@@ -18,7 +18,7 @@ REQ-025,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-026,Aircraft,Must,Inspection,To Be Designed,None,None,No Test
 REQ-027,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-028,Aircraft,Must,"Test, property-based",Decimal hours in airworthiness_rules.intervals,"test_golden_next_due; test_properties_intervals: hours_remaining, projection",assurance/independent-verification/intervals.md,Rule Tested and Independently Recomputed; Interface Not Built
-REQ-040,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-040,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
 REQ-041,Maintenance Programme,Must,Test,airworthiness_rules.intervals.Interval,"test_golden_next_due: an_interval_needs_a_positive_limit, three_units",assurance/independent-verification/intervals.md,Rule Tested and Independently Recomputed; Interface Not Built
 REQ-042,Maintenance Programme,Must,"Test, Golden, Independent",airworthiness_rules.intervals.limits,test_golden_next_due; test_properties_intervals,assurance/independent-verification/intervals.md,Rule Tested and Independently Recomputed; Interface Not Built
 REQ-043,Maintenance Programme,Must,"Golden (G-BXYZ, 100-Hour or Annual Check, 41.0 hours), property-based, Independent","airworthiness_rules.intervals.comes_first, is_due","test_golden_next_due: g_bxyz, g_fmno, three_units, due_exactly_and_overdue",assurance/independent-verification/intervals.md,Rule Tested and Independently Recomputed; Interface Not Built
@@ -26,14 +26,18 @@ REQ-044,Maintenance Programme,Must,Test,"airworthiness_rules.intervals.projected
 REQ-045,Maintenance Programme,Must,"Golden, Independent",airworthiness_rules.intervals.limits,test_golden_next_due: g_abcd,assurance/independent-verification/intervals.md,Rule Tested and Independently Recomputed; Interface Not Built
 REQ-046,Maintenance Programme,Must,"Golden, Independent, boundary tests (leap years, month ends, British Summer Time changes)",airworthiness_rules.dates.days_between,"test_golden_review: g_ejkl, day_counts; test_golden_next_due: g_fmno; test_properties_dates",assurance/independent-verification/review-and-dates.md; assurance/independent-verification/intervals.md,Rule Tested and Independently Recomputed; Interface Not Built
 REQ-047,Maintenance Programme,Must,"Test, property-based","airworthiness_rules.dates.add_months, add_years",test_golden_next_due: month_intervals; test_golden_review: leap_day; test_properties_intervals,assurance/independent-verification/intervals.md,Rule Tested and Independently Recomputed; Interface Not Built
-REQ-048,Maintenance Programme,Must,"Test, Independent",To Be Designed,None,None,No Test
-REQ-049,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-048,Maintenance Programme,Must,"Test, Golden, property-based, Independent","airworthiness_rules.intervals.limits, Tolerance, MINIMUM_INSPECTION_PROGRAMME_TOLERANCE","test_golden_tolerance: g_bxyz_tolerance_limits, g_fmno_tolerance_limits, next_interval, month_ends, sailplane; test_properties_intervals: tolerance, next_interval",assurance/independent-verification/tolerance.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-049,Maintenance Programme,Must,"Test, Independent","airworthiness_rules.intervals.TaskKind, ToleranceNotPermittedError","test_golden_tolerance: refused_for_anything_but, above_1_month_or_10_hours, every_kind_is_calculated_without_a_tolerance",assurance/independent-verification/tolerance.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
 REQ-050,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
 REQ-051,Maintenance Programme,Must,"Golden, Independent",airworthiness_rules.records.release_record_deadline,test_golden_review: g_abcd; test_properties_dates: deadlines,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
 REQ-052,Maintenance Programme,Should,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-053,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-053,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
 REQ-054,Maintenance Programme,Must,"Inspection, Test",To Be Designed,None,None,No Test
 REQ-055,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
+REQ-056,Maintenance Programme,Must,"Test, property-based, Independent","airworthiness_rules.intervals.Limit.within_tolerance, overdue; is_due","test_golden_tolerance: never_moves_the_due_point, hours_inside_and_past, calendar_inside_and_past, done_inside_the_tolerance; test_properties_intervals: tolerance",assurance/independent-verification/tolerance.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-057,Maintenance Programme,Should,"Golden, Independent",airworthiness_rules.intervals.tolerance_outlasts_certificate,"test_golden_tolerance: g_bxyz_tolerance_ends_after, g_fmno_tolerance_ends_before",assurance/independent-verification/tolerance.md,Rule Tested and Independently Recomputed; Interface Not Built
+REQ-058,Maintenance Programme,Must,"Test, Golden, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-059,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
 REQ-060,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-061,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-062,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test

@@ -41,6 +41,11 @@ The Fleet table shows results. These are the inputs that produce them, added on 
 - G-BXYZ: due at 3,359.0 hours (41.0 hours remaining) or on 30 July 2027 (254 days). At 0.5 hours a day 41.0 hours is 82 days, so hours come first.
 - G-FMNO: due at 5,012.0 hours (61.8 hours remaining) or on 4 February 2027 (78 days). At 0.2 hours a day 61.8 hours is 309 days, so the calendar limit comes first.
 
+The basis of each aircraft's maintenance programme is not yet recorded here. The tolerance cases, added on 18 November 2026, take G-BXYZ and G-FMNO to be on the Minimum Inspection Programme (ML.A.302(d)(1): tolerance 1 month or 10 hours); to be confirmed by Alex King.
+
+- G-BXYZ: the tolerance ends at 3,369.0 hours (51.0 hours remaining) or on 30 August 2027 (285 days). The review certificate is valid to 2 August 2027, so the calendar tolerance ends after it.
+- G-FMNO: the tolerance ends at 5,022.0 hours (71.8 hours remaining) or on 4 March 2027 (106 days), before the review certificate's 27 April 2027.
+
 ## Work in Progress
 
 - WP-2026-046, G-DGHI, stabilator trim cable rectification, 5 of 7 tasks closed.

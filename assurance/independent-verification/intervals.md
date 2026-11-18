@@ -37,7 +37,7 @@ Every case agrees with the golden tests in `tests/test_golden_next_due.py`.
 | When no utilisation is recorded the interface must say the first limit is not determined | Interface, REQ-044 |
 | Rounding down can make a tie where the calendar limit truly falls first | Accepted: both are shown |
 | Remaining exactly 0 on a calendar limit: may the aircraft fly to the end of that day | To Be Checked; decision for Alex |
-| A task never yet done (threshold since new or since overhaul) is not covered | Requirement to add before the programme module is built |
-| Tolerance and permitted variation (REQ-048, REQ-049) are not implemented | Next: needs AMC ML.A.302 read in the UK text |
-| Which counter a task runs against: airframe, engine or propeller | Requirement to add with the aircraft model (REQ-020) |
+| A task never yet done (threshold since new or since overhaul) is not covered | Requirement to add before the programme module is built. Added 18 November 2026: REQ-058 |
+| Tolerance and permitted variation (REQ-048, REQ-049) are not implemented | Next: needs AMC ML.A.302 read in the UK text. Done 18 November 2026: `tolerance.md` |
+| Which counter a task runs against: airframe, engine or propeller | Requirement to add with the aircraft model (REQ-020). Added 18 November 2026: REQ-059 |
 | Month-end rule is one way: done 28 February plus 1 month is 28 March | Intended; intervals run from the actual date done |
