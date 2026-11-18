@@ -15,8 +15,7 @@ from airworthiness_plus.accounts.middleware import (
     SIGNED_IN_AT_KEY,
 )
 from airworthiness_plus.accounts.models import User
-from airworthiness_plus.accounts.permissions import address_of, requires
-from airworthiness_plus.accounts.roles import Action
+from airworthiness_plus.accounts.permissions import address_of
 
 BACKEND = "airworthiness_plus.accounts.backends.OrganisationBackend"
 PENDING_KEY = "password_accepted_for"
@@ -118,12 +117,3 @@ def sign_out(request: HttpRequest) -> HttpResponse:
         sign_in.log_signed_out(user, address_of(request))
     logout(request)
     return redirect("sign_in")
-
-
-@never_cache
-@requires(Action.VIEW_RECORDS)
-def home(request: HttpRequest) -> HttpResponse:
-    """The first page after sign-in. The Fleet takes its place when it is built."""
-    user = request.user
-    assert isinstance(user, User)  # noqa: S101  guaranteed by ``requires``
-    return render(request, "accounts/home.html", {"organisation": user.organisation})

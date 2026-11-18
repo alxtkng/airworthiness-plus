@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Fleet{% endblock %}
+{% block content %}
+<h1>Fleet</h1>
+<p><a href="{% url 'add_aircraft' %}">Add an Aircraft</a></p>
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Type Rating</th><th>Owned By</th><th>Status</th><th>Airframe Hours</th><th>Hours Entered For</th></tr>
+</thead>
+<tbody>
+{% for row in rows %}
+<tr>
+<td><a href="{% url 'aircraft' row.aircraft.id %}">{{ row.aircraft.registration }}</a></td>
+<td>{{ row.aircraft.type_rating }}</td>
+<td>{{ row.aircraft.owner }}</td>
+<td>{{ row.aircraft.status }}{% if row.aircraft.unserviceable_reason %}, {{ row.aircraft.unserviceable_reason }}{% endif %}</td>
+<td>{{ row.airframe.hours|hours }}</td>
+<td>{{ row.airframe.on|long_date }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

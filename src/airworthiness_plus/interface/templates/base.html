@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Airworthiness+{% endblock %}</title>
+</head>
+<body>
+{% if request.user.is_authenticated %}
+<header>
+<p>{{ request.user.organisation.name }}</p>
+<nav aria-label="Sections">
+<a href="{% url 'home' %}">Fleet</a>
+<a href="{% url 'transfers' %}">Transfers</a>
+</nav>
+<p>{{ request.user.full_name }}, {{ request.user.roles|join:", " }}</p>
+<form method="post" action="{% url 'sign_out' %}">
+{% csrf_token %}
+<button type="submit">Sign Out</button>
+</form>
+</header>
+{% endif %}
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>
