@@ -151,8 +151,8 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
-| REQ-170 | Records are loaded from paper or spreadsheets only through an import that produces a verification report: every imported value beside its source value, with who checked it | CAP 562 C-90 (R) | Must | Test |
-| REQ-171 | Airworthiness directive data and maintenance review data can be checked 100% on migration, and the report shows the proportion checked | CAP 562 C-90 (R) | Must | Test |
+| REQ-170 | Records are loaded in bulk from paper or spreadsheets only through an import that produces a verification report: every imported value beside its source value, with who checked it and when. A file is loaded whole or not at all. In the slice a file holds aircraft and their totals, airworthiness directive status, or airworthiness review certificates | CAP 562 C-90 (R) | Must | Test |
+| REQ-171 | Airworthiness directive data and maintenance review data can be checked 100% on migration, and the report shows the proportion checked, and how many values differ from their source. No value is marked as checked for the person | CAP 562 C-90 (R) | Must | Test |
 | REQ-172 | The system has a problem log. An entry records the problem, the action and the solution, with dates and people. Entries cannot be changed or removed; a later note is added to an entry | CAP 562 C-90 (R, bound problem log) | Must | Test |
 | REQ-173 | The system records the start of an organisation's parallel run and shows when 6 months have passed | CAP 562 C-90 (R) | Should | Test |
 | REQ-174 | The system records the reference and date of the organisation's written Civil Aviation Authority approval to keep records other than in logbooks | CAP 562 C-90 (R); (N) research/cap562/03.md cites C-50 5.11 | Must | Test |
