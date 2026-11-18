@@ -17,6 +17,7 @@ dev = [
     "ruff>=0.8",
     "pip-audit>=2.7",
     "detect-secrets>=1.5",
+    "django-stubs>=5.2,<5.3",
 ]
 
 [build-system]
