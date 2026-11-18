@@ -4,6 +4,7 @@ The running record for Airworthiness+. Read it before any change, and check ever
 
 ## Product
 
+- The repository is public from 18 November 2026, decided by Alex King. Its history was rewritten first to remove the server address and private notes; the original is kept private as `airworthiness-plus-archive`. Pull requests 1, 2, 41, 42 and 43 appear here as closed placeholders so that their numbers still resolve. `main` is protected: changes arrive only by pull request with passing checks.
 - Licence, decided by Alex King on 18 November 2026: the application code is AGPL-3.0-only, copyright Airworthiness Limited. Reason: a hosted modified version must publish its source, so the code cannot be taken closed; the copyright holder can still license commercially or relax the licence later. Outside contributions wait for a contributor agreement. The licence for the open data standard is not yet decided; the recommendation on record is CC BY 4.0 for its documentation and Apache-2.0 for its schema and tooling (Issue #25).
 - Airworthiness+ is a continuing airworthiness web app for owners, operators, Part-CAO, Part-CAMO and Part-145 organisations and licensed engineers, mainly in the United Kingdom.
 - Vision: open source with an open data standard for the sector, in the way 360Giving connected grant data.
