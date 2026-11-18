@@ -1,0 +1,101 @@
+Requirement,Module,Priority,Verification Method,Design Element,Test Identifiers,Evidence,Status
+REQ-001,Organisation and Access,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-002,Organisation and Access,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-003,Organisation and Access,Must,Test: every endpoint tried against another organisation's records,To Be Designed,None,None,No Test
+REQ-004,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
+REQ-005,Organisation and Access,Must,"Test, Inspection",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-006,Organisation and Access,Must,Test: every action against every role,To Be Designed,None,None,No Test
+REQ-007,Organisation and Access,Must,Inspection,To Be Designed,None,None,No Test
+REQ-008,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
+REQ-009,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
+REQ-010,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
+REQ-020,Aircraft,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-021,Aircraft,Must,Test: stored value equals source value byte for byte,To Be Designed,None,None,No Test
+REQ-022,Aircraft,Must,Test,To Be Designed,None,None,No Test
+REQ-023,Aircraft,Must,Test,To Be Designed,None,None,No Test
+REQ-024,Aircraft,Must,Test,To Be Designed,None,None,No Test
+REQ-025,Aircraft,Must,Test,To Be Designed,None,None,No Test
+REQ-026,Aircraft,Must,Inspection,To Be Designed,None,None,No Test
+REQ-027,Aircraft,Must,Test,To Be Designed,None,None,No Test
+REQ-028,Aircraft,Must,"Test, property-based",To Be Designed,None,None,No Test
+REQ-040,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-041,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
+REQ-042,Maintenance Programme,Must,"Test, Golden, Independent",To Be Designed,None,None,No Test
+REQ-043,Maintenance Programme,Must,"Golden (G-BXYZ, 100-Hour or Annual Check, 41.0 hours), property-based, Independent",To Be Designed,None,None,No Test
+REQ-044,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
+REQ-045,Maintenance Programme,Must,"Golden, Independent",To Be Designed,None,None,No Test
+REQ-046,Maintenance Programme,Must,"Golden, Independent, boundary tests (leap years, month ends, British Summer Time changes)",To Be Designed,None,None,No Test
+REQ-047,Maintenance Programme,Must,"Test, property-based",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-048,Maintenance Programme,Must,"Test, Independent",To Be Designed,None,None,No Test
+REQ-049,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-050,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
+REQ-051,Maintenance Programme,Must,"Golden, Independent",To Be Designed,None,None,No Test
+REQ-052,Maintenance Programme,Should,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-053,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-054,Maintenance Programme,Must,"Inspection, Test",To Be Designed,None,None,No Test
+REQ-055,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
+REQ-060,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
+REQ-061,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-062,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
+REQ-063,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
+REQ-064,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
+REQ-065,Airworthiness Directives,Must,"Test, Independent",To Be Designed,None,None,No Test
+REQ-066,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-067,Airworthiness Directives,Must,"Test, Golden",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-068,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
+REQ-080,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
+REQ-081,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
+REQ-082,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
+REQ-083,Maintenance Data,Must,Golden,To Be Designed,None,None,No Test
+REQ-084,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
+REQ-085,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
+REQ-086,Maintenance Data,Must,Golden,To Be Designed,None,None,No Test
+REQ-087,Maintenance Data,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-088,Maintenance Data,Must,Golden,To Be Designed,None,None,No Test
+REQ-089,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
+REQ-100,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test
+REQ-101,Airworthiness Review,Must,"Test, Independent",To Be Designed,None,None,No Test
+REQ-102,Airworthiness Review,Must,"Golden, boundary tests at 90 and 91 days, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-103,Airworthiness Review,Must,Golden once sourced,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-104,Airworthiness Review,Must,"Test, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-105,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-106,Airworthiness Review,Must,Boundary tests at 30 and 31 days,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-107,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-108,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-109,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-110,Airworthiness Review,Must,"Test, concurrency test",To Be Designed,None,None,No Test
+REQ-111,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-112,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-113,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-114,Airworthiness Review,Should,Test,To Be Designed,None,None,No Test
+REQ-115,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
+REQ-116,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
+REQ-130,Records,Must,Test,To Be Designed,None,None,No Test
+REQ-131,Records,Must,Test: no delete path in the application; the database refuses update and delete on history,To Be Designed,None,None,No Test
+REQ-132,Records,Must,Test; penetration test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-133,Records,Must,Inspection: the system has no automatic removal at all in private beta,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-134,Records,Must,Test: export compared with the database for every record type,To Be Designed,None,None,No Test
+REQ-135,Records,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-136,Records,Must,Test: the build fails,To Be Designed,None,None,No Test
+REQ-137,Records,Must,Boundary tests,To Be Designed,None,None,No Test
+REQ-138,Records,Must,Test,To Be Designed,None,None,No Test
+REQ-139,Records,Must,"Inspection, Test",To Be Designed,None,None,No Test
+REQ-150,Backup and Recovery,Must,Demonstration; backup logs,To Be Designed,None,None,No Test
+REQ-151,Backup and Recovery,Must,Inspection,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-152,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test
+REQ-153,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test
+REQ-154,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test
+REQ-170,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test
+REQ-171,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test
+REQ-172,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test
+REQ-173,CAA Acceptance,Should,Test,To Be Designed,None,None,No Test
+REQ-174,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-175,CAA Acceptance,Must,Inspection,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-176,CAA Acceptance,Should,Inspection,To Be Designed,None,None,No Test
+REQ-190,Interface,Must,Inspection; automated check of interface strings,To Be Designed,None,None,No Test
+REQ-191,Interface,Must,Inspection,To Be Designed,None,None,No Test
+REQ-192,Interface,Must,Test,To Be Designed,None,None,No Test
+REQ-193,Interface,Must,Inspection,To Be Designed,None,None,No Test
+REQ-194,Interface,Must,Inspection,To Be Designed,None,None,No Test
+REQ-195,Interface,Must,"Automated check that no interface string contains ""EASA Form""",To Be Designed,None,None,No Test
+REQ-196,Interface,Must,Inspection,To Be Designed,None,None,No Test

@@ -32,6 +32,7 @@ Every page uses this data. Placeholders in square brackets stand for real values
 - WP-2026-046, G-DGHI, stabilator trim cable rectification, 5 of 7 tasks closed.
 - WP-2026-047, G-ABCD, landing light replacement, issued for 19 November 2026.
 - WP-2026-048, G-EJKL, annual check and headset socket, draft, 1 to 4 December 2026.
+- G-ABCD right main tyre replaced by the pilot-owner on 22 October 2026; the certificate of release to service must be in the records by 21 November 2026 (30 days, ML.A.305).
 - WP-2026-043, G-CDEF, 100-hour check and spinner replacement, released 4 November 2026 by Chris Moore. WP-2026-047 also includes the engine oil and filter change.
 - Planning: Bay 1 and Bay 2; December certifying staff 34% short before contracted cover; [Contract Engineer] is a contracted B1.2; [Maintenance Manager] and [Compliance Monitoring Manager] as people. Organisation fatigue limits: 10-hour shift, 11 hours' rest, 48 hours a week.
 - G-CDEF flies on a loan propeller fitted on WP-2026-043; its own propeller is at [Propeller Organisation] for overhaul, due back 25 November 2026.
