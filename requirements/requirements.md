@@ -63,7 +63,7 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | REQ-052 | Pilot-owner maintenance is recorded with the date the pilot-owner told the organisation, and flagged when that is more than 30 days after the task | Appendix I to Part-ML (R); the notes cite ML.A.305(a) (N) | Should | Test |
 | REQ-053 | The programme is reviewed at least annually. The system shows the date of the last review and when the next is due | ML.A.302 (R); ML.A.302(c)(9) (N) | Must | Test |
 | REQ-054 | Stale utilisation is visible: every remaining-hours or remaining-cycles figure shows the date of the utilisation entry it was calculated from | Hazard H-001 | Must | Inspection, Test |
-| REQ-055 | An item is Due Soon (amber) inside a threshold and Overdue (red) only when past due. The thresholds are set per organisation | Decisions.md, Interface. Default threshold values have no source: decision needed | Must | Test |
+| REQ-055 | An item is Due Soon (amber) inside a threshold and Overdue (red) only when past due. The defaults are 30 days, 10.0 hours or 10 cycles, adjustable for each organisation; a regulatory deadline of 30 days or fewer is Due Soon from the day it starts | Decisions.md, Interface (D, decided 18 November 2026) | Must | Test |
 
 ## 4. Airworthiness Directives
 
@@ -174,5 +174,4 @@ These block verification of the requirements named, not the start of building.
 | Confirm every (N) reference against the UK text | All with (N) | Issue #38 |
 | Last day of validity of a certificate that does not keep the pattern | REQ-103 | Issue #38 |
 | Month-interval rule at month ends | REQ-047 | Architecture Decision Record, Step 4 |
-| Default Due Soon thresholds | REQ-055 | Decision for Alex |
 | Role matrix | REQ-006, REQ-007 | Decisions.md, with Step 4 |
