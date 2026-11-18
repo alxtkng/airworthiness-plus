@@ -5,6 +5,7 @@ from django.urls import URLPattern, URLResolver, path
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
 from airworthiness_plus.directives import views as directives
+from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.programme import views as programme
 
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -69,6 +70,26 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "directive-decisions/<uuid:applicability_id>/terminate/",
         directives.terminate,
         name="terminate_directive",
+    ),
+    path("maintenance-data/", data.data_page, name="maintenance_data"),
+    path("maintenance-data/add/", data.add_data, name="add_data"),
+    path("maintenance-data/<uuid:data_set_id>/", data.data_set_page, name="data_set"),
+    path("maintenance-data/<uuid:data_set_id>/revisions/", data.add_revision, name="add_revision"),
+    path("maintenance-data/<uuid:data_set_id>/checks/", data.record_check, name="record_check"),
+    path(
+        "maintenance-data/<uuid:data_set_id>/customer-status/",
+        data.customer_status,
+        name="customer_status",
+    ),
+    path(
+        "maintenance-data/<uuid:data_set_id>/no-longer-held/",
+        data.end_holding,
+        name="end_holding",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/maintenance-data/",
+        data.aircraft_data_page,
+        name="aircraft_data",
     ),
     path("sign-in/", accounts.sign_in_page, name="sign_in"),
     path("sign-in/code/", accounts.code_page, name="code"),
