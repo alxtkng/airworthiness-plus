@@ -10,6 +10,7 @@ import uuid
 from collections.abc import Sequence
 
 from airworthiness_plus.accounts.models import User
+from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.organisations.models import ApprovalType, Organisation, Privilege
 
@@ -23,7 +24,7 @@ def provision_organisation(
     first_user_username: str,
     first_user_full_name: str,
 ) -> tuple[Organisation, User]:
-    """Create the organisation and one user who can then add the others."""
+    """Create the organisation and one Administrator, who can then add the others."""
     identifier = uuid.uuid4()
     with working_for(identifier):
         organisation = Organisation.objects.create(
@@ -38,5 +39,6 @@ def provision_organisation(
             organisation=organisation,
             username=first_user_username,
             full_name=first_user_full_name,
+            roles=[Role.ADMINISTRATOR],
         )
     return organisation, user

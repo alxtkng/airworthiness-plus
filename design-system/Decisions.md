@@ -66,6 +66,41 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Due Soon defaults, decided 18 November 2026 and adjustable for each organisation: 30 days, 10.0 hours or 10 cycles remaining, whichever limit governs. An airworthiness review certificate is Due Soon at 30 days; the 90-day early review window is shown in words, not colour. A regulatory deadline of 30 days or fewer (release to service in the records, copy of the review certificate to the Civil Aviation Authority) is Due Soon from the day it starts. These numbers are ours, not the regulation's.
 - The Fleet lists aircraft under management. An aircraft being transferred in appears on the Transfers tab until its records are complete.
 
+## Roles and Permissions
+
+Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition of CAP 562 C-90; which role may do what is ours, derived from the people in `SampleData.md`, except where a source is given below. `airworthiness_plus/accounts/roles.py` holds the same matrix, and a test fails the build if the two differ.
+
+- A user may hold more than one role, as Lucy Grant is both Airworthiness Review Staff and in continuing airworthiness. An action is permitted if any role held permits it.
+- A user with no role, and an inactive user, may do nothing.
+- The Administrator manages users and the organisation record and does not change airworthiness records. An Administrator can give themselves another role; the change is in the history.
+- Read Only can view and nothing else.
+- Only Airworthiness Review Staff carry out a review and issue a certificate (ML.A.903, CAO.A.045). Issue also needs a current authorisation, which is REQ-109 and separate from the role.
+- An extension is open to the Continuing Airworthiness Manager and to Airworthiness Review Staff, because the regulation gives the privilege to the organisation under both continuing airworthiness management and airworthiness review (CAO.A.095(b)(4), (c)(1)(ii)). Who within the organisation signs an extension is for its exposition; this reading is to be confirmed by Alex King.
+- Only the Continuing Airworthiness Manager changes the maintenance programme and decides whether a directive applies (hazard H-002). The programme review may also be recorded by Airworthiness Review Staff, who may carry it out with the airworthiness review (ML.A.302(c)(9)).
+- Second factor at sign-in, decided 18 November 2026: codes from an authenticator application, the time-based one-time password of RFC 6238. It needs no new dependency. A code can be phished where a passkey cannot, so passkeys are considered again when the verification level is set in Step 7 (REQ-008).
+
+| Action | Administrator | Continuing Airworthiness Manager | Airworthiness Review Staff | Planning and Records | Read Only |
+|---|---|---|---|---|---|
+| View Records | Yes | Yes | Yes | Yes | Yes |
+| Export Records | Yes | Yes | Yes | Yes | No |
+| Manage Users and Roles | Yes | No | No | No | No |
+| Change Organisation Record | Yes | No | No | No | No |
+| Add or Change Aircraft | No | Yes | No | Yes | No |
+| Enter Utilisation | No | Yes | No | Yes | No |
+| Change Maintenance Programme | No | Yes | No | No | No |
+| Record Maintenance Programme Review | No | Yes | Yes | No | No |
+| Record Accomplishment | No | Yes | No | Yes | No |
+| Record Airworthiness Directive | No | Yes | No | Yes | No |
+| Decide Directive Applicability | No | Yes | No | No | No |
+| Record Directive Compliance | No | Yes | No | Yes | No |
+| Record Maintenance Data | No | Yes | No | Yes | No |
+| Record Amendment Check | No | Yes | No | Yes | No |
+| Carry Out Airworthiness Review | No | No | Yes | No | No |
+| Issue Airworthiness Review Certificate | No | No | Yes | No | No |
+| Extend Airworthiness Review Certificate | No | Yes | Yes | No | No |
+| Record Copy Sent to the Civil Aviation Authority | No | Yes | Yes | Yes | No |
+| Add to Problem Log | Yes | Yes | Yes | Yes | No |
+
 ## Writing
 
 - Terse Title Case labels, no full stops, no middle dots.
