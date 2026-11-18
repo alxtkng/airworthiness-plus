@@ -21,10 +21,10 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
-| REQ-001 | The system holds one record for each organisation: name, approval type, approval reference (UK.CAO.[Number]), privileges and scope of work | SampleData.md, Organisation; CAO.A.095 (N) | Must | Test |
-| REQ-002 | Every record belongs to exactly one organisation | AMC CAO.A.090, AMC CAMO.A.220 (R); the notes place the software conditions in AMC1 CAO.A.100(f) (N) | Must | Test |
-| REQ-003 | A user can read only the records of their own organisation. This is enforced in the data layer, so a fault in the interface cannot expose another organisation's data | AMC CAO.A.090, AMC CAMO.A.220 (R); (D) brief Step 4 | Must | Test: every endpoint tried against another organisation's records |
-| REQ-004 | Only users who belong to the organisation can enter or change its data. There is no support or administrator account that can write to a customer organisation's records | AMC CAO.A.090, AMC CAMO.A.220 (R) | Must | Test |
+| REQ-001 | The system holds one record for each organisation: name, approval type, approval reference (UK.CAO.[Number]), privileges and scope of work. The privileges are Maintenance, Continuing Airworthiness Management, Airworthiness Review and Permit to Fly: at least one; Airworthiness Review only with Maintenance or Continuing Airworthiness Management; Permit to Fly only with Airworthiness Review | SampleData.md, Organisation; CAO.A.095(a) to (e) (R, confirmed 18 November 2026) | Must | Test |
+| REQ-002 | Every record belongs to exactly one organisation, and never moves to another | AMC1 CAO.A.100(f) point (d)(2) (R, confirmed 18 November 2026): a software tool used by several organisations gives each access to its own data only | Must | Test |
+| REQ-003 | A user can read only the records of their own organisation. This is enforced in the data layer, so a fault in the interface cannot expose another organisation's data | AMC1 CAO.A.100(f) point (d)(2)(i) (R, confirmed 18 November 2026); (D) brief Step 4 | Must | Test: every endpoint tried against another organisation's records; direct queries against the database |
+| REQ-004 | Only users who belong to the organisation can enter or change its data. There is no support or administrator account that can write to a customer organisation's records. An organisation and its first user are set up once by Airworthiness Limited, and that is recorded in the history as done by a database role, not a user | AMC1 CAO.A.100(f) point (d)(2)(ii) (R, confirmed 18 November 2026): data is entered only by personnel of the CAO | Must | Test |
 | REQ-005 | Every user has their own named account. There are no shared accounts | CAP 562 C-90 (R); (N) research/cap562/03.md 6.3 | Must | Test, Inspection |
 | REQ-006 | Write access is by role. Each role's permissions are listed in one role matrix, and an action outside the matrix is refused | CAP 562 C-90 (R) | Must | Test: every action against every role |
 | REQ-007 | The roles in the slice are Administrator, Continuing Airworthiness Manager, Airworthiness Review Staff, Planning and Records, and Read Only | (D) derived from SampleData.md, People. Role matrix to be recorded in Decisions.md | Must | Inspection |
@@ -116,22 +116,22 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | REQ-109 | A certificate can be issued only when the review is complete, every finding is closed, and the person issuing it is airworthiness review staff with a current authorisation | ML.A.903(e) (R, confirmed 18 November 2026); CAO.A.045 (R) | Must | Test |
 | REQ-110 | The certificate is CAA Form 15c. Its serial is allocated by the server, unique, and never reused, including after a void or a restore from backup | Decisions.md, Product; CAP 562 C-90 (R) | Must | Test, concurrency test |
 | REQ-111 | A copy of each certificate issued or extended goes to the Civil Aviation Authority within 10 days. The system shows the deadline, records the date sent, and flags an unsent copy. Golden: G-CDEF issued 11 November 2026, deadline 21 November 2026 | ML.A.903(f) (R, confirmed 18 November 2026): within 10 days of the date of issue or extension | Must | Golden, Independent |
-| REQ-112 | A copy of each certificate issued or extended is kept with all supporting documents | CAO.A.090(a)(3) (N) | Must | Test |
-| REQ-113 | Review staff recency is 6 months of continuing airworthiness work in 2 years, or 1 review in 12 months. The system calculates the date recency lapses. Golden: lapse on 2 December 2026 for the review staff member in SampleData.md | CAO.A.045(c), AMC1 CAO.A.045(c) (R, confirmed 18 November 2026); CAMO.A.305 (R) | Must | Golden, Independent |
+| REQ-112 | A copy of each certificate issued or extended is kept with all supporting documents | CAO.A.090(a)(3) (R, confirmed 18 November 2026) | Must | Test |
+| REQ-113 | Review staff recency is 6 months of continuing airworthiness work in 2 years, or 1 review in 12 months. The system calculates the date recency lapses. Golden: lapse on 2 December 2026 for the review staff member in SampleData.md | CAO.A.045(c), AMC1 CAO.A.045(c) (R, confirmed 18 November 2026) | Must | Golden, Independent |
 | REQ-114 | A lapsed review staff member is restored by 1 review under supervision, which the system records | AMC1 CAO.A.045(d) (R, confirmed 18 November 2026) | Should | Test |
-| REQ-115 | Review staff records are kept for 2 years after the person leaves | CAO.A.045(e) (R) | Must | Test |
+| REQ-115 | Review staff records are kept for 2 years after the person leaves | CAO.A.045(e) (R, confirmed 18 November 2026) | Must | Test |
 | REQ-116 | The review schedule lists every aircraft by days remaining to expiry and shows whether today is inside the 90-day window | REQ-100, REQ-102 | Must | Test |
 
 ## 7. Records
 
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
-| REQ-130 | Every record has an append-only history. Each entry holds who made it, when, what changed, the value before and the value after | CAP 562 C-90 (R); (D) brief Step 4 | Must | Test |
+| REQ-130 | Every record has an append-only history. Each entry holds who made it, when, what changed, the value before and the value after. The history is written by the database when a record changes, never by the application directly, and each entry carries a hash chained to the entry before it for the same record | CAP 562 C-90 (R); (D) brief Step 4; ADR-0002 | Must | Test |
 | REQ-131 | Nothing is deleted. A wrong or outdated entry is superseded by a new one, and both remain | CAP 562 C-90 (R); (D) brief Step 4 | Must | Test: no delete path in the application; the database refuses update and delete on history |
-| REQ-132 | Records are protected against unauthorised alteration, damage and theft | 145.A.45(e) (R, adopted for Part-CAO); CAO.A.090(d) (N) | Must | Test; penetration test |
-| REQ-133 | The system keeps every record for at least the longest applicable period: maintenance records 36 months after release; totals and directive status 12 months after the aircraft is withdrawn; Part-CAO records 3 years from release and continuing airworthiness records 2 years after permanent withdrawal | ML.A.305 (R); CAO.A.090(b), (c) (N) | Must | Inspection: the system has no automatic removal at all in private beta |
-| REQ-134 | A complete record of an aircraft can be exported at any time in an open, documented format. It includes the full history and superseded entries | ML.A.305 (R); CAO.A.090(f) (N, transfer of records); (D) brief Step 4 | Must | Test: export compared with the database for every record type |
-| REQ-135 | A complete record of an organisation can be exported in the same way | (D) brief Step 4; CAO.A.090(g) (N) | Must | Test |
+| REQ-132 | Records are protected against unauthorised alteration, damage and theft | 145.A.45(e) (R, adopted for Part-CAO); CAO.A.090(d) (R, confirmed 18 November 2026): protection from damage, alteration and theft | Must | Test; penetration test |
+| REQ-133 | The system keeps every record for at least the longest applicable period: maintenance records 36 months after release; totals and directive status 12 months after the aircraft is withdrawn; Part-CAO records 3 years from release and continuing airworthiness records 2 years after permanent withdrawal | ML.A.305 (R); CAO.A.090(b), (c) (R, confirmed 18 November 2026) | Must | Inspection: the system has no automatic removal at all in private beta |
+| REQ-134 | A complete record of an aircraft can be exported at any time in an open, documented format. It includes the full history and superseded entries | ML.A.305 (R); CAO.A.090(f) (R, confirmed 18 November 2026), transfer of records; AMC1 CAO.A.100(f) point (d)(2)(iii) (R, confirmed 18 November 2026): the data can be retrieved at any time; (D) brief Step 4 | Must | Test: export compared with the database for every record type |
+| REQ-135 | A complete record of an organisation can be exported in the same way | (D) brief Step 4; CAO.A.090(g) (R, confirmed 18 November 2026); AMC1 CAO.A.100(f) point (d)(2)(iii) (R, confirmed 18 November 2026) | Must | Test |
 | REQ-136 | A new type of record cannot be added without adding it to the export | Hazard H-012 | Must | Test: the build fails |
 | REQ-137 | The time of every entry is stored in Coordinated Universal Time. A regulatory date (due, valid to, deadline) is a UK local date with no time, and periods are counted in UK local dates | (D) brief Step 4; hazard H-006 | Must | Boundary tests |
 | REQ-138 | A write is reported as saved only after it is committed | Hazard H-003 | Must | Test |
@@ -142,7 +142,7 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
 | REQ-150 | The records are backed up at least every 24 hours | 145.A.45(e) (R, adopted for Part-CAO); CAP 562 C-90 (R) | Must | Demonstration; backup logs |
-| REQ-151 | Backups are stored in a different location from the main data | CAO.A.090(e) (N) | Must | Inspection |
+| REQ-151 | Backups are stored in a different location from the main data | CAO.A.090(e) (R, confirmed 18 November 2026) | Must | Inspection |
 | REQ-152 | A failed or missing backup raises an alert | Hazard H-009 | Must | Demonstration |
 | REQ-153 | A restore from backup is carried out and recorded before private beta ends, and repeated on a schedule | Hazard H-009; CAP 562 C-90 (R) | Must | Demonstration |
 | REQ-154 | After a restore, certificate serials continue from the highest serial ever issued | Hazard H-007; CAP 562 C-90 (R) | Must | Demonstration |
@@ -156,7 +156,7 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | REQ-172 | The system has a problem log. An entry records the problem, the action and the solution, with dates and people. Entries cannot be changed or removed; a later note is added to an entry | CAP 562 C-90 (R, bound problem log) | Must | Test |
 | REQ-173 | The system records the start of an organisation's parallel run and shows when 6 months have passed | CAP 562 C-90 (R) | Should | Test |
 | REQ-174 | The system records the reference and date of the organisation's written Civil Aviation Authority approval to keep records other than in logbooks | CAP 562 C-90 (R); (N) research/cap562/03.md cites C-50 5.11 | Must | Test |
-| REQ-175 | A description of the system is kept for use in an exposition: main functions, how records are queried, who is authorised, security, backup and training | CAP 562 C-90 (N); AMC1 CAO.A.025 (R) | Must | Inspection |
+| REQ-175 | A description of the system is kept for use in an exposition: main functions, how records are queried, who is authorised, security, backup and training | CAP 562 C-90 (N); AMC1 CAO.A.025 (R); AMC1 CAO.A.100(f) point (d) (R, confirmed 18 November 2026): the use of the tool is described in the exposition and approved by the Civil Aviation Authority | Must | Inspection |
 | REQ-176 | A change that extends the system into a new function regulated by the Civil Aviation Authority is recorded as a decision before release, so the organisation can tell the authority | CAP 562 C-90 (N, scope of the assessed system) | Should | Inspection |
 
 ## 10. Interface and Writing

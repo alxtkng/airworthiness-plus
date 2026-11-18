@@ -75,7 +75,7 @@ The running record for Airworthiness+. Read it before any change, and check ever
 
 ## Regulation Facts in Use
 
-Confirmed against the UK text in the Civil Aviation Authority Regulatory Library (regulatorylibrary.caa.co.uk/1321-2014) on 18 November 2026: ML.A.302, ML.A.303, ML.A.305, ML.A.901, ML.A.903, AMC1 ML.A.302, AMC1 ML.A.302(c), AMC1 ML.A.302(d), GM1 ML.A.302, GM1 ML.A.302(c)(3), GM1 ML.A.302(c)(4) and AMC1 CAO.A.045. That reading corrected two sources below: the Minimum Inspection Programme intervals and tolerance are in the rule itself, ML.A.302(d)(1), and the annual review of the programme is ML.A.302(c)(9). Other rows are as recorded during discovery and are confirmed as each is used (Issue #38).
+Confirmed against the UK text in the Civil Aviation Authority Regulatory Library (regulatorylibrary.caa.co.uk/1321-2014) on 18 November 2026: ML.A.302, ML.A.303, ML.A.305, ML.A.901, ML.A.903, AMC1 ML.A.302, AMC1 ML.A.302(c), AMC1 ML.A.302(d), GM1 ML.A.302, GM1 ML.A.302(c)(3), GM1 ML.A.302(c)(4), CAO.A.045, AMC1 CAO.A.045, CAO.A.090, CAO.A.095 and AMC1 CAO.A.100(f). That reading corrected three sources below: the conditions for contracted software are in AMC1 CAO.A.100(f) point (d)(2), and a search of the library finds no AMC to CAO.A.090; the Minimum Inspection Programme intervals and tolerance are in the rule itself, ML.A.302(d)(1), and the annual review of the programme is ML.A.302(c)(9). Other rows are as recorded during discovery and are confirmed as each is used (Issue #38).
 
 | Fact | Value | Source |
 |---|---|---|
@@ -85,7 +85,7 @@ Confirmed against the UK text in the Civil Aviation Authority Regulatory Library
 | Early extension | Up to 30 days before expiry, keeps the review pattern | ML.A.901(d) |
 | Early airworthiness review | Up to 90 days before expiry, keeps the review pattern | ML.A.903(d) |
 | Copy of review certificate to the Civil Aviation Authority | Within 10 days of the date of issue or extension | ML.A.903(f) |
-| Airworthiness review staff recency | 6 months of continuing airworthiness management in every 2-year period, or 1 review in the last 12-month period | CAO.A.045(c), AMC1 CAO.A.045(c), CAMO.A.305 |
+| Airworthiness review staff recency | 6 months of continuing airworthiness management in every 2-year period, or 1 review in the last 12-month period | CAO.A.045(c), AMC1 CAO.A.045(c). CAMO.A.305, for Part-CAMO, is To Be Checked |
 | Certifying staff authorisation | Licence valid, 6 months (or 100 days) of experience in 2 years, recurrent training in 2 years | CAO.A.040, 66.A.20(b), 145.A.35 |
 | Minimum Inspection Programme | Aeroplanes, touring motor gliders and balloons: annual or 100 hours, whichever first, tolerance 1 month or 10 hours. Sailplanes and powered sailplanes other than touring motor gliders: annual, tolerance 1 month. Next interval from when the inspection is done | ML.A.302(d)(1)(a), (b); AMC1 ML.A.302(d) |
 | Tolerance and the review certificate | Using the 1-month tolerance for the annual inspection may result in an expired airworthiness review certificate | AMC1 ML.A.302(d) |
@@ -114,7 +114,9 @@ Confirmed against the UK text in the Civil Aviation Authority Regulatory Library
 | On the job training | First type rating in first category; within 3 years; 50% of tasks after theory; mentor 1 year in category; assessor 3 years and not the mentor | 66.A.45(c), Appendix III Section 6 |
 | Manhour plan | Reviewed at least every 3 months; shortfall over 25% in a month reported; at least half of each shift employed | AMC 145.A.30(d); Part-CAO needs enough staff, CAO.A.035(d) |
 | Defect deferral | Pilot-in-command, minimum equipment list, or certifying staff; limit from the maintenance data | ML.A.403 |
-| Contracted software for records | Each organisation sees only its own data; only its own staff enter data | AMC CAO.A.090, AMC CAMO.A.220 |
+| Contracted software for records | Not subcontracting, but described in the exposition and approved by the Civil Aviation Authority, provided that each organisation has access to its own data only, data is entered only by the organisation's personnel, and the data can be retrieved at any time | AMC1 CAO.A.100(f) point (d)(2). The Part-CAMO equivalent, recorded during discovery as AMC CAMO.A.220, is To Be Checked |
+| Part-CAO privileges | Maintenance; continuing airworthiness management; airworthiness review, with maintenance or continuing airworthiness management; permit to fly, with airworthiness review. One or more | CAO.A.095(a) to (e) |
+| Part-CAO records | Maintenance records and associated maintenance data 3 years from release; continuing airworthiness records, review certificates and permits to fly 2 years from permanent withdrawal; protected from damage, alteration and theft; backup hardware in a different location; transferred with the aircraft or when the organisation closes | CAO.A.090(a) to (g) |
 
 ## National Regime
 
