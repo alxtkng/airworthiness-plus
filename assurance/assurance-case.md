@@ -116,11 +116,11 @@ Hazards answered: H-005.
 
 | Sub-claim | Argument | Evidence | Status |
 |---|---|---|---|
-| C7.1 Each set of data held carries author, applicability, revision and the date its amendment status was last checked | M.A.401, ML.A.401, CAO.A.055; AMC M.A.401(c), AMC1 145.A.45(g) | Requirements and tests; golden case G-FMNO (Grob G 115 manual amendment to check by 20 November 2026) | Planned |
-| C7.2 A superseded revision is marked superseded everywhere it appears and is never selectable as current | Supersession is an append-only event (C2.2), so the earlier revision stays visible in history only | Tests on revision supersession | Planned |
-| C7.3 An overdue amendment check is flagged | Currency rests on the check being done, with special attention to mandatory instructions and airworthiness limitations | Tests on amendment check due dates | Planned |
-| C7.4 Customer-provided data is held only while work is in progress or for the length of the contract, with its amendment status evidenced | CAO.A.055(a), CAO.A.080 | Requirements and tests; sample case G-BXYZ owner-provided instructions confirmed 2 June 2026 | Planned |
-| C7.5 Data needed for a job is confirmed held and current before the work | AMC1 CAO.A.055. Work packages are outside this slice, so the slice delivers the check, not the work package | Requirement recorded; test of the currency check | Planned |
+| C7.1 Each set of data held carries author, applicability, revision and the date its amendment status was last checked | M.A.401, ML.A.401, CAO.A.055; AMC M.A.401(c), AMC1 145.A.45(g) | Requirements and tests; golden case G-FMNO (Grob G 115 manual amendment to check by 20 November 2026): `tests/test_maintenance_data.py` | Partial |
+| C7.2 A superseded revision is marked superseded everywhere it appears and is never selectable as current | Supersession is an append-only event (C2.2), so the earlier revision stays visible in history only | Tests on revision supersession: `tests/test_maintenance_data.py` | Partial |
+| C7.3 An overdue amendment check is flagged | Currency rests on the check being done, with special attention to mandatory instructions and airworthiness limitations | Tests on amendment check due dates: `tests/test_maintenance_data.py` | Partial |
+| C7.4 Customer-provided data is held only while work is in progress or for the length of the contract, with its amendment status evidenced | CAO.A.055(a), CAO.A.080 | Requirements and tests; sample case G-BXYZ owner-provided instructions confirmed 2 June 2026: `tests/test_maintenance_data.py` | Partial |
+| C7.5 Data needed for a job is confirmed held and current before the work | AMC1 CAO.A.055. Work packages are outside this slice, so the slice delivers the check, not the work package | Requirement recorded; test of the currency check: `tests/test_maintenance_data.py` | Partial |
 
 ## Maintaining This Case
 

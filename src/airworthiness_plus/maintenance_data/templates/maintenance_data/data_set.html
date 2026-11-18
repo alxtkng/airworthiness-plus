@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ data_set.title }}{% endblock %}
+{% block content %}
+<h1>{{ data_set.title }}</h1>
+<p>{{ data_set.kind }}</p>
+<dl>
+<dt>Author</dt><dd>{{ data_set.author }}</dd>
+<dt>Applies To</dt><dd>{{ data_set.applies_to|join:", " }}</dd>
+<dt>Holding</dt><dd>{{ data_set.holding }}{% if data_set.no_longer_held_on %}, From {{ data_set.no_longer_held_on|long_date }}{% endif %}</dd>
+<dt>Amendment Service</dt><dd>{{ data_set.amendment_service }}</dd>
+<dt>Next Amendment Check By</dt><dd>{{ data_set.check_due|long_date }}</dd>
+{% if data_set.customer_provided %}<dt>Provided By</dt><dd>{{ data_set.provided_by }}</dd>
+<dt>Amendment Status Shown By</dt><dd>{{ data_set.evidence }}, {{ data_set.evidence_dated|long_date }}</dd>{% endif %}
+</dl>
+<h2>Revisions</h2>
+<table>
+<thead><tr><th>Revision</th><th>Revision Date</th><th>Status</th></tr></thead>
+<tbody>
+{% for revision in revisions %}
+<tr><td>{{ revision.revision }}</td><td>{{ revision.revision_date|long_date }}</td><td>{% if revision.current %}Current{% else %}Superseded{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<form method="post" action="{% url 'add_revision' data_set.id %}">
+{% csrf_token %}
+{% for field in revision_form %}<p>{{ field.label_tag }} {{ field }}</p>
+{% endfor %}<p><button type="submit">Record New Revision</button></p>
+</form>
+<h2>Amendment Checks</h2>
+<table>
+<thead><tr><th>Checked</th><th>Checked By</th><th>Result</th></tr></thead>
+<tbody>
+{% for check in checks %}
+<tr><td>{{ check.checked_on|long_date }}</td><td>{{ check.checked_by.full_name }}</td><td>{{ check.result }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<form method="post" action="{% url 'record_check' data_set.id %}">
+{% csrf_token %}
+{% for field in check_form %}<p>{{ field.label_tag }} {{ field }}</p>
+{% endfor %}<p><button type="submit">Record Amendment Check</button></p>
+</form>
+{% if data_set.customer_provided %}
+<h2>Customer Amendment Status</h2>
+<form method="post" action="{% url 'customer_status' data_set.id %}">
+{% csrf_token %}
+{% for field in customer_form %}<p>{{ field.label_tag }} {{ field }}</p>
+{% endfor %}<p><button type="submit">Record Amendment Status</button></p>
+</form>
+{% endif %}
+{% if data_set.holding == "Held" %}
+<h2>No Longer Held</h2>
+<form method="post" action="{% url 'end_holding' data_set.id %}">
+{% csrf_token %}
+{% for field in end_form %}<p>{{ field.label_tag }} {{ field }}</p>
+{% endfor %}<p><button type="submit">Record as No Longer Held</button></p>
+</form>
+{% endif %}
+{% endblock %}

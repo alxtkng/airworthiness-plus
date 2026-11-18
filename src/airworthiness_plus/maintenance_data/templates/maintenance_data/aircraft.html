@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ aircraft.registration }}, Maintenance Data{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+<h2>Maintenance Data for {{ aircraft.type_rating }}</h2>
+<p>{{ data.answer }}</p>
+<table>
+<thead>
+<tr><th>Title</th><th>Author</th><th>Kind</th><th>Applies To</th><th>Revision</th><th>Revision Date</th><th>Holding</th><th>Special Attention</th><th>Amendment Status</th><th>Last Checked</th><th>Next Amendment Check By</th><th>Status</th></tr>
+</thead>
+<tbody>
+{% for line in data.lines %}
+<tr>
+<td><a href="{% url 'data_set' line.data_set.id %}">{{ line.data_set.title }}</a></td>
+<td>{{ line.data_set.author }}</td>
+<td>{{ line.data_set.kind }}</td>
+<td>{{ line.data_set.applies_to|join:", " }}</td>
+<td>{{ line.revision.revision }}</td>
+<td>{{ line.revision.revision_date|long_date }}</td>
+<td>{{ line.state }}{% if line.data_set.no_longer_held_on %}, From {{ line.data_set.no_longer_held_on|long_date }}{% endif %}</td>
+<td>{% if line.data_set.mandatory %}Mandatory Instructions or Airworthiness Limitations{% endif %}</td>
+<td>{{ line.data_set.amendment_service }}{% if line.data_set.customer_provided %}Provided by {{ line.data_set.provided_by }}, {{ line.data_set.evidence }}, {{ line.data_set.evidence_dated|long_date }}{% endif %}</td>
+<td>{% if line.last_check %}{{ line.last_check.checked_on|long_date }}, {{ line.last_check.checked_by.full_name }}{% endif %}</td>
+<td>{{ line.data_set.check_due|long_date }}</td>
+<td>{{ line.flag.value }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

@@ -18,6 +18,7 @@
 <p>
 <a href="{% url 'programme' aircraft.id %}">Maintenance Programme</a>
 <a href="{% url 'directive_status' aircraft.id %}">Airworthiness Directives</a>
+<a href="{% url 'aircraft_data' aircraft.id %}">Maintenance Data</a>
 <a href="{% url 'enter_utilisation' aircraft.id %}">Enter Hours and Cycles</a>
 <a href="{% url 'add_counter' aircraft.id %}">Add an Engine or Propeller</a>
 {% if aircraft.status == "Serviceable" %}<a href="{% url 'make_unserviceable' aircraft.id %}">Record as Unserviceable</a>{% endif %}
