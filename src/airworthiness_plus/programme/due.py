@@ -28,6 +28,7 @@ from airworthiness_rules.intervals import (
     comes_first,
     limits,
     projected_days,
+    tolerance_outlasts_certificate,
 )
 from airworthiness_rules.programme import (
     Flag,
@@ -66,6 +67,9 @@ class ExplainedLimit:
     rule: str
     inputs: tuple[tuple[str, str], ...]
     source: str
+    # AMC1 ML.A.302(d): the day the review certificate ends, when the
+    # tolerance of this limit ends after it (REQ-057).
+    certificate_ends_first: date | None = None
 
     @property
     def due_text(self) -> str:
@@ -224,7 +228,13 @@ def _explain(
     return tuple(inputs), source
 
 
-def due_line(task: Task, programme: Programme, today: date, thresholds: Thresholds) -> DueLine:
+def due_line(
+    task: Task,
+    programme: Programme,
+    today: date,
+    thresholds: Thresholds,
+    certificate_valid_to: date | None = None,
+) -> DueLine:
     """Work out where one task stands today."""
     last = task.work_done.order_by("dated", "hours").last()
     never_done = last is None
@@ -289,6 +299,10 @@ def due_line(task: Task, programme: Programme, today: date, thresholds: Threshol
                 rule=RULES[limit.unit],
                 inputs=inputs,
                 source=source,
+                certificate_ends_first=certificate_valid_to
+                if certificate_valid_to is not None
+                and tolerance_outlasts_certificate(limit, certificate_valid_to)
+                else None,
             )
         )
     return DueLine(
@@ -302,7 +316,9 @@ def due_line(task: Task, programme: Programme, today: date, thresholds: Threshol
     )
 
 
-def due_lines(aircraft: Aircraft, today: date) -> list[DueLine]:
+def due_lines(
+    aircraft: Aircraft, today: date, certificate_valid_to: date | None = None
+) -> list[DueLine]:
     """Return every task of the aircraft's programme and where it stands.
 
     Nothing is calculated for a Transfer In or a Non-Part 21 aircraft
@@ -313,7 +329,7 @@ def due_lines(aircraft: Aircraft, today: date) -> list[DueLine]:
         return []
     thresholds = thresholds_of(aircraft.organisation)
     return [
-        due_line(task, programme, today, thresholds)
+        due_line(task, programme, today, thresholds, certificate_valid_to)
         for task in programme.tasks.filter(retired=False).select_related("counter")
         if not (task.once and task.work_done.exists())
     ]

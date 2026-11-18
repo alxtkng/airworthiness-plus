@@ -45,7 +45,7 @@
 <td>{{ item.limit.unit.value }}</td>
 <td>{{ item.due_text }}</td>
 <td>{{ item.remaining_text }}</td>
-<td>{{ item.tolerance_text }}</td>
+<td>{{ item.tolerance_text }}{% if item.certificate_ends_first %}, After the Review Certificate Ends {{ item.certificate_ends_first|long_date }}{% endif %}</td>
 <td>{{ item.flag.value }}</td>
 <td>{% if item.first and line.ranked %}{% if line.limits|length > 1 %}Projected First{% else %}Only Limit{% endif %}{% elif not line.ranked %}Not Ranked{% endif %}</td>
 </tr>

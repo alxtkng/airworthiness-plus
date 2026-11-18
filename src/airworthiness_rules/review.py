@@ -1,12 +1,13 @@
 """Airworthiness review certificate rules for Part-ML aircraft.
 
-Source: UK Regulation (EU) No 1321/2014, ML.A.901 and ML.A.903, read in the
-Civil Aviation Authority Regulatory Library on 18 November 2026.
+Source: UK Regulation (EU) No 1321/2014, ML.A.901 and ML.A.903, and for
+review staff CAO.A.045 and AMC1 CAO.A.045, read in the Civil Aviation
+Authority Regulatory Library on 18 November 2026.
 """
 
 from datetime import date
 
-from airworthiness_rules.dates import add_days, add_years, days_between
+from airworthiness_rules.dates import add_days, add_months, add_years, days_between
 
 VALIDITY_YEARS = 1
 """ML.A.901(a): the certificate is valid for 1 year."""
@@ -87,3 +88,50 @@ def valid_to_after_extension(extended: date, valid_to: date, consecutive_extensi
 def copy_to_authority_deadline(issued_or_extended: date) -> date:
     """Return the last day to send the copy to the Civil Aviation Authority (REQ-111)."""
     return add_days(issued_or_extended, COPY_TO_AUTHORITY_DAYS)
+
+
+RECENCY_REVIEW_MONTHS = 12
+"""AMC1 CAO.A.045(c)(2): at least one airworthiness review in the last
+12-month period."""
+
+RECENCY_INVOLVEMENT_MONTHS = 6
+"""AMC1 CAO.A.045(c)(1): involved in continuing airworthiness management
+for at least 6 months in every 2-year period."""
+
+
+def recency_by_review_lasts_to(last_review: date) -> date:
+    """Return the last day on which ``last_review`` still counts (REQ-113).
+
+    A review counts for 12 months: to the same day of the month a year
+    later. Whether that day itself still counts is a reading of "the last
+    12-month period"; it is taken to count.
+    """
+    return add_months(last_review, RECENCY_REVIEW_MONTHS)
+
+
+def review_staff_recent(
+    today: date, *, last_review: date | None, months_involved_in_two_years: int
+) -> bool:
+    """Return whether review staff have appropriate recent experience (REQ-113).
+
+    AMC1 CAO.A.045(c): either 6 months of continuing airworthiness
+    management in the 2-year period, or one airworthiness review in the
+    last 12-month period. Either is enough.
+    """
+    if months_involved_in_two_years < 0:
+        raise ValueError("Months involved cannot be below zero")
+    if months_involved_in_two_years >= RECENCY_INVOLVEMENT_MONTHS:
+        return True
+    return last_review is not None and today <= recency_by_review_lasts_to(last_review)
+
+
+def recency_lapses(*, last_review: date | None, months_involved_in_two_years: int) -> date | None:
+    """Return the day after which recency is lost, or None if no date can be given.
+
+    A date can be given only when recency rests on the last review alone.
+    With 6 months of involvement recency does not rest on a date known
+    here; with neither, it has already lapsed.
+    """
+    if months_involved_in_two_years >= RECENCY_INVOLVEMENT_MONTHS or last_review is None:
+        return None
+    return recency_by_review_lasts_to(last_review)

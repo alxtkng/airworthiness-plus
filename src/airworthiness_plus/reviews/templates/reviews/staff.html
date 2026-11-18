@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Airworthiness Review Staff{% endblock %}
+{% block content %}
+<h1>Airworthiness Review Staff</h1>
+{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+<table>
+<thead>
+<tr><th>Name</th><th>Authorisation Reference</th><th>Accepted</th><th>Last Review</th><th>Months in the 2-Year Period</th><th>Recency Rests On</th><th>Recency Lapses</th><th>Status</th><th>Record</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td>{{ line.staff.user.full_name }}</td>
+<td>{{ line.staff.authorisation_reference }}</td>
+<td>{{ line.staff.accepted_on|long_date }}</td>
+<td>{{ line.last_review|long_date }}</td>
+<td>{{ line.staff.months_involved }}, Recorded {{ line.staff.months_recorded_on|long_date }}</td>
+<td>{{ line.basis }}</td>
+<td>{% if line.lapses %}After {{ line.lapses|long_date }}{% if line.flag.value %}, {{ line.flag.value }}{% endif %}{% endif %}</td>
+<td>{{ line.state }}{% if line.staff.restored_on %}, Restored {{ line.staff.restored_on|long_date }} Under {{ line.staff.restored_under }}{% endif %}</td>
+<td>
+<form method="post" action="{% url 'update_involvement' line.staff.id %}">{% csrf_token %}{% for field in involvement_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Save</button></form>
+{% if not line.current %}<form method="post" action="{% url 'record_restoration' line.staff.id %}">{% csrf_token %}{% for field in restoration_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Record Restoration</button></form>{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<h2>Record Airworthiness Review Staff</h2>
+<form method="post" action="{% url 'add_review_staff' %}">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}<p><button type="submit">Record Review Staff</button></p>
+</form>
+{% endblock %}

@@ -26,8 +26,17 @@ from airworthiness_plus.aircraft.forms import (
     UnserviceableForm,
     UtilisationForm,
 )
-from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind, Regime, Stage
-from airworthiness_rules.intervals import Reading
+from airworthiness_plus.aircraft.models import (
+    Aircraft,
+    Counter,
+    CounterKind,
+    Regime,
+    Stage,
+    Status,
+)
+from airworthiness_plus.interface import formatting
+from airworthiness_rules.dates import days_between
+from airworthiness_rules.intervals import Reading, Unit
 from airworthiness_rules.utilisation import EntryRefusedError
 
 
@@ -38,6 +47,7 @@ class FleetRow:
     aircraft: Aircraft
     airframe: Reading | None
     next_due: str
+    review_valid_to: date | None
 
 
 def _airframe(aircraft: Aircraft) -> Reading | None:
@@ -45,22 +55,39 @@ def _airframe(aircraft: Aircraft) -> Reading | None:
     return services.current_reading(counter) if counter is not None else None
 
 
-def _next_due(aircraft: Aircraft, today: date) -> str:
-    """Return what is due next on the aircraft, as the Fleet shows it (REQ-043, REQ-044).
+def _next_due(aircraft: Aircraft, today: date, review_valid_to: date | None) -> str:
+    """Return what is due next on the aircraft, as the Fleet shows it (REQ-043, REQ-044, REQ-100).
 
-    The order across tasks is a projection from the planning utilisation.
-    When some task cannot be placed in it, the Fleet says so.
+    An Unserviceable aircraft is to be rectified before anything else. The
+    airworthiness review is set beside the tasks of the programme by its
+    days remaining; the order across tasks is a projection from the
+    planning utilisation, and when a task cannot be placed in it the Fleet
+    says so.
     """
     from airworthiness_plus.programme import due
 
+    if aircraft.status == Status.UNSERVICEABLE:
+        return "Rectify Defect"
     lines = due.due_lines(aircraft, today)
-    if not lines:
-        return ""
     first, complete = due.next_due(lines)
-    if not first:
-        return "Not Ranked, No Planning Utilisation"
-    shown = "; ".join(line.summary for line in first)
-    return shown if complete else f"{shown}; Other Tasks Not Ranked"
+    candidates: list[tuple[int, str]] = []
+    unranked = bool(lines) and not first
+    if first:
+        urgent = any(line.needs_attention or line.reached for line in first)
+        projected = [limit.projected for line in first for limit in line.first]
+        known = [value for value in projected if value is not None]
+        days = -1 if urgent or not known else min(known)
+        text = "; ".join(line.summary for line in first)
+        candidates.append((days, text if complete else f"{text}; Other Tasks Not Ranked"))
+    if review_valid_to is not None:
+        remaining = days_between(today, review_valid_to)
+        review = f"Airworthiness Review, {formatting.amount(Unit.CALENDAR, remaining)}"
+        candidates.append((min(remaining, -1) if remaining <= 0 else remaining, review))
+    if not candidates:
+        return "Not Ranked, No Planning Utilisation" if unranked else ""
+    soonest = min(days for days, _ in candidates)
+    shown = "; ".join(text for days, text in candidates if days == soonest)
+    return f"{shown}; Tasks Not Ranked, No Planning Utilisation" if unranked else shown
 
 
 def _user(request: HttpRequest) -> User:
@@ -74,10 +101,14 @@ def _user(request: HttpRequest) -> User:
 def fleet(request: HttpRequest) -> HttpResponse:
     """The Fleet: aircraft under management (Decisions.md, Interface)."""
     today = services.today()
-    rows = [
-        FleetRow(aircraft, _airframe(aircraft), _next_due(aircraft, today))
-        for aircraft in Aircraft.objects.filter(stage=Stage.FLEET)
-    ]
+    from airworthiness_plus.reviews import services as review_services
+
+    rows = []
+    for aircraft in Aircraft.objects.filter(stage=Stage.FLEET):
+        valid_to = review_services.current_valid_to(aircraft)
+        rows.append(
+            FleetRow(aircraft, _airframe(aircraft), _next_due(aircraft, today, valid_to), valid_to)
+        )
     return render(request, "aircraft/fleet.html", {"rows": rows})
 
 

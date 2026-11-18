@@ -7,6 +7,7 @@ from airworthiness_plus.aircraft import views as aircraft
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.programme import views as programme
+from airworthiness_plus.reviews import views as reviews
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
@@ -90,6 +91,38 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "aircraft/<uuid:aircraft_id>/maintenance-data/",
         data.aircraft_data_page,
         name="aircraft_data",
+    ),
+    path("reviews/", reviews.schedule_page, name="review_schedule"),
+    path("review-staff/", reviews.staff_page, name="review_staff"),
+    path("review-staff/add/", reviews.add_staff, name="add_review_staff"),
+    path(
+        "review-staff/<uuid:staff_id>/involvement/",
+        reviews.update_involvement,
+        name="update_involvement",
+    ),
+    path(
+        "review-staff/<uuid:staff_id>/restoration/",
+        reviews.record_restoration,
+        name="record_restoration",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/review/", reviews.aircraft_review_page, name="aircraft_review"
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/review/certificates/",
+        reviews.record_certificate,
+        name="record_certificate",
+    ),
+    path("certificates/<uuid:certificate_id>/extend/", reviews.extend, name="extend_certificate"),
+    path(
+        "certificates/<uuid:certificate_id>/copy-sent/",
+        reviews.certificate_copy_sent,
+        name="certificate_copy_sent",
+    ),
+    path(
+        "extensions/<uuid:extension_id>/copy-sent/",
+        reviews.extension_copy_sent,
+        name="extension_copy_sent",
     ),
     path("sign-in/", accounts.sign_in_page, name="sign_in"),
     path("sign-in/code/", accounts.code_page, name="code"),

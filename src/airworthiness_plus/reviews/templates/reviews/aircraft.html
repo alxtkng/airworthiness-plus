@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ aircraft.registration }}, Airworthiness Review{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+<h2>Airworthiness Review Certificate</h2>
+{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+<dl>
+<dt>Review Certificate Valid To</dt><dd>{% if line.valid_to %}{{ line.valid_to|long_date }}{% else %}No Certificate Recorded{% endif %}</dd>
+{% if line.certificate %}<dt>Remaining</dt><dd>{{ line.days|days }}{% if line.flag.value %}, {{ line.flag.value }}{% endif %}</dd>
+<dt>Review</dt><dd>{% if line.in_review_window %}Inside the 90-Day Window, the Review Pattern Is Kept{% else %}Outside the 90-Day Window{% endif %}</dd>
+<dt>Extensions Since the Last Review</dt><dd>{{ line.extensions }} of 2</dd>{% endif %}
+</dl>
+<table>
+<thead>
+<tr><th>Certificate Reference</th><th>Issued By</th><th>Date of Issue</th><th>Date of Expiry</th><th>Status</th><th>Copy to the Civil Aviation Authority</th></tr>
+</thead>
+<tbody>
+{% for certificate, extensions in certificates %}
+<tr>
+<td>{{ certificate.reference }}</td>
+<td>{% if certificate.issued_by %}{{ certificate.issued_by.user.full_name }}, {{ certificate.issued_by.authorisation_reference }}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
+<td>{{ certificate.issued_on|long_date }}</td>
+<td>{{ certificate.valid_to|long_date }}</td>
+<td>{% if certificate.voided %}Void, {{ certificate.void_reason }}{% elif certificate == line.certificate %}Current{% else %}Superseded{% endif %}</td>
+<td>{% if not certificate.issued_by %}{% elif certificate.copy_sent_on %}Sent {{ certificate.copy_sent_on|long_date }}{% else %}
+<form method="post" action="{% url 'certificate_copy_sent' certificate.id %}">{% csrf_token %}{{ copy_form.on.label_tag }} {{ copy_form.on }} <button type="submit">Record Copy Sent</button></form>{% endif %}</td>
+</tr>
+{% for extension in extensions %}
+<tr>
+<td>{{ certificate.reference }}, Extension {{ forloop.counter }}</td>
+<td>{{ extension.extended_by.full_name }}</td>
+<td>{{ extension.extended_on|long_date }}</td>
+<td>{{ extension.valid_to|long_date }}</td>
+<td>Extended, ML.A.901(c) Conditions Confirmed</td>
+<td>{% if extension.copy_sent_on %}Sent {{ extension.copy_sent_on|long_date }}{% else %}
+<form method="post" action="{% url 'extension_copy_sent' extension.id %}">{% csrf_token %}{{ copy_form.on.label_tag }} {{ copy_form.on }} <button type="submit">Record Copy Sent</button></form>{% endif %}</td>
+</tr>
+{% endfor %}
+{% endfor %}
+</tbody>
+</table>
+{% if line.certificate %}
+<h2>Extend the Certificate of {{ aircraft.registration }}</h2>
+<form method="post" action="{% url 'extend_certificate' line.certificate.id %}">
+{% csrf_token %}
+{% for field in extension_form %}<p>{{ field }} {{ field.label_tag }}</p>
+{% endfor %}<p><button type="submit">Extend by 1 Year</button></p>
+</form>
+{% endif %}
+<h2>Record a Certificate Issued Elsewhere for {{ aircraft.registration }}</h2>
+<form method="post" action="{% url 'record_certificate' aircraft.id %}">
+{% csrf_token %}
+{% if certificate_form.non_field_errors %}<p role="alert">{{ certificate_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in certificate_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}<p><button type="submit">Record Certificate</button></p>
+</form>
+{% endblock %}
