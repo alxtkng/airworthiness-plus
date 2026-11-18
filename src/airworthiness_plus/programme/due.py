@@ -1,0 +1,398 @@
+"""What is due on an aircraft, with the working shown (REQ-042 to REQ-058, REQ-139).
+
+Every figure comes from ``airworthiness_rules``. This module gathers the
+inputs from the records, and puts beside each figure the rule, the inputs
+and the source it was calculated from, so that nobody has to take the
+figure on trust (hazard H-014).
+"""
+
+from dataclasses import dataclass
+from datetime import date
+
+from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.interface import formatting
+from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.programme.models import InspectionCategory, Programme, Task, WorkDone
+from airworthiness_rules.dates import days_between
+from airworthiness_rules.intervals import (
+    MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
+    MINIMUM_INSPECTION_PROGRAMME_TOLERANCE_SAILPLANE,
+    Interval,
+    Limit,
+    Reading,
+    TaskKind,
+    Tolerance,
+    Unit,
+    Utilisation,
+    comes_first,
+    limits,
+    projected_days,
+)
+from airworthiness_rules.programme import (
+    Flag,
+    Thresholds,
+    deadline_flag,
+    limit_flag,
+    pilot_owner_told_late,
+    programme_review_due,
+    task_flag,
+)
+from airworthiness_rules.records import release_record_deadline
+
+RULES = {
+    Unit.HOURS: (
+        "Due at the Hours When Last Done Plus the Interval. "
+        "Remaining Is Due Hours Less Current Hours"
+    ),
+    Unit.CYCLES: (
+        "Due at the Cycles When Last Done Plus the Interval. "
+        "Remaining Is Due Cycles Less Current Cycles"
+    ),
+    Unit.CALENDAR: (
+        "Due the Interval After the Date Last Done. Remaining Is an Exact Count of Days From Today"
+    ),
+}
+
+
+@dataclass(frozen=True)
+class ExplainedLimit:
+    """One limit of a task, with how it was worked out (REQ-139)."""
+
+    limit: Limit
+    flag: Flag
+    first: bool
+    projected: int | None
+    rule: str
+    inputs: tuple[tuple[str, str], ...]
+    source: str
+
+    @property
+    def due_text(self) -> str:
+        return formatting.point(self.limit.unit, self.limit.due)
+
+    @property
+    def remaining_text(self) -> str:
+        return formatting.amount(self.limit.unit, self.limit.remaining)
+
+    @property
+    def tolerance_text(self) -> str:
+        if self.limit.tolerance_limit is None:
+            return ""
+        return formatting.point(self.limit.unit, self.limit.tolerance_limit)
+
+
+@dataclass(frozen=True)
+class DueLine:
+    """One task of the programme and where it stands today."""
+
+    task: Task
+    limits: tuple[ExplainedLimit, ...]
+    flag: Flag
+    ranked: bool
+    reading: Reading | None
+    never_done: bool
+    problem: str
+
+    @property
+    def first(self) -> tuple[ExplainedLimit, ...]:
+        """Return the limit or limits expected first."""
+        return tuple(limit for limit in self.limits if limit.first)
+
+    @property
+    def reached(self) -> bool:
+        return any(limit.limit.remaining <= 0 for limit in self.limits)
+
+    @property
+    def needs_attention(self) -> bool:
+        """Return whether the task could not be calculated.
+
+        Such a task is never shown as not due: nobody knows where it stands
+        until what is missing is recorded. Found by the independent recompute.
+        """
+        return bool(self.problem)
+
+    @property
+    def summary(self) -> str:
+        """Return the task and what remains, as the Fleet shows it."""
+        if not self.limits:
+            return f"{self.task.title}, {self.problem}"
+        shown = self.first if self.ranked else self.limits
+        return f"{self.task.title}, " + " or ".join(limit.remaining_text for limit in shown)
+
+
+def thresholds_of(organisation: Organisation) -> Thresholds:
+    """Return the organisation's Due Soon thresholds (REQ-055)."""
+    return Thresholds(
+        days=organisation.due_soon_days,
+        hours=organisation.due_soon_hours,
+        cycles=organisation.due_soon_cycles,
+    )
+
+
+def _tolerance(task: Task, programme: Programme) -> Tolerance | None:
+    """Return the tolerance for a task: only for a Minimum Inspection Programme inspection."""
+    if task.task_kind is not TaskKind.MINIMUM_INSPECTION_PROGRAMME:
+        return None
+    if programme.inspection_category == InspectionCategory.SAILPLANE:
+        return MINIMUM_INSPECTION_PROGRAMME_TOLERANCE_SAILPLANE
+    return MINIMUM_INSPECTION_PROGRAMME_TOLERANCE
+
+
+def _interval_text(interval: Interval) -> str:
+    parts = []
+    if interval.hours is not None:
+        parts.append(formatting.amount(Unit.HOURS, interval.hours))
+    if interval.cycles is not None:
+        parts.append(formatting.amount(Unit.CYCLES, interval.cycles))
+    if interval.months is not None:
+        parts.append(f"{interval.months} Months" if interval.months != 1 else "1 Month")
+    if interval.days is not None:
+        parts.append(formatting.amount(Unit.CALENDAR, interval.days))
+    return " or ".join(parts) + (", Whichever Comes First" if len(parts) > 1 else "")
+
+
+def _reading_text(reading: Reading, unit: Unit) -> str:
+    when = formatting.long_date(reading.on)
+    if unit is Unit.HOURS:
+        return f"{when} at {formatting.amount(Unit.HOURS, reading.hours)}"
+    if unit is Unit.CYCLES:
+        return f"{when} at {formatting.amount(Unit.CYCLES, reading.cycles)}"
+    return when
+
+
+def _explain(
+    limit: Limit,
+    *,
+    task: Task,
+    interval: Interval,
+    start: Reading,
+    never_done: bool,
+    counter_reading: Reading | None,
+    today: date,
+    utilisation: Utilisation,
+    tolerance: Tolerance | None,
+    projected: int | None,
+    ranked: bool,
+) -> tuple[tuple[tuple[str, str], ...], str]:
+    """Return the inputs and the source for one limit."""
+    inputs = [
+        (
+            "Counted From, Never Yet Done" if never_done else "Last Done",
+            _reading_text(start, limit.unit),
+        ),
+        ("First Threshold" if never_done else "Interval", _interval_text(interval)),
+    ]
+    if limit.unit is Unit.CALENDAR:
+        inputs.append(("Today", formatting.long_date(today)))
+    elif counter_reading is not None:
+        value = counter_reading.hours if limit.unit is Unit.HOURS else counter_reading.cycles
+        inputs.append(
+            (
+                f"Current, {task.counter}",
+                f"{formatting.amount(limit.unit, value)}, Entered For "
+                f"{formatting.long_date(counter_reading.on)}",
+            )
+        )
+    if limit.tolerance_limit is not None and tolerance is not None:
+        size = (
+            "1 Month"
+            if limit.unit is Unit.CALENDAR
+            else formatting.amount(Unit.HOURS, tolerance.hours or 0)
+        )
+        inputs.append(
+            ("Tolerance", f"{size}, to {formatting.point(limit.unit, limit.tolerance_limit)}")
+        )
+    if limit.unit is not Unit.CALENDAR:
+        rate = utilisation.hours_per_day if limit.unit is Unit.HOURS else utilisation.cycles_per_day
+        if projected is not None and rate is not None and limit.remaining > 0:
+            per_day = formatting.amount(limit.unit, rate)
+            inputs.append(
+                (
+                    "Projection, for Planning Only",
+                    f"{formatting.amount(limit.unit, limit.remaining)} at {per_day} a Day Is "
+                    f"{formatting.amount(Unit.CALENDAR, projected)}, Rounded Down",
+                )
+            )
+        elif not ranked:
+            inputs.append(
+                ("Projection", "No Planning Utilisation Recorded, So Limits Are Not Ranked")
+            )
+    source = f"{task.source}; ML.A.302"
+    if limit.tolerance_limit is not None:
+        source += "; Tolerance, ML.A.302(d)(1)"
+    return tuple(inputs), source
+
+
+def due_line(task: Task, programme: Programme, today: date, thresholds: Thresholds) -> DueLine:
+    """Work out where one task stands today."""
+    last = task.work_done.order_by("dated", "hours").last()
+    never_done = last is None
+    start = last.reading if last is not None else task.starts
+    interval = task.first_interval if never_done else task.interval
+    counter_reading = aircraft_services.current_reading(task.counter)
+
+    def nothing(problem: str) -> DueLine:
+        return DueLine(task, (), Flag.NONE, False, counter_reading, never_done, problem)
+
+    if start is None:
+        return nothing("No Starting Point Recorded")
+    needs_counter = interval.hours is not None or interval.cycles is not None
+    if needs_counter and counter_reading is None:
+        return nothing(f"No Hours Recorded for {task.counter}")
+    current = Reading(
+        today,
+        counter_reading.hours if counter_reading else start.hours,
+        counter_reading.cycles if counter_reading else start.cycles,
+    )
+    tolerance = _tolerance(task, programme)
+    try:
+        found = limits(
+            interval,
+            start,
+            current,
+            kind=task.task_kind if tolerance is not None else None,
+            tolerance=tolerance,
+        )
+    except ValueError:
+        return nothing(f"Hours Entered for {task.counter} Are Older Than This Task's Last Record")
+
+    utilisation = Utilisation(programme.hours_per_day, programme.cycles_per_day)
+    first = comes_first(found, utilisation)
+    ranked = (
+        len(found) == 1
+        or len(first) < len(found)
+        or all(projected_days(limit, utilisation) is not None for limit in found)
+    )
+    explained = []
+    for limit in found:
+        projected = projected_days(limit, utilisation)
+        inputs, source = _explain(
+            limit,
+            task=task,
+            interval=interval,
+            start=start,
+            never_done=never_done,
+            counter_reading=counter_reading,
+            today=today,
+            utilisation=utilisation,
+            tolerance=tolerance,
+            projected=projected,
+            ranked=ranked,
+        )
+        explained.append(
+            ExplainedLimit(
+                limit=limit,
+                flag=limit_flag(limit, thresholds),
+                first=limit in first,
+                projected=projected,
+                rule=RULES[limit.unit],
+                inputs=inputs,
+                source=source,
+            )
+        )
+    return DueLine(
+        task=task,
+        limits=tuple(explained),
+        flag=task_flag(found, thresholds),
+        ranked=ranked,
+        reading=counter_reading if needs_counter else None,
+        never_done=never_done,
+        problem="",
+    )
+
+
+def due_lines(aircraft: Aircraft, today: date) -> list[DueLine]:
+    """Return every task of the aircraft's programme and where it stands.
+
+    Nothing is calculated for a Transfer In or a Non-Part 21 aircraft
+    (REQ-022, REQ-027), or for an aircraft with no programme.
+    """
+    programme = Programme.objects.filter(aircraft=aircraft).first()
+    if programme is None or not aircraft.calculations_supported:
+        return []
+    thresholds = thresholds_of(aircraft.organisation)
+    return [
+        due_line(task, programme, today, thresholds)
+        for task in programme.tasks.filter(retired=False).select_related("counter")
+    ]
+
+
+def next_due(lines: list[DueLine]) -> tuple[list[DueLine], bool]:
+    """Return the task or tasks expected first, and whether every task could be ranked.
+
+    A task with a limit already reached comes first, whatever the planning
+    figures say. Otherwise tasks are ranked by the projected day of their
+    first limit; a task that cannot be projected is not ranked, and the
+    second value says so.
+    """
+    worked = [line for line in lines if line.limits]
+    urgent = [line for line in lines if line.needs_attention or line.reached]
+    if urgent:
+        return urgent, True
+    if len(lines) == 1 and worked:
+        # One task: there is nothing to rank it against.
+        return worked, True
+    days: dict[int, int] = {}
+    for index, line in enumerate(worked):
+        projections = [limit.projected for limit in line.first]
+        if line.ranked and all(projection is not None for projection in projections):
+            days[index] = min(projection for projection in projections if projection is not None)
+    if not days:
+        return [], not worked
+    soonest = min(days.values())
+    complete = len(days) == len(worked) and len(worked) == len(lines)
+    return [worked[index] for index, value in days.items() if value == soonest], complete
+
+
+@dataclass(frozen=True)
+class WorkLine:
+    """One piece of work done, with the deadlines that follow from it (REQ-051, REQ-052)."""
+
+    work: WorkDone
+    release_deadline: date
+    release_flag: Flag
+    release_late: bool
+    told_late: bool
+
+
+def work_lines(aircraft: Aircraft, today: date) -> list[WorkLine]:
+    """Return the work done on the aircraft, newest first, with what is outstanding."""
+    lines = []
+    for work in WorkDone.objects.filter(aircraft=aircraft).order_by("-dated", "-hours"):
+        deadline = release_record_deadline(work.dated)
+        outstanding = not work.release_reference
+        told_late = (
+            work.by_pilot_owner
+            and work.pilot_owner_told_on is not None
+            and pilot_owner_told_late(work.dated, work.pilot_owner_told_on)
+        )
+        lines.append(
+            WorkLine(
+                work=work,
+                release_deadline=deadline,
+                release_flag=deadline_flag(today, deadline) if outstanding else Flag.NONE,
+                release_late=work.release_recorded_on is not None
+                and work.release_recorded_on > deadline,
+                told_late=told_late,
+            )
+        )
+    return lines
+
+
+@dataclass(frozen=True)
+class ReviewLine:
+    """When the programme was last reviewed and when the next review is due (REQ-053)."""
+
+    last_reviewed: date | None
+    due: date | None
+    flag: Flag
+
+
+def review_line(programme: Programme, today: date, thresholds: Thresholds) -> ReviewLine:
+    """Return where the annual review of the programme stands, ML.A.302(c)(9)."""
+    if programme.last_reviewed is None:
+        return ReviewLine(None, None, Flag.NONE)
+    due = programme_review_due(programme.last_reviewed)
+    flag = limit_flag(Limit(Unit.CALENDAR, due, days_between(today, due)), thresholds)
+    return ReviewLine(programme.last_reviewed, due, flag)

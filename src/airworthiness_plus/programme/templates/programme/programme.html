@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ aircraft.registration }}, Maintenance Programme{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+<h2>Maintenance Programme</h2>
+{% if aircraft.regime == "Non-Part 21" %}<p>Calculations Not Yet Supported for Non-Part 21 Aircraft</p>{% endif %}
+{% if aircraft.stage == "Transfer In" %}<p>No Due Items Until Records Are Complete</p>{% endif %}
+{% if programme %}
+<dl>
+<dt>Basis</dt><dd>{{ programme.basis }}{% if programme.inspection_category %}, {{ programme.inspection_category }}{% endif %}</dd>
+<dt>Programme Reference</dt><dd>{{ programme.reference }}</dd>
+<dt>Planning Utilisation</dt><dd>{% if programme.hours_per_day %}{{ programme.hours_per_day|hours }} Hours a Day{% else %}Not Recorded{% endif %}{% if programme.cycles_per_day %}, {{ programme.cycles_per_day|hours }} Cycles a Day{% endif %}</dd>
+<dt>Last Reviewed</dt><dd>{% if review.last_reviewed %}{{ review.last_reviewed|long_date }}{% else %}Not Recorded{% endif %}</dd>
+<dt>Next Review By</dt><dd>{{ review.due|long_date }}{% if review.flag.value %}, {{ review.flag.value }}{% endif %}</dd>
+</dl>
+<p>
+<a href="{% url 'set_up_programme' aircraft.id %}">Change Programme</a>
+<a href="{% url 'add_task' aircraft.id %}">Add a Task</a>
+<a href="{% url 'record_work' aircraft.id %}">Record Work Done</a>
+</p>
+<form method="post" action="{% url 'record_review' aircraft.id %}">
+{% csrf_token %}
+<label for="reviewed_on">Reviewed</label>
+<input id="reviewed_on" name="reviewed_on" type="date" required>
+<button type="submit">Record Programme Review</button>
+</form>
+<h2>Tasks</h2>
+<table>
+<thead>
+<tr><th>Task</th><th>Limit</th><th>Due</th><th>Remaining</th><th>Tolerance Ends</th><th>Status</th><th>Comes First</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+{% if line.needs_attention %}
+<tr>
+<td>{{ line.task.title }}</td>
+<td colspan="6">Cannot Be Calculated, {{ line.problem }}</td>
+</tr>
+{% endif %}
+{% for item in line.limits %}
+<tr>
+<td>{{ line.task.title }}</td>
+<td>{{ item.limit.unit.value }}</td>
+<td>{{ item.due_text }}</td>
+<td>{{ item.remaining_text }}</td>
+<td>{{ item.tolerance_text }}</td>
+<td>{{ item.flag.value }}</td>
+<td>{% if item.first and line.ranked %}{% if line.limits|length > 1 %}Projected First{% else %}Only Limit{% endif %}{% elif not line.ranked %}Not Ranked{% endif %}</td>
+</tr>
+<tr>
+<td colspan="7">
+<details>
+<summary>How {{ item.due_text }} Was Calculated</summary>
+<dl>
+<dt>Rule</dt><dd>{{ item.rule }}</dd>
+{% for label, value in item.inputs %}<dt>{{ label }}</dt><dd>{{ value }}</dd>
+{% endfor %}<dt>Source</dt><dd>{{ item.source }}</dd>
+</dl>
+</details>
+</td>
+</tr>
+{% endfor %}
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Programme Recorded</p>
+<p><a href="{% url 'set_up_programme' aircraft.id %}">Record the Programme</a> <a href="{% url 'record_work' aircraft.id %}">Record Work Done</a></p>
+{% endif %}
+<h2>Work Done</h2>
+<table>
+<thead>
+<tr><th>Completed</th><th>Work</th><th>Hours</th><th>Certificate of Release to Service</th><th>Pilot-Owner</th></tr>
+</thead>
+<tbody>
+{% for line in work %}
+<tr>
+<td>{{ line.work.dated|long_date }}</td>
+<td>{{ line.work.description }}</td>
+<td>{{ line.work.hours|hours }}</td>
+<td>{% if line.work.release_reference %}{{ line.work.release_reference }}, Recorded {{ line.work.release_recorded_on|long_date }}{% if line.release_late %}, After the 30 Days{% endif %}{% else %}To Be Recorded by {{ line.release_deadline|long_date }}, {{ line.release_flag.value }}
+<form method="post" action="{% url 'record_release' line.work.id %}">
+{% csrf_token %}
+<label for="release-{{ line.work.id }}">Certificate of Release to Service</label>
+<input id="release-{{ line.work.id }}" name="release_reference" type="text" maxlength="100" required>
+<button type="submit">Record Release</button>
+</form>{% endif %}</td>
+<td>{% if line.work.by_pilot_owner %}Pilot-Owner Maintenance{% if line.work.pilot_owner_told_on %}, Organisation Told {{ line.work.pilot_owner_told_on|long_date }}{% if line.told_late %}, After the 30 Days{% endif %}{% endif %}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

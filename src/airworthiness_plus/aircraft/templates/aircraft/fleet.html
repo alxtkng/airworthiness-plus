@@ -6,7 +6,7 @@
 <p><a href="{% url 'add_aircraft' %}">Add an Aircraft</a></p>
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Type Rating</th><th>Owned By</th><th>Status</th><th>Airframe Hours</th><th>Hours Entered For</th></tr>
+<tr><th>Aircraft Registration</th><th>Type Rating</th><th>Owned By</th><th>Status</th><th>Next Due</th><th>Airframe Hours</th><th>Hours Entered For</th></tr>
 </thead>
 <tbody>
 {% for row in rows %}
@@ -15,6 +15,7 @@
 <td>{{ row.aircraft.type_rating }}</td>
 <td>{{ row.aircraft.owner }}</td>
 <td>{{ row.aircraft.status }}{% if row.aircraft.unserviceable_reason %}, {{ row.aircraft.unserviceable_reason }}{% endif %}</td>
+<td>{{ row.next_due }}</td>
 <td>{{ row.airframe.hours|hours }}</td>
 <td>{{ row.airframe.on|long_date }}</td>
 </tr>
