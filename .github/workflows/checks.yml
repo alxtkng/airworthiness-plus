@@ -17,6 +17,26 @@ jobs:
     name: Tests, Types, Lint, Dependencies, Secrets
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    services:
+      postgres:
+        # Pinned to a digest, not a moving tag (threat TH-061). No password is
+        # set or stored: the database exists only for this job and accepts
+        # connections from it alone.
+        image: postgres:18.7@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      AIRWORTHINESS_DATABASE_NAME: airworthiness
+      AIRWORTHINESS_DATABASE_USER: postgres
+      AIRWORTHINESS_DATABASE_HOST: localhost
+      AIRWORTHINESS_DATABASE_PORT: "5432"
     steps:
       # Actions are pinned to a commit, not a moving tag (threat TH-061).
       - name: Check Out
@@ -36,6 +56,10 @@ jobs:
         # --locked fails if uv.lock is out of date; hashes are verified on install (TH-060).
         run: uv sync --locked
 
+      - name: Make a Signing Key for This Run
+        # Generated here and never stored, so no key is in the repository (TH-063).
+        run: echo "AIRWORTHINESS_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(50))')" >> "$GITHUB_ENV"
+
       - name: Lint
         run: uv run ruff check .
 
@@ -46,6 +70,7 @@ jobs:
         run: uv run mypy
 
       - name: Test
+        # Runs against the PostgreSQL service above.
         run: uv run pytest
 
       - name: Dependency Vulnerability Scan

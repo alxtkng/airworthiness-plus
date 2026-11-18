@@ -50,10 +50,11 @@ Option A.
 |---|---|---|
 | Language | Python, a version in security support, pinned | Standard library decimal and date types; the existing scripts |
 | Framework | Django 5.2 LTS, moving to 6.2 LTS after its release in April 2027 | 5.2 has security support to April 2028 (djangoproject.com/download) |
-| Database | PostgreSQL, a version in support, pinned | Row-level security, sequences, constraints and triggers enforce the record rules in the data layer |
+| Database | PostgreSQL, a version in support, pinned. Amended 18 November 2026: the pipeline runs PostgreSQL 18.7, pinned by image digest; version 16 is the oldest the tests accept | Row-level security, sequences, constraints and triggers enforce the record rules in the data layer |
 | Pages | Django templates, CSS built from `design-system/tokens.json`, Geist font files served from the application, htmx for expand on click | No build chain for the interface; no third-party requests from the browser |
 | Calculations | A separate pure Python package, `airworthiness_rules`, with no Django or database imports: dates, intervals, next due, review validity, recency | Can be tested, property-tested and independently recomputed on its own |
 | Tests | pytest, Hypothesis | Golden cases and property-based tests |
+| Settings | Read from the environment only, through `airworthiness_plus.environment`; a missing required value stops the application. Amended 18 November 2026 | No secret and no deployment value in the repository (threat TH-063) |
 | Checks | mypy in strict mode, ruff, pip-audit, detect-secrets, CycloneDX software bill of materials exported by uv | Step 5 pipeline. Amended 18 November 2026: detect-secrets replaces gitleaks so that every tool is installed from the lock file with verified hashes |
 | Dependencies | uv, with a lock file that pins versions and hashes | Pinned dependencies (Step 5) |
 | Continuous integration | GitHub Actions | Runs on every pull request; free for this scale |
