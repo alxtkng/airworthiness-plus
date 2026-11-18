@@ -38,7 +38,7 @@ Regulatory baseline:
 
 ## Part 3. The repository: read this first
 
-Private repository: `github.com/alxtkng/airworthiness-plus` (branch `main`). Attach it with push access and clone it before anything else.
+Repository: `github.com/alxtkng/airworthiness-plus` (branch `main`), public since 18 November 2026. The earlier private history is kept in `alxtkng/airworthiness-plus-archive`. Attach it with push access and clone it before anything else.
 
 - `design-system/Decisions.md`: the running record of every product, navigation, interface, writing and regulation decision, including the Regulation Facts tables and the National Regime (BCAR) section. Read it completely.
 - `design-system/SampleData.md`: the single consistent sample organisation, fleet, people and records. Today in the sample world is 18 November 2026. Use this data for every test fixture and seed.
