@@ -122,7 +122,7 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 | T-SEC-008 | test_application: plain_http_is_redirected_to_https |
 | T-SEC-010 | test_aircraft: another_organisations_aircraft_is_not_found_on_any_page, record_cannot_refer_to_another_organisations_record. To be repeated for every endpoint as each is added |
 | T-SEC-011 | test_aircraft: every_aircraft_page_follows_the_role_matrix. To be repeated for every endpoint as each is added |
-| T-SEC-012 | test_reviews: review_staff_who_have_lapsed_cannot_issue, staff_who_have_left_or_been_made_inactive_cannot_issue |
+| T-SEC-012 | test_reviews: review_staff_who_have_lapsed_cannot_issue, staff_who_have_left_or_been_made_inactive_cannot_issue; test_review_checklist: review_staff_whose_recency_has_lapsed_cannot_issue_and_the_lapse_is_recorded, only_the_person_carrying_out_the_review_records_and_issues_it, only_review_staff_start_a_review |
 | T-SEC-013 | test_data_layer: with_no_organisation_set_there_are_no_rows |
 | T-SEC-014 | test_data_layer: application_cannot_change_or_remove_history, owner_of_the_tables_cannot_change_or_remove_history_either |
 | T-SEC-015 | test_data_layer: chain_holds, altered_entry_is_detected, removed_entry_is_detected |

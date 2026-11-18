@@ -104,7 +104,7 @@ Hazards answered: H-008, H-003, H-007.
 | C6.3 The system records the customer's written CAA approval | Reference and date for each organisation | Requirement and test | Planned |
 | C6.4 The system can be described in an exposition | AMC1 CAO.A.025 Part B (records, B.9 in `design-system/Procedures.md`): functions, authorised persons, security, backup, training | Draft exposition text for the records system | Planned |
 | C6.5 Contracted software conditions are met | AMC1 CAO.A.100(f) point (d)(2): own data only, data entered only by the organisation's personnel, data retrievable at any time | C3.1, C3.2, C2.6 | Partial |
-| C6.6 Forms and terms are the CAA's | CAA Form 15c, CAA Form 3-CAO, SRG1782 type ratings verbatim (`design-system/Decisions.md`) | Interface review against Decisions.md and Writing.md | Planned |
+| C6.6 Forms and terms are the CAA's | CAA Form 15c, CAA Form 3-CAO, SRG1782 type ratings verbatim (`design-system/Decisions.md`) | Interface review against Decisions.md and Writing.md. The certificate page carries every entry of CAA Form 15c, Issue 2, inspected against Appendix IV to Part-ML on 18 November 2026: `tests/test_review_checklist.py` | Partial |
 
 Limit of this claim: acceptance is the CAA's decision for each organisation. This case shows the conditions are met; it does not assert approval.
 
