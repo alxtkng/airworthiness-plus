@@ -8,8 +8,11 @@ from hypothesis import strategies as st
 
 from airworthiness_rules.dates import add_months
 from airworthiness_rules.intervals import (
+    MINIMUM_INSPECTION_PROGRAMME_INTERVAL,
+    MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
     Interval,
     Reading,
+    TaskKind,
     Unit,
     Utilisation,
     comes_first,
@@ -122,3 +125,63 @@ def test_due_does_not_depend_on_planning_utilisation(
     )
     assert is_due(found) == any(limit.remaining <= 0 for limit in found)
     assert {limit.unit for limit in found} == {Unit.HOURS, Unit.CALENDAR}
+
+
+@given(TENTHS, TENTHS, st.integers(min_value=0, max_value=800), DATES)
+def test_a_tolerance_changes_nothing_but_when_a_limit_is_overdue(
+    done_at: Decimal, flown: Decimal, elapsed: int, done: date
+) -> None:
+    """REQ-048, REQ-056. For any inspection of the Minimum Inspection Programme:
+    the due points and what remains are the same with and without the
+    tolerance; the tolerance ends exactly 10.0 hours and 1 month later; the
+    task is due at the same moment; and the tolerance only ever delays overdue."""
+    last = Reading(done, done_at)
+    current = Reading(done + timedelta(days=elapsed), done_at + flown)
+    plain = limits(MINIMUM_INSPECTION_PROGRAMME_INTERVAL, last, current)
+    toleranced = limits(
+        MINIMUM_INSPECTION_PROGRAMME_INTERVAL,
+        last,
+        current,
+        kind=TaskKind.MINIMUM_INSPECTION_PROGRAMME,
+        tolerance=MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
+    )
+    assert is_due(plain) == is_due(toleranced)
+    for without, with_tolerance in zip(plain, toleranced, strict=True):
+        assert (without.unit, without.due, without.remaining) == (
+            with_tolerance.unit,
+            with_tolerance.due,
+            with_tolerance.remaining,
+        )
+        assert with_tolerance.tolerance_remaining is not None
+        extra = with_tolerance.tolerance_remaining - with_tolerance.remaining
+        if with_tolerance.unit is Unit.HOURS:
+            assert extra == Decimal("10")
+        else:
+            assert isinstance(with_tolerance.due, date)
+            assert with_tolerance.tolerance_limit == add_months(with_tolerance.due, 1)
+            assert 28 <= extra <= 31
+        assert with_tolerance.overdue == (with_tolerance.tolerance_remaining < 0)
+        assert with_tolerance.within_tolerance == (
+            with_tolerance.remaining < 0 <= with_tolerance.tolerance_remaining
+        )
+        if with_tolerance.overdue:
+            assert without.overdue
+        assert not (with_tolerance.overdue and with_tolerance.within_tolerance)
+
+
+@given(TENTHS, TENTHS, st.integers(min_value=0, max_value=800), DATES)
+def test_the_next_interval_depends_only_on_when_the_inspection_was_done(
+    previous_hours: Decimal, flown: Decimal, elapsed: int, previous: date
+) -> None:
+    """REQ-048, ML.A.302(d)(1). However early or late the inspection was against
+    the one before, the next is due 100.0 hours and 12 months after it."""
+    done = Reading(previous + timedelta(days=elapsed), previous_hours + flown)
+    hours, calendar = limits(
+        MINIMUM_INSPECTION_PROGRAMME_INTERVAL,
+        done,
+        done,
+        kind=TaskKind.MINIMUM_INSPECTION_PROGRAMME,
+        tolerance=MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
+    )
+    assert hours.due == done.hours + Decimal("100")
+    assert calendar.due == add_months(done.on, 12)
