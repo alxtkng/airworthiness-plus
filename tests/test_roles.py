@@ -49,12 +49,12 @@ def test_the_record_and_the_code_list_the_same_actions_and_roles() -> None:
     assert {action for action, _ in RECORDED} == {action.value for action in Action}
     assert {role for _, role in RECORDED} == set(Role.values)
     assert set(MATRIX) == set(Action)
-    assert len(RECORDED) == len(Action) * len(Role) == 95
+    assert len(RECORDED) == len(Action) * len(Role) == 105
 
 
 @pytest.mark.parametrize(("action", "role"), sorted(RECORDED))
 def test_every_action_against_every_role(action: str, role: str) -> None:
-    """REQ-006. Each of the 95 cells of the matrix in Decisions.md."""
+    """REQ-006. Each of the 105 cells of the matrix in Decisions.md."""
     assert permitted([role], Action(action)) is RECORDED[(action, role)]
 
 

@@ -35,6 +35,9 @@ from airworthiness_plus.exports.verify import entry_hash, verify
 from airworthiness_plus.history import chain
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.imports import services as import_services
+from airworthiness_plus.imports.layouts import CERTIFICATES
+from airworthiness_plus.imports.models import LoadKind
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
 from airworthiness_plus.programme import services as programme_services
@@ -131,6 +134,19 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
         acceptance_services.add_note(
             problem, kind=NoteKind.SOLUTION, text="[Solution]", noted_by=sample.lucy
         )
+        loaded = import_services.load(
+            organisation=sample.ours,
+            by=sample.lucy,
+            kind=LoadKind.CERTIFICATES,
+            source="[Logbooks]",
+            file_name="certificates.csv",
+            content=(
+                ",".join(CERTIFICATES) + "\r\nG-ABCD,[Earlier Reference],2025-03-14,2026-03-14,"
+                "[Issuing Organisation],\r\n"
+            ).encode(),
+        )
+        first = loaded.values.all()[0]
+        import_services.record_checks(loaded, by=sample.lucy, agreed=[str(first.id)], differing={})
     with working_for(sample.ours.id, sample.reviewer.id):
         review = review_services.start_review(ejkl, staff=reviews.reviewer)
     with working_for(sample.ours.id, sample.lucy.id):
