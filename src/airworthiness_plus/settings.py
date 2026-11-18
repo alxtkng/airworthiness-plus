@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "airworthiness_plus.interface",
     "airworthiness_plus.aircraft",
     "airworthiness_plus.programme",
+    "airworthiness_plus.directives",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

@@ -81,9 +81,7 @@ class Programme(Record):
         return self.reference
 
 
-TASK_KINDS = [
-    (kind.value, kind.value) for kind in TaskKind if kind is not TaskKind.AIRWORTHINESS_DIRECTIVE
-]
+TASK_KINDS = [(kind.value, kind.value) for kind in TaskKind]
 
 
 class Task(Record):
@@ -122,6 +120,9 @@ class Task(Record):
     )
     starts_cycles = models.PositiveIntegerField("Cycles Then", null=True, blank=True)
 
+    # An action done once and not repeated, such as a directive complied
+    # with by a single inspection: due at its limit, and finished once done.
+    once = models.BooleanField(default=False)
     retired = models.BooleanField(default=False)
 
     class Meta:

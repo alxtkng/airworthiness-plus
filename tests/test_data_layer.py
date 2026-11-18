@@ -188,10 +188,15 @@ def test_every_table_is_under_the_record_rules() -> None:
         "organisations_organisation": ["SELECT", "UPDATE"],
         # An entry of hours and cycles is added and never changed (REQ-025).
         "aircraft_utilisationentry": ["INSERT", "SELECT"],
+        # Compliance with a directive is added and never changed (REQ-066).
+        "directives_compliance": ["INSERT", "SELECT"],
     }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
-    extra_triggers = {"aircraft_utilisationentry": {"utilisation_fits"}}
+    extra_triggers = {
+        "aircraft_utilisationentry": {"utilisation_fits"},
+        "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
+    }
     required_triggers = {"history_refuse_delete", "history_refuse_truncate", "history_write"}
     for name in sorted(records):
         enabled, forced, policies, triggers, privileges = tables[name]

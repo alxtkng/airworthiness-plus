@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Airworthiness Directives{% endblock %}
+{% block content %}
+<h1>Airworthiness Directives</h1>
+<p><a href="{% url 'add_directive' %}">Record an Airworthiness Directive</a></p>
+<table>
+<thead>
+<tr><th>Directive Number</th><th>Revision</th><th>Issuing Authority</th><th>Subject</th><th>Effective Date</th><th>Supersedes</th><th>Status</th></tr>
+</thead>
+<tbody>
+{% for directive in directives %}
+<tr>
+<td>{{ directive.number }}</td>
+<td>{{ directive.revision }}</td>
+<td>{{ directive.authority }}</td>
+<td>{{ directive.subject }}</td>
+<td>{{ directive.effective_date|long_date }}</td>
+<td>{% if directive.supersedes %}{{ directive.supersedes }}{% endif %}</td>
+<td>{% if directive.superseded_by %}Superseded by {{ directive.superseded_by }}{% else %}Current{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

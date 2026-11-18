@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ aircraft.registration }}, Airworthiness Directives{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+<h2>Airworthiness Directive Status</h2>
+<table>
+<thead>
+<tr><th>Directive Number</th><th>Subject</th><th>Applicability</th><th>Basis</th><th>Decided</th><th>Compliance</th><th>Next Due</th><th>Status</th><th>Record</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td>{{ line.directive }}</td>
+<td>{{ line.directive.subject }}</td>
+<td>{{ line.state }}</td>
+<td>{{ line.applicability.basis }}</td>
+<td>{% if line.applicability %}{{ line.applicability.decided_by.full_name }}, {{ line.applicability.decided_on|long_date }}{% endif %}</td>
+<td>{% if line.last_compliance %}{{ line.last_compliance.description }}, {{ line.last_compliance.dated|long_date }} at {{ line.last_compliance.hours|hours }} Hours{% if line.last_compliance.release_reference %}, {{ line.last_compliance.release_reference }}{% endif %}{% if line.compliance_count > 1 %}, {{ line.compliance_count }} Records{% endif %}{% endif %}</td>
+<td>{{ line.next_due }}{% if line.applicability.terminated_on %}, {{ line.applicability.terminating_action }}, {{ line.applicability.terminated_on|long_date }}{% endif %}</td>
+<td>{% if line.to_assess %}To Assess{% else %}{{ line.flag.value }}{% endif %}</td>
+<td>
+{% if not line.directive_superseded %}<a href="{% url 'decide_directive' aircraft.id line.directive.id %}">{% if line.applicability %}Change Decision{% else %}Decide Applicability{% endif %}</a>{% endif %}
+{% if line.applicability.decision == "Applicable" %}
+<a href="{% url 'comply_directive' line.applicability.id %}">Record Compliance</a>
+{% if not line.applicability.terminated_on %}<a href="{% url 'terminate_directive' line.applicability.id %}">Record Terminating Action</a>{% endif %}
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}
