@@ -19,6 +19,7 @@ Scope is one slice, the Part-CAO core loop for Part-ML aircraft: Organisation an
 | Folder | Holds |
 |---|---|
 | `prompts/private-beta.md` | The working brief for this phase |
+| `prompts/private-beta-continuation.md` | Where the work stands and how to carry on, for a new session |
 | `assurance/` | Assurance case, hazard log, NCSC Software Security Code of Practice self-assessment, readiness review |
 | `requirements/` | Numbered requirements and the traceability matrix |
 | `architecture/` | Architecture Decision Records and the threat model |
