@@ -31,7 +31,7 @@ State is one of: Not Started, In Progress, Met. A principle is Met only when its
 | Principle | Summary | Current State | Evidence Location |
 |---|---|---|---|
 | 3.1 | Distribute software securely to customers | Not Started. Nothing is distributed in private beta. The service will be delivered over HTTPS from airworthiness.co | To come: deployment record in `operations/` |
-| 3.2 | Implement and publish an effective vulnerability disclosure process | In Progress. Process and contact written; mailbox alias to be created by Alex; repository not public | `SECURITY.md` |
+| 3.2 | Implement and publish an effective vulnerability disclosure process | In Progress. Process and contact (contact@airworthiness.co) written; repository not public | `SECURITY.md` |
 | 3.3 | Have processes for proactively detecting, prioritising and managing vulnerabilities in components | Not Started | To come: dependency scan in continuous integration; `operations/vulnerability-management.md` |
 | 3.4 | Report vulnerabilities to relevant parties where appropriate | Not Started | To come: `operations/vulnerability-management.md` |
 | 3.5 | Provide timely security updates, patches and notifications to customers | Not Started. No customers in private beta | To come: `operations/vulnerability-management.md`; service level document |
