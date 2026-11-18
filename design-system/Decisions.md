@@ -60,6 +60,13 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Status dots: amber and red only, green only in a Status column.
 - Percentages use the % sign.
 - Day counts are exact: from 18 November to 6 December is 18 days. Amber for due soon, red only when overdue.
+- Import, decided 18 November 2026 (REQ-170, REQ-171; hazard H-008). Ours:
+  - a file is CSV in UTF-8 with fixed column headings. A date is written 2026-11-18 or 18 November 2026 and nothing else, because 03/04/2026 can be read two ways. Hours have at most one decimal place and no comma; cycles are whole numbers. At most 1 megabyte and 2,000 rows
+  - a file is loaded whole or not at all, and every row that cannot be loaded is named with its reason. Each row makes its records through the same services as the pages, so the same rules refuse the same things. An import never changes a decision already recorded
+  - three kinds of file in the slice: Aircraft and Totals; Airworthiness Directive Status, one row for each directive and aircraft with the decision, its basis and the last compliance; Airworthiness Review Certificates. A repeating action of a directive, and the tasks and work done of a maintenance programme, are entered through the pages
+  - every value loaded is kept as it was written in the file. The verification report shows each beside what the source says, with who checked it and when, the proportion checked rounded down to a whole percent, and how many differ. A value is checked by ticking that it agrees or by typing what the source says; nothing is ticked for the person and there is no control that ticks every value. A value can be checked again and every check is kept
+  - a value that differs is corrected through the pages, where the correction is in the history; the report goes on showing what was imported
+  - Import Records is for the Continuing Airworthiness Manager, because a file of directive status records decisions on applicability. Check Imported Records is open to the Continuing Airworthiness Manager, Airworthiness Review Staff, and Planning and Records. Hours and cycles are checked by a second person, not the one who loaded the file (hazards H-008 and H-011); any other value may be checked by either, and the report shows who loaded and who checked
 - Acceptance records, decided 18 November 2026 (REQ-172 to REQ-174, REQ-176). Ours:
   - the problem log is a list of entries. An entry is the problem, who raised it and the day. The action, the solution and any later note are each added to it with the person and the day; nothing is changed or removed, and the application has no permission to do either. An entry is Open, then Action Taken, then Solved once a solution is added; entries not solved come first
   - dates in the problem log are the day the entry or note is added. Nothing is back-dated
@@ -135,6 +142,8 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Extend Airworthiness Review Certificate | No | Yes | Yes | No | No |
 | Record Copy Sent to the Civil Aviation Authority | No | Yes | Yes | Yes | No |
 | Add to Problem Log | Yes | Yes | Yes | Yes | No |
+| Import Records | No | Yes | No | No | No |
+| Check Imported Records | No | Yes | Yes | Yes | No |
 
 ## Writing
 

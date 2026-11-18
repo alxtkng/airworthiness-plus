@@ -15,6 +15,7 @@ from airworthiness_plus.acceptance.models import Problem, ProblemNote
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft, Counter, UtilisationEntry
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive
+from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme.models import Programme, Task, WorkDone
@@ -81,4 +82,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(ReviewItem, _by("review__aircraft")),
     Exported(Problem, None),
     Exported(ProblemNote, None),
+    Exported(Load, None),
+    Exported(LoadedValue, None),
+    Exported(ValueCheck, None),
 )

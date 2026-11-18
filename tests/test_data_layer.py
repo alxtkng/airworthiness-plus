@@ -195,6 +195,10 @@ def test_every_table_is_under_the_record_rules() -> None:
         # An entry of the problem log and its notes are added and never changed (REQ-172).
         "acceptance_problem": ["INSERT", "SELECT"],
         "acceptance_problemnote": ["INSERT", "SELECT"],
+        # A load, its values and their checks are added and never changed (REQ-170).
+        "imports_load": ["INSERT", "SELECT"],
+        "imports_loadedvalue": ["INSERT", "SELECT"],
+        "imports_valuecheck": ["INSERT", "SELECT"],
     }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}

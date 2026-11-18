@@ -7,6 +7,7 @@ from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
+from airworthiness_plus.imports import views as imports
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.reviews import views as reviews
@@ -138,6 +139,10 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("records-export/", exports.exports_page, name="records_export"),
     path("records-export/organisation/", exports.export_organisation, name="export_organisation"),
     path("aircraft/<uuid:aircraft_id>/export/", exports.export_aircraft, name="export_aircraft"),
+    path("imports/", imports.imports_page, name="imports"),
+    path("imports/load/", imports.load, name="load_import"),
+    path("imports/<uuid:load_id>/", imports.report_page, name="import_report"),
+    path("imports/<uuid:load_id>/check/", imports.check, name="check_import"),
     path("problem-log/", acceptance.problem_log, name="problem_log"),
     path("problem-log/add/", acceptance.add_problem, name="add_problem"),
     path("problem-log/<uuid:problem_id>/notes/", acceptance.add_note, name="add_problem_note"),

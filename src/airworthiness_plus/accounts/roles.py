@@ -50,6 +50,8 @@ class Action(Enum):
     EXTEND_AIRWORTHINESS_REVIEW_CERTIFICATE = "Extend Airworthiness Review Certificate"
     RECORD_COPY_SENT_TO_THE_AUTHORITY = "Record Copy Sent to the Civil Aviation Authority"
     ADD_TO_PROBLEM_LOG = "Add to Problem Log"
+    IMPORT_RECORDS = "Import Records"
+    CHECK_IMPORTED_RECORDS = "Check Imported Records"
 
 
 _ADMINISTRATOR = Role.ADMINISTRATOR
@@ -78,6 +80,8 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.EXTEND_AIRWORTHINESS_REVIEW_CERTIFICATE: frozenset({_MANAGER, _REVIEW}),
     Action.RECORD_COPY_SENT_TO_THE_AUTHORITY: frozenset({_MANAGER, _REVIEW, _RECORDS}),
     Action.ADD_TO_PROBLEM_LOG: frozenset({_ADMINISTRATOR, _MANAGER, _REVIEW, _RECORDS}),
+    Action.IMPORT_RECORDS: frozenset({_MANAGER}),
+    Action.CHECK_IMPORTED_RECORDS: frozenset({_MANAGER, _REVIEW, _RECORDS}),
 }
 
 
