@@ -44,6 +44,11 @@ class Organisation(Record):
     due_soon_days = models.PositiveSmallIntegerField(default=30)
     due_soon_hours = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal("10.0"))
     due_soon_cycles = models.PositiveSmallIntegerField(default=10)
+    # The Civil Aviation Authority's written approval to keep records in this
+    # system, and the day the parallel run began (REQ-173, REQ-174).
+    records_approval_reference = models.CharField(max_length=100, blank=True)
+    records_approval_dated = models.DateField(null=True, blank=True)
+    parallel_run_started_on = models.DateField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -58,6 +63,11 @@ class Organisation(Record):
                     ]
                 ),
                 name="organisation_has_known_privileges",
+            ),
+            models.CheckConstraint(
+                condition=Q(records_approval_reference="", records_approval_dated__isnull=True)
+                | (~Q(records_approval_reference="") & Q(records_approval_dated__isnull=False)),
+                name="organisation_records_approval_has_its_date",
             ),
             models.CheckConstraint(
                 condition=Q(due_soon_hours__gte=0),

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ organisation.name }}{% endblock %}
+{% block content %}
+<h1>{{ organisation.name }}</h1>
+{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+<dl>
+<dt>Approval</dt><dd>{{ organisation.approval_type }}, {{ organisation.approval_reference }}</dd>
+<dt>Address</dt><dd>{{ organisation.address }}</dd>
+<dt>Privileges</dt><dd>{{ organisation.privileges|join:", " }}</dd>
+<dt>Scope of Work</dt><dd>{{ organisation.scope_of_work }}</dd>
+</dl>
+<h2>Approval to Keep Records in This System</h2>
+<dl>
+<dt>Approval Reference</dt><dd>{% if organisation.records_approval_reference %}{{ organisation.records_approval_reference }}{% else %}Not Recorded{% endif %}</dd>
+<dt>Approval Dated</dt><dd>{{ organisation.records_approval_dated|long_date }}</dd>
+</dl>
+<form method="post" action="{% url 'record_records_approval' %}">
+{% csrf_token %}
+{% for field in approval_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}<p><button type="submit">Record Approval</button></p>
+</form>
+<h2>Parallel Run</h2>
+<dl>
+<dt>Parallel Run Started</dt><dd>{% if run %}{{ run.started_on|long_date }}{% else %}Not Started{% endif %}</dd>
+{% if run %}<dt>6 Months</dt><dd>{% if run.passed %}Passed on {{ run.passes_on|long_date }}{% else %}Pass on {{ run.passes_on|long_date }}{% endif %}</dd>{% endif %}
+</dl>
+<form method="post" action="{% url 'record_parallel_run' %}">
+{% csrf_token %}
+{% for field in run_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}<p><button type="submit">Record Parallel Run</button></p>
+</form>
+{% endblock %}

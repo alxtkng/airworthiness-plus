@@ -192,6 +192,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "directives_compliance": ["INSERT", "SELECT"],
         # A check of the amendment status is added and never changed (REQ-082).
         "maintenance_data_amendmentcheck": ["INSERT", "SELECT"],
+        # An entry of the problem log and its notes are added and never changed (REQ-172).
+        "acceptance_problem": ["INSERT", "SELECT"],
+        "acceptance_problemnote": ["INSERT", "SELECT"],
     }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}

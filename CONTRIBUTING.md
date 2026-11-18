@@ -20,6 +20,10 @@ How changes reach `main`. The same steps apply to code, requirements and assuran
 - Tests use the sample organisation and fleet in `design-system/SampleData.md`. Today in the sample world is 18 November 2026.
 - Nothing is deleted from records, in the product or in this repository's record documents. Superseded entries stay and are marked superseded.
 
+## Changes to What the System Does
+
+A change that extends the system into a new function regulated by the Civil Aviation Authority is recorded as a decision in `architecture/decisions/` before it is released (REQ-176). The decision names the function, the regulation it falls under and the requirements added. An organisation using the system can then tell the authority that the system it described in its exposition has changed.
+
 ## The Checks
 
 Every pull request runs `.github/workflows/checks.yml`. The same checks run locally:

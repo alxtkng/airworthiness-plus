@@ -16,6 +16,8 @@
 <a href="{% url 'maintenance_data' %}">Maintenance Data</a>
 <a href="{% url 'review_schedule' %}">Airworthiness Review</a>
 <a href="{% url 'records_export' %}">Records Export</a>
+<a href="{% url 'problem_log' %}">Problem Log</a>
+<a href="{% url 'organisation' %}">Organisation</a>
 </nav>
 <p>{{ request.user.full_name }}, {{ request.user.roles|join:", " }}</p>
 <form method="post" action="{% url 'sign_out' %}">

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from django.db import models
 from django.db.models import Q
 
+from airworthiness_plus.acceptance.models import Problem, ProblemNote
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft, Counter, UtilisationEntry
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive
@@ -78,4 +79,6 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Extension, _by("certificate__aircraft")),
     Exported(Review, _by("aircraft")),
     Exported(ReviewItem, _by("review__aircraft")),
+    Exported(Problem, None),
+    Exported(ProblemNote, None),
 )
