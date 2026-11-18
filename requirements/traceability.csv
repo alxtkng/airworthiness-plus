@@ -9,7 +9,7 @@ REQ-007,Organisation and Access,Must,Inspection,To Be Designed,None,None,No Test
 REQ-008,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
 REQ-009,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
 REQ-010,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
-REQ-020,Aircraft,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-020,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-021,Aircraft,Must,Test: stored value equals source value byte for byte,To Be Designed,None,None,No Test
 REQ-022,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-023,Aircraft,Must,Test,To Be Designed,None,None,No Test
@@ -24,24 +24,24 @@ REQ-042,Maintenance Programme,Must,"Test, Golden, Independent",To Be Designed,No
 REQ-043,Maintenance Programme,Must,"Golden (G-BXYZ, 100-Hour or Annual Check, 41.0 hours), property-based, Independent",To Be Designed,None,None,No Test
 REQ-044,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
 REQ-045,Maintenance Programme,Must,"Golden, Independent",To Be Designed,None,None,No Test
-REQ-046,Maintenance Programme,Must,"Golden, Independent, boundary tests (leap years, month ends, British Summer Time changes)",To Be Designed,None,None,No Test
-REQ-047,Maintenance Programme,Must,"Test, property-based",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-046,Maintenance Programme,Must,"Golden, Independent, boundary tests (leap years, month ends, British Summer Time changes)",airworthiness_rules.dates.days_between,"test_golden_review: g_ejkl, day_counts; test_properties_dates",assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-047,Maintenance Programme,Must,"Test, property-based",airworthiness_rules.dates.add_years,test_golden_review: leap_day; test_properties_dates: anniversary,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Source To Be Checked
 REQ-048,Maintenance Programme,Must,"Test, Independent",To Be Designed,None,None,No Test
 REQ-049,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-050,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
-REQ-051,Maintenance Programme,Must,"Golden, Independent",To Be Designed,None,None,No Test
+REQ-051,Maintenance Programme,Must,"Golden, Independent",airworthiness_rules.records.release_record_deadline,test_golden_review: g_abcd; test_properties_dates: deadlines,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
 REQ-052,Maintenance Programme,Should,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-053,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-054,Maintenance Programme,Must,"Inspection, Test",To Be Designed,None,None,No Test
 REQ-055,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
 REQ-060,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
-REQ-061,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-061,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-062,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-063,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-064,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-065,Airworthiness Directives,Must,"Test, Independent",To Be Designed,None,None,No Test
 REQ-066,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-067,Airworthiness Directives,Must,"Test, Golden",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-067,Airworthiness Directives,Must,"Test, Golden",To Be Designed,None,None,No Test
 REQ-068,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-080,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
 REQ-081,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
@@ -53,20 +53,20 @@ REQ-086,Maintenance Data,Must,Golden,To Be Designed,None,None,No Test
 REQ-087,Maintenance Data,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-088,Maintenance Data,Must,Golden,To Be Designed,None,None,No Test
 REQ-089,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
-REQ-100,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test
-REQ-101,Airworthiness Review,Must,"Test, Independent",To Be Designed,None,None,No Test
-REQ-102,Airworthiness Review,Must,"Golden, boundary tests at 90 and 91 days, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-100,Airworthiness Review,Must,"Golden, Independent",airworthiness_rules.review.days_to_expiry,test_golden_review: g_ejkl,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-101,Airworthiness Review,Must,"Test, Independent",airworthiness_rules.review.valid_to_after_review,test_golden_review: review_outside_the_window,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-102,Airworthiness Review,Must,"Golden, boundary tests at 90 and 91 days, Independent","airworthiness_rules.review.review_keeps_pattern, valid_to_after_review","test_golden_review: g_cdef_early_review, early_review_window_boundaries; test_properties_dates",assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
 REQ-103,Airworthiness Review,Must,Golden once sourced,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-104,Airworthiness Review,Must,"Test, Independent",To Be Designed,None,None,No Test; Source To Be Checked
-REQ-105,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-106,Airworthiness Review,Must,Boundary tests at 30 and 31 days,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-107,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-108,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-109,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-104,Airworthiness Review,Must,"Test, Independent",airworthiness_rules.review.valid_to_after_extension,test_golden_review: extension_refused,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-105,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
+REQ-106,Airworthiness Review,Must,Boundary tests at 30 and 31 days,airworthiness_rules.review.valid_to_after_extension,"test_golden_review: extension_keeps_the_pattern, extension_refused",assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-107,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test
+REQ-108,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test
+REQ-109,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-110,Airworthiness Review,Must,"Test, concurrency test",To Be Designed,None,None,No Test
-REQ-111,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-111,Airworthiness Review,Must,"Golden, Independent",airworthiness_rules.review.copy_to_authority_deadline,test_golden_review: g_cdef_copy; test_properties_dates: deadlines,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
 REQ-112,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-113,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-113,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test
 REQ-114,Airworthiness Review,Should,Test,To Be Designed,None,None,No Test
 REQ-115,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-116,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
@@ -77,7 +77,7 @@ REQ-133,Records,Must,Inspection: the system has no automatic removal at all in p
 REQ-134,Records,Must,Test: export compared with the database for every record type,To Be Designed,None,None,No Test
 REQ-135,Records,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-136,Records,Must,Test: the build fails,To Be Designed,None,None,No Test
-REQ-137,Records,Must,Boundary tests,To Be Designed,None,None,No Test
+REQ-137,Records,Must,Boundary tests,airworthiness_rules.dates.uk_today,test_golden_review: uk_today,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
 REQ-138,Records,Must,Test,To Be Designed,None,None,No Test
 REQ-139,Records,Must,"Inspection, Test",To Be Designed,None,None,No Test
 REQ-150,Backup and Recovery,Must,Demonstration; backup logs,To Be Designed,None,None,No Test

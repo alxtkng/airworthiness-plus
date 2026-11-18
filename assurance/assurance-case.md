@@ -27,8 +27,8 @@ Hazards answered: H-001, H-006, H-010, H-011.
 | C1.1 Every calculation rule is a numbered requirement with a source reference | A rule that is written down and sourced can be checked against the regulation by someone other than its author | `requirements/requirements.md` | Planned |
 | C1.2 Every calculation requirement has at least one test | A requirement with no test is a visible gap | `requirements/traceability.csv` | Planned |
 | C1.3 Golden cases from the sample fleet pass, each with an expected result worked by hand and cited to its rule | Fixed worked cases catch a wrong rule, not only a wrong implementation | Golden fixtures and test results in continuous integration (G-EJKL, G-CDEF, G-ABCD, G-BXYZ, G-FMNO, early review window, whichever comes first, exact day counts, date boundaries) | Planned |
-| C1.4 Interval arithmetic holds for generated inputs, not only chosen ones | Property-based tests explore cases nobody thought to write | Property-based test results in continuous integration | Planned |
-| C1.5 Each calculation module is recomputed independently | A second party who has not seen the implementation recomputes the golden cases from the regulation and fixtures alone, mirroring an independent inspection | `assurance/independent-verification/` one report per module | Planned |
+| C1.4 Interval arithmetic holds for generated inputs, not only chosen ones | Property-based tests explore cases nobody thought to write | Property-based test results in continuous integration | Partial |
+| C1.5 Each calculation module is recomputed independently | A second party who has not seen the implementation recomputes the golden cases from the regulation and fixtures alone, mirroring an independent inspection | `assurance/independent-verification/` one report per module | Partial |
 | C1.6 Dates are handled by one explicit rule | Regulatory periods are counted in UK local dates; leap years, month ends and British Summer Time changes are tested | Architecture Decision Record on dates and time zones; boundary tests | Planned |
 
 ## C2. Integrity and Permanence of Records

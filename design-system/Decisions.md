@@ -72,14 +72,17 @@ The running record for Airworthiness+. Read it before any change, and check ever
 
 ## Regulation Facts in Use
 
+Confirmed against the UK text in the Civil Aviation Authority Regulatory Library (regulatorylibrary.caa.co.uk/1321-2014) on 18 November 2026: ML.A.305, ML.A.901, ML.A.903 and AMC1 CAO.A.045. Other rows are as recorded during discovery and are confirmed as each is used (Issue #38).
+
 | Fact | Value | Source |
 |---|---|---|
-| Certificate of release to service in records | Within 30 days of completion | ML.A.305, M.A.305 |
+| Certificate of release to service in records | Not later than 30 days after the day the maintenance task is completed | ML.A.305(a), M.A.305 |
 | Pilot-owner tells contracted organisation | Within 30 days of the task | Appendix I to Part-ML |
-| Airworthiness review certificate validity | 1 year, extendable twice by 1 year in a controlled environment | ML.A.901 |
-| Early airworthiness review | Up to 90 days before expiry, keeps the expiry pattern | ML.A.901 |
-| Copy of review certificate to the authority | Within 10 days | ML.A.904, Appendix I |
-| Airworthiness review staff recency | 6 months of continuing airworthiness work in 2 years, or 1 review in 12 months | CAO.A.045, CAMO.A.305 |
+| Airworthiness review certificate validity | 1 year; extendable at most two consecutive times by 1 year each, by a CAMO or CAO that has managed the aircraft for the previous 12 months | ML.A.901(a), ML.A.901(c) |
+| Early extension | Up to 30 days before expiry, keeps the review pattern | ML.A.901(d) |
+| Early airworthiness review | Up to 90 days before expiry, keeps the review pattern | ML.A.903(d) |
+| Copy of review certificate to the Civil Aviation Authority | Within 10 days of the date of issue or extension | ML.A.903(f) |
+| Airworthiness review staff recency | 6 months of continuing airworthiness management in every 2-year period, or 1 review in the last 12-month period | CAO.A.045(c), AMC1 CAO.A.045(c), CAMO.A.305 |
 | Certifying staff authorisation | Licence valid, 6 months (or 100 days) of experience in 2 years, recurrent training in 2 years | CAO.A.040, 66.A.20(b), 145.A.35 |
 | Minimum Inspection Programme | Annual or 100 hours, whichever first; tolerance 1 month or 10 hours, next interval from when done | AMC ML.A.302 |
 | Maintenance programme review | At least annually | ML.A.302 |
@@ -89,11 +92,11 @@ The running record for Airworthiness+. Read it before any change, and check ever
 | Authority oversight cycle | 24 months, up to 36 or 48 with good record | CAMO.B.305, 145.B.305 |
 | Internal audit | Every item every 12 months, up to 100% extension | CAO.A.100, CAMO.A.200 |
 | Contract ended for non-compliance | Owner tells the authority within 2 weeks | Appendix I to Part-ML |
-| Maintenance records retention | 36 months after release; totals and directive status 12 months after withdrawal | ML.A.305 |
+| Maintenance records retention | 36 months after release; totals and directive status 12 months after withdrawal | ML.A.305(h) |
 | Human factors training | Within 6 months of joining, then every 2 years | 145.A.30(e) |
 | Fuel tank safety training | Phase 1 within 6 months, Phase 2 within 12 months, then every 2 years | AMC 145.A.30(e) |
 | Airworthiness review staff records | Kept 2 years after the person leaves | CAO.A.045(e) |
-| Lapsed airworthiness review staff | Restored by 1 review under supervision | AMC CAO.A.045 |
+| Lapsed airworthiness review staff | Restored by 1 review under supervision | AMC1 CAO.A.045(d) |
 | Component classes | Serviceable with release document, unserviceable, unsalvageable, standard part, material | M.A.501, ML.A.501, 145.A.42 |
 | Unsalvageable items | Secure area, mutilated, or kept for training or research, with a named person responsible | ML.A.504, AMC1 CAO.A.030(n) |
 | Finding levels | Level 1 lowers safety or seriously endangers flight safety, immediate action; Level 2 may lower safety | CAMO.B.350, CAO.B.050 |

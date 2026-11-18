@@ -10,6 +10,7 @@ Each requirement has an identifier, the requirement in plain words, its source, 
 - **(N)** the reference comes from the research notes in `research/`, which were made from the European Union Aviation Safety Agency text or from CAP 562. It is To Be Checked against UK Regulation (EU) No 1321/2014, CAA edition of September 2026, before the requirement is relied on (Issue #38).
 - **(D)** a design decision of this project, with where it is recorded.
 - No requirement is verified until every (N) reference on it has been confirmed and changed to (R).
+- References marked "confirmed 18 November 2026" were read in the UK text in the Civil Aviation Authority Regulatory Library on that date.
 
 Priority: Must (the slice is not complete without it) or Should.
 
@@ -34,7 +35,7 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
-| REQ-020 | The aircraft record holds: Aircraft Registration, type rating, serial number, owner, airframe hours, cycles, and the hours and cycles of each engine and propeller | Brief Part 5; ML.A.305 (R); ML.A.903(a)(1) (N) | Must | Test |
+| REQ-020 | The aircraft record holds: Aircraft Registration, type rating, serial number, owner, airframe hours, cycles, and the hours and cycles of each engine and propeller | Brief Part 5; ML.A.305(b), (c) (R, confirmed 18 November 2026); ML.A.903(a)(1) (R, confirmed 18 November 2026) | Must | Test |
 | REQ-021 | The type rating is chosen from SRG1782 (Version 16, 11 August 2026) and stored and shown verbatim, never re-cased or shortened | Decisions.md, Product | Must | Test: stored value equals source value byte for byte |
 | REQ-022 | Every aircraft record carries a regime: Part 21 or Non-Part 21. The slice calculates for Part 21 aircraft under Part-ML only; a Non-Part 21 aircraft can be recorded but shows that its calculations are not yet supported | Decisions.md, National Regime | Must | Test |
 | REQ-023 | Aircraft status is Serviceable or Unserviceable. Unserviceable carries a reason and a date | Decisions.md, Interface | Must | Test |
@@ -59,7 +60,7 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | REQ-048 | For the Minimum Inspection Programme the tolerance is 1 month or 10 hours, and when the tolerance is used the next interval runs from when the task was done | AMC ML.A.302 (R) | Must | Test, Independent |
 | REQ-049 | A tolerance or permitted variation is never applied to an airworthiness directive, an airworthiness limitation or a life limit | CAP 562 5-30, 5-40 (R, national regime); Part-ML equivalent To Be Checked | Must | Test |
 | REQ-050 | Each accomplishment of a task is recorded with the date, hours and cycles at accomplishment and the release to service reference. Earlier accomplishments are kept | ML.A.305 (R); CAP 562 C-90 (R) | Must | Test |
-| REQ-051 | A certificate of release to service must be in the records within 30 days of the work being completed. The system shows the deadline and flags a completed task with no release recorded. Golden: G-ABCD tyre replaced 22 October 2026, deadline 21 November 2026 | ML.A.305, M.A.305 (R) | Must | Golden, Independent |
+| REQ-051 | A certificate of release to service must be in the records within 30 days of the work being completed. The system shows the deadline and flags a completed task with no release recorded. Golden: G-ABCD tyre replaced 22 October 2026, deadline 21 November 2026 | ML.A.305(a) (R, confirmed 18 November 2026): not later than 30 days after the day of completion; M.A.305 (R) | Must | Golden, Independent |
 | REQ-052 | Pilot-owner maintenance is recorded with the date the pilot-owner told the organisation, and flagged when that is more than 30 days after the task | Appendix I to Part-ML (R); the notes cite ML.A.305(a) (N) | Should | Test |
 | REQ-053 | The programme is reviewed at least annually. The system shows the date of the last review and when the next is due | ML.A.302 (R); ML.A.302(c)(9) (N) | Must | Test |
 | REQ-054 | Stale utilisation is visible: every remaining-hours or remaining-cycles figure shows the date of the utilisation entry it was calculated from | Hazard H-001 | Must | Inspection, Test |
@@ -70,13 +71,13 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
 | REQ-060 | An airworthiness directive record holds its number, issuing authority, subject, effective date, revision and what it supersedes | M.A.401(b) (R, directives are applicable maintenance data); ML.A.305 (R) | Must | Test |
-| REQ-061 | For each aircraft and each directive that could affect its type, engine, propeller or equipment, an applicability decision is recorded: Applicable or Not Applicable, with the basis, the person and the date | ML.A.903(a)(5) (N); hazard H-002 | Must | Test |
+| REQ-061 | For each aircraft and each directive that could affect its type, engine, propeller or equipment, an applicability decision is recorded: Applicable or Not Applicable, with the basis, the person and the date | ML.A.903(a)(5) (R, confirmed 18 November 2026); hazard H-002 | Must | Test |
 | REQ-062 | There is no default applicability. A directive with no decision shows as Applicability to Assess and is flagged | Hazard H-002 | Must | Test |
 | REQ-063 | Not Applicable cannot be set in bulk, and needs a stated basis | Hazard H-002 | Must | Test |
 | REQ-064 | A compliance record holds the method, date, hours, cycles and release to service reference | ML.A.305 (R) | Must | Test |
 | REQ-065 | A repetitive directive has an interval in hours, calendar time or cycles, and its next due is calculated by the same rules as a programme task, with no tolerance | REQ-042 to REQ-047, REQ-049 | Must | Test, Independent |
 | REQ-066 | A terminating action ends the repetition and never erases the earlier repetitive inspection records | CAP 562 C-90 (R); (N) research/cap562/03.md | Must | Test |
-| REQ-067 | The system produces the current directive status of each aircraft: every directive assessed, its applicability, compliance and next due | ML.A.305 (R, directive status is retained); ML.A.903(a)(5) (N) | Must | Test, Golden |
+| REQ-067 | The system produces the current directive status of each aircraft: every directive assessed, its applicability, compliance and next due | ML.A.305(d)(1), (h)(5) (R, confirmed 18 November 2026); ML.A.903(a)(5) (R, confirmed 18 November 2026) | Must | Test, Golden |
 | REQ-068 | A superseded directive stays in the record marked superseded, with the directive that replaced it | (D) brief Step 4, nothing deleted | Must | Test |
 
 ## 5. Maintenance Data
@@ -99,20 +100,20 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
 | REQ-100 | Each aircraft shows the date its airworthiness review certificate is valid to and the exact days remaining. Golden: G-EJKL, 6 December 2026, 18 days on 18 November 2026 | ML.A.901 (R); Decisions.md, Interface | Must | Golden, Independent |
-| REQ-101 | An airworthiness review certificate is valid for 1 year | ML.A.901 (R) | Must | Test, Independent |
-| REQ-102 | A review done in the 90 days before expiry keeps the pattern: the new certificate is valid to 1 year after the previous expiry. A review done 91 or more days before expiry does not. Golden: G-CDEF reviewed 11 November 2026, valid to 2 December 2027 | ML.A.901 (R); ML.A.903(d) (N). Clause differs between record and notes, Issue #38 | Must | Golden, boundary tests at 90 and 91 days, Independent |
+| REQ-101 | An airworthiness review certificate is valid for 1 year | ML.A.901(a) (R, confirmed 18 November 2026) | Must | Test, Independent |
+| REQ-102 | A review done in the 90 days before expiry keeps the pattern: the new certificate is valid to 1 year after the previous expiry. A review done 91 or more days before expiry does not. Golden: G-CDEF reviewed 11 November 2026, valid to 2 December 2027 | ML.A.903(d) (R, confirmed 18 November 2026) | Must | Golden, boundary tests at 90 and 91 days, Independent |
 | REQ-103 | The exact last day of validity for a review that does not keep the pattern (the anniversary of issue, or the day before) follows the UK text and CAA Form 15c | To Be Checked: no source in the record | Must | Golden once sourced |
-| REQ-104 | A certificate can be extended at most twice in a row, for 1 year each time, and only in a controlled environment. The system counts extensions and refuses a third | ML.A.901 (R); ML.A.901(c) (N) | Must | Test, Independent |
-| REQ-105 | Before an extension the system records confirmation of each controlled environment condition: continuously managed by the organisation for the previous 12 months, maintained by approved organisations, and no evidence the aircraft is not airworthy | ML.A.901(c) (N) | Must | Test |
-| REQ-106 | An extension done up to 30 days before expiry keeps the pattern | ML.A.901(d) (N) | Must | Boundary tests at 30 and 31 days |
-| REQ-107 | The documented review of records is a checklist of the items the regulation lists. Each item has a result, the evidence sampled and any finding | ML.A.903(a) (N), 11 items in research/1321-2014/18.md | Must | Inspection against the UK text; Test |
-| REQ-108 | The physical survey is a checklist of the items the regulation lists, with the same fields, and records who assisted if the review staff member is not qualified under Part-66 | ML.A.903(b), (c) (N), 5 items | Must | Inspection against the UK text; Test |
-| REQ-109 | A certificate can be issued only when the review is complete, every finding is closed, and the person issuing it is airworthiness review staff with a current authorisation | ML.A.903(e) (N); CAO.A.045 (R) | Must | Test |
+| REQ-104 | A certificate can be extended at most twice in a row, for 1 year each time, and only in a controlled environment. The system counts extensions and refuses a third | ML.A.901(c) (R, confirmed 18 November 2026) | Must | Test, Independent |
+| REQ-105 | Before an extension the system records confirmation of each controlled environment condition: continuously managed by the organisation for the previous 12 months, maintained by approved organisations, and no evidence the aircraft is not airworthy | ML.A.901(c)(1) to (3) (R, confirmed 18 November 2026) | Must | Test |
+| REQ-106 | An extension done up to 30 days before expiry keeps the pattern | ML.A.901(d) (R, confirmed 18 November 2026) | Must | Boundary tests at 30 and 31 days |
+| REQ-107 | The documented review of records is a checklist of the items the regulation lists. Each item has a result, the evidence sampled and any finding | ML.A.903(a)(1) to (11) (R, confirmed 18 November 2026) | Must | Inspection against the UK text; Test |
+| REQ-108 | The physical survey is a checklist of the items the regulation lists, with the same fields, and records who assisted if the review staff member is not qualified under Part-66 | ML.A.903(b), (c)(1) to (5) (R, confirmed 18 November 2026) | Must | Inspection against the UK text; Test |
+| REQ-109 | A certificate can be issued only when the review is complete, every finding is closed, and the person issuing it is airworthiness review staff with a current authorisation | ML.A.903(e) (R, confirmed 18 November 2026); CAO.A.045 (R) | Must | Test |
 | REQ-110 | The certificate is CAA Form 15c. Its serial is allocated by the server, unique, and never reused, including after a void or a restore from backup | Decisions.md, Product; CAP 562 C-90 (R) | Must | Test, concurrency test |
-| REQ-111 | A copy of each certificate issued or extended goes to the Civil Aviation Authority within 10 days. The system shows the deadline, records the date sent, and flags an unsent copy. Golden: G-CDEF issued 11 November 2026, deadline 21 November 2026 | ML.A.904, Appendix I (R); ML.A.903(f) (N). Clause differs, Issue #38 | Must | Golden, Independent |
+| REQ-111 | A copy of each certificate issued or extended goes to the Civil Aviation Authority within 10 days. The system shows the deadline, records the date sent, and flags an unsent copy. Golden: G-CDEF issued 11 November 2026, deadline 21 November 2026 | ML.A.903(f) (R, confirmed 18 November 2026): within 10 days of the date of issue or extension | Must | Golden, Independent |
 | REQ-112 | A copy of each certificate issued or extended is kept with all supporting documents | CAO.A.090(a)(3) (N) | Must | Test |
-| REQ-113 | Review staff recency is 6 months of continuing airworthiness work in 2 years, or 1 review in 12 months. The system calculates the date recency lapses. Golden: lapse on 2 December 2026 for the review staff member in SampleData.md | CAO.A.045, CAMO.A.305 (R); AMC1 CAO.A.045(c) (N) | Must | Golden, Independent |
-| REQ-114 | A lapsed review staff member is restored by 1 review under supervision, which the system records | AMC CAO.A.045 (R) | Should | Test |
+| REQ-113 | Review staff recency is 6 months of continuing airworthiness work in 2 years, or 1 review in 12 months. The system calculates the date recency lapses. Golden: lapse on 2 December 2026 for the review staff member in SampleData.md | CAO.A.045(c), AMC1 CAO.A.045(c) (R, confirmed 18 November 2026); CAMO.A.305 (R) | Must | Golden, Independent |
+| REQ-114 | A lapsed review staff member is restored by 1 review under supervision, which the system records | AMC1 CAO.A.045(d) (R, confirmed 18 November 2026) | Should | Test |
 | REQ-115 | Review staff records are kept for 2 years after the person leaves | CAO.A.045(e) (R) | Must | Test |
 | REQ-116 | The review schedule lists every aircraft by days remaining to expiry and shows whether today is inside the 90-day window | REQ-100, REQ-102 | Must | Test |
 
@@ -172,6 +173,6 @@ These block verification of the requirements named, not the start of building.
 | Point | Requirements | Tracked |
 |---|---|---|
 | Confirm every (N) reference against the UK text | All with (N) | Issue #38 |
-| Last day of validity of a certificate that does not keep the pattern | REQ-103 | Issue #38 |
+| Last day of validity of a certificate that does not keep the pattern. ML.A.901(a) says only "valid for 1 year"; CAA Form 15c not yet read | REQ-103 | Issue #38 |
 | Month-interval rule at month ends | REQ-047 | Architecture Decision Record, Step 4 |
 | Role matrix | REQ-006, REQ-007 | Decisions.md, with Step 4 |
