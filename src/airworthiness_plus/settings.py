@@ -8,6 +8,7 @@ developer's machine, the pipeline and the server except through it.
 from pathlib import Path
 
 from airworthiness_plus.environment import flag, listed, optional, required
+from airworthiness_plus.history.sql import APPLICATION_ROLE
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -21,7 +22,12 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
+    "airworthiness_plus.history",
+    "airworthiness_plus.organisations",
+    "airworthiness_plus.accounts",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -49,6 +55,12 @@ TEMPLATES = [
     },
 ]
 
+# The application works as a database role that owns nothing, cannot delete
+# and is subject to row-level security (REQ-003, REQ-131, threats TH-020,
+# TH-021). Migrations and the setting up of a new organisation are run
+# separately, as the owner of the tables, with this flag set (threat TH-024).
+DATABASE_OWNER_WORK = flag("AIRWORTHINESS_DATABASE_OWNER_WORK")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -60,6 +72,7 @@ DATABASES = {
         # Each request is one transaction, so a response that reports a write
         # as saved is sent only after the write is committed (REQ-138).
         "ATOMIC_REQUESTS": True,
+        "OPTIONS": {} if DATABASE_OWNER_WORK else {"assume_role": APPLICATION_ROLE},
     },
 }
 

@@ -1,0 +1,606 @@
+"""Tests that try to break the record rules directly against the database.
+
+Organisation scoping (REQ-002, REQ-003, REQ-004; threat TH-020) and the
+append-only history (REQ-130, REQ-131; threats TH-021, TH-022, TH-025) are
+enforced by PostgreSQL. These tests go underneath the application: raw SQL
+as the application's database role, and as the owner of the tables.
+
+The organisation and people are from design-system/SampleData.md. The
+second organisation is a placeholder that exists only to be kept out.
+"""
+
+import json
+import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from django.apps import apps
+from django.db import DatabaseError, IntegrityError, connection, transaction
+
+from airworthiness_plus.accounts.models import User
+from airworthiness_plus.history import chain
+from airworthiness_plus.history.models import Event, Record, RecordsAreNeverDeletedError
+from airworthiness_plus.history.session import _current, _set, working_for
+from airworthiness_plus.history.sql import APPLICATION_ROLE, protect_record_table
+from airworthiness_plus.organisations.models import Organisation, Privilege
+from airworthiness_plus.organisations.provisioning import provision_organisation
+from tests.conftest import as_owner
+
+pytestmark = pytest.mark.django_db
+
+SCOPE = (
+    "Aeroplanes 2,730 Kilograms Maximum Take-Off Mass or Less; Sailplanes and Powered "
+    "Sailplanes (management and review only); Piston Engines, Lycoming and Continental; "
+    "C14 Landing Gear; C16 Propellers"
+)
+
+# Tables Django itself creates. They hold no records and the application
+# role has no access to them at all.
+FRAMEWORK_TABLES = {
+    "django_migrations",
+    "django_content_type",
+    "django_session",
+    "auth_permission",
+    "auth_group",
+    "auth_group_permissions",
+}
+
+
+@dataclass(frozen=True)
+class Two:
+    """The sample organisation with one user, and another organisation with one user."""
+
+    ours: Organisation
+    lucy: User
+    other: Organisation
+    stranger: User
+
+
+@pytest.fixture
+def two() -> Two:
+    with as_owner():
+        ours, lucy = provision_organisation(
+            name="[Your Organisation]",
+            approval_reference="UK.CAO.[Number]",
+            privileges=list(Privilege),
+            scope_of_work=SCOPE,
+            first_user_username="lucy.grant@your-organisation.example",
+            first_user_full_name="Lucy Grant",
+        )
+        other, stranger = provision_organisation(
+            name="[Other Organisation]",
+            approval_reference="UK.CAO.[Other Number]",
+            privileges=[Privilege.CONTINUING_AIRWORTHINESS_MANAGEMENT],
+            scope_of_work="Aeroplanes 2,730 Kilograms Maximum Take-Off Mass or Less",
+            first_user_username="name@other-organisation.example",
+            first_user_full_name="[Other Name]",
+        )
+    return Two(ours, lucy, other, stranger)
+
+
+@contextmanager
+def refused(message: str) -> Iterator[None]:
+    """Expect the database to refuse, and keep the test's transaction usable."""
+    with pytest.raises(DatabaseError, match=message), transaction.atomic():
+        yield
+
+
+Value = str | int | uuid.UUID
+
+
+def run(sql: str, *parameters: Value) -> int:
+    """Run raw SQL on the application's connection and return the number of rows touched."""
+    with connection.cursor() as cursor:
+        cursor.execute(sql, parameters)
+        return int(cursor.rowcount)
+
+
+def one(sql: str, *parameters: Value) -> object:
+    with connection.cursor() as cursor:
+        cursor.execute(sql, parameters)
+        row = cursor.fetchone()
+    assert row is not None
+    return row[0]
+
+
+def add_chris(two: Two) -> User:
+    """Lucy Grant adds Chris Moore to the sample organisation."""
+    with working_for(two.ours.id, two.lucy.id):
+        return User.objects.create_user(
+            organisation=two.ours,
+            username="chris.moore@your-organisation.example",
+            full_name="Chris Moore",
+        )
+
+
+# The application's database role
+
+
+def test_the_application_role_has_no_special_powers() -> None:
+    """Threats TH-020, TH-024. Not a superuser, cannot bypass row-level security,
+    cannot sign in by itself, and owns no table."""
+    assert one("SELECT current_user") == APPLICATION_ROLE
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT rolsuper, rolbypassrls, rolcanlogin, rolcreatedb, rolcreaterole "
+            "FROM pg_roles WHERE rolname = %s",
+            [APPLICATION_ROLE],
+        )
+        assert cursor.fetchone() == (False, False, False, False, False)
+    assert one("SELECT count(*) FROM pg_tables WHERE tableowner = %s", APPLICATION_ROLE) == 0
+
+
+def test_the_application_role_can_make_nothing_of_its_own() -> None:
+    """Threat TH-026. No table, temporary table, function or trigger of its own,
+    so it cannot build a way round the history."""
+    assert one("SELECT has_schema_privilege(current_user, current_schema(), 'CREATE')") is False
+    assert one("SELECT has_database_privilege(current_user, current_database(), 'TEMP')") is False
+    assert one("SELECT has_database_privilege(current_user, current_database(), 'CREATE')") is False
+    with refused("permission denied"):
+        run("CREATE TEMPORARY TABLE planted (id integer)")
+    with refused("permission denied"):
+        run("CREATE TABLE planted (id integer)")
+    with refused("permission denied"):
+        run("CREATE FUNCTION planted() RETURNS integer LANGUAGE sql AS 'SELECT 1'")
+    with refused("must be owner"):
+        run("ALTER TABLE accounts_user DISABLE TRIGGER history_write")
+    with refused("must be owner"):
+        run("ALTER TABLE accounts_user DISABLE ROW LEVEL SECURITY")
+    with refused("permission denied"):
+        run("SET session_replication_role = replica")
+
+
+def test_every_table_is_under_the_record_rules() -> None:
+    """REQ-002, REQ-003, REQ-131. The build fails if a table is added without
+    row-level security, the history trigger and the refusal of deletion, or
+    if the application is given more than it needs on any table."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity, "
+            "  ARRAY(SELECT polname::text FROM pg_policy WHERE polrelid = c.oid ORDER BY 1), "
+            "  ARRAY(SELECT tgname::text FROM pg_trigger "
+            "         WHERE tgrelid = c.oid AND NOT tgisinternal ORDER BY 1), "
+            "  ARRAY(SELECT p FROM unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE',"
+            "         'TRUNCATE','REFERENCES','TRIGGER']) AS p "
+            "         WHERE has_table_privilege(%s, c.oid, p) ORDER BY 1) "
+            "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = current_schema() AND c.relkind = 'r' ORDER BY 1",
+            [APPLICATION_ROLE],
+        )
+        tables = {row[0]: row[1:] for row in cursor.fetchall()}
+
+    assert FRAMEWORK_TABLES <= set(tables)
+    for name in FRAMEWORK_TABLES:
+        assert tables[name][4] == [], f"{name}: the application has no access"
+
+    records = set(tables) - FRAMEWORK_TABLES - {"history_event"}
+    assert records == {"organisations_organisation", "accounts_user"}
+    for name in records:
+        enabled, forced, policies, triggers, privileges = tables[name]
+        assert (enabled, forced) == (True, True), name
+        assert policies == ["organisation_scope"], name
+        assert triggers == ["history_refuse_delete", "history_refuse_truncate", "history_write"]
+        assert set(privileges) <= {"SELECT", "INSERT", "UPDATE"}, name
+    assert tables["organisations_organisation"][4] == ["SELECT", "UPDATE"]
+
+    enabled, forced, policies, triggers, privileges = tables["history_event"]
+    assert (enabled, forced) == (True, True)
+    assert policies == ["organisation_scope"]
+    assert triggers == ["history_chain", "history_refuse_change", "history_refuse_truncate"]
+    assert privileges == ["INSERT", "SELECT"]
+
+
+def test_every_model_is_a_record_or_the_history() -> None:
+    """REQ-131. A model that is not a record has to be added here on purpose."""
+    for model in apps.get_models():
+        if model._meta.db_table in FRAMEWORK_TABLES:
+            continue
+        assert issubclass(model, Record) or model is Event, model
+
+
+def test_a_record_table_is_never_given_delete() -> None:
+    """REQ-131."""
+    with pytest.raises(ValueError, match="SELECT, INSERT or UPDATE only"):
+        protect_record_table("aircraft_aircraft", privileges=("SELECT", "DELETE"))
+    with pytest.raises(ValueError, match="plain identifier"):
+        protect_record_table("aircraft; DROP TABLE accounts_user")
+
+
+# Organisation scoping
+
+
+def test_with_no_organisation_set_there_are_no_rows(two: Two) -> None:
+    """REQ-003, threat TH-020, planned test T-SEC-013."""
+    assert Organisation.objects.count() == 0
+    assert User.objects.count() == 0
+    assert Event.objects.count() == 0
+    assert one("SELECT count(*) FROM organisations_organisation") == 0
+    assert one("SELECT count(*) FROM accounts_user") == 0
+    assert one("SELECT count(*) FROM history_event") == 0
+
+
+def test_an_organisation_sees_only_its_own_records(two: Two) -> None:
+    """REQ-003, AMC1 CAO.A.100(f) point (d)(2)(i)."""
+    with working_for(two.ours.id, two.lucy.id):
+        assert list(Organisation.objects.all()) == [two.ours]
+        assert list(User.objects.all()) == [two.lucy]
+        assert {event.organisation_id for event in Event.objects.all()} == {two.ours.id}
+        assert not User.objects.filter(pk=two.stranger.pk).exists()
+        assert not Organisation.objects.filter(pk=two.other.pk).exists()
+        assert one("SELECT count(*) FROM accounts_user WHERE id = %s", two.stranger.id) == 0
+    with working_for(two.other.id, two.stranger.id):
+        assert list(User.objects.all()) == [two.stranger]
+
+
+def test_an_organisation_cannot_change_another_organisations_records(two: Two) -> None:
+    """REQ-004, threat TH-020, AMC1 CAO.A.100(f) point (d)(2)(ii)."""
+    with working_for(two.ours.id, two.lucy.id):
+        assert User.objects.filter(pk=two.stranger.pk).update(full_name="Changed") == 0
+        assert Organisation.objects.filter(pk=two.other.pk).update(name="Changed") == 0
+        assert run("UPDATE accounts_user SET full_name = 'Changed'") == 1  # Lucy only
+        with refused("row-level security"):
+            User.objects.create_user(
+                organisation=two.other,
+                username="planted@your-organisation.example",
+                full_name="Planted",
+            )
+        with refused("row-level security|never moves"):
+            run(
+                "UPDATE accounts_user SET organisation_id = %s WHERE id = %s",
+                two.other.id,
+                two.lucy.id,
+            )
+    with as_owner():
+        assert one("SELECT full_name FROM accounts_user WHERE id = %s", two.stranger.id) == (
+            "[Other Name]"
+        )
+        assert one("SELECT name FROM organisations_organisation WHERE id = %s", two.other.id) == (
+            "[Other Organisation]"
+        )
+
+
+def test_the_application_cannot_create_an_organisation(two: Two) -> None:
+    """REQ-004. Setting up an organisation is not open to the application's role."""
+    with working_for(two.ours.id, two.lucy.id), refused("permission denied"):
+        run(
+            "INSERT INTO organisations_organisation "
+            "(id, name, approval_type, approval_reference, privileges, scope_of_work) "
+            "VALUES (%s, 'Planted', 'Part-CAO', 'UK.CAO.[Number]', '{Maintenance}', 'None')",
+            uuid.uuid4(),
+        )
+
+
+def test_the_session_settings_end_with_the_transaction() -> None:
+    """Threat TH-020. Nothing carries over to the next request on the same connection."""
+    assert _current() == ("", "")
+    organisation, user = uuid.uuid4(), uuid.uuid4()
+    with working_for(organisation, user):
+        assert _current() == (str(organisation), str(user))
+        with working_for(None):
+            assert _current() == ("", "")
+        assert _current() == (str(organisation), str(user))
+    assert _current() == ("", "")
+
+    with pytest.raises(RuntimeError), working_for(organisation, user):
+        raise RuntimeError
+    assert _current() == ("", "")
+
+    # Set without being put back: the end of the transaction clears it.
+    with transaction.atomic():
+        _set(str(organisation), str(user))
+        transaction.set_rollback(True)
+    assert _current() == ("", "")
+
+
+# Who made a change
+
+
+def test_a_change_with_no_signed_in_user_is_refused(two: Two) -> None:
+    """REQ-130, threat TH-022, planned test T-SEC-016."""
+    with working_for(two.ours.id), refused("No signed-in user"):
+        User.objects.filter(pk=two.lucy.pk).update(full_name="Changed")
+
+
+def test_a_change_by_a_user_of_another_organisation_is_refused(two: Two) -> None:
+    """REQ-004, threat TH-020."""
+    with working_for(two.ours.id, two.stranger.id), refused("not an active user"):
+        User.objects.filter(pk=two.lucy.pk).update(full_name="Changed")
+
+
+def test_a_user_who_has_left_is_kept_and_can_no_longer_act(two: Two) -> None:
+    """REQ-010. Made inactive, never deleted; past entries keep the name."""
+    chris = add_chris(two)
+    with working_for(two.ours.id, chris.id):
+        Organisation.objects.filter(pk=two.ours.pk).update(scope_of_work=SCOPE + "; C5 Batteries")
+    with working_for(two.ours.id, two.lucy.id):
+        User.objects.filter(pk=chris.pk).update(is_active=False)
+    with working_for(two.ours.id, chris.id), refused("not an active user"):
+        Organisation.objects.filter(pk=two.ours.pk).update(scope_of_work=SCOPE)
+    with working_for(two.ours.id, two.lucy.id):
+        assert User.objects.filter(pk=chris.pk, is_active=False).exists()
+        entry = Event.of(two.ours).last()
+        assert entry is not None
+        assert (entry.actor_id, entry.actor_name) == (chris.id, "Chris Moore")
+
+
+# The history
+
+
+def test_every_change_writes_who_when_what_before_and_after(two: Two) -> None:
+    """REQ-130, threat TH-022."""
+    started = datetime.now(UTC) - timedelta(seconds=5)
+    chris = add_chris(two)
+    with working_for(two.ours.id, two.lucy.id):
+        User.objects.filter(pk=chris.pk).update(full_name="Christopher Moore")
+        created, changed = Event.of(chris)
+
+    assert (created.sequence, created.action, created.changed) == (1, "Created", [])
+    assert (created.actor_id, created.actor_name) == (two.lucy.id, "Lucy Grant")
+    assert created.organisation_id == two.ours.id
+    assert created.before_json is None
+    assert created.after_json is not None
+    assert json.loads(created.after_json)["full_name"] == "Chris Moore"
+    assert started <= created.at <= datetime.now(UTC) + timedelta(seconds=5)
+    assert created.previous_hash == ""
+
+    assert (changed.sequence, changed.action, changed.changed) == (2, "Changed", ["full_name"])
+    assert changed.before_json is not None
+    assert changed.after_json is not None
+    assert json.loads(changed.before_json)["full_name"] == "Chris Moore"
+    assert json.loads(changed.after_json)["full_name"] == "Christopher Moore"
+    assert changed.previous_hash == created.hash
+
+
+def test_a_save_that_changes_nothing_writes_no_history(two: Two) -> None:
+    """REQ-130. The history holds changes, not saves."""
+    with working_for(two.ours.id, two.lucy.id):
+        before = Event.of(two.lucy).count()
+        two.lucy.save()
+        assert Event.of(two.lucy).count() == before
+
+
+def test_a_password_is_never_written_to_the_history(two: Two) -> None:
+    """Threat TH-001. That it changed is recorded; its value is not."""
+    with working_for(two.ours.id, two.lucy.id):
+        two.lucy.set_password("a long phrase nobody else knows")
+        two.lucy.save()
+        entry = Event.of(two.lucy).last()
+        assert entry is not None
+        assert entry.changed == ["password"]
+        for stored in Event.of(two.lucy).values_list("before_json", "after_json"):
+            for text in stored:
+                assert text is None or "password" not in json.loads(text)
+
+
+def test_setting_up_an_organisation_is_recorded_against_the_database_role(two: Two) -> None:
+    """REQ-130. Work done as the owner of the tables is not passed off as a user's."""
+    with working_for(two.ours.id, two.lucy.id):
+        (entry,) = Event.of(two.ours)
+    assert entry.actor_id is None
+    assert entry.actor_name.startswith("Database Role ")
+    assert entry.action == "Created"
+
+
+def test_the_application_cannot_change_or_remove_history(two: Two) -> None:
+    """REQ-131, threat TH-021, planned test T-SEC-014."""
+    with working_for(two.ours.id, two.lucy.id):
+        assert one("SELECT count(*) FROM history_event") == 2
+        with refused("permission denied"):
+            run("UPDATE history_event SET actor_name = 'Someone Else'")
+        with refused("permission denied"):
+            run("DELETE FROM history_event")
+        with refused("permission denied"):
+            run("TRUNCATE history_event")
+        with refused("History is written only by a change to a record"):
+            run(
+                "INSERT INTO history_event (organisation_id, record_type, record_id, action, "
+                "changed, after_json) VALUES (%s, 'accounts_user', %s, 'Created', '{}', '{}')",
+                two.ours.id,
+                uuid.uuid4(),
+            )
+        entry = Event.of(two.lucy).get()
+        with pytest.raises(RecordsAreNeverDeletedError):
+            entry.save()
+        with pytest.raises(RecordsAreNeverDeletedError):
+            entry.delete()
+        with pytest.raises(RecordsAreNeverDeletedError):
+            Event.objects.all().delete()
+
+
+def test_the_owner_of_the_tables_cannot_change_or_remove_history_either(two: Two) -> None:
+    """REQ-131, threats TH-021, TH-025, planned test T-SEC-014. The trigger
+    refuses whoever asks, including a superuser."""
+    with as_owner():
+        assert one("SELECT count(*) FROM history_event") == 4
+        with refused("never changed in place or deleted"):
+            run("UPDATE history_event SET actor_name = 'Someone Else'")
+        with refused("never changed in place or deleted"):
+            run("DELETE FROM history_event")
+        with refused("History is written only by a change to a record"):
+            run(
+                "INSERT INTO history_event (organisation_id, record_type, record_id, action, "
+                "changed, after_json) VALUES (%s, 'accounts_user', %s, 'Created', '{}', '{}')",
+                two.ours.id,
+                uuid.uuid4(),
+            )
+        # PostgreSQL will not consider TRUNCATE while foreign key checks are waiting.
+        run("SET CONSTRAINTS ALL IMMEDIATE")
+        with refused("never changed in place or deleted"):
+            run("TRUNCATE history_event CASCADE")
+        assert one("SELECT count(*) FROM history_event") == 4
+
+
+def test_a_record_is_never_deleted_by_anyone(two: Two) -> None:
+    """REQ-131. No delete in the application, no privilege for its role, and a
+    trigger that refuses the owner."""
+    with working_for(two.ours.id, two.lucy.id):
+        with pytest.raises(RecordsAreNeverDeletedError):
+            two.lucy.delete()
+        with pytest.raises(RecordsAreNeverDeletedError):
+            User.objects.all().delete()
+        with pytest.raises(RecordsAreNeverDeletedError):
+            Organisation.objects.all().delete()
+        for table in ("accounts_user", "organisations_organisation"):
+            with refused("permission denied"):
+                run(f"DELETE FROM {table}")  # noqa: S608
+            with refused("permission denied"):
+                run(f"TRUNCATE {table} CASCADE")
+    with as_owner():
+        run("SET CONSTRAINTS ALL IMMEDIATE")
+        for table in ("accounts_user", "organisations_organisation"):
+            with refused("never changed in place or deleted"):
+                run(f"DELETE FROM {table}")  # noqa: S608
+            with refused("never changed in place or deleted"):
+                run(f"TRUNCATE {table} CASCADE")
+        assert one("SELECT count(*) FROM accounts_user") == 2
+
+
+def test_a_record_keeps_its_identifier_and_its_organisation(two: Two) -> None:
+    """REQ-002, REQ-130. Otherwise a history could be cut loose from its record."""
+    with working_for(two.ours.id, two.lucy.id), refused("identifier of a record never changes"):
+        run("UPDATE accounts_user SET id = %s WHERE id = %s", uuid.uuid4(), two.lucy.id)
+    with as_owner(), refused("never moves to another organisation"):
+        run(
+            "UPDATE accounts_user SET organisation_id = %s WHERE id = %s",
+            two.other.id,
+            two.lucy.id,
+        )
+
+
+# The hash chain
+
+
+def everything() -> list[Event]:
+    with as_owner():
+        return list(Event.objects.all())
+
+
+def test_the_chain_holds_and_the_database_and_the_check_agree(two: Two) -> None:
+    """Threat TH-021, planned test T-SEC-015. The database writes each hash;
+    ``chain.expected_hash`` computes it again, separately, in Python."""
+    chris = add_chris(two)
+    with working_for(two.ours.id, two.lucy.id):
+        User.objects.filter(pk=chris.pk).update(full_name="Christopher Moore")
+        User.objects.filter(pk=chris.pk).update(full_name="Chris Moore")
+    entries = everything()
+    assert len(entries) == 7
+    assert chain.problems(entries) == []
+    assert all(len(entry.hash) == 64 for entry in entries)
+    with as_owner():
+        assert one("SELECT count(*) FROM history_event e WHERE hash <> history_event_hash(e)") == 0
+
+
+def test_an_altered_entry_is_detected(two: Two) -> None:
+    """Threats TH-021, TH-025, planned test T-SEC-015. Someone with the
+    database to themselves switches the triggers off and rewrites an entry."""
+    chris = add_chris(two)
+    with working_for(two.ours.id, two.lucy.id):
+        User.objects.filter(pk=chris.pk).update(full_name="Christopher Moore")
+        first, second = Event.of(chris)
+    with as_owner():
+        run("SET LOCAL session_replication_role = replica")
+        run(
+            "UPDATE history_event SET after_json = replace(after_json, 'Chris Moore', 'X') "
+            "WHERE id = %s",
+            first.id,
+        )
+        run("SET LOCAL session_replication_role = origin")
+    assert chain.problems(everything()) == [
+        chain.ChainProblem(first.id, "Has been altered since it was written")
+    ]
+
+    # Covering the tracks by rewriting the hash breaks the link from the next entry.
+    with as_owner():
+        run("SET LOCAL session_replication_role = replica")
+        run("UPDATE history_event e SET hash = history_event_hash(e) WHERE id = %s", first.id)
+        run("SET LOCAL session_replication_role = origin")
+    assert chain.problems(everything()) == [
+        chain.ChainProblem(second.id, "Does not follow the entry before it")
+    ]
+
+
+def test_a_removed_entry_is_detected(two: Two) -> None:
+    """Threats TH-021, TH-025, planned test T-SEC-015."""
+    chris = add_chris(two)
+    with working_for(two.ours.id, two.lucy.id):
+        User.objects.filter(pk=chris.pk).update(full_name="Christopher Moore")
+        User.objects.filter(pk=chris.pk).update(full_name="Chris Moore")
+        _, second, third = Event.of(chris)
+    with as_owner():
+        run("SET LOCAL session_replication_role = replica")
+        run("DELETE FROM history_event WHERE id = %s", second.id)
+        run("SET LOCAL session_replication_role = origin")
+    assert chain.problems(everything()) == [
+        chain.ChainProblem(third.id, "An entry is missing before this one")
+    ]
+
+
+# The organisation record
+
+
+def test_the_organisation_record_holds_its_approval(two: Two) -> None:
+    """REQ-001. SampleData.md, Organisation: Part-CAO, UK.CAO.[Number], all four privileges."""
+    with working_for(two.ours.id, two.lucy.id):
+        ours = Organisation.objects.get()
+    assert (ours.name, ours.approval_type, ours.approval_reference) == (
+        "[Your Organisation]",
+        "Part-CAO",
+        "UK.CAO.[Number]",
+    )
+    assert ours.privileges == [
+        "Maintenance",
+        "Continuing Airworthiness Management",
+        "Airworthiness Review",
+        "Permit to Fly",
+    ]
+    assert ours.scope_of_work == SCOPE
+
+
+@pytest.mark.parametrize(
+    ("privileges", "constraint"),
+    [
+        ([], "organisation_has_known_privileges"),
+        (["Design"], "organisation_has_known_privileges"),
+        (["Airworthiness Review"], "organisation_review_needs_maintenance_or_management"),
+        (["Maintenance", "Permit to Fly"], "organisation_permit_to_fly_needs_review"),
+    ],
+)
+def test_privileges_follow_cao_a_095(two: Two, privileges: list[str], constraint: str) -> None:
+    """REQ-001, CAO.A.095. Airworthiness review needs maintenance or continuing
+    airworthiness management (point (c)); permit to fly needs airworthiness
+    review (point (d)); one or more privileges (point (e))."""
+    with (
+        working_for(two.ours.id, two.lucy.id),
+        pytest.raises(IntegrityError, match=constraint),
+        transaction.atomic(),
+    ):
+        Organisation.objects.filter(pk=two.ours.pk).update(privileges=privileges)
+
+
+@pytest.mark.parametrize(
+    "privileges",
+    [
+        ["Maintenance"],
+        ["Continuing Airworthiness Management", "Airworthiness Review"],
+        ["Maintenance", "Airworthiness Review", "Permit to Fly"],
+    ],
+)
+def test_privileges_allowed_by_cao_a_095(two: Two, privileges: list[str]) -> None:
+    """REQ-001, CAO.A.095."""
+    with working_for(two.ours.id, two.lucy.id):
+        assert Organisation.objects.filter(pk=two.ours.pk).update(privileges=privileges) == 1
+
+
+def test_one_account_for_each_person(two: Two) -> None:
+    """REQ-005. A user name belongs to one person."""
+    with (
+        working_for(two.ours.id, two.lucy.id),
+        pytest.raises(IntegrityError),
+        transaction.atomic(),
+    ):
+        User.objects.create_user(
+            organisation=two.ours, username=two.lucy.username, full_name="Second Person"
+        )

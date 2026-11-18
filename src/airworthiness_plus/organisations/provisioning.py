@@ -1,0 +1,42 @@
+"""Set up a new organisation and its first user.
+
+The application's own database role cannot create an organisation: this is
+run by Airworthiness Limited with the credentials used for migrations, once
+for each organisation. After it, only the organisation's own users enter
+or change its data (REQ-004, AMC1 CAO.A.100(f) point (d)(2)).
+"""
+
+import uuid
+from collections.abc import Sequence
+
+from airworthiness_plus.accounts.models import User
+from airworthiness_plus.history.session import working_for
+from airworthiness_plus.organisations.models import ApprovalType, Organisation, Privilege
+
+
+def provision_organisation(
+    *,
+    name: str,
+    approval_reference: str,
+    privileges: Sequence[Privilege],
+    scope_of_work: str,
+    first_user_username: str,
+    first_user_full_name: str,
+) -> tuple[Organisation, User]:
+    """Create the organisation and one user who can then add the others."""
+    identifier = uuid.uuid4()
+    with working_for(identifier):
+        organisation = Organisation.objects.create(
+            id=identifier,
+            name=name,
+            approval_type=ApprovalType.PART_CAO,
+            approval_reference=approval_reference,
+            privileges=list(privileges),
+            scope_of_work=scope_of_work,
+        )
+        user = User.objects.create_user(
+            organisation=organisation,
+            username=first_user_username,
+            full_name=first_user_full_name,
+        )
+    return organisation, user
