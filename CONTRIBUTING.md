@@ -40,6 +40,12 @@ export AIRWORTHINESS_DATABASE_NAME=airworthiness
 export AIRWORTHINESS_DATABASE_USER=<your database user>
 ```
 
+The tests create the database and the role `airworthiness_application`, so the database user needs the right to create both. The tests then run as that role, as the application does in service (`architecture/decisions/ADR-0002-data-layer.md`). Migrations, and nothing else, are run as the owner of the tables:
+
+```
+AIRWORTHINESS_DATABASE_OWNER_WORK=true uv run python manage.py migrate
+```
+
 `AIRWORTHINESS_DATABASE_PASSWORD`, `AIRWORTHINESS_DATABASE_HOST` and `AIRWORTHINESS_DATABASE_PORT` are read when set. Never put these values in a file in the repository.
 
 The pipeline also scans dependencies for known vulnerabilities, scans for committed secrets, and produces a software bill of materials (a list of every component in the build). A dependency is added or updated only by changing `pyproject.toml`, running `uv lock`, and committing both files in a pull request of its own.

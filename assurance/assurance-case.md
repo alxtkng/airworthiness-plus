@@ -39,9 +39,9 @@ Hazards answered: H-003, H-007, H-008, H-012.
 
 | Sub-claim | Argument | Evidence | Status |
 |---|---|---|---|
-| C2.1 Every record has an append-only history: who, what, when, before and after | CAP 562 C-90 expects the full input history to be kept; a terminating action must not erase earlier repetitive inspection entries | Data model in `architecture/`; tests that update and delete paths do not exist or fail at the data layer | Planned |
-| C2.2 Nothing is deleted, only superseded | Same as C2.1 | Tests; database permissions review | Planned |
-| C2.3 Records are protected against unauthorised alteration | 145.A.45(e), adopted as a design requirement for Part-CAO | Access control tests; threat model, tampering threats | Planned |
+| C2.1 Every record has an append-only history: who, what, when, before and after | CAP 562 C-90 expects the full input history to be kept; a terminating action must not erase earlier repetitive inspection entries | `architecture/decisions/ADR-0002-data-layer.md`; `tests/test_data_layer.py`: update and delete of history refused for the application and for the owner | Partial |
+| C2.2 Nothing is deleted, only superseded | Same as C2.1 | `tests/test_data_layer.py`: the catalogue test on privileges and triggers for every table | Partial |
+| C2.3 Records are protected against unauthorised alteration | 145.A.45(e), adopted as a design requirement for Part-CAO | Access control tests; threat model, tampering threats; hash chain tests in `tests/test_data_layer.py` | Partial |
 | C2.4 Certificate serials are allocated by the server, unique and never reused | CAP 562 C-90 expects control of serial numbers for certificates the system generates | Concurrency tests on serial allocation | Planned |
 | C2.5 Records are kept for the required periods | ML.A.305 and CAO.A.090; staff records CAO.A.045(e) | Retention requirements and tests | Planned |
 | C2.6 A complete aircraft record can be exported at any time in an open format | The owner's records must be transferable; the export also proves nothing is held only in a proprietary form | Export tests comparing export against database content | Planned |
@@ -55,7 +55,7 @@ Hazards answered: H-004, H-003.
 
 | Sub-claim | Argument | Evidence | Status |
 |---|---|---|---|
-| C3.1 Organisation scoping is enforced in the data layer, not only in the interface | AMC CAO.A.090 and AMC CAMO.A.220: each organisation sees only its own data and only its own staff enter data. Enforcement below the interface survives an interface mistake | Architecture Decision Record; data-layer policy tests | Planned |
+| C3.1 Organisation scoping is enforced in the data layer, not only in the interface | AMC1 CAO.A.100(f) point (d)(2): each organisation has access to its own data only and data is entered only by its own personnel. Enforcement below the interface survives an interface mistake | `architecture/decisions/ADR-0002-data-layer.md`; `tests/test_data_layer.py` | Partial |
 | C3.2 Every endpoint refuses reads and writes of another organisation's records | Tested by trying, for every endpoint | Automated cross-organisation isolation tests in continuous integration (Step 7) | Planned |
 | C3.3 Write access is by role | CAP 562 C-90: only authorised persons may alter records | Role matrix in requirements; access control tests | Planned |
 | C3.4 Accounts resist takeover | Threat model, account takeover threats | `assurance/asvs.md` authentication and session results | Planned |
@@ -103,7 +103,7 @@ Hazards answered: H-008, H-003, H-007.
 | C6.2 The system supports the parallel run and problem log | The 6-month parallel run happens in public beta; private beta must deliver the means: a problem log whose entries cannot be removed | Problem log requirement and tests | Planned |
 | C6.3 The system records the customer's written CAA approval | Reference and date for each organisation | Requirement and test | Planned |
 | C6.4 The system can be described in an exposition | AMC1 CAO.A.025 Part B (records, B.9 in `design-system/Procedures.md`): functions, authorised persons, security, backup, training | Draft exposition text for the records system | Planned |
-| C6.5 Contracted software conditions are met | AMC CAO.A.090: own data only, own staff only | C3.1, C3.2 | Planned |
+| C6.5 Contracted software conditions are met | AMC1 CAO.A.100(f) point (d)(2): own data only, data entered only by the organisation's personnel, data retrievable at any time | C3.1, C3.2, C2.6 | Partial |
 | C6.6 Forms and terms are the CAA's | CAA Form 15c, CAA Form 3-CAO, SRG1782 type ratings verbatim (`design-system/Decisions.md`) | Interface review against Decisions.md and Writing.md | Planned |
 
 Limit of this claim: acceptance is the CAA's decision for each organisation. This case shows the conditions are met; it does not assert approval.

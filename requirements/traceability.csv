@@ -1,14 +1,14 @@
 Requirement,Module,Priority,Verification Method,Design Element,Test Identifiers,Evidence,Status
-REQ-001,Organisation and Access,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-002,Organisation and Access,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-003,Organisation and Access,Must,Test: every endpoint tried against another organisation's records,To Be Designed,None,None,No Test
-REQ-004,Organisation and Access,Must,Test,airworthiness_plus.settings: no administration interface installed. Rest To Be Designed,test_application: administration_interface_is_absent (T-SEC-018),None,Partly Tested: Administration Interface Absent; No Write Path Yet
-REQ-005,Organisation and Access,Must,"Test, Inspection",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-001,Organisation and Access,Must,Test,airworthiness_plus.organisations.models.Organisation,"test_data_layer: organisation_record_holds_its_approval, privileges_follow_cao_a_095, privileges_allowed",ADR-0002,Data Layer Tested; Interface Not Built
+REQ-002,Organisation and Access,Must,Test,Row-level security on every table; airworthiness_plus.history.sql.protect_record_table,"test_data_layer: every_table_is_under_the_record_rules, every_model_is_a_record, keeps_its_identifier_and_its_organisation",ADR-0002,Data Layer Tested; Interface Not Built
+REQ-003,Organisation and Access,Must,Test: every endpoint tried against another organisation's records,Row-level security keyed to the session organisation; airworthiness_plus.history.session.working_for,"test_data_layer: no_organisation_set (T-SEC-013), sees_only_its_own, session_settings_end_with_the_transaction",ADR-0002,Data Layer Tested; No Endpoint Yet
+REQ-004,Organisation and Access,Must,Test,Row-level security WITH CHECK; no INSERT on organisations for the application role; no administration interface,"test_data_layer: cannot_change_another_organisations_records, cannot_create_an_organisation, change_by_a_user_of_another_organisation; test_application: administration_interface_is_absent (T-SEC-018)",ADR-0002,Data Layer Tested; No Endpoint Yet
+REQ-005,Organisation and Access,Must,"Test, Inspection",airworthiness_plus.accounts.models.User: unique user name. Rest To Be Designed,test_data_layer: one_account_for_each_person,None,Partly Tested: Unique User Name; Source To Be Checked
 REQ-006,Organisation and Access,Must,Test: every action against every role,To Be Designed,None,None,No Test
 REQ-007,Organisation and Access,Must,Inspection,To Be Designed,None,None,No Test
 REQ-008,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
 REQ-009,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
-REQ-010,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
+REQ-010,Organisation and Access,Must,Test,airworthiness_plus.accounts.models.User.is_active; history keeps the name,test_data_layer: user_who_has_left_is_kept,ADR-0002,Data Layer Tested; Interface Not Built
 REQ-020,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-021,Aircraft,Must,Test: stored value equals source value byte for byte,To Be Designed,None,None,No Test
 REQ-022,Aircraft,Must,Test,To Be Designed,None,None,No Test
@@ -69,23 +69,23 @@ REQ-108,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Des
 REQ-109,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-110,Airworthiness Review,Must,"Test, concurrency test",To Be Designed,None,None,No Test
 REQ-111,Airworthiness Review,Must,"Golden, Independent",airworthiness_rules.review.copy_to_authority_deadline,test_golden_review: g_cdef_copy; test_properties_dates: deadlines,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
-REQ-112,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-112,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-113,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test
 REQ-114,Airworthiness Review,Should,Test,To Be Designed,None,None,No Test
 REQ-115,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-116,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
-REQ-130,Records,Must,Test,To Be Designed,None,None,No Test
-REQ-131,Records,Must,Test: no delete path in the application; the database refuses update and delete on history,To Be Designed,None,None,No Test
-REQ-132,Records,Must,Test; penetration test,"airworthiness_plus.settings: HTTPS redirect, Strict Transport Security, secure cookies. Rest To Be Designed","test_application: plain_http_is_redirected (T-SEC-008), cookies (T-SEC-003), deployment_checks",None,Partly Tested: Transport and Cookie Settings; Source To Be Checked
-REQ-133,Records,Must,Inspection: the system has no automatic removal at all in private beta,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-130,Records,Must,Test,"history_event written by trigger; airworthiness_plus.history: sql, models.Event, chain","test_data_layer: every_change_writes_who_when_what, change_with_no_signed_in_user (T-SEC-016), setting_up_an_organisation, password_is_never_written, chain_holds, altered_entry, removed_entry (T-SEC-015)",ADR-0002,Data Layer Tested; Interface Not Built
+REQ-131,Records,Must,Test: no delete path in the application; the database refuses update and delete on history,No DELETE or TRUNCATE privilege; history_refuse triggers; Record.delete refused,"test_data_layer: application_cannot_change_or_remove_history, owner_cannot (T-SEC-014), record_is_never_deleted, record_table_is_never_given_delete, application_role_can_make_nothing",ADR-0002,Data Layer Tested; Interface Not Built
+REQ-132,Records,Must,Test; penetration test,Transport and cookie settings; append-only history with hash chain; application role with least privilege. Rest To Be Designed,"test_application: plain_http_is_redirected (T-SEC-008), cookies (T-SEC-003), deployment_checks; test_data_layer: application_role_has_no_special_powers, altered_entry_is_detected",None,Partly Tested: Settings and Data Layer; Penetration Test Not Done
+REQ-133,Records,Must,Inspection: the system has no automatic removal at all in private beta,To Be Designed,None,None,No Test
 REQ-134,Records,Must,Test: export compared with the database for every record type,To Be Designed,None,None,No Test
-REQ-135,Records,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-135,Records,Must,Test,To Be Designed,None,None,No Test
 REQ-136,Records,Must,Test: the build fails,To Be Designed,None,None,No Test
 REQ-137,Records,Must,Boundary tests,"airworthiness_rules.dates.uk_today; airworthiness_plus.settings: USE_TZ, TIME_ZONE","test_golden_review: uk_today; test_application: entry_times, database session",assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
 REQ-138,Records,Must,Test,airworthiness_plus.settings: ATOMIC_REQUESTS,test_application: each_request_is_one_transaction,None,Partly Tested: Setting Only; No Write Path Yet
 REQ-139,Records,Must,"Inspection, Test",To Be Designed,None,None,No Test
 REQ-150,Backup and Recovery,Must,Demonstration; backup logs,To Be Designed,None,None,No Test
-REQ-151,Backup and Recovery,Must,Inspection,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-151,Backup and Recovery,Must,Inspection,To Be Designed,None,None,No Test
 REQ-152,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test
 REQ-153,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test
 REQ-154,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test

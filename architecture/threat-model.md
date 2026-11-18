@@ -13,7 +13,7 @@ Reviewed: 18 November 2026, before any product code. Reviewed again at each step
 | Continuing airworthiness records and their history | A lost or altered record means an aircraft's status cannot be shown (ML.A.305, CAO.A.090) |
 | Calculated due dates and validity dates | A wrong figure can lead to an overrun (hazards H-001, H-010) |
 | Certificates and their serials | A certificate must be traceable and unique (CAP 562 C-90) |
-| Separation between organisations | AMC CAO.A.090, AMC CAMO.A.220 |
+| Separation between organisations | AMC1 CAO.A.100(f) point (d)(2) |
 | Personal data of staff, owners and pilots | UK GDPR |
 | Backups and their encryption key | They contain everything above |
 | The source code, build pipeline and deployment credentials | Whoever controls these controls all of the above |
@@ -71,6 +71,7 @@ Severity uses the hazard log scale: High, Medium, Low.
 | TH-023 | Tampering | Duplicate or reused certificate serial through concurrent requests or after a restore | Medium | Serial from a database sequence inside the issuing transaction, with a uniqueness constraint; restore procedure checks the sequence | REQ-110, REQ-154 | T-SEC-017 concurrent issue gives distinct serials |
 | TH-024 | Elevation of Privilege | Privilege misuse through an administration interface or a support account | High | No vendor write access to customer organisations; Django administration interface not exposed for customer data; database migrations run with a separate user | REQ-004 | T-SEC-018 administration addresses return not found in production settings |
 | TH-025 | Tampering | Someone with database owner access alters data beneath the application | High | Access to the server limited to Alex King by key; hash chain makes alteration detectable; off-server backups allow comparison | REQ-132, REQ-151 | T-SEC-015; operations access review (Step 8) |
+| TH-026 | Tampering | The application's database role, driven through an injection, builds a trigger or table of its own to write history entries that no change to a record produced, or switches a trigger off | High | The role owns nothing and can create no table, temporary table, function or trigger; history accepts an entry only from the trigger on a record; every entry is attributed and chained by the database | REQ-130, REQ-131 | `tests/test_data_layer.py`: application_role_can_make_nothing_of_its_own, application_cannot_change_or_remove_history |
 
 ### Flow 4. Backup
 
@@ -105,6 +106,21 @@ These go beyond ADR-0001 and are adopted here:
 1. Each event carries a hash chained to the previous event of the same record (TH-021, TH-025, TH-081).
 2. The application's storage credentials can add backups but not delete them (TH-041).
 3. Database migrations run under a separate database user from the application (TH-024).
+4. The application works as a database role that owns nothing and can create nothing, and history is written by the database, not the application (TH-021, TH-026). Recorded in `architecture/decisions/ADR-0002-data-layer.md`, added 18 November 2026.
+
+## Tests That Now Exist
+
+Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_application.py`. The rest of the T-SEC tests need endpoints and are created in Step 7.
+
+| Planned Test | Test |
+|---|---|
+| T-SEC-003 | test_application: cookies_are_secure_and_hidden_from_scripts |
+| T-SEC-008 | test_application: plain_http_is_redirected_to_https |
+| T-SEC-013 | test_data_layer: with_no_organisation_set_there_are_no_rows |
+| T-SEC-014 | test_data_layer: application_cannot_change_or_remove_history, owner_of_the_tables_cannot_change_or_remove_history_either |
+| T-SEC-015 | test_data_layer: chain_holds, altered_entry_is_detected, removed_entry_is_detected |
+| T-SEC-016 | test_data_layer: change_with_no_signed_in_user_is_refused, every_change_writes_who_when_what_before_and_after |
+| T-SEC-018 | test_application: administration_interface_is_absent |
 
 ## Not Yet Covered
 
