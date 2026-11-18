@@ -140,7 +140,8 @@ Recorded 18 November 2026, to be settled when the verification level is chosen i
 - A new password is checked for length and against Django's list of common passwords, not against a list of breached passwords (threat TH-001).
 - The first time, the second factor is set up by whoever holds the password. An account's first password must therefore reach its user by a route that is not the system itself.
 - The key is shown as text and as a set-up address, with no code to scan.
-- There is no page yet for a user to change a password or for an Administrator to add a user; both come with the Users page.
+- Closed 18 November 2026: the Users page lets an Administrator add a user, set roles, make a user inactive, set a new first password and reset a second factor; a user changes their own password. A first password is changed before any other page answers (`tests/test_users.py`).
+- An Administrator who resets a second factor and sets a password could then sign in as that user. Both acts are in the access log with the Administrator's name; nothing prevents them. To be weighed in Step 7.
 - The access log holds the network address of each attempt, which is personal data. It goes in the record of processing in Step 8.
 - Behind the reverse proxy the address seen is the proxy's until the proxy's forwarded address is trusted, which is a deployment setting (Step 8).
 - Django's development server reads the migrations table, which the application's database role cannot. The service runs under a WSGI server, to be chosen and added as a dependency before the first deployment.

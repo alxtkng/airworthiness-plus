@@ -119,6 +119,12 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
   - 5 failed attempts for a user name within 15 minutes, counted since the last sign-in, lock that name until 15 minutes after the fifth; wrong codes count as wrong passwords do
   - a session ends when the browser closes, 30 minutes after its last request, 12 hours after sign-in whatever happens, when the user signs out, when the user is made inactive, and when the password changes
   - the page gives the same answer for an unknown name, a wrong password, an inactive user and a locked name; the reason is in the access log
+- Users, decided 18 November 2026 (REQ-005 to REQ-010). Ours:
+  - the Administrator adds a user with a full name, a user name that is an email address, roles and a first password. The first password reaches the person by a route other than the system, and is changed by them before any other page answers
+  - a user name is used once across every organisation. A name that is taken, here or elsewhere, gets the same answer
+  - a user may hold no role, and can then do nothing. An organisation always has an active Administrator: the last one cannot lose the role or be made inactive, and nobody makes themselves inactive
+  - a user who leaves is made inactive, never deleted. Their sessions end at once
+  - a lost password is replaced by the Administrator with a new first password; a lost authenticator is reset by the Administrator, and the user sets a second factor up again at the next sign-in. Both are entered in the access log with who did it. A user changes their own password by giving the current one; their other sessions end
 - Access log, decided 18 November 2026 (REQ-009): every sign-in, failed sign-in, sign-out, second factor set-up and refused action, with the user name, the time from the database clock and the network address. It is added to and never changed. An organisation sees its own entries. A change of role is in the history of the user record instead.
 
 | Action | Administrator | Continuing Airworthiness Manager | Airworthiness Review Staff | Planning and Records | Read Only |
