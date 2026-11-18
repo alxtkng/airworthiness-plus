@@ -30,5 +30,5 @@ Rules for this phase:
 - Every requirement traces to a test. A requirement with no test is a visible gap in `requirements/traceability.csv`.
 - Changes reach `main` only by pull request with passing checks. See `CONTRIBUTING.md`.
 - Vulnerabilities are reported as set out in `SECURITY.md`.
-- No licence has been chosen. Until one is, all rights are reserved by Airworthiness Limited.
+- The code is licensed under the GNU Affero General Public License version 3 only (AGPL-3.0-only), copyright Airworthiness Limited. See `LICENSE`. The sample data, design system and research notes are covered by the same licence unless a file says otherwise. The licence for the open data standard is not yet chosen.
 - Public beta does not start until `assurance/readiness-review.md` is signed off by Alex King.

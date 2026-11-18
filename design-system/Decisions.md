@@ -4,6 +4,7 @@ The running record for Airworthiness+. Read it before any change, and check ever
 
 ## Product
 
+- Licence, decided by Alex King on 18 November 2026: the application code is AGPL-3.0-only, copyright Airworthiness Limited. Reason: a hosted modified version must publish its source, so the code cannot be taken closed; the copyright holder can still license commercially or relax the licence later. Outside contributions wait for a contributor agreement. The licence for the open data standard is not yet decided; the recommendation on record is CC BY 4.0 for its documentation and Apache-2.0 for its schema and tooling (Issue #25).
 - Airworthiness+ is a continuing airworthiness web app for owners, operators, Part-CAO, Part-CAMO and Part-145 organisations and licensed engineers, mainly in the United Kingdom.
 - Vision: open source with an open data standard for the sector, in the way 360Giving connected grant data.
 - Regulation baseline: UK Regulation (EU) No 1321/2014, Civil Aviation Authority edition of September 2026, and UK Regulation (EU) No 748/2012. The European Union Aviation Safety Agency text is a map only; numbers come from the UK text.
