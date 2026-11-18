@@ -95,7 +95,7 @@ Severity uses the hazard log scale: High, Medium, Low.
 
 | Identifier | STRIDE | Threat | Severity | Mitigation | Requirement | Planned Test |
 |---|---|---|---|---|---|---|
-| TH-080 | Information Disclosure | Export of another organisation's aircraft | High | Export runs through the same data-layer scoping; export is a logged event | REQ-003, REQ-134, REQ-009 | T-SEC-010 includes export endpoints |
+| TH-080 | Information Disclosure | Export of another organisation's aircraft | High | Export runs through the same data-layer scoping; export is a logged event, with the SHA-256 of its manifest | REQ-003, REQ-134, REQ-009 | T-SEC-010 includes export endpoints: test_exports: another_organisations_aircraft_cannot_be_exported |
 | TH-081 | Tampering | Exported file altered after export and presented as the record | Medium | Export carries the event hash chain and a checksum, so it can be verified against the system | REQ-134 | T-SEC-019 altered export fails verification |
 | TH-082 | Information Disclosure | Formula injection when a CSV export is opened in a spreadsheet | Low | Cells beginning with =, +, - or @ are neutralised in CSV | REQ-134 | T-SEC-020 |
 
@@ -129,6 +129,8 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 | T-SEC-016 | test_data_layer: change_with_no_signed_in_user_is_refused, every_change_writes_who_when_what_before_and_after |
 | T-SEC-017 | test_reviews: two_certificates_cannot_be_allocated_a_serial_at_the_same_moment, serials_run_in_order_and_a_void_serial_is_never_used_again |
 | T-SEC-018 | test_application: administration_interface_is_absent |
+| T-SEC-019 | test_exports: an_altered_export_fails_verification, the_export_agrees_with_itself_and_with_the_chain_in_the_database, the_command_checks_an_export_without_the_database |
+| T-SEC-020 | test_exports: a_value_that_looks_like_a_formula_is_not_run_by_a_spreadsheet |
 
 ## Known Gaps in Sign-In
 

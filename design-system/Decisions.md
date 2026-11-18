@@ -60,6 +60,13 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Status dots: amber and red only, green only in a Status column.
 - Percentages use the % sign.
 - Day counts are exact: from 18 November to 6 December is 18 days. Amber for due soon, red only when overdue.
+- Records export, decided 18 November 2026 (REQ-134 to REQ-136; hazard H-012; threats TH-080 to TH-082). Ours:
+  - an export is a ZIP file of JSON, with CSV copies for reading in a spreadsheet, and a README that describes every file and how to check it. No software of ours is needed to read it
+  - what the export says of a record is taken from the history: a record is what the last entry of its history says, and every entry is included with its hash. A test compares this with the database for every type of record
+  - an aircraft's export holds the aircraft, its counters and entries, programme, tasks, work done, every directive the organisation records with the decisions and compliance for this aircraft, the maintenance data for its type rating, and its certificates, extensions and reviews. People are given by name only. The organisation's export holds every record and the access log
+  - each export is entered in the access log with the SHA-256 of its manifest, and the Records Export page lists them. A file that has been altered, even with every hash recalculated, has a different manifest SHA-256
+  - the check is a part of the system that uses only the Python standard library, run as `python manage.py verify_export`, with no database
+  - a type of record that is not in the export fails the build
 - Airworthiness review certificates, decided 18 November 2026 (REQ-100 to REQ-116; hazards H-007, H-010, H-013). Ours, except where a source is given:
   - a certificate has one date, its date of issue, and the 90 days of ML.A.903(d) are measured from it
   - a certificate issued by the organisation takes its serial from the database, in order from 1, and its reference is the approval reference, then ARC, then the serial in four digits: UK.CAO.[Number]-ARC-0001. A certificate issued elsewhere keeps the reference it carries. A voided certificate stays, and its serial is not used again. What a certificate says is never altered

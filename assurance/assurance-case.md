@@ -44,7 +44,7 @@ Hazards answered: H-003, H-007, H-008, H-012.
 | C2.3 Records are protected against unauthorised alteration | 145.A.45(e), adopted as a design requirement for Part-CAO | Access control tests; threat model, tampering threats; hash chain tests in `tests/test_data_layer.py` | Partial |
 | C2.4 Certificate serials are allocated by the server, unique and never reused | CAP 562 C-90 expects control of serial numbers for certificates the system generates | Concurrency tests on serial allocation: `tests/test_reviews.py` | Partial |
 | C2.5 Records are kept for the required periods | ML.A.305 and CAO.A.090; staff records CAO.A.045(e) | Retention requirements and tests | Planned |
-| C2.6 A complete aircraft record can be exported at any time in an open format | The owner's records must be transferable; the export also proves nothing is held only in a proprietary form | Export tests comparing export against database content | Planned |
+| C2.6 A complete aircraft record can be exported at any time in an open format | The owner's records must be transferable; the export also proves nothing is held only in a proprietary form | Export tests comparing export against database content for every type of record, and failing the build for a type not exported: `tests/test_exports.py` | Available |
 | C2.7 Migrated data is verified against its source | CAP 562 C-90: up to 100% checking of airworthiness directive and maintenance review data | Migration verification report for each load (Step 9) | Planned |
 
 ## C3. Access Control and Data Segregation
