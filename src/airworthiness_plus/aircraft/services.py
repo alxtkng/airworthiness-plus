@@ -41,6 +41,8 @@ def add_aircraft(
     owner: str,
     regime: Regime = Regime.PART_21,
     serial_number: str = "",
+    manufacturer: str = "",
+    designation: str = "",
     airframe: Reading | None = None,
     records_expected: int | None = None,
     records_received: int = 0,
@@ -57,6 +59,8 @@ def add_aircraft(
         registration=registration,
         type_rating=type_rating,
         serial_number=serial_number,
+        manufacturer=manufacturer,
+        designation=designation,
         owner=owner,
         regime=regime,
         stage=Stage.TRANSFER_IN if transfer else Stage.FLEET,
@@ -121,6 +125,16 @@ def enter_utilisation(
         supersedes=supersedes,
         confirmed_unusual=verdict is Verdict.NEEDS_CONFIRMATION,
     )
+
+
+def record_details(
+    aircraft: Aircraft, *, serial_number: str, manufacturer: str, designation: str
+) -> None:
+    """Record what CAA Form 15c says of the aircraft besides its registration."""
+    aircraft.serial_number = serial_number.strip()
+    aircraft.manufacturer = manufacturer.strip()
+    aircraft.designation = designation.strip()
+    aircraft.save(update_fields=["serial_number", "manufacturer", "designation"])
 
 
 def make_unserviceable(aircraft: Aircraft, reason: str, since: date) -> None:

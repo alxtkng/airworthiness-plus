@@ -74,6 +74,7 @@ def make_sample() -> Sample:
         ours, administrator = provision_organisation(
             name="[Your Organisation]",
             approval_reference="UK.CAO.[Number]",
+            address="[Organisation Address]",
             privileges=list(Privilege),
             scope_of_work=SCOPE,
             first_user_username="accountable.manager@your-organisation.example",

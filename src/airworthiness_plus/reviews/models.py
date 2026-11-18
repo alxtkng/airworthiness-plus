@@ -135,6 +135,8 @@ class Extension(Record):
     extended_on = models.DateField("Extended")
     valid_to = models.DateField("Date of Expiry")
     extended_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    # CAA Form 15c: airframe flight hours at the date of issue of the extension.
+    airframe_hours = models.DecimalField(max_digits=8, decimal_places=1, null=True, blank=True)
     managed_for_12_months = models.BooleanField()
     maintained_by_approved_organisations = models.BooleanField()
     no_evidence_not_airworthy = models.BooleanField()
@@ -154,3 +156,100 @@ class Extension(Record):
                 name="extension_every_condition_confirmed",
             ),
         ]
+
+
+class Result(models.TextChoices):
+    """What the review found on one point."""
+
+    SATISFACTORY = "Satisfactory", "Satisfactory"
+    FINDING = "Finding", "Finding"
+    NOT_APPLICABLE = "Not Applicable", "Not Applicable"
+
+
+class ProgrammeDiscrepancy(models.TextChoices):
+    """ML.A.903(e)(3) and (h): whether the review found the programme deficient.
+
+    Point (h) says the programme may be reviewed with the airworthiness
+    review, not that it must be, so the review can say that it was not.
+    """
+
+    NOT_REVIEWED = "Not Reviewed With This Review", "Not Reviewed With This Review"
+    NONE_FOUND = "None Found", "None Found"
+    ADDRESSED = "Found and Addressed", "Found and Addressed"
+    NOT_ADDRESSED = "Found, Not Yet Addressed", "Found, Not Yet Addressed"
+
+
+class Review(Record):
+    """One airworthiness review of an aircraft: records and physical survey (ML.A.903).
+
+    Once its certificate is issued the review cannot be changed: the
+    database refuses.
+    """
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    aircraft = models.ForeignKey(Aircraft, on_delete=models.PROTECT, related_name="+")
+    staff = models.ForeignKey(ReviewStaff, on_delete=models.PROTECT, related_name="reviews")
+    started_on = models.DateField("Started")
+    # ML.A.903(b): staff not qualified under Part-66 are assisted at the survey.
+    assisted_by = models.CharField("Assisted at the Survey By", max_length=200, blank=True)
+    airframe_hours = models.DecimalField(
+        "Airframe Flight Hours at the Review", max_digits=8, decimal_places=1, null=True, blank=True
+    )
+    programme_discrepancy = models.CharField(
+        "Maintenance Programme", max_length=40, choices=ProgrammeDiscrepancy.choices, blank=True
+    )
+    certificate = models.OneToOneField(
+        Certificate, on_delete=models.PROTECT, null=True, blank=True, related_name="review"
+    )
+
+    class Meta:
+        ordering = ["started_on"]
+
+
+class ReviewItem(Record):
+    """One point of a review, with its result, the evidence sampled and any finding (REQ-107)."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    review = models.ForeignKey(Review, on_delete=models.PROTECT, related_name="items")
+    position = models.PositiveSmallIntegerField()
+    reference = models.CharField(max_length=20)
+    part = models.CharField(max_length=40)
+    label = models.CharField(max_length=200)
+    may_not_apply = models.BooleanField(default=False)
+    result = models.CharField("Result", max_length=20, choices=Result.choices, blank=True)
+    evidence = models.CharField("Evidence Sampled", max_length=300, blank=True)
+    finding = models.CharField("Finding", max_length=300, blank=True)
+    closure = models.CharField("How It Was Closed", max_length=300, blank=True)
+    closed_on = models.DateField("Closed", null=True, blank=True)
+
+    class Meta:
+        ordering = ["position"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["review", "position"], name="reviewitem_one_for_each_point"
+            ),
+            # A result comes with the evidence sampled.
+            models.CheckConstraint(
+                condition=Q(result="") | (Q(result__in=Result.values) & ~Q(evidence="")),
+                name="reviewitem_result_has_its_evidence",
+            ),
+            models.CheckConstraint(
+                condition=~Q(result=Result.NOT_APPLICABLE) | Q(may_not_apply=True),
+                name="reviewitem_not_applicable_only_where_the_regulation_allows",
+            ),
+            models.CheckConstraint(
+                condition=(Q(result=Result.FINDING) & ~Q(finding=""))
+                | (~Q(result=Result.FINDING) & Q(finding="", closure="", closed_on__isnull=True)),
+                name="reviewitem_finding_is_described",
+            ),
+            models.CheckConstraint(
+                condition=Q(closure="", closed_on__isnull=True)
+                | (~Q(closure="") & Q(closed_on__isnull=False)),
+                name="reviewitem_closure_has_its_date",
+            ),
+        ]
+
+    @property
+    def open_finding(self) -> bool:
+        """Return whether the point has a finding that is not yet closed."""
+        return self.result == Result.FINDING and self.closed_on is None

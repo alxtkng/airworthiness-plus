@@ -14,20 +14,31 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from airworthiness_plus.accounts.models import User
-from airworthiness_plus.accounts.permissions import requires
+from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.reviews import services
 from airworthiness_plus.reviews.forms import (
     CertificateForm,
+    ClosureForm,
     CopySentForm,
+    DetailsForm,
     ExtensionForm,
     InvolvementForm,
+    ItemForm,
     RestorationForm,
     ReviewStaffForm,
+    VoidForm,
 )
-from airworthiness_plus.reviews.models import Certificate, Extension, ReviewStaff
+from airworthiness_plus.reviews.models import (
+    Certificate,
+    Extension,
+    Result,
+    Review,
+    ReviewItem,
+    ReviewStaff,
+)
 
 
 def _user(request: HttpRequest) -> User:
@@ -59,6 +70,7 @@ def _aircraft_page(
                 (certificate, list(certificate.extensions.select_related("extended_by")))
                 for certificate in services.certificates(aircraft)
             ],
+            "reviews": Review.objects.filter(aircraft=aircraft).select_related("staff__user"),
             "certificate_form": form,
             "extension_form": ExtensionForm(),
             "copy_form": CopySentForm(),
@@ -216,3 +228,178 @@ def record_restoration(request: HttpRequest, staff_id: uuid.UUID) -> HttpRespons
         else:
             return redirect("review_staff")
     return _staff_page(request, ReviewStaffForm(), message)
+
+
+# The review itself
+
+
+def _own_review(request: HttpRequest, review: Review, action: Action) -> None:
+    """Refuse anyone but the member of review staff carrying out this review.
+
+    ML.A.903(e)(1) and (g): the review is carried out and its certificate
+    issued by the authorised review staff, and is not passed to another.
+    The refusal is entered in the access log.
+    """
+    if review.staff.user_id != _user(request).id:
+        raise ActionRefusedError(action)
+
+
+def _review_page(request: HttpRequest, review: Review, message: str = "") -> HttpResponse:
+    today = aircraft_services.today()
+    return render(
+        request,
+        "reviews/review.html",
+        {
+            "review": review,
+            "aircraft": review.aircraft,
+            "items": list(review.items.all()),
+            "outstanding": services.outstanding(review, today) if not review.certificate else [],
+            "item_form": ItemForm(),
+            "closure_form": ClosureForm(),
+            "details_form": DetailsForm(
+                initial={
+                    "assisted_by": review.assisted_by,
+                    "airframe_hours": review.airframe_hours,
+                    "programme_discrepancy": review.programme_discrepancy,
+                }
+            ),
+            "message": message,
+        },
+    )
+
+
+@requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+@require_POST
+def start_review(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """Start a review of an aircraft, as the signed-in member of review staff."""
+    aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
+    staff = ReviewStaff.objects.filter(user=_user(request), left_on__isnull=True).first()
+    if staff is None:
+        raise ActionRefusedError(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+    review = services.start_review(aircraft, staff=staff)
+    return redirect("review", review_id=review.id)
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def review_page(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
+    """One review: every point of ML.A.903, its result, evidence and findings (REQ-107, REQ-108)."""
+    return _review_page(request, get_object_or_404(Review, pk=review_id))
+
+
+@requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+@require_POST
+def record_item(request: HttpRequest, item_id: uuid.UUID) -> HttpResponse:
+    """Record the result of one point."""
+    item = get_object_or_404(ReviewItem, pk=item_id)
+    _own_review(request, item.review, Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+    form = ItemForm(request.POST)
+    message = "Give a Result and the Evidence Sampled"
+    if form.is_valid():
+        data = form.cleaned_data
+        try:
+            services.record_item(
+                item,
+                result=Result(data["result"]),
+                evidence=data["evidence"],
+                finding=data["finding"],
+            )
+        except services.RefusedError as error:
+            message = str(error)
+        else:
+            return redirect("review", review_id=item.review_id)
+    return _review_page(request, item.review, message)
+
+
+@requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+@require_POST
+def close_finding(request: HttpRequest, item_id: uuid.UUID) -> HttpResponse:
+    """Record how a finding was closed."""
+    item = get_object_or_404(ReviewItem, pk=item_id)
+    _own_review(request, item.review, Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+    form = ClosureForm(request.POST)
+    message = "Say How the Finding Was Closed"
+    if form.is_valid():
+        try:
+            services.close_finding(item, closure=form.cleaned_data["closure"])
+        except services.RefusedError as error:
+            message = str(error)
+        else:
+            return redirect("review", review_id=item.review_id)
+    return _review_page(request, item.review, message)
+
+
+@requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+@require_POST
+def review_details(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
+    """Record who assisted at the survey, the airframe hours and the state of the programme."""
+    review = get_object_or_404(Review, pk=review_id)
+    _own_review(request, review, Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+    form = DetailsForm(request.POST)
+    message = ""
+    if form.is_valid():
+        try:
+            services.record_details(review, **form.cleaned_data)
+        except services.RefusedError as error:
+            message = str(error)
+        else:
+            return redirect("review", review_id=review.id)
+    return _review_page(request, review, message)
+
+
+@requires(Action.ISSUE_AIRWORTHINESS_REVIEW_CERTIFICATE)
+@require_POST
+def issue(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
+    """Issue the certificate for a completed review (REQ-109, REQ-110).
+
+    Whether the person may issue is decided here, on the server, at the
+    moment of issue (threat TH-009). A lapse found now is recorded even
+    though the issue is refused.
+    """
+    review = get_object_or_404(Review, pk=review_id)
+    _own_review(request, review, Action.ISSUE_AIRWORTHINESS_REVIEW_CERTIFICATE)
+    services.note_lapse(review.staff, aircraft_services.today())
+    try:
+        certificate = services.issue_from_review(review)
+    except services.RefusedError as error:
+        return _review_page(request, review, str(error))
+    return redirect("certificate", certificate_id=certificate.id)
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def certificate_page(request: HttpRequest, certificate_id: uuid.UUID) -> HttpResponse:
+    """One certificate, with the entries of CAA Form 15c (REQ-110)."""
+    certificate = get_object_or_404(Certificate, pk=certificate_id)
+    organisation = certificate.aircraft.organisation
+    issued_by = ", ".join(
+        part
+        for part in (organisation.name, organisation.address, organisation.approval_reference)
+        if part
+    )
+    return render(
+        request,
+        "reviews/certificate.html",
+        {
+            "certificate": certificate,
+            "issued_by": issued_by,
+            "aircraft": certificate.aircraft,
+            "extensions": list(certificate.extensions.select_related("extended_by")),
+            "review": Review.objects.filter(certificate=certificate).first(),
+            "void_form": VoidForm(),
+        },
+    )
+
+
+@requires(Action.ISSUE_AIRWORTHINESS_REVIEW_CERTIFICATE)
+@require_POST
+def void(request: HttpRequest, certificate_id: uuid.UUID) -> HttpResponse:
+    """Void a certificate. It stays in the record and its serial is not used again."""
+    certificate = get_object_or_404(Certificate, pk=certificate_id)
+    form = VoidForm(request.POST)
+    if form.is_valid():
+        try:
+            services.void_certificate(certificate, form.cleaned_data["reason"])
+        except services.RefusedError:
+            pass
+    return redirect("certificate", certificate_id=certificate.id)

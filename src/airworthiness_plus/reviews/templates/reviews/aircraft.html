@@ -19,7 +19,7 @@
 <tbody>
 {% for certificate, extensions in certificates %}
 <tr>
-<td>{{ certificate.reference }}</td>
+<td><a href="{% url 'certificate' certificate.id %}">{{ certificate.reference }}</a></td>
 <td>{% if certificate.issued_by %}{{ certificate.issued_by.user.full_name }}, {{ certificate.issued_by.authorisation_reference }}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
 <td>{{ certificate.issued_on|long_date }}</td>
 <td>{{ certificate.valid_to|long_date }}</td>
@@ -49,6 +49,13 @@
 {% endfor %}<p><button type="submit">Extend by 1 Year</button></p>
 </form>
 {% endif %}
+<h2>Review {{ aircraft.registration }}</h2>
+{% for review in reviews %}<p><a href="{% url 'review' review.id %}">Review Started {{ review.started_on|long_date }} by {{ review.staff.user.full_name }}{% if review.certificate %}, {{ review.certificate.reference }}{% else %}, in Progress{% endif %}</a></p>
+{% endfor %}
+<form method="post" action="{% url 'start_review' aircraft.id %}">
+{% csrf_token %}
+<button type="submit">Start an Airworthiness Review of {{ aircraft.registration }}</button>
+</form>
 <h2>Record a Certificate Issued Elsewhere for {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'record_certificate' aircraft.id %}">
 {% csrf_token %}

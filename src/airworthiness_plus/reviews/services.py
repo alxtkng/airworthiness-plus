@@ -8,10 +8,19 @@ from django.db import transaction
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.aircraft.models import Aircraft, Stage
+from airworthiness_plus.aircraft.models import Aircraft, CounterKind, Stage
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due
-from airworthiness_plus.reviews.models import Certificate, Extension, ReviewStaff
+from airworthiness_plus.reviews.checklist import CHECKLIST, SURVEY
+from airworthiness_plus.reviews.models import (
+    Certificate,
+    Extension,
+    ProgrammeDiscrepancy,
+    Result,
+    Review,
+    ReviewItem,
+    ReviewStaff,
+)
 from airworthiness_rules.dates import days_between
 from airworthiness_rules.intervals import Limit, Unit
 from airworthiness_rules.programme import Flag, deadline_flag, limit_flag
@@ -348,12 +357,15 @@ def extend_certificate(
         expiry = valid_to_after_extension(on, valid_to(certificate), certificate.extensions.count())
     except ExtensionNotPermittedError as error:
         raise RefusedError(str(error)) from error
+    airframe = certificate.aircraft.counters.filter(kind=CounterKind.AIRFRAME).first()
+    reading = aircraft_services.current_reading(airframe) if airframe is not None else None
     return Extension.objects.create(
         organisation_id=certificate.organisation_id,
         certificate=certificate,
         extended_on=on,
         valid_to=expiry,
         extended_by=extended_by,
+        airframe_hours=reading.hours if reading is not None else None,
         managed_for_12_months=True,
         maintained_by_approved_organisations=True,
         no_evidence_not_airworthy=True,
@@ -442,3 +454,156 @@ def schedule(organisation: Organisation, today: date) -> list[ScheduleLine]:
     del organisation
     lines = [schedule_line(a, today) for a in Aircraft.objects.filter(stage=Stage.FLEET)]
     return sorted(lines, key=lambda line: (line.days is not None, line.days or 0))
+
+
+# The review itself
+
+
+@transaction.atomic
+def start_review(
+    aircraft: Aircraft, *, staff: ReviewStaff, started_on: date | None = None
+) -> Review:
+    """Start a review, with every point of ML.A.903(a) and (c) to be verified (REQ-107, REQ-108)."""
+    on = started_on or aircraft_services.today()
+    if on > aircraft_services.today():
+        raise RefusedError("A Review Cannot Be Started After Today")
+    if staff.organisation_id != aircraft.organisation_id:
+        raise RefusedError("Review Staff Belong to Another Organisation")
+    review = Review.objects.create(
+        organisation_id=aircraft.organisation_id, aircraft=aircraft, staff=staff, started_on=on
+    )
+    ReviewItem.objects.bulk_create(
+        ReviewItem(
+            organisation_id=aircraft.organisation_id,
+            review=review,
+            position=position,
+            reference=point.reference,
+            part=point.part,
+            label=point.label,
+            may_not_apply=point.may_not_apply,
+        )
+        for position, point in enumerate(CHECKLIST, start=1)
+    )
+    return review
+
+
+def _open(review: Review) -> None:
+    if review.certificate_id is not None:
+        raise RefusedError("A Review Is Never Altered Once Its Certificate Is Issued")
+
+
+def record_item(item: ReviewItem, *, result: Result, evidence: str, finding: str = "") -> None:
+    """Record the result of one point, with the evidence sampled and any finding (REQ-107)."""
+    _open(item.review)
+    if not evidence.strip():
+        raise RefusedError("A Result Comes With the Evidence Sampled")
+    if result == Result.NOT_APPLICABLE and not item.may_not_apply:
+        raise RefusedError("This Point Applies to Every Aircraft")
+    if result == Result.FINDING and not finding.strip():
+        raise RefusedError("A Finding Is Described")
+    item.result = result
+    item.evidence = evidence.strip()
+    item.finding = finding.strip() if result == Result.FINDING else ""
+    item.closure = ""
+    item.closed_on = None
+    item.save(update_fields=["result", "evidence", "finding", "closure", "closed_on"])
+
+
+def close_finding(item: ReviewItem, *, closure: str, on: date | None = None) -> None:
+    """Record how a finding was closed, and when (REQ-109, ML.A.903(e)(2))."""
+    _open(item.review)
+    closed = on or aircraft_services.today()
+    if item.result != Result.FINDING:
+        raise RefusedError("Only a Finding Is Closed")
+    if not closure.strip():
+        raise RefusedError("A Closure Says How the Finding Was Closed")
+    if closed > aircraft_services.today() or closed < item.review.started_on:
+        raise RefusedError("A Finding Is Closed During the Review, and Not After Today")
+    item.closure = closure.strip()
+    item.closed_on = closed
+    item.save(update_fields=["closure", "closed_on"])
+
+
+def record_details(
+    review: Review,
+    *,
+    assisted_by: str,
+    airframe_hours: Decimal | None,
+    programme_discrepancy: str,
+) -> None:
+    """Record who assisted at the survey, the airframe hours, and the state of the programme."""
+    _open(review)
+    review.assisted_by = assisted_by.strip()
+    review.airframe_hours = airframe_hours
+    review.programme_discrepancy = programme_discrepancy
+    review.save(update_fields=["assisted_by", "airframe_hours", "programme_discrepancy"])
+
+
+def outstanding(review: Review, today: date) -> list[str]:
+    """Return everything that stands between the review and its certificate (REQ-109).
+
+    ML.A.903(e): issued only by appropriately authorised review staff,
+    when the review has been completely carried out and all findings are
+    closed, and when any discrepancy found in the programme has been
+    addressed. ML.A.903(b): staff not qualified under Part-66 are assisted
+    at the survey. An empty list means the certificate may be issued.
+    """
+    reasons = []
+    items = list(review.items.all())
+    unanswered = [item.reference for item in items if not item.result]
+    if unanswered:
+        reasons.append("No Result Yet for " + ", ".join(unanswered))
+    open_findings = [item.reference for item in items if item.open_finding]
+    if open_findings:
+        reasons.append("Finding Not Closed on " + ", ".join(open_findings))
+    survey_done = any(item.part == SURVEY and item.result for item in items)
+    if survey_done and not review.staff.part_66_qualified and not review.assisted_by:
+        reasons.append("ML.A.903(b): Name Who Assisted at the Survey")
+    if review.airframe_hours is None:
+        reasons.append("Airframe Flight Hours at the Review Not Entered")
+    missing = [
+        label
+        for label, value in (
+            ("Aircraft Manufacturer", review.aircraft.manufacturer),
+            (
+                "Manufacturer\N{RIGHT SINGLE QUOTATION MARK}s Designation",
+                review.aircraft.designation,
+            ),
+            ("Aircraft Serial Number", review.aircraft.serial_number),
+        )
+        if not value
+    ]
+    if missing:
+        reasons.append("CAA Form 15c: Not Entered for the Aircraft, " + ", ".join(missing))
+    if not review.aircraft.organisation.address:
+        reasons.append("CAA Form 15c: The Address of the Organisation Is Not Entered")
+    if not review.programme_discrepancy:
+        reasons.append(
+            "ML.A.903(e)(3): State Whether a Discrepancy Was Found in the Maintenance Programme"
+        )
+    elif review.programme_discrepancy == ProgrammeDiscrepancy.NOT_ADDRESSED:
+        reasons.append("ML.A.903(e)(3): The Maintenance Programme Discrepancy Is Not Yet Addressed")
+    if not may_issue(review.staff, today):
+        reasons.append("CAO.A.045(c): The Review Staff Member Does Not Have Recent Experience")
+    return reasons
+
+
+@transaction.atomic
+def issue_from_review(review: Review) -> Certificate:
+    """Issue the certificate for a completed review (REQ-109, REQ-110).
+
+    The review is locked first, so that two requests at the same moment
+    cannot each issue a certificate for it.
+    """
+    review = Review.objects.select_for_update().get(pk=review.pk)
+    _open(review)
+    today = aircraft_services.today()
+    reasons = outstanding(review, today)
+    if reasons:
+        raise RefusedError("; ".join(reasons))
+    certificate = issue_certificate(
+        review.aircraft, staff=review.staff, issued_on=today, airframe_hours=review.airframe_hours
+    )
+    review.certificate = certificate
+    review.save(update_fields=["certificate"])
+    return certificate

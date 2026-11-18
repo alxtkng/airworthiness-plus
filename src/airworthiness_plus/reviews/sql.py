@@ -69,3 +69,42 @@ DROP FUNCTION reviews_certificate_fixed();
 DROP FUNCTION reviews_certificate_before_insert();
 DROP FUNCTION reviews_allocate_serial(uuid);
 """
+
+# A review is a record of what was verified. Once its certificate is issued,
+# neither the review nor any point of it can be changed (REQ-107, REQ-109).
+CREATE_REVIEW_FIXED = """
+CREATE FUNCTION reviews_review_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF OLD.certificate_id IS NOT NULL THEN
+        RAISE EXCEPTION 'A review is never altered once its certificate is issued'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE FUNCTION reviews_reviewitem_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM reviews_review
+                WHERE id = NEW.review_id AND certificate_id IS NOT NULL) THEN
+        RAISE EXCEPTION 'A review is never altered once its certificate is issued'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER review_fixed BEFORE UPDATE ON reviews_review
+    FOR EACH ROW EXECUTE FUNCTION reviews_review_fixed();
+CREATE TRIGGER reviewitem_fixed BEFORE INSERT OR UPDATE ON reviews_reviewitem
+    FOR EACH ROW EXECUTE FUNCTION reviews_reviewitem_fixed();
+"""
+
+DROP_REVIEW_FIXED = """
+DROP TRIGGER reviewitem_fixed ON reviews_reviewitem;
+DROP TRIGGER review_fixed ON reviews_review;
+DROP FUNCTION reviews_reviewitem_fixed();
+DROP FUNCTION reviews_review_fixed();
+"""

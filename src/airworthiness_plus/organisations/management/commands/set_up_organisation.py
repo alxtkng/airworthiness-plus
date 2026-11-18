@@ -28,6 +28,7 @@ class Command(BaseCommand):
         """Ask for the details, then create the organisation."""
         name = input("Organisation Name: ").strip()
         reference = input("Approval Reference: ").strip()
+        address = input("Address: ").strip()
         scope = input("Scope of Work: ").strip()
         privileges = [
             privilege
@@ -43,6 +44,7 @@ class Command(BaseCommand):
             organisation, user = provision_organisation(
                 name=name,
                 approval_reference=reference,
+                address=address,
                 privileges=privileges,
                 scope_of_work=scope,
                 first_user_username=username,
