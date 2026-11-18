@@ -198,6 +198,11 @@ def log_signed_out(user: User, address: str | None = None) -> None:
     _log(AccessKind.SIGNED_OUT, user.username, user=user, address=address)
 
 
+def log_records_exported(user: User, detail: str, address: str | None = None) -> None:
+    """Enter an export of records in the access log (threat TH-080)."""
+    _log(AccessKind.RECORDS_EXPORTED, user.username, user=user, detail=detail, address=address)
+
+
 def log_action_refused(user: User, action: str, address: str | None = None) -> None:
     """Enter a refused action in the access log (REQ-009)."""
     _log(AccessKind.ACTION_REFUSED, user.username, user=user, detail=action, address=address)

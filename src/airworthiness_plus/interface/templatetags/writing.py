@@ -4,7 +4,7 @@ A value that is missing is written as nothing. A template passes an empty
 string, not None, for a value that is not there.
 """
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from django import template
@@ -19,6 +19,12 @@ register = template.Library()
 def long_date(value: object) -> str:
     """Write a date as 18 November 2026, or nothing if there is none."""
     return formatting.long_date(value) if isinstance(value, date) else ""
+
+
+@register.filter
+def moment(value: object) -> str:
+    """Write a time in United Kingdom time, or nothing if there is none."""
+    return formatting.moment(value) if isinstance(value, datetime) else ""
 
 
 @register.filter

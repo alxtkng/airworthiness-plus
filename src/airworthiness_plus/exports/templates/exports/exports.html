@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Records Export{% endblock %}
+{% block content %}
+<h1>Records Export</h1>
+<p>An export is a ZIP file of JSON and CSV with the full history of every record. The README inside it says how to check it.</p>
+<h2>Export the Record of an Aircraft</h2>
+<table>
+<thead><tr><th>Aircraft Registration</th><th>Type Rating</th><th>Export</th></tr></thead>
+<tbody>
+{% for one in aircraft %}
+<tr>
+<td><a href="{% url 'aircraft' one.id %}">{{ one.registration }}</a></td>
+<td>{{ one.type_rating }}</td>
+<td><form method="post" action="{% url 'export_aircraft' one.id %}">{% csrf_token %}<button type="submit">Export the Record of {{ one.registration }}</button></form></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<h2>Export the Record of {{ organisation.name }}</h2>
+<form method="post" action="{% url 'export_organisation' %}">
+{% csrf_token %}
+<button type="submit">Export the Record of {{ organisation.name }}</button>
+</form>
+<h2>Exports Made</h2>
+<table>
+<thead><tr><th>When</th><th>By</th><th>Export and the SHA-256 of Its Manifest</th></tr></thead>
+<tbody>
+{% for entry in made %}
+<tr>
+<td>{{ entry.at|moment }}</td>
+<td>{{ entry.user.full_name }}</td>
+<td>{{ entry.detail }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}
