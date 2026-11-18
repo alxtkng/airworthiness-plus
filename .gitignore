@@ -37,3 +37,6 @@ backups/
 # Pipeline output
 requirements-audit.txt
 sbom.cdx.json
+
+# Static files gathered by collectstatic
+static-collected/

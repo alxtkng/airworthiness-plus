@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
+    "django.contrib.staticfiles",
     "airworthiness_plus.history",
     "airworthiness_plus.organisations",
     "airworthiness_plus.accounts",
@@ -42,6 +43,7 @@ LOGIN_URL = "sign_in"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "airworthiness_plus.accounts.middleware.OrganisationContextMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -89,6 +91,13 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# The stylesheet, the script and the font files are served by the application
+# itself, so a page asks nothing of any other site (threat TH-005). They are
+# gathered into STATIC_ROOT by ``manage.py collectstatic`` when the service is
+# built, and served from there by WhiteNoise.
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR.parent.parent / "static-collected"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
