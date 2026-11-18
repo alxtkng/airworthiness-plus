@@ -91,11 +91,11 @@ REQ-153,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test
 REQ-154,Backup and Recovery,Must,Demonstration,To Be Designed,None,None,No Test
 REQ-170,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test
 REQ-171,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test
-REQ-172,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test
-REQ-173,CAA Acceptance,Should,Test,To Be Designed,None,None,No Test
-REQ-174,CAA Acceptance,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-172,CAA Acceptance,Must,Test,"airworthiness_plus.acceptance: Problem, ProblemNote (insert only); services.add_problem, add_note, problem_log","test_acceptance: an_entry_records_the_problem_the_action_and_the_solution_with_dates_and_people, entries_that_are_not_solved_come_first, an_entry_and_its_notes_cannot_be_changed_or_removed",None,Tested
+REQ-173,CAA Acceptance,Should,Test,airworthiness_rules.acceptance; Organisation.parallel_run_started_on; acceptance.services.parallel_run,test_golden_acceptance; test_acceptance: the_parallel_run_shows_when_six_months_have_passed,Month arithmetic verified in assurance/independent-verification/review-and-dates.md,Tested
+REQ-174,CAA Acceptance,Must,Test,"Organisation.records_approval_reference, records_approval_dated; acceptance.services.record_approval",test_acceptance: the_written_approval_is_recorded_with_its_reference_and_date,None,Tested
 REQ-175,CAA Acceptance,Must,Inspection,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-176,CAA Acceptance,Should,Inspection,To Be Designed,None,None,No Test
+REQ-176,CAA Acceptance,Should,Inspection,"CONTRIBUTING.md, Changes to What the System Does; architecture/decisions",None,CONTRIBUTING.md,Procedure Written; Inspected at the Readiness Review
 REQ-190,Interface,Must,Inspection; automated check of interface strings,To Be Designed,None,None,No Test
 REQ-191,Interface,Must,Inspection,To Be Designed,test_aircraft: fleet_page_shows_the_sample_fleet,None,Tested for the Fleet; Inspection To Come With the Interface
 REQ-192,Interface,Must,Test,airworthiness_plus.interface.formatting; template filters,"test_aircraft: dates_and_numbers_are_written_as_the_writing_rules_say, fleet_page_shows_the_sample_fleet",None,Tested

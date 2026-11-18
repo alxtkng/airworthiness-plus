@@ -60,6 +60,11 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Status dots: amber and red only, green only in a Status column.
 - Percentages use the % sign.
 - Day counts are exact: from 18 November to 6 December is 18 days. Amber for due soon, red only when overdue.
+- Acceptance records, decided 18 November 2026 (REQ-172 to REQ-174, REQ-176). Ours:
+  - the problem log is a list of entries. An entry is the problem, who raised it and the day. The action, the solution and any later note are each added to it with the person and the day; nothing is changed or removed, and the application has no permission to do either. An entry is Open, then Action Taken, then Solved once a solution is added; entries not solved come first
+  - dates in the problem log are the day the entry or note is added. Nothing is back-dated
+  - the Organisation page shows the organisation record, the reference and date of the written approval to keep records in the system, and the day the parallel run began with the day its 6 months pass: the same day of the month 6 months later, or the last day of that month if it is shorter. The Administrator records both
+  - a change that extends the system into a new function regulated by the Civil Aviation Authority is recorded as an architecture decision before it is released, so that the organisation can tell the authority (`CONTRIBUTING.md`)
 - Records export, decided 18 November 2026 (REQ-134 to REQ-136; hazard H-012; threats TH-080 to TH-082). Ours:
   - an export is a ZIP file of JSON, with CSV copies for reading in a spreadsheet, and a README that describes every file and how to check it. No software of ours is needed to read it
   - what the export says of a record is taken from the history: a record is what the last entry of its history says, and every entry is included with its hash. A test compares this with the database for every type of record
