@@ -33,3 +33,7 @@ coverage/
 *.dump
 *.sql.gz
 backups/
+
+# Pipeline output
+requirements-audit.txt
+sbom.cdx.json
