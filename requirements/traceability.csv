@@ -4,10 +4,10 @@ REQ-002,Organisation and Access,Must,Test,Row-level security on every table; air
 REQ-003,Organisation and Access,Must,Test: every endpoint tried against another organisation's records,Row-level security keyed to the session organisation; airworthiness_plus.history.session.working_for,"test_data_layer: no_organisation_set (T-SEC-013), sees_only_its_own, session_settings_end_with_the_transaction",ADR-0002,Data Layer Tested; No Endpoint Yet
 REQ-004,Organisation and Access,Must,Test,Row-level security WITH CHECK; no INSERT on organisations for the application role; no administration interface,"test_data_layer: cannot_change_another_organisations_records, cannot_create_an_organisation, change_by_a_user_of_another_organisation; test_application: administration_interface_is_absent (T-SEC-018)",ADR-0002,Data Layer Tested; No Endpoint Yet
 REQ-005,Organisation and Access,Must,"Test, Inspection",airworthiness_plus.accounts.models.User: unique user name. Rest To Be Designed,test_data_layer: one_account_for_each_person,None,Partly Tested: Unique User Name; Source To Be Checked
-REQ-006,Organisation and Access,Must,Test: every action against every role,To Be Designed,None,None,No Test
-REQ-007,Organisation and Access,Must,Inspection,To Be Designed,None,None,No Test
+REQ-006,Organisation and Access,Must,Test: every action against every role,"airworthiness_plus.accounts.roles: MATRIX, permitted; User.may","test_roles: every_action_against_every_role (95 cells), record_and_the_code, no_role_and_an_unknown_role, inactive_user, role_that_is_not_in_the_matrix","design-system/Decisions.md, Roles and Permissions",Matrix Tested; Not Yet Enforced at Any Endpoint
+REQ-007,Organisation and Access,Must,Inspection,airworthiness_plus.accounts.roles.Role; User.roles,"test_roles: record_and_the_code, read_only, administrator, only_airworthiness_review_staff, two_roles, first_user","design-system/Decisions.md, Roles and Permissions",Matrix Recorded and Tested; One Reading To Be Confirmed
 REQ-008,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
-REQ-009,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
+REQ-009,Organisation and Access,Must,Test,Change of role: history_event. Sign-in and refused actions To Be Designed,test_roles: change_of_role_is_in_the_history,None,Partly Tested: Change of Role Only
 REQ-010,Organisation and Access,Must,Test,airworthiness_plus.accounts.models.User.is_active; history keeps the name,test_data_layer: user_who_has_left_is_kept,ADR-0002,Data Layer Tested; Interface Not Built
 REQ-020,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-021,Aircraft,Must,Test: stored value equals source value byte for byte,To Be Designed,None,None,No Test

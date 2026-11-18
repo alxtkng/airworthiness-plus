@@ -1,10 +1,13 @@
-"""The user record (REQ-005, REQ-010)."""
+"""The user record (REQ-005, REQ-006, REQ-007, REQ-010)."""
 
 from typing import Any, ClassVar
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.models import Q
 
+from airworthiness_plus.accounts.roles import Action, Role, permitted
 from airworthiness_plus.history.models import Record, RecordQuerySet
 from airworthiness_plus.organisations.models import Organisation
 
@@ -41,11 +44,28 @@ class User(Record, AbstractBaseUser):
     username = models.CharField(max_length=254, unique=True)
     full_name = models.CharField(max_length=200)
     is_active = models.BooleanField(default=True)
+    roles = ArrayField(models.CharField(max_length=40, choices=Role.choices), default=list)
 
     objects: ClassVar[UserManager] = UserManager()
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["full_name"]
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(roles__contained_by=list(Role.values)),
+                name="user_has_known_roles",
+            ),
+        ]
+
     def __str__(self) -> str:
         return self.full_name
+
+    def may(self, action: Action) -> bool:
+        """Return whether this user may take ``action`` (REQ-006).
+
+        An inactive user may do nothing. Otherwise any role the user holds
+        that permits the action is enough.
+        """
+        return self.is_active and permitted(self.roles, action)
