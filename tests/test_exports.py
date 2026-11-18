@@ -21,6 +21,8 @@ from django.db import connection
 from django.http import HttpResponse
 from django.test import Client
 
+from airworthiness_plus.acceptance import services as acceptance_services
+from airworthiness_plus.acceptance.models import NoteKind
 from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.accounts.roles import Action, permitted
 from airworthiness_plus.aircraft import services as aircraft_services
@@ -123,6 +125,12 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             next_due=date(2027, 2, 1),
         )
         User.objects.filter(pk=sample.reviewer.pk).update(second_factor_secret=KEY)
+        problem = acceptance_services.add_problem(
+            organisation=sample.ours, raised_by=sample.lucy, problem="[Problem]"
+        )
+        acceptance_services.add_note(
+            problem, kind=NoteKind.SOLUTION, text="[Solution]", noted_by=sample.lucy
+        )
     with working_for(sample.ours.id, sample.reviewer.id):
         review = review_services.start_review(ejkl, staff=reviews.reviewer)
     with working_for(sample.ours.id, sample.lucy.id):
