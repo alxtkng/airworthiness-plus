@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Section Tabs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+</style>
+</helmet>
+<nav aria-label="{{label}}" style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; margin-top: {{gap}}; display: flex; flex-wrap: wrap; column-gap: 4px; row-gap: 4px; box-shadow: {{rule}}">
+  <sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+    <a href="{{tab.href}}" aria-current="{{tab.current}}" style="display: inline-flex; align-items: center; height: 44px; padding: 0 12px; font-size: 14px; line-height: 20px; font-weight: {{tab.weight}}; color: {{tab.colour}}; box-shadow: {{tab.bar}}">{{tab.label}}</a>
+  </sc-for>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"set":{"editor":"enum","options":["aircraft","defects","config","parts","goodsin","stores","planning","tools","people","enquiries","staff","auth","licence","settings"],"default":"planning"},"active":{"editor":"text","default":"plan"},"line":{"editor":"boolean","default":true},"dark":{"editor":"boolean","default":false},"$preview":{"width":960,"height":64}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { text: '#EDEDED', muted: '#A1A1A1', border: '#2E2E2E' }
+      : { text: '#171717', muted: '#666666', border: '#EBEBEB' };
+    const sets = {
+      aircraft: { label: 'Aircraft views', tabs: [
+        ['fleet', 'All Aircraft', 'Fleet.dc.html'],
+        ['reviews', 'Airworthiness Reviews', 'Reviews.dc.html'],
+        ['transfers', 'Transfers', 'Transfers.dc.html']
+      ] },
+      defects: { label: 'Defects views', tabs: [
+        ['defects', 'Open and Deferred', 'Defects.dc.html'],
+        ['reliability', 'Repeat Defects', 'Reliability.dc.html']
+      ] },
+      config: { label: 'Aircraft configuration views', tabs: [
+        ['components', 'Components and Life Limits', 'Components.dc.html'],
+        ['directives', 'Airworthiness Directives', 'Directives.dc.html'],
+        ['mods', 'Modifications and Repairs', 'Mods.dc.html'],
+        ['weighing', 'Weight and Balance', 'Weighing.dc.html']
+      ] },
+      goodsin: { label: 'Goods in views', tabs: [
+        ['received', 'Receiving Inspection', 'PartsReceived.dc.html']
+      ] },
+      stores: { label: 'Stores views', tabs: [
+        ['stores', 'Stock', 'Stores.dc.html'],
+        ['quarantine', 'Quarantine and Scrap', 'Quarantine.dc.html']
+      ] },
+      planning: { label: 'Manhours and capacity views', tabs: [
+        ['plan', 'Manhour Plan', 'Plan.dc.html'],
+        ['load', 'Load and Capacity', 'Load.dc.html'],
+        ['roster', 'Staff Roster', 'Roster.dc.html']
+      ] },
+      tools: { label: 'Tools and equipment views', tabs: [
+        ['tools', 'Register', 'Tools.dc.html'],
+        ['providers', 'Service Providers', 'Providers.dc.html'],
+        ['alt', 'Alternative Tooling', 'AltTool.dc.html'],
+        ['need', 'Tooling Need Evaluations', 'ToolNeed.dc.html']
+      ] },
+      enquiries: { label: 'Enquiries and quotes views', tabs: [
+        ['enquiries', 'Enquiries', 'Enquiries.dc.html'],
+        ['quotes', 'Quotes', 'Quotes.dc.html']
+      ] },
+      staff: { label: 'Staff views', tabs: [
+        ['staff', 'All Staff', 'Staff.dc.html'],
+        ['orgchart', 'Organisation Chart', 'OrgChart.dc.html']
+      ] },
+      auth: { label: 'Authorisations views', tabs: [
+        ['auth', 'Authorisations', 'Authorisations.dc.html'],
+        ['recency', 'Recency', 'Recency.dc.html']
+      ] },
+      licence: { label: 'Aircraft maintenance licence views', tabs: [
+        ['exams', 'Basic Examinations', 'BasicExaminations.dc.html'],
+        ['logbook', 'Experience Logbook', 'Logbook.dc.html'],
+        ['type', 'Type Training', 'TypeTraining.dc.html'],
+        ['ojt', 'On the Job Training', 'Training.dc.html']
+      ] },
+      settings: { label: 'Settings views', tabs: [
+        ['org', 'Organisation', 'Settings.dc.html'],
+        ['plansettings', 'Planning', 'PlanSettings.dc.html']
+      ] }
+    };
+    const active = this.props.active || '';
+    const families = { parts: ['goodsin', 'stores'], people: ['auth', 'licence'] };
+    const fam = families[this.props.set];
+    const set = fam ? sets[fam.find(k => sets[k].tabs.some(x => x[0] === active)) || fam[0]] : (sets[this.props.set] || sets.planning);
+    const tabs = set.tabs.map(([key, label, href]) => {
+      const on = key === active;
+      return { label, href, current: on ? 'page' : 'false', weight: '400', colour: on ? t.text : t.muted, bar: on ? 'inset 0 -2px 0 ' + t.text : 'none' };
+    });
+    const line = !(this.props.line === false || this.props.line === 'false');
+    return { t, tabs, label: set.label, gap: line ? '12px' : '0', rule: line ? 'inset 0 -1px 0 ' + t.border : 'none' };
+  }
+}
+</script>
+</body>
+</html>

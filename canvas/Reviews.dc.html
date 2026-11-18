@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Airworthiness Reviews</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"Geist Mono Embedded";src:url("/_blob/cbad824f95366da895c21559ece6cd03") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+tbody tr:last-child > td{border-bottom-color:transparent !important}
+ul > li:last-child, .last-clear > div:last-child{border-bottom-color:transparent !important}
+</style>
+</helmet>
+<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <div style="flex: 1 1 248px; max-width: 100%; display: flex">
+    <dc-import name="Sidebar" active="reviews" dark="{{dark}}" hint-size="248px,1100px"></dc-import>
+  </div>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
+    <dc-import name="TopBar" trail="Continuing Airworthiness=Fleet.dc.html|Aircraft" line="false" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
+    <div style="margin: -36px -40px 0; padding: 0 40px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; box-shadow: inset 0 -1px 0 {{t.border}}">
+      <div style="display: contents">
+
+        <h1 style="position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Airworthiness Reviews</h1>
+        <dc-import name="Tabs" set="aircraft" active="reviews" line="false" dark="{{dark}}" hint-size="760px,44px"></dc-import>
+      </div>
+      <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 40px; padding: 0 16px; border-radius: 6px; border: 0; background: {{t.pBg}}; color: {{t.pFg}}; cursor: pointer">Start a Review</button>
+    </div>
+
+    <section aria-labelledby="schedule-heading" style="display: flex; flex-direction: column; gap: 16px">
+      <h2 id="schedule-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Review Schedule</h2>
+      <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+        <table style="width: 100%; min-width: 1000px; border-collapse: collapse; font-size: 14px; line-height: 20px; white-space: nowrap">
+          <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px">
+            <th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th>
+            <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Aircraft Registration</th>
+            <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Valid To</th>
+            <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Days Left</th>
+            <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Early Review From</th>
+            <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Progress</th>
+            <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Next Step</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{schedule}}" as="r" hint-placeholder-count="6">
+              <tr style="background: {{r.bg}}">
+                <td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{r.line}}"><button type="button" aria-expanded="{{r.expanded}}" aria-label="Show Details" onClick="{{r.toggle}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{r.rot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; font-weight: 500">{{r.reg}}</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; text-align: right">{{r.valid}}</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; text-align: right">{{r.days}}</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; text-align: right">{{r.window}}</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}">
+                  <span style="display: flex; gap: 4px" role="img" aria-label="{{r.progressText}}">
+                    <sc-for list="{{r.steps}}" as="s" hint-placeholder-count="4"><span title="{{s.label}}" style="width: 36px; height: 6px; border-radius: 3px; background: {{s.colour}}; display: inline-block"></span></sc-for>
+                  </span>
+                </td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; overflow: hidden; text-overflow: ellipsis; max-width: 240px"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{r.colour}}; display: {{r.mark}}"></span>{{r.next}}</span></td>
+              </tr>
+              <sc-if value="{{r.open}}" hint-placeholder-val="{{false}}">
+                <tr style="background: {{r.bg}}"><td colspan="7" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}; white-space: normal">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px">
+                    <sc-for list="{{r.facts}}" as="f" hint-placeholder-count="3"><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{f.label}}</span><span style="font-size: 14px; line-height: 20px">{{f.value}}</span></div></sc-for>
+                  </div>
+                </td></tr>
+              </sc-if>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+      <section aria-labelledby="checklist-heading" style="flex: 3 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px">
+          <h2 id="checklist-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">G-EJKL Review Checklist</h2>
+          <span style="font-size: 14px; font-weight: 400; color: {{t.muted}}">{{done}} of {{checklist.length}} Complete</span>
+        </div>
+        <ul style="margin: 0; padding: 0; list-style: none; border-top: 1px solid {{t.border}}">
+          <sc-for list="{{checklist}}" as="c" hint-placeholder-count="9">
+            <li style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+              <label style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer">
+                <input type="checkbox" checked="{{c.checked}}" onChange="{{c.toggle}}" style="width: 18px; height: 18px; margin: 1px 0 0; accent-color: {{t.text}}">
+                <span style="font-weight: 500">{{c.item}}</span>
+              </label>
+              <span style="font-size: 13px; font-weight: 400; color: {{t.muted}}; white-space: nowrap">{{c.note}}</span>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+
+      <section aria-labelledby="staff-heading" style="flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <h2 id="staff-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Review Staff Recency</h2>
+        <p style="margin: 0; font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">Recency: 6 Months of Continuing Airworthiness Work in 2 Years, or 1 Review in 12 Months</p>
+        <div class="last-clear" style="border-top: 1px solid {{t.border}}">
+          <sc-for list="{{staff}}" as="s" hint-placeholder-count="2">
+            <div style="padding: 14px 0; border-bottom: 1px solid {{t.border}}; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 20px">
+              <span style="display: flex; justify-content: space-between; gap: 16px"><span style="font-weight: 500">{{s.name}}</span><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{s.colour}}; display: inline-block"></span>{{s.status}}</span></span>
+              <span style="color: {{t.body}}">{{s.detail}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { checked: [true, true, true, true, true, true, false, false, false], open: {} }; }
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', track: '#2E2E2E' }
+      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', track: '#EBEBEB' };
+    const c = { red: '#FF5A4E', amber: '#FFB224', green: '#1FCB6E', grey: t.muted };
+    const stepNames = ['Records Checked', 'Physical Survey', 'Certificate Issued', 'Copy to Civil Aviation Authority'];
+    const steps = n => stepNames.map((label, i) => ({ label, colour: i < n ? t.text : t.track }));
+    const schedule = [
+      { reg: 'G-CDEF', type: 'Robin DR 400 series (Lycoming)', valid: '2 December 2027', days: '379', window: 'Issued 11 November 2026', n: 3, next: 'Send Signed Copy', nextDate: 'Due 21 November 2026', colour: c.amber },
+      { reg: 'G-EJKL', type: 'Cessna/Reims-Cessna 152/F152 Series (Lycoming)', valid: '6 December 2026', days: '18', window: '7 September 2026', n: 1, next: 'Physical Survey', nextDate: 'Booked 19 November 2026', colour: c.amber },
+      { reg: 'G-ABCD', type: 'Piper PA-28 Series (Lycoming)', valid: '14 March 2027', days: '116', window: '14 December 2026', n: 0, next: 'Not started', nextDate: '', colour: c.grey },
+      { reg: 'G-FMNO', type: 'Grob G115/120 Series (Lycoming)', valid: '27 April 2027', days: '160', window: '27 January 2027', n: 0, next: 'Not started', nextDate: '', colour: c.grey },
+      { reg: 'G-DGHI', type: 'Piper PA-28 Series (Lycoming)', valid: '19 May 2027', days: '182', window: '18 February 2027', n: 0, next: 'Not started', nextDate: 'Open Defect to Clear First', colour: c.grey },
+      { reg: 'G-BXYZ', type: 'Cessna/Reims-Cessna 172/F172 Series (Lycoming)', valid: '2 August 2027', days: '257', window: '4 May 2027', n: 0, next: 'Not started', nextDate: '', colour: c.grey }
+    ].map(r => ({ ...r, next: r.next === 'Not started' ? 'Not Started' : r.next, steps: steps(r.n), progressLabel: r.n === 0 ? '' : r.n + ' of 4: ' + stepNames[r.n - 1], mark: r.colour === c.grey ? 'none' : 'inline-block' })).map(r => {
+      const on = !!this.state.open[r.reg];
+      const progressText = r.n === 0 ? 'Not Started' : r.progressLabel;
+      return { ...r, progressText, open: on, expanded: on ? 'true' : 'false', rot: on ? '90deg' : '0deg', line: on ? 'transparent' : t.row, bg: on ? t.sidebar : 'transparent',
+        toggle: () => { const n = { ...this.state.open }; n[r.reg] = !n[r.reg]; this.setState({ open: n }); },
+        facts: [{ label: 'Type Rating', value: r.type }, { label: 'Progress', value: progressText }, { label: 'Next Step', value: r.next }].concat(r.nextDate ? [{ label: 'Next Step Date', value: r.nextDate }] : []) };
+    });
+    const items = [
+      ['Airframe, Engine and Propeller Hours Consistent', 'Technical Log'],
+      ['Flight Manual and Supplements Current', ''],
+      ['Maintenance Programme Reviewed in 12 Months', 'Issue 1'],
+      ['Scheduled Maintenance Complete', ''],
+      ['Airworthiness Directives Complied With', '11 Applicable'],
+      ['Life-Limited Components Within Limits', ''],
+      ['Modifications and Repairs Approved', ''],
+      ['Weight and Balance Schedule Current', ''],
+      ['Physical Survey', '19 November']
+    ];
+    const checklist = items.map((it, i) => ({ item: it[0], note: it[1], checked: this.state.checked[i], toggle: () => { const next = this.state.checked.slice(); next[i] = !next[i]; this.setState({ checked: next }); } }));
+    const done = this.state.checked.filter(Boolean).length;
+    const staff = [
+      { name: 'Lucy Grant, Airworthiness Review Staff', status: 'Current', colour: c.green, detail: 'Last Review 11 November 2026, G-CDEF' },
+      { name: '[Name], Airworthiness Review Staff', status: 'Lapses 2 December 2026', colour: c.amber, detail: 'Last Review 2 December 2025, G-EJKL Review Keeps Current' }
+    ];
+    return { t, dark, schedule, checklist, done, staff };
+  }
+}
+</script>
+</body>
+</html>

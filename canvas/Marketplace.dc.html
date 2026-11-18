@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Marketplace</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"Geist Mono Embedded";src:url("/_blob/cbad824f95366da895c21559ece6cd03") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+tbody tr:last-child > td{border-bottom-color:transparent !important}
+ol > li:last-child{border-bottom-color:transparent !important}
+</style>
+</helmet>
+<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <div style="flex: 1 1 248px; max-width: 100%; display: flex">
+    <dc-import name="Sidebar" active="marketplace" dark="{{dark}}" hint-size="248px,1700px"></dc-import>
+  </div>
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
+    <dc-import name="TopBar" trail="Commercial=Marketplace.dc.html|Marketplace" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
+    <h1 style="position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Marketplace</h1>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: -16px">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: {{t.muted}}">
+          <span>For Aircraft Registration</span>
+          <select onChange="{{onAircraft}}" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; width: 220px">
+            <sc-for list="{{aircraft}}" as="o" hint-placeholder-count="7"><option value="{{o.value}}" selected="{{o.selected}}">{{o.label}}</option></sc-for>
+          </select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: {{t.muted}}">
+          <span>Search</span>
+          <input type="search" value="{{q}}" onChange="{{onQuery}}" placeholder="Organisation, Company Number, Reference or Rating" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; width: 320px">
+        </label>
+      </div>
+      <span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">Civil Aviation Authority Approved Organisations Lists, {{listDate}}</span>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px">
+      <div role="group" aria-label="Approval" style="display: inline-flex; flex-wrap: wrap; padding: 3px; border-radius: 6px; background: {{t.empty}}; gap: 2px">
+        <sc-for list="{{approvals}}" as="f" hint-placeholder-count="9">
+          <button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; height: 32px; padding: 0 12px; border-radius: 6px; border: 0; cursor: pointer; color: {{t.text}}; background: {{f.bg}}; box-shadow: {{f.shadow}}">{{f.label}} <span style="color: {{t.muted}}">{{f.count}}</span></button>
+        </sc-for>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: {{t.muted}}">
+        <span>Rating</span>
+        <select onChange="{{onRating}}" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; min-width: 320px">
+          <sc-for list="{{ratings}}" as="o" hint-placeholder-count="12"><option value="{{o.value}}" selected="{{o.selected}}">{{o.label}}</option></sc-for>
+        </select>
+      </label>
+    </div>
+
+
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div role="list" aria-label="Organisations" style="border-top: 1px solid {{t.border}}">
+          <sc-for list="{{rows}}" as="e" hint-placeholder-count="14">
+            <div role="listitem" style="border-bottom: 1px solid {{t.row}}">
+              <button type="button" aria-expanded="{{e.expanded}}" onClick="{{e.toggle}}" style="font: inherit; width: 100%; padding: 12px 0; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; display: grid; grid-template-columns: 28px minmax(0, 2fr) minmax(0, 3fr); column-gap: 16px; align-items: center">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{e.rot}}); color: {{t.muted}}; flex: none"><path d="M9 6l6 6-6 6"></path></svg>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">{{e.name}}</span> <span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 13px; color: {{t.muted}}">{{e.number}}</span></span>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; display: {{e.mark}}; flex: none"></span><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{e.what}}</span></span>
+              </button>
+              <sc-if value="{{e.open}}" hint-placeholder-val="{{false}}">
+                <div style="padding: 0 0 20px 44px; display: flex; flex-direction: column; gap: 20px">
+                  <sc-for list="{{e.approvalsList}}" as="a" hint-placeholder-count="1">
+                    <div style="display: flex; flex-direction: column; gap: 12px">
+                      <span style="font-size: 14px; line-height: 20px"><span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 13px">{{a.ref}}</span> <span style="color: {{t.muted}}">{{a.kind}}</span></span>
+                      <sc-for list="{{a.groups}}" as="g" hint-placeholder-count="2">
+                        <div style="display: flex; flex-direction: column; gap: 6px">
+                          <span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{g.title}}</span>
+                          <sc-for list="{{g.classes}}" as="c" hint-placeholder-count="3">
+                            <div style="display: grid; grid-template-columns: 48px minmax(0, 280px) minmax(0, 1fr); column-gap: 16px; font-size: 14px; line-height: 20px">
+                              <span style="font-weight: 500">{{c.code}}</span>
+                              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span>
+                              <span style="display: flex; flex-direction: column; min-width: 0"><sc-for list="{{c.types}}" as="y" hint-placeholder-count="2"><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{t.body}}">{{y.text}}</span></sc-for></span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+                    <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 14px; border-radius: 6px; border: 0; background: {{t.pBg}}; color: {{t.pFg}}; cursor: pointer">Send an Enquiry</button>
+                    <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">Add to Suppliers</button>
+                    <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 8px; border: 0; background: transparent; color: {{t.muted}}; cursor: pointer">Claim This Listing</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      <span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">{{countLabel}}</span>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1700}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { data: null, failed: false, q: '', appr: 'all', rating: '', reg: '', pick: null }; }
+  componentDidMount() {
+    fetch('/_blob/6437941f9f3e3613b7f907c36f9bb011').then(r => r.json()).then(d => this.setState({ data: d })).catch(() => this.setState({ failed: true }));
+  }
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E', empty: '#1A1A1A', raised: '#2E2E2E', sel: '#1A1A1A' }
+      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB', empty: '#F2F2F2', raised: '#FFFFFF', sel: '#F2F2F2' };
+    const st = this.state;
+    const d = st.data || { orgs: [], date: '' };
+    const fleet = [['', 'All Aircraft'], ['G-ABCD', 'G-ABCD'], ['G-DGHI', 'G-DGHI'], ['G-EJKL', 'G-EJKL'], ['G-BXYZ', 'G-BXYZ'], ['G-FMNO', 'G-FMNO'], ['G-CDEF', 'G-CDEF']];
+    const aircraft = fleet.map(f => ({ value: f[0], label: f[1], selected: st.reg === f[0] }));
+    const q = st.q.trim().toLowerCase();
+    const loc = o => {
+      const parts = o.ad.filter(a => a && a !== o.pc && a.indexOf(o.pc) === -1 && !/[\/]|www|http/i.test(a));
+      const tail = parts.length > 2 ? parts.slice(-2) : parts.slice(-1);
+      return tail.concat(o.pc ? [o.pc] : []).join(', ');
+    };
+    const match = o => !q || (o.n + ' ' + o.r + ' ' + (o.ch || '') + ' ' + (o.bc || '') + ' ' + o.rt.map(r => r.join(' ')).join(' ')).toLowerCase().indexOf(q) !== -1;
+    const forReg = o => !st.reg || o.ac.indexOf(st.reg) !== -1;
+    const base = d.orgs.filter(o => match(o) && forReg(o));
+    const shortName = a => a === 'Alternative Procedures to Design Organisation Approval' ? 'Alternative Procedures' : a.replace(' Design', '').replace(' Production', '').replace(' Training', '');
+    const kindOf = o => o.bc || shortName(o.a);
+    const apprList = (d.approvals || []);
+    const approvals = [['all', 'All']].concat(apprList.map(a => [a, shortName(a)])).map(k => {
+      const on = st.appr === k[0];
+      const n = k[0] === 'all' ? base.length : base.filter(o => o.a === k[0]).length;
+      return { label: k[1], count: String(n), pressed: on ? 'true' : 'false', bg: on ? t.raised : 'transparent', shadow: on ? '0 1px 2px rgba(0,0,0,0.12)' : 'none', pick: () => this.setState({ appr: k[0], rating: '' }) };
+    });
+    const inAppr = base.filter(o => st.appr === 'all' || o.a === st.appr);
+    const counts = {};
+    inAppr.forEach(o => (o.rf || []).forEach(f => { counts[f] = (counts[f] || 0) + 1; }));
+    const order = ['PRIV', 'CAO', '145', 'POA', 'DOA', '147', 'BCAR'];
+    const keys = Object.keys(counts).sort((a, b) => {
+      const ga = order.indexOf(a.split('|')[0]), gb = order.indexOf(b.split('|')[0]);
+      if (ga !== gb) return ga - gb;
+      const na = parseInt((a.split('|')[1].match(/^[A-Z](\d+)/) || [0, 0])[1], 10), nb = parseInt((b.split('|')[1].match(/^[A-Z](\d+)/) || [0, 0])[1], 10);
+      return a.split('|')[1][0] === b.split('|')[1][0] && na !== nb ? na - nb : a.localeCompare(b, undefined, { numeric: true });
+    });
+    const xp = s => String(s || '').replace(/ kg MTOM/g, ' Kilograms Maximum Take-Off Mass').replace(/(\d) kg/g, '$1 Kilograms').replace(/\bMTOM\b/g, 'Maximum Take-Off Mass');
+    const labels = d.labels || {};
+    const ratings = [{ value: '', label: 'All Ratings', selected: st.rating === '' }].concat(keys.map(k => ({ value: k, label: xp(labels[k] || k.split('|')[1]) + ' (' + counts[k] + ')', selected: st.rating === k })));
+    const list = inAppr.filter(o => !st.rating || (o.rf || []).indexOf(st.rating) !== -1)
+      .sort((a, b) => (a.st === b.st ? 0 : a.st === 'Suspended' ? 1 : -1));
+    const site = o => o.w ? o.w.replace(/^https?:\/\//, '').replace(/\/$/, '') : '';
+    const summary = o => {
+      const rs = o.rs || [];
+      const isCodes = rs.length && rs.every(x => /^[A-D]\d{1,2}$/.test(x));
+      const std = o.sc && o.sc.length ? o.rs[0] : null;
+      const text = xp(std ? std : isCodes ? rs.slice().sort((x, y) => x[0] === y[0] ? parseInt(x.slice(1), 10) - parseInt(y.slice(1), 10) : x.localeCompare(y)).join(', ') : rs.slice(0, 3).join(', ') + (rs.length > 3 ? ' and ' + (rs.length - 3) + ' More' : ''));
+      return (o.st === 'Suspended' ? 'Suspended, ' : '') + text;
+    };
+    const scope = o => {
+      if (o.sc && o.sc.length) {
+        return ['Aircraft Maintenance', 'Engine Maintenance', 'Component Maintenance', 'Non-Destructive Testing'].map(pr => {
+          const by = {}, order = [];
+          o.sc.filter(r => r[0] === pr).forEach(r => {
+            if (!by[r[1]]) { by[r[1]] = { code: r[1], name: r[2], types: [] }; order.push(r[1]); }
+            const l = r[3] + (r[4] ? ', ' + r[4] : '');
+            if (l && l !== 'All Components in the Class' && by[r[1]].types.indexOf(l) === -1) by[r[1]].types.push(l);
+          });
+          return { title: pr, classes: order.map(c => Object.assign({}, by[c], { types: by[c].types.map(x => ({ text: x })) })) };
+        }).filter(g => g.classes.length);
+      }
+      const by = {}, order = [];
+      o.rt.forEach(r => { const n = xp(r[0]) || 'Scope'; if (!by[n]) { by[n] = { code: '', name: n, types: [] }; order.push(n); } const l = xp(r[1]); if (l && by[n].types.indexOf(l) === -1) by[n].types.push(l); });
+      return [{ title: 'Scope of Approval', classes: order.map(n => Object.assign({}, by[n], { types: by[n].types.map(x => ({ text: x })) })) }];
+    };
+    const ekey = n => n.toLowerCase().replace(/\s+(t\/a|trading as)\b.*$/, '').replace(/\bltd\b\.?/g, 'limited').replace(/\bco\b\.?/g, 'company').replace(/[^a-z0-9]/g, '');
+    const groupsMap = {};
+    list.forEach(o => { const k = o.ch ? 'GB-COH-' + o.ch : ekey(o.n); (groupsMap[k] = groupsMap[k] || []).push(o); });
+    const keysE = Object.keys(groupsMap).sort((x, y) => groupsMap[x][0].n.localeCompare(groupsMap[y][0].n));
+    const openE = st.openE || {};
+    const ents = keysE.map(k => {
+      const os = groupsMap[k];
+      const plain = os.map(o => o.n.replace(/\s+(t\/a|trading as)\b.*$/i, '').trim());
+      const name = plain.slice().sort((x, y) => (/limited$/i.test(y) ? 1 : 0) - (/limited$/i.test(x) ? 1 : 0) || x.length - y.length)[0];
+      const kinds = []; os.forEach(o => { const n = kindOf(o); if (kinds.indexOf(n) === -1) kinds.push(n); });
+      const single = os.length === 1;
+      const on = !!openE[k];
+      return { key: k, name, number: os[0].ch || '', what: single ? kindOf(os[0]) + ': ' + summary(os[0]) : kinds.join(', '),
+        mark: os.some(o => o.st === 'Suspended') ? 'inline-block' : 'none',
+        open: on, expanded: on ? 'true' : 'false', rot: on ? '90deg' : '0deg',
+        toggle: () => { const n = Object.assign({}, openE); n[k] = !on; this.setState({ openE: n }); },
+        approvalsList: on ? os.map(o => ({ ref: o.r, kind: kindOf(o) + (o.st === 'Suspended' ? ', Suspended' : ''), groups: scope(o) })) : [] };
+    });
+    const rows = ents.slice(0, 60);
+    const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const countLabel = st.failed ? 'Civil Aviation Authority Lists Not Loaded' : (!st.data ? 'Loading Civil Aviation Authority Lists' : (ents.length > 60 ? '60 of ' + fmt(ents.length) + ' Organisations, Search to Narrow' : fmt(ents.length) + ' Organisations') + ', ' + fmt(list.length) + ' Approvals');
+    return { t, dark, aircraft, onAircraft: e => this.setState({ reg: e.target.value, pick: null }), q: st.q, onQuery: e => this.setState({ q: e.target.value }), approvals, ratings, onRating: e => this.setState({ rating: e.target.value, pick: null }), rows, countLabel, listDate: d.date || '12 November 2026' };
+  }
+}
+</script>
+</body>
+</html>

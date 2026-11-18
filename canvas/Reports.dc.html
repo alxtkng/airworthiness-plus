@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Safety Reports</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"Geist Mono Embedded";src:url("/_blob/cbad824f95366da895c21559ece6cd03") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+tbody tr:last-child > td{border-bottom-color:transparent !important}
+ol > li:last-child{border-bottom-color:transparent !important}
+</style>
+</helmet>
+<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <div style="flex: 1 1 248px; max-width: 100%; display: flex">
+    <dc-import name="Sidebar" active="reports" dark="{{dark}}" hint-size="248px,1100px"></dc-import>
+  </div>
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
+    <dc-import name="TopBar" trail="Management System=Main.dc.html|Safety Reports" line="true" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
+    <h1 style="position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Safety Reports</h1>
+    <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: -16px"><a href="SafetyReport.dc.html" style="font-size: 14px; font-weight: 500; height: 40px; line-height: 38px; box-sizing: border-box; padding: 0 16px; border-radius: 6px; border: 0; background: {{t.pBg}}; color: {{t.pFg}}; display: inline-block">Report a Safety Issue</a></div>
+    <div style="display: flex; flex-wrap: wrap; column-gap: 40px; row-gap: 8px; padding: 14px 16px; border-radius: 6px; border: 1px solid {{t.border}}; font-size: 14px; line-height: 20px; font-weight: 400; color: {{t.muted}}"><span><span style="color: {{t.text}}; font-weight: 500">{{toAssess}}</span> To Assess</span><span><span style="color: {{t.text}}; font-weight: 500">2 Working Days</span> Average Time to Assess</span><span><span style="color: {{t.text}}; font-weight: 500">0</span> Feedback Outstanding</span></div>
+    <section aria-labelledby="rep-h" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px"><h2 id="rep-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Internal Safety Reports</h2><div role="group" aria-label="Status" style="display: inline-flex; flex-wrap: wrap; padding: 3px; border-radius: 6px; background: {{t.empty}}; gap: 2px"><sc-for list="{{filters}}" as="f" hint-placeholder-count="4"><button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; height: 32px; padding: 0 12px; border-radius: 6px; border: 0; cursor: pointer; color: {{t.text}}; background: {{f.bg}}; box-shadow: {{f.shadow}}">{{f.label}} <span style="color: {{t.muted}}">{{f.count}}</span></button></sc-for></div></div>
+      <p style="margin: 0; font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">Confidential, Names Removed Before Anyone but the Safety Manager Sees a Report</p>
+      <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+        <table style="width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 14px; line-height: 20px">
+          <thead><tr style="background: {{t.sidebar}}; color: {{t.muted}}; font-size: 13px; text-align: left"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 140px">Reference</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left">Report</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 130px">Type</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 170px">Received</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 320px">Outcome</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 160px">Status</th></tr></thead>
+          <tbody>
+            <sc-for list="{{reports}}" as="r" hint-placeholder-count="5">
+              <tr style="background: {{r.bg}}"><td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{r.line}}; vertical-align: middle"><button type="button" aria-expanded="{{r.exp}}" aria-label="Show Details" onClick="{{r.tog}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{r.rot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; text-align: left"><span style="font-weight: 500; font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 13px">{{r.ref}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; text-align: left"><span style="font-weight: 400">{{r.title}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; text-align: left"><span style="font-weight: 400">{{r.type}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; text-align: left"><span style="font-weight: 400">{{r.received}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; text-align: left"><span style="font-weight: 400">{{r.outcome}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; text-align: left"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{r.sm.mc}}; box-shadow: {{r.sm.mr}}; display: {{r.sm.md}}; flex: none"></span><span>{{r.status}}</span></span></td></tr>
+              <sc-if value="{{r.open}}" hint-placeholder-val="{{false}}"><tr style="background: {{r.bg}}"><td colspan="7" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px"><sc-for list="{{r.facts}}" as="d" hint-placeholder-count="6"><div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{d.label}}</span><span style="font-size: 14px; line-height: 20px">{{d.value}}</span></div></sc-for></div></td></tr></sc-if>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = {"open": {}, "show": "all"}; }
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E', empty: '#1A1A1A', raised: '#2E2E2E', note: '#000000', error: '#FF6166' }
+      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB', empty: '#F2F2F2', raised: '#FFFFFF', note: '#FAFAFA', error: '#CB2A2F' };
+    const M = { r: '#FF5A4E', a: '#FFB224', g: '#1FCB6E' };
+    const mark = k => k === 'o' ? { mc: 'transparent', mr: 'inset 0 0 0 1.5px ' + t.muted, md: 'inline-block' } : (k ? { mc: M[k], mr: 'none', md: 'inline-block' } : { mc: 'transparent', mr: 'none', md: 'none' });
+    const ui = id => { const on = !!(this.state.open || {})[id]; return { open: on, exp: on ? 'true' : 'false', rot: on ? '90deg' : '0deg', line: on ? 'transparent' : t.row, bg: on ? t.sidebar : 'transparent',
+      tog: () => { const n = Object.assign({}, this.state.open); n[id] = !n[id]; this.setState({ open: n }); } }; };
+    const seg = (key, opts) => opts.map(([k, label, n]) => { const on = this.state[key] === k; return { label, count: n === undefined ? '' : String(n), pressed: on ? 'true' : 'false', bg: on ? t.raised : 'transparent', shadow: on ? '0 1px 2px rgba(0,0,0,0.12)' : 'none', pick: () => this.setState({ [key]: k }) }; });
+    const fact = (label, value) => ({ label, value });
+
+    const reportData = [
+      { ref: 'SR-2026-015', received: '17 November 2026', title: 'Torque Value on the Work Card Differed From the Maintenance Manual', type: 'Error', registration: 'None', outcome: 'Not Yet Assessed', state: 'assess', assessed: '', feedback: 'Not Yet Due' },
+      { ref: 'SR-2026-014', received: '2 November 2026', title: 'Logbook Hours Did Not Match the Technical Log', type: 'Hazard', registration: 'None', outcome: 'Added to the Hazard Log as 2026-0007', state: 'hazard', assessed: '4 November 2026', feedback: 'Reporter Told 4 November 2026' },
+      { ref: 'SR-2026-013', received: '14 October 2026', title: 'Fuel Sample Cup Left in the Cabin After Maintenance', type: 'Near Miss', registration: 'G-BXYZ', outcome: 'Loose Article Check Added to the Release Checklist', state: 'closed', assessed: '15 October 2026', feedback: 'Reporter Told 16 October 2026' },
+      { ref: 'SR-2026-012', received: '29 September 2026', title: 'Poor Hangar Lighting Over the Inspection Bay', type: 'Concern', registration: 'None', outcome: 'Extra Lighting Fitted 6 October 2026', state: 'closed', assessed: '1 October 2026', feedback: 'Reporter Told 6 October 2026' },
+      { ref: 'SR-2026-011', received: '9 September 2026', title: 'Torque Wrench Found Without Its Calibration Label', type: 'Near Miss', registration: 'None', outcome: 'Tool Withdrawn and Recalibrated, Shared at the October Staff Meeting', state: 'closed', assessed: '10 September 2026', feedback: 'Reporter Told 11 September 2026' }
+    ];
+
+    const stateInfo = { assess: ['To Assess', 'a'], hazard: ['In Hazard Log', 'o'], closed: ['Closed', 'g'] };
+    const st = this.state;
+    const n = k => reportData.filter(r => r.state === k).length;
+    const filters = seg('show', [['all', 'All', reportData.length], ['assess', 'To Assess', n('assess')], ['hazard', 'In Hazard Log', n('hazard')], ['closed', 'Closed', n('closed')]]);
+    const reports = reportData.filter(r => st.show === 'all' || r.state === st.show).map(r => ({ ...r, ...ui(r.ref),
+      status: stateInfo[r.state][0], sm: mark(stateInfo[r.state][1]),
+      facts: [fact('Reference', r.ref), fact('Report', r.title), fact('Type', r.type), fact('Aircraft Registration', r.registration),
+        fact('Received', r.received), fact('Reporter', 'Confidential, Known to the Safety Manager Only'), fact('Assessed', r.assessed || 'Not Yet Assessed'),
+        fact('Outcome', r.outcome), fact('Feedback to Reporter', r.feedback), fact('Status', stateInfo[r.state][0])] }));
+    return { t, dark, reports, filters, toAssess: n('assess') };
+  }
+}
+</script>
+</body>
+</html>

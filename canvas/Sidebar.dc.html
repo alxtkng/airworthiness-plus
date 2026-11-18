@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"Geist Mono Embedded";src:url("/_blob/cbad824f95366da895c21559ece6cd03") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+input::placeholder{color:inherit;opacity:0.75}
+</style>
+</helmet>
+<nav aria-label="Application" style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.sidebar}}; border-right: 1px solid {{t.border}}; box-sizing: border-box; width: 100%; height: 100%; min-height: 1700px; padding: 16px 12px; display: flex; flex-direction: column; gap: 20px">
+  <a href="Home.dc.html" style="padding: 4px 8px; display: flex; align-items: center; gap: 10px; color: {{t.text}}">
+    <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 6px; background: {{t.text}}; color: {{t.sidebar}}; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">A+</span>
+    <span style="display: flex; flex-direction: column; min-width: 0">
+      <span style="font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.01em">Airworthiness+</span>
+      <span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">[Your Organisation]</span>
+    </span>
+  </a>
+
+  <label style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid {{t.border}}; background: {{t.field}}; color: {{t.muted}}; font-size: 14px; font-weight: 500">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+    <input type="search" aria-label="Search aircraft, people and tools" placeholder="Search" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 14px; color: {{t.text}}">
+  </label>
+
+  <div style="display: flex; flex-direction: column; gap: 18px">
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="6">
+      <div style="display: flex; flex-direction: column; gap: 1px">
+        <sc-if value="{{g.hasLabel}}" hint-placeholder-val="{{true}}">
+          <span style="padding: 0 10px 6px; font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">{{g.label}}</span>
+        </sc-if>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <a href="{{i.href}}" aria-current="{{i.current}}" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 6px; font-size: 14px; color: {{i.colour}}; font-weight: {{i.weight}}; background: {{i.bg}}; box-shadow: {{i.ring}}">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none; color: {{i.iconColour}}"><path d="{{i.icon}}"></path></svg>
+            <span style="flex: 1; min-width: 0">{{i.label}}</span>
+            <span style="font-size: 13px; font-weight: 500; color: {{t.muted}}; font-family: 'Geist Mono Embedded', 'Geist Mono', monospace">{{i.count}}</span>
+          </a>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: auto; display: flex; flex-direction: column; gap: 1px">
+    <sc-for list="{{footer}}" as="i" hint-placeholder-count="2">
+      <a href="{{i.href}}" aria-current="{{i.current}}" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 6px; font-size: 14px; color: {{i.colour}}; font-weight: {{i.weight}}; background: {{i.bg}}; box-shadow: {{i.ring}}">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none; color: {{i.iconColour}}"><path d="{{i.icon}}"></path></svg>
+        <span>{{i.label}}</span>
+      </a>
+    </sc-for>
+    <div style="margin-top: 12px; padding: 12px 10px 0; border-top: 1px solid {{t.border}}; display: flex; align-items: center; gap: 10px">
+      <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 16px; background: {{t.row}}; color: {{t.text}}; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500">YN</span>
+      <span style="display: flex; flex-direction: column; min-width: 0">
+        <span style="font-size: 14px; line-height: 20px; font-weight: 500">[Your Name]</span>
+        <span style="font-size: 12px; line-height: 16px; color: {{t.muted}}">Continuing Airworthiness Manager</span>
+      </span>
+    </div>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["home","manuals","mdata","revisions","reading","notices","enquiries","quotes","customers","invoices","orgchart","recurrent","exams","type","crs","contracts","occurrences","suppliers","auth","approval","exposition","changes","oversight","marketplace","wp","fleet","defects","programmes","directives","mods","reliability","weighing","transfers","components","received","stores","quarantine","reviews","aircraft","hazards","reports","audit","actions","plan","load","roster","tools","tool","providers","alt","need","staff","recency","logbook","ojt","competence","assessment","org","plansettings","guide"],"default":"home"},"approval":{"editor":"enum","options":["all","owner","cao","camo","145"],"default":"all"},"dark":{"editor":"boolean","default":false},"$preview":{"width":248,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { text: '#EDEDED', muted: '#A1A1A1', nav: '#EDEDED', sidebar: '#000000', border: '#2E2E2E', active: '#1A1A1A', field: '#0A0A0A', row: '#2E2E2E' }
+      : { text: '#171717', muted: '#666666', nav: '#171717', sidebar: '#FAFAFA', border: '#EBEBEB', active: '#FFFFFF', field: '#FFFFFF', row: '#EBEBEB' };
+    const active = this.props.active || 'home';
+    const icons = {
+      home: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z',
+      aircraft: 'M22 2L11 13M22 2l-7 20-4-9-9-4z',
+      hazard: 'M12 3l10 18H2zM12 10v4M12 17.5v.01',
+      defect: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v5M12 16.5v.01',
+      programme: 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3',
+      directive: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6zM9 12l2 2 4-4',
+      mod: 'M4 20l4-1 11-11-3-3L5 16zM14 6l3 3',
+      repeat: 'M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4',
+      weight: 'M6 8h12l2 12H4zM9 8a3 3 0 1 1 6 0',
+      transfer: 'M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4',
+      report: 'M4 4h16v12H9l-5 4z',
+      audit: 'M9 12l2 2 4-4M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
+      workpackage: 'M8 4h8v3H8zM6 6H5v15h14V6h-1M9 12h6M9 16h4',
+      actions: 'M10 6h10M10 12h10M10 18h10M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2',
+      planning: 'M4 5h16v16H4zM4 10h16M9 3v4M15 3v4',
+      parts: 'M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10',
+      tools: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.8-.7-.7-2.8z',
+      people: 'M16 21v-2a4 4 0 0 0-8 0v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+      settings: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4',
+      market: 'M4 9l1.5-5h13L20 9M4 9h16v2a3 3 0 0 1-5.3 2 3 3 0 0 1-5.4 0A3 3 0 0 1 4 11zM5 13v8h14v-8M10 21v-5h4v5',
+      release: 'M5 12l5 5L20 7',
+      contract: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h4',
+      occurrence: 'M12 3v4M12 17v4M3 12h4M17 12h4M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+      goodsin: 'M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4zM12 3v7M9 7l3 3 3-3',
+      supplier: 'M3 7h11v10H3zM14 10h4l3 3v4h-7M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+      badge: 'M4 5h16v14H4zM9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM6 16a3 3 0 0 1 6 0M14 9h4M14 13h4',
+      training: 'M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5',
+      approval: 'M12 3l2.5 2 3.2-.3.8 3.1 2.7 1.8-1.3 2.9 1.3 2.9-2.7 1.8-.8 3.1-3.2-.3L12 21l-2.5-2-3.2.3-.8-3.1-2.7-1.8 1.3-2.9-1.3-2.9 2.7-1.8.8-3.1 3.2.3zM9 12l2 2 4-4',
+      manual: 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z',
+      reading: 'M4 5h10v14H4zM7 9h4M7 12h4M14 15l2 2 4-4',
+      notice: 'M4 10v4h3l6 4V6l-6 4zM17 9a4 4 0 0 1 0 6',
+      help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.01'
+    };
+    const approval = this.props.approval || 'all';
+    const show = who => approval === 'all' || who.indexOf(approval) !== -1;
+    const ALL = ['owner', 'cao', 'camo', '145'], ORG = ['cao', 'camo', '145'], MNT = ['cao', '145'];
+    const item = (keys, label, href, icon, count, who) => {
+      const on = keys.indexOf(active) !== -1;
+      return { who: who || ALL, label, href, count: count || '', icon: icons[icon], current: on ? 'page' : 'false', colour: on ? t.text : t.nav, iconColour: on ? t.text : t.muted, weight: '400', bg: on ? t.active : 'transparent', ring: on ? '0 0 0 1px ' + t.border : 'none' };
+    };
+    const all = [
+      { label: '', items: [item(['home'], 'Dashboard', 'Home.dc.html', 'home')] },
+      { label: 'Continuing Airworthiness', items: [
+        item(['fleet', 'reviews', 'aircraft', 'transfers'], 'Aircraft', 'Fleet.dc.html', 'aircraft', '6'),
+        item(['defects', 'reliability'], 'Defects', 'Defects.dc.html', 'defect', '4'),
+        item(['programmes'], 'Maintenance Programmes', 'Programmes.dc.html', 'programme', '1'),
+        item(['components', 'directives', 'mods', 'weighing'], 'Aircraft Configuration', 'Components.dc.html', 'directive', '3'),
+        item(['crs'], 'Release to Service', 'ReleaseToService.dc.html', 'release', '1', ['owner', 'cao', '145']),
+        item(['contracts'], 'Contracts', 'Contracts.dc.html', 'contract')
+      ] },
+      { label: 'Management System', items: [
+        item(['hazards'], 'Hazard Log', 'Main.dc.html', 'hazard', '7', ['camo', '145']),
+        item(['reports'], 'Safety Reports', 'Reports.dc.html', 'report', '1', ['camo', '145']),
+        item(['occurrences'], 'Occurrence Reports', 'Occurrences.dc.html', 'occurrence', '1'),
+        item(['audit'], 'Compliance Monitoring', 'Audit.dc.html', 'audit', '3', ORG),
+        item(['actions'], 'Actions', 'Actions.dc.html', 'actions', '9', ORG)
+      ] },
+      { label: 'Planning', items: [
+        item(['wp'], 'Work Packages', 'WorkPackages.dc.html', 'workpackage', '4', MNT),
+        item(['plan', 'load', 'roster'], 'Manhours and Capacity', 'Plan.dc.html', 'planning', '', MNT)
+      ] },
+      { label: 'Logistics', items: [
+        item(['received'], 'Goods In', 'PartsReceived.dc.html', 'goodsin', '2', MNT),
+        item(['stores', 'quarantine'], 'Stores', 'Stores.dc.html', 'parts', '', MNT),
+        item(['tools', 'tool', 'providers', 'alt', 'need'], 'Tools and Equipment', 'Tools.dc.html', 'tools', '4', MNT),
+        item(['suppliers'], 'Suppliers', 'Suppliers.dc.html', 'supplier', '', MNT)
+      ] },
+      { label: 'People', items: [
+        item(['staff', 'orgchart'], 'Staff', 'Staff.dc.html', 'people', '', ORG),
+        item(['auth', 'recency'], 'Authorisations', 'Authorisations.dc.html', 'badge', '1', ORG)
+      ] },
+      { label: 'Training', items: [
+        item(['recurrent'], 'Recurrent Training', 'RecurrentTraining.dc.html', 'repeat', '2', ORG),
+        item(['exams', 'logbook', 'type', 'ojt'], 'Aircraft Maintenance Licence', 'BasicExaminations.dc.html', 'training', '', ORG),
+        item(['competence', 'assessment'], 'Competency Assessments', 'Competence.dc.html', 'audit', '', ORG)
+      ] },
+      { label: 'Documentation', items: [
+        item(['manuals', 'exposition'], 'Manuals and Procedures', 'Manuals.dc.html', 'manual', '', ORG),
+        item(['mdata'], 'Maintenance Data', 'MaintenanceData.dc.html', 'manual', '2', ['owner', 'cao', 'camo', '145']),
+        item(['revisions'], 'Revisions', 'Revisions.dc.html', 'repeat', '2', ORG),
+        item(['reading'], 'Required Reading', 'RequiredReading.dc.html', 'reading', '1', ORG),
+        item(['notices'], 'Notices', 'Notices.dc.html', 'notice', '', ORG)
+      ] },
+      { label: 'Organisation', items: [
+        item(['approval'], 'Approval and Scope', 'Approval.dc.html', 'approval', '', ORG),
+        item(['changes'], 'Changes', 'Changes.dc.html', 'repeat', '2', ORG),
+        item(['oversight'], 'Oversight', 'Oversight.dc.html', 'audit', '', ORG)
+      ] },
+      { label: 'Commercial', items: [
+        item(['marketplace'], 'Marketplace', 'Marketplace.dc.html', 'market'),
+        item(['enquiries', 'quotes'], 'Enquiries and Quotes', 'Enquiries.dc.html', 'report', '2', ORG),
+        item(['customers'], 'Customers', 'Customers.dc.html', 'people', '', ORG),
+        item(['invoices'], 'Invoices', 'Invoices.dc.html', 'programme', '1', ORG)
+      ] }
+    ];
+    const groups = all.map(g => ({ label: g.label, items: g.items.filter(i => show(i.who)) })).filter(g => g.items.length);
+    const footer = [
+      item(['org', 'plansettings'], 'Settings', 'Settings.dc.html', 'settings'),
+      item(['guide'], 'Help', 'Guide.dc.html', 'help')
+    ];
+    groups.forEach(g => { g.hasLabel = g.label !== ''; });
+    return { t, groups, footer };
+  }
+}
+</script>
+</body>
+</html>

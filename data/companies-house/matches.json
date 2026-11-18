@@ -1,0 +1,5058 @@
+{
+ "21aerolimited": {
+  "number": "14352544",
+  "ch_name": "21 AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "21jaerodesignlimited": {
+  "number": "09832274",
+  "ch_name": "21JAERODESIGN LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "247aircraftmaintenancelimited": {
+  "number": "NI740115",
+  "ch_name": "247 AIRCRAFT MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "247aviationlimited": {
+  "number": "NI673782",
+  "ch_name": "247 AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, Northern Ireland company, SIC 51102 air transport; CAA address Belfast Intl Airport"
+ },
+ "25repaircentrelimited": {
+  "number": "06372641",
+  "ch_name": "25 REPAIR CENTRE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "2excelaviationlimited": {
+  "number": "05391365",
+  "ch_name": "2 EXCEL AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "2exceldesignlimited": {
+  "number": "05576452",
+  "ch_name": "2 EXCEL DESIGN LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "2excelengineeringlimited": {
+  "number": "08965471",
+  "ch_name": "2 EXCEL ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "365aerospacelimited": {
+  "number": "09000565",
+  "ch_name": "365 AEROSPACE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "a2baerolimited": {
+  "number": "07177093",
+  "ch_name": "A2BAERO LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "a2bhelicharterslimited": {
+  "number": "09665203",
+  "ch_name": "A2B HELI (CHARTERS) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "a2bhelimaintenancelimited": {
+  "number": "08611150",
+  "ch_name": "A2B HELI (MAINTENANCE) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aaltohapslimited": {
+  "number": "13925802",
+  "ch_name": "AALTO HAPS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aboveaeroaoclimited": {
+  "number": "10916899",
+  "ch_name": "ABOVE AERO AOC LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "academy147limited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "low",
+  "source": "review",
+  "reason": "No Companies House company named Academy 147 Limited; only unrelated snooker/other '147' companies; likely non-UK Part 147 organisation"
+ },
+ "ackaviationlimited": {
+  "number": "08647404",
+  "ch_name": "A C K AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aclastechnicslimited": {
+  "number": "SC229729",
+  "ch_name": "ACLAS TECHNICS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "acroaeronauticalserviceslimited": {
+  "number": "01695968",
+  "ch_name": "ACRO AERONAUTICAL SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "acroaeronauticalservicestra": {
+  "number": "01695968",
+  "ch_name": "ACRO AERONAUTICAL SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name, only such company, SIC 74100 design; registered office Nottingham not HP27"
+ },
+ "acroaircraftseatinglimited": {
+  "number": "05859680",
+  "ch_name": "ACRO AIRCRAFT SEATING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "acropolisaviationlimited": {
+  "number": "06762686",
+  "ch_name": "ACROPOLIS AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "acsaviationindustrieslimited": {
+  "number": "08993660",
+  "ch_name": "ACS AVIATION INDUSTRIES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "acsaviationlimited": {
+  "number": "SC315417",
+  "ch_name": "ACS AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "adaerospacelimited": {
+  "number": "03034197",
+  "ch_name": "AD AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "adamsaviationsupplycompanylimited": {
+  "number": "00943304",
+  "ch_name": "ADAMS AVIATION SUPPLY COMPANY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "advancedaircrafttraininglimited": {
+  "number": "05836429",
+  "ch_name": "ADVANCED AIRCRAFT TRAINING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aemlimited": {
+  "number": "00620201",
+  "ch_name": "AEM LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aerfinlimited": {
+  "number": "07371844",
+  "ch_name": "AERFIN LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aermavenlimited": {
+  "number": "08083529",
+  "ch_name": "AER MAVEN LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aeroanglialimited": {
+  "number": "03702091",
+  "ch_name": "AERO ANGLIA LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aerocandiaaviationserviceslimited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "low",
+  "source": "review",
+  "reason": "No Companies House company found under Aerocandia name or variants; likely a non-UK training organisation"
+ },
+ "aerocogroupinternationallimited": {
+  "number": "07928622",
+  "ch_name": "AEROCO GROUP INTERNATIONAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aerodynamicsystemslimited": {
+  "number": "13760832",
+  "ch_name": "AERODYNAMIC SYSTEMS LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aeroenginespowerplantslimited": {
+  "number": "14684422",
+  "ch_name": "AERO ENGINES & POWERPLANTS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aerofablimited": {
+  "number": "16280099",
+  "ch_name": "AEROFAB LTD",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name, engineering SIC 71129, incorporated 2025 consistent with 2026 CAA approval; virtual London office, postcode unconfirmed; older 05616164 dissolved 2024"
+ },
+ "aeroluxlimited": {
+  "number": "02251223",
+  "ch_name": "AEROLUX LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aeromaintenancelimited": {
+  "number": "04519316",
+  "ch_name": "AERO MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aeropeoplelimited": {
+  "number": "04191976",
+  "ch_name": "AEROPEOPLE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aeroresponselimited": {
+  "number": "04389398",
+  "ch_name": "AERORESPONSE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aerosmaintenancelimited": {
+  "number": "03320874",
+  "ch_name": "AEROS MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aerospacedesignfacilitieslimited": {
+  "number": "03912742",
+  "ch_name": "AEROSPACE DESIGN FACILITIES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aerospacendtlimited": {
+  "number": "03615502",
+  "ch_name": "AEROSPACE NDT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aerospacetoolinglimited": {
+  "number": "06045956",
+  "ch_name": "AEROSPACE TOOLING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aerospoolspolsro": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Slovak company (spol. s r. o.), not on Companies House"
+ },
+ "aerotechaircraftmaintenancelimited": {
+  "number": "03439316",
+  "ch_name": "AEROTECH AIRCRAFT MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aerotechnicsmanchesterlimited": {
+  "number": "07457963",
+  "ch_name": "AERO TECHNICS (MANCHESTER) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aerotechsystemslimited": {
+  "number": "09581572",
+  "ch_name": "AEROTECH SYSTEMS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aerotegritylimited": {
+  "number": "15625851",
+  "ch_name": "AEROTEGRITY LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aerotronavoteclimited": {
+  "number": "10157575",
+  "ch_name": "AEROTRON AVOTEC LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aeroweldlimited": {
+  "number": "03430964",
+  "ch_name": "AEROWELD LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aesaerolimited": {
+  "number": "14029549",
+  "ch_name": "AES AERO LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "afdsystemslimited": {
+  "number": "07081294",
+  "ch_name": "AFD SYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "affinityflyingserviceslimited": {
+  "number": "09811656",
+  "ch_name": "AFFINITY FLYING SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airatlantaaviaserviceslimited": {
+  "number": "03620905",
+  "ch_name": "AIR ATLANTA AVIASERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airbaseukinteriorslimited": {
+  "number": "12068803",
+  "ch_name": "AIRBASE UK INTERIORS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airbourneaviationserviceslimited": {
+  "number": "16115366",
+  "ch_name": "AIRBOURNE AVIATION SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airbus": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "low",
+  "source": "review",
+  "reason": "No UK postcode; UK.147 approval likely for Airbus SAS (France, foreign), UK Airbus entities not identifiable"
+ },
+ "airbusdefenceandspacesa": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Spanish S.A. (sociedad anonima), not a UK company; Airbus Defence and Space Limited 02449259 is a different UK entity"
+ },
+ "airbushelicopters": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Airbus Helicopters (French SAS, Marignane), foreign Part 147 approval with no UK address; not Airbus Helicopters UK Ltd"
+ },
+ "airbushelicoptersdeutschlandgmbh": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "German GmbH, not a UK company; Airbus Helicopters UK Limited 01164090 is a different entity"
+ },
+ "airbushelicoptersuklimited": {
+  "number": "01164090",
+  "ch_name": "AIRBUS HELICOPTERS UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aircamoaviationlimited": {
+  "number": "09557856",
+  "ch_name": "AIRCAMO AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aircamoengineslimited": {
+  "number": "12587006",
+  "ch_name": "AIRCAMO ENGINES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aircharterscotlandlimited": {
+  "number": "SC303971",
+  "ch_name": "AIR CHARTER SCOTLAND LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aircraftcomponentserviceslimited": {
+  "number": "04371529",
+  "ch_name": "AIRCRAFT COMPONENT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aircraftengineeringacademysrl": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Italian S.r.l., not a UK company"
+ },
+ "aircraftengineeringconsultancyandtraininglimited": {
+  "number": "07299890",
+  "ch_name": "AIRCRAFT ENGINEERING CONSULTANCY AND TRAINING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aircraftengineerslimited": {
+  "number": "SC226029",
+  "ch_name": "AIRCRAFT ENGINEERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aircraftinstrumentslimited": {
+  "number": "02958900",
+  "ch_name": "AIRCRAFT INSTRUMENTS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aircraftservicingguernseylimited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Guernsey company (GY8 postcode); not registered at Companies House"
+ },
+ "airframeassemblieslimited": {
+  "number": "01962149",
+  "ch_name": "AIRFRAME ASSEMBLIES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "airleasinglimited": {
+  "number": "02772518",
+  "ch_name": "AIR LEASING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airleasinglimiteda825supp2": {
+  "number": "02772518",
+  "ch_name": "AIR LEASING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name and postcode NN6 0BN (Sywell)"
+ },
+ "airlinecomponentsinternationallimited": {
+  "number": "02200536",
+  "ch_name": "AIRLINE COMPONENTS INTERNATIONAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "airmastersuklimited": {
+  "number": "09294944",
+  "ch_name": "AIRMASTERS (UK) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "airmenuiserie": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "French company (Air Menuiserie), not on Companies House"
+ },
+ "airnavigationandtradingcompanylimited": {
+  "number": "00437101",
+  "ch_name": "AIR NAVIGATION AND TRADING COMPANY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airoperationtechnologiesas": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Czech a.s., not a UK company"
+ },
+ "airspeedaviationlimited": {
+  "number": "01618642",
+  "ch_name": "AIRSPEED AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airtankerserviceslimited": {
+  "number": "06279646",
+  "ch_name": "AIRTANKER SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airwaysaeroassociationslimited": {
+  "number": "00447296",
+  "ch_name": "AIRWAYS AERO ASSOCIATIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "airxjetsupportlimited": {
+  "number": "05651555",
+  "ch_name": "AIRX JET SUPPORT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ajwtechniqueeuropelimited": {
+  "number": "08254763",
+  "ch_name": "AJW TECHNIQUE EUROPE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "alicebluaerolimited": {
+  "number": "NI673794",
+  "ch_name": "ALICE BLU AERO LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "all4jetsspzoospk": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Polish limited partnership (Sp. z o.o. Sp.k.); not a UK company"
+ },
+ "altitudegloballimited": {
+  "number": "03703253",
+  "ch_name": "ALTITUDE GLOBAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "ametekairtechnologygrouplimitedairscrew": {
+  "number": "00499805",
+  "ch_name": "AMETEK AIRTECHNOLOGY GROUP LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact legal name, previously Airscrew Limited; Airscrew is the division"
+ },
+ "amsafebridportlimited": {
+  "number": "00140449",
+  "ch_name": "AMSAFE BRIDPORT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "angeltrainingsystemslimited": {
+  "number": "05837835",
+  "ch_name": "ANGEL TRAINING SYSTEMS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "apfiltrationlimited": {
+  "number": "01969231",
+  "ch_name": "AP FILTRATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "apmsaviationlimited": {
+  "number": "07411839",
+  "ch_name": "APMS AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "apolloairserviceslimited": {
+  "number": "08489950",
+  "ch_name": "APOLLO AIR SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "apphlimited": {
+  "number": "01972451",
+  "ch_name": "APPH LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "applusuklimited": {
+  "number": "SC236136",
+  "ch_name": "APPLUS UK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ardentaviationlimited": {
+  "number": "14781903",
+  "ch_name": "ARDENT AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "argomobilerepairteamuklimited": {
+  "number": "11634843",
+  "ch_name": "ARGO MOBILE REPAIR TEAM (UK) LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "arionaviationlimited": {
+  "number": "08744163",
+  "ch_name": "ARION AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "asaerospacelimited": {
+  "number": "07472248",
+  "ch_name": "AS AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "ascendairwayslimited": {
+  "number": "05228762",
+  "ch_name": "ASCEND AIRWAYS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ascentindustrieslimited": {
+  "number": "07731403",
+  "ch_name": "ASCENT INDUSTRIES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "aslairlinesuklimited": {
+  "number": "12776510",
+  "ch_name": "ASL AIRLINES UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "atccaerotechnicalconsultingcoachinggmbh": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "German/Austrian GmbH, not a UK company"
+ },
+ "atcholdingslimited": {
+  "number": "03377264",
+  "ch_name": "ATC HOLDINGS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "atlanticaviationgrouplimited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Irish company (Shannon), no UK registration found; no postcode on CAA list"
+ },
+ "atlanticflightmaintenancelimited": {
+  "number": "07882666",
+  "ch_name": "ATLANTIC FLIGHT MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "atlashelicopterslimited": {
+  "number": "04330355",
+  "ch_name": "ATLAS HELICOPTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "atsaerolimited": {
+  "number": "01126061",
+  "ch_name": "ATS AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aurignyairserviceslimited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Guernsey States-owned airline registered in Guernsey (GY8); not on Companies House"
+ },
+ "autogyrocertificationlimited": {
+  "number": "05486550",
+  "ch_name": "AUTOGYRO CERTIFICATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "avalonaerolimited": {
+  "number": "04124583",
+  "ch_name": "AVALON AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "avalonaerotechnicalserviceslimited": {
+  "number": "06924818",
+  "ch_name": "AVALON AERO TECHNICAL SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aviatechniquelimited": {
+  "number": "04494889",
+  "ch_name": "AVIA TECHNIQUE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aviationconsultancyengineeringserviceslimited": {
+  "number": "04184783",
+  "ch_name": "AVIATION CONSULTANCY & ENGINEERING SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aviationconsultlimited": {
+  "number": "11479358",
+  "ch_name": "AVIATION CONSULT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aviationworkslimited": {
+  "number": "11304154",
+  "ch_name": "AVIATION WORKS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "aviccabinsystemsuklimited": {
+  "number": "11577055",
+  "ch_name": "AVIC CABIN SYSTEMS (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "avionicarelimited": {
+  "number": "02434979",
+  "ch_name": "AVIONICARE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "avmanengineeringlimited": {
+  "number": "06905155",
+  "ch_name": "AVMAN ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "avtracuklimited": {
+  "number": "02714345",
+  "ch_name": "AVTRAC (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "b17preservationlimitedengineeringdivision": {
+  "number": "01691958",
+  "ch_name": "B17 PRESERVATION LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name (B-17 Sally B operator at Duxford); registered office Surbiton, SIC 99000 odd"
+ },
+ "babcockaerospacelimited": {
+  "number": "03887962",
+  "ch_name": "BABCOCK AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "babcockmissioncriticalservicesdesignandcompletionslimited": {
+  "number": "05035651",
+  "ch_name": "BABCOCK MISSION CRITICAL SERVICES DESIGN AND COMPLETIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "babcockmissioncriticalservicesonshorelimited": {
+  "number": "03776034",
+  "ch_name": "BABCOCK MISSION CRITICAL SERVICES ONSHORE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "bacityflyerlimited": {
+  "number": "02571224",
+  "ch_name": "BA CITYFLYER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "baesystemscorporateairtravellimited": {
+  "number": "03666197",
+  "ch_name": "BAE SYSTEMS (CORPORATE AIR TRAVEL) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "baesystemsoperationslimited": {
+  "number": "01996687",
+  "ch_name": "BAE SYSTEMS (OPERATIONS) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "baesystemsoperationslimitedbaesystemsregionalaircraft": {
+  "number": "01996687",
+  "ch_name": "BAE SYSTEMS (OPERATIONS) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Legal name BAE Systems (Operations) Limited matches exactly; SIC 30300; Regional Aircraft is its Prestwick business unit"
+ },
+ "baesystemsplc": {
+  "number": "01470151",
+  "ch_name": "BAE SYSTEMS PLC",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "baeuroflyerlimited": {
+  "number": "13734241",
+  "ch_name": "BA EUROFLYER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "barnbrooksystemslimited": {
+  "number": "01362146",
+  "ch_name": "BARNBROOK SYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "bctaviationmaintenancelimited": {
+  "number": "04355793",
+  "ch_name": "BCT AVIATION MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "beadlightlimited": {
+  "number": "02127821",
+  "ch_name": "BEADLIGHT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "beaerospaceuklimited": {
+  "number": "03599118",
+  "ch_name": "B/E AEROSPACE (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, registered office LU7 4TB matches CAA postcode"
+ },
+ "belltextroninc": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "US corporation (Bell Textron Inc., Texas); no UK registration found"
+ },
+ "bigginairlimited": {
+  "number": "02225317",
+  "ch_name": "BIGGINAIR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "bodminlightaeroplaneserviceslimited": {
+  "number": "02018497",
+  "ch_name": "BODMIN LIGHT AEROPLANE SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "boeingustrainingandflightservicesllc": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "US limited liability company, not the UK subsidiary Boeing UK Training and Flight Services Ltd"
+ },
+ "bombardierservicesuklimited": {
+  "number": "03601305",
+  "ch_name": "BOMBARDIER SERVICES (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "bookajetlimited": {
+  "number": "02651944",
+  "ch_name": "BOOKAJET LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "bosaerospacelimited": {
+  "number": "08262433",
+  "ch_name": "BOS AEROSPACE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "bostonairlimited": {
+  "number": "00381534",
+  "ch_name": "BOSTONAIR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "bostonairtechnicaltraininglimited": {
+  "number": "06438632",
+  "ch_name": "BOSTONAIR TECHNICAL TRAINING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "boultbeeflightacademylimited": {
+  "number": "07623458",
+  "ch_name": "BOULTBEE FLIGHT ACADEMY LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "bournemouthaviationserviceslimited": {
+  "number": "01766171",
+  "ch_name": "BOURNEMOUTH AVIATION SERVICES LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "bournemouthavionicslimited": {
+  "number": "05194734",
+  "ch_name": "BOURNEMOUTH AVIONICS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "bradforlimited": {
+  "number": "NI030422",
+  "ch_name": "BRADFOR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "brinkleyaircraftserviceslimited": {
+  "number": "03381760",
+  "ch_name": "BRINKLEY AIRCRAFT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "brinkleypropellerserviceslimited": {
+  "number": "06238815",
+  "ch_name": "BRINKLEY PROPELLER SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "bristowhelicopterslimited": {
+  "number": "00551102",
+  "ch_name": "BRISTOW HELICOPTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "britishairwaysengineeringgatwicklimited": {
+  "number": "16147388",
+  "ch_name": "BRITISH AIRWAYS ENGINEERING GATWICK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "britishairwaysengineeringwaleslimited": {
+  "number": "02204178",
+  "ch_name": "BRITISH AIRWAYS ENGINEERING WALES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "britishairwaysplc": {
+  "number": "01777777",
+  "ch_name": "BRITISH AIRWAYS PLC",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "britishballoonandairshipclublimited": {
+  "number": "00892386",
+  "ch_name": "BRITISH BALLOON AND AIRSHIP CLUB LIMITED(THE)",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "britishglidingassociationlimited": {
+  "number": "00422605",
+  "ch_name": "BRITISH GLIDING ASSOCIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "britishglidingassociationtra": {
+  "number": "00422605",
+  "ch_name": "BRITISH GLIDING ASSOCIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Name matches and registered office postcode LE19 1RJ matches"
+ },
+ "britishmicrolightaircraftassociationlimited": {
+  "number": "01678351",
+  "ch_name": "BRITISH MICROLIGHT AIRCRAFT ASSOCIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "britishschoolofaviationlimited": {
+  "number": "11478134",
+  "ch_name": "BRITISH SCHOOL OF AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "brittennormanaerospacelimited": {
+  "number": "06401337",
+  "ch_name": "BRITTEN-NORMAN AEROSPACE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "bygoneaviationlimited": {
+  "number": "05746372",
+  "ch_name": "BYGONE AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "cabinairserviceslimited": {
+  "number": "05845889",
+  "ch_name": "CABINAIR SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "caeinc": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Canadian corporation, not a UK company"
+ },
+ "caerdavlimited": {
+  "number": "08009507",
+  "ch_name": "CAERDAV LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "caledonianairbornesystemslimited": {
+  "number": "02207626",
+  "ch_name": "CALEDONIAN AIRBORNE SYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "cameronballoonslimited": {
+  "number": "01006715",
+  "ch_name": "CAMERON BALLOONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "capitalairserviceslimited": {
+  "number": "02980781",
+  "ch_name": "CAPITAL AIR SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cardiffandvalecollege": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Further education corporation in Wales, not a Companies House company"
+ },
+ "cardinalhelicopterserviceslimited": {
+  "number": "08874961",
+  "ch_name": "CARDINAL HELICOPTER SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "casaeroserviceslimited": {
+  "number": "13073601",
+  "ch_name": "CAS AERO SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "castleairlimited": {
+  "number": "03188994",
+  "ch_name": "CASTLE AIR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "catreusaoclimited": {
+  "number": "07490287",
+  "ch_name": "CATREUS AOC LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "caviceprotectionlimited": {
+  "number": "06714461",
+  "ch_name": "CAV ICE PROTECTION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "celairiongmbh": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "German GmbH, foreign organisation"
+ },
+ "centrelineavlimited": {
+  "number": "02333041",
+  "ch_name": "CENTRELINE AV LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cfsaeroproductslimited": {
+  "number": "07899604",
+  "ch_name": "CFS AEROPRODUCTS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cfsmaintenancelimited": {
+  "number": "07339186",
+  "ch_name": "CFS MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "channelislandsaeroserviceslimited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Jersey company (JE3 postcode); Jersey companies are not on Companies House and no match found"
+ },
+ "chcscotialimited": {
+  "number": "00936569",
+  "ch_name": "CHC SCOTIA LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "cheltonlimited": {
+  "number": "00896823",
+  "ch_name": "CHELTON LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cheshireflyingserviceslimited": {
+  "number": "01181855",
+  "ch_name": "CHESHIRE FLYING SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cirrusdesigncorporation": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "US corporation, not a UK company"
+ },
+ "civilaviationtechnicaltrainingsolutionslimited": {
+  "number": "05846366",
+  "ch_name": "CIVIL AVIATION TECHNICAL TRAINING SOLUTIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cobaltaerospacelimited": {
+  "number": "08435365",
+  "ch_name": "COBALT AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "compactrailssystemslimited": {
+  "number": "08349463",
+  "ch_name": "COMPACT RAILS & SYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "componentprocessrepairlimited": {
+  "number": "02521221",
+  "ch_name": "COMPONENT PROCESS AND REPAIR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "conciergeulimited": {
+  "number": "10781545",
+  "ch_name": "CONCIERGE U LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "covingtonaircrafteulimited": {
+  "number": "12263538",
+  "ch_name": "COVINGTON AIRCRAFT EU, LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cranfieldaerospacesolutionslimited": {
+  "number": "02415720",
+  "ch_name": "CRANFIELD AEROSPACE SOLUTIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "crstechnicslimited": {
+  "number": "10264365",
+  "ch_name": "CRS TECHNICS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "csebournemouthlimited": {
+  "number": "01474814",
+  "ch_name": "CSE BOURNEMOUTH LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cuttingedgehelicoptermaintenancelimited": {
+  "number": "NI673144",
+  "ch_name": "CUTTING EDGE HELICOPTER MAINTENANCE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "cuttingedgehelicopterslimited": {
+  "number": "NI611345",
+  "ch_name": "CUTTING EDGE HELICOPTERS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "darchemengineeringlimited": {
+  "number": "SC144767",
+  "ch_name": "DARCHEM ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "dassaultaviation": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "French societe anonyme; UK entries are separate subsidiaries/branches (Dassault Falcon Service)"
+ },
+ "ddaloaviacinsociedadlimitada": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Spanish Sociedad Limitada, foreign organisation"
+ },
+ "deaaviationlimited": {
+  "number": "05728943",
+  "ch_name": "DEA AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dehavillandsupportlimited": {
+  "number": "04049847",
+  "ch_name": "DE HAVILLAND SUPPORT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dehavillandsupportlimitedtra": {
+  "number": "04049847",
+  "ch_name": "DE HAVILLAND SUPPORT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, registered office Duxford Airfield CB22 4QR matches"
+ },
+ "deltairaerospacelimitedtra": {
+  "number": "04402573",
+  "ch_name": "DELTAIR AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, SIC 33160, Hampshire aviation business; now in liquidation"
+ },
+ "deltairlimited": {
+  "number": "09580458",
+  "ch_name": "DELTAIR LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name, Waterlooville PO7 7AN near CAA PO7 7XG; but filed as dormant; former trading co Deltair Aerospace 04402573 (SIC 33160) in liquidation"
+ },
+ "developingassetsuklimited": {
+  "number": "04411666",
+  "ch_name": "DEVELOPING ASSETS (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "devonairambulancetradingcompanylimited": {
+  "number": "03876276",
+  "ch_name": "DEVON AIR AMBULANCE TRADING COMPANY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dgsaeropartslimited": {
+  "number": "16283083",
+  "ch_name": "DGS AEROPARTS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dhlairuklimited": {
+  "number": "01671114",
+  "ch_name": "DHL AIR (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "diamondhotairballoonslimited": {
+  "number": "05772595",
+  "ch_name": "DIAMOND HOT AIR BALLOONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "directflightlimited": {
+  "number": "01762483",
+  "ch_name": "DIRECTFLIGHT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dragonaviationsportaircraftlimited": {
+  "number": "14098356",
+  "ch_name": "DRAGON AVIATION SPORT AIRCRAFT LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dragonflyaviationserviceslimited": {
+  "number": "07948303",
+  "ch_name": "DRAGONFLY AVIATION SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "drlarder": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Sole trader D R Larder t/a Air-Tech, not a company"
+ },
+ "drucklimited": {
+  "number": "01590333",
+  "ch_name": "DRUCK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dsphelicopterslimited": {
+  "number": "SC820774",
+  "ch_name": "DSP HELICOPTERS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "dukeriesaviationlimited": {
+  "number": "05081048",
+  "ch_name": "DUKERIES AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dunhillaviationengineeringlimited": {
+  "number": "13745654",
+  "ch_name": "DUNHILL AVIATION ENGINEERING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "dunlopaircrafttyreslimited": {
+  "number": "03226333",
+  "ch_name": "DUNLOP AIRCRAFT TYRES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "eagleaeroengineeringlimited": {
+  "number": "07025947",
+  "ch_name": "EAGLE AERO ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "eastmidlandsflyingschoollimited": {
+  "number": "01778013",
+  "ch_name": "EAST MIDLANDS FLYING SCHOOL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "eastmidlandshelicoptersengineeringlimited": {
+  "number": "05572335",
+  "ch_name": "EAST MIDLANDS HELICOPTERS ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "easyballoonslimited": {
+  "number": "07276494",
+  "ch_name": "EASY BALLOONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "easyjetuklimited": {
+  "number": "10886978",
+  "ch_name": "EASYJET UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "eatonlimited": {
+  "number": "00155621",
+  "ch_name": "EATON LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ebghelicopterslimited": {
+  "number": "03887878",
+  "ch_name": "E.B.G. (HELICOPTERS) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ebghelicopterssalesmaintenancelimited": {
+  "number": "07197311",
+  "ch_name": "EBG HELICOPTERS (SALES & MAINTENANCE) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "echo4limited": {
+  "number": "13623829",
+  "ch_name": "ECHO 4 LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "econpropellerlimited": {
+  "number": "06146365",
+  "ch_name": "ECON PROPELLER LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ecubemaintenancelimited": {
+  "number": "11513806",
+  "ch_name": "ECUBE MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "ekteos": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "French company (EKTEOS); no Companies House results"
+ },
+ "elevateairlimited": {
+  "number": "14548162",
+  "ch_name": "ELEVATE AIR, LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ellipseaerosro": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Czech s.r.o., not a UK company"
+ },
+ "emeraldairlinesuklimited": {
+  "number": "NI683576",
+  "ch_name": "EMERALD AIRLINES UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "enersyslimited": {
+  "number": "00731261",
+  "ch_name": "ENERSYS LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "enstoneairlineslimited": {
+  "number": "03110902",
+  "ch_name": "ENSTONE AIRLINES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "enstoneairlineslimiteda825supp2": {
+  "number": "03110902",
+  "ch_name": "ENSTONE AIRLINES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, SIC 33160 aircraft maintenance; registered office at agent in Taplow"
+ },
+ "eplanelimited": {
+  "number": "03920748",
+  "ch_name": "E - PLANE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "essexaeroengineslimited": {
+  "number": "13784725",
+  "ch_name": "ESSEX AERO ENGINES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "essexhertsairambulancetrust": {
+  "number": "05397840",
+  "ch_name": "ESSEX & HERTS AIR AMBULANCE TRUST",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ethosenergyaccessoriesandcomponentslimited": {
+  "number": "SC853846",
+  "ch_name": "ETHOSENERGY ACCESSORIES AND COMPONENTS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "etihadairwaysengineeringllc": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "UAE LLC, foreign organisation"
+ },
+ "euraviaengineeringsupplycompanylimited": {
+  "number": "02239011",
+  "ch_name": "EURAVIA ENGINEERING & SUPPLY CO. LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "euroflightmaintenancelimited": {
+  "number": "15959892",
+  "ch_name": "EURO FLIGHT MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "europeanskybuslimited": {
+  "number": "02850498",
+  "ch_name": "EUROPEAN SKYBUS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "evolitolimited": {
+  "number": "11308921",
+  "ch_name": "EVOLITO LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "excelcharterlimited": {
+  "number": "04110313",
+  "ch_name": "EXCEL CHARTER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "excelcharterlimiteda823a825a825supp2": {
+  "number": "04110313",
+  "ch_name": "EXCEL CHARTER LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Current name Excel Charter Limited (held since 2000, aviation SIC 51101); 12828434 only briefly used the name in Aug 2024; 04110313 page shows an insolvency tab; RM4 postcode not matched"
+ },
+ "executivejetcharterlimited": {
+  "number": "02978848",
+  "ch_name": "EXECUTIVE JET CHARTER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "exeteraerospacelimited": {
+  "number": "12302344",
+  "ch_name": "EXETER AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "exetercollege": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Further education corporation, not a Companies House company"
+ },
+ "expressaviationsupportinternationallimited": {
+  "number": "03903397",
+  "ch_name": "EXPRESS AVIATION SUPPORT INTERNATIONAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "eyetechengineeringlimited": {
+  "number": "02140095",
+  "ch_name": "EYETECH ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "falconaviationlimited": {
+  "number": "02612526",
+  "ch_name": "FALCON AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "falconaviationlimiteda825supp2": {
+  "number": "02612526",
+  "ch_name": "FALCON AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name and only active match; SIC 96090 and Crowthorne address do not confirm the OX13 location"
+ },
+ "falconflyingserviceslimited": {
+  "number": "03822142",
+  "ch_name": "FALCON FLYING SERVICES LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "fastaviationlimited": {
+  "number": "08673277",
+  "ch_name": "FAST AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "fcslengineeringlimited": {
+  "number": "11269768",
+  "ch_name": "FCSL ENGINEERING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "fergussonsadvancedcompositetechnologylimited": {
+  "number": "07591421",
+  "ch_name": "FERGUSSON'S ADVANCED COMPOSITE TECHNOLOGY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ffelimited": {
+  "number": "01192710",
+  "ch_name": "FFE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "flexjetoperationslimited": {
+  "number": "06528991",
+  "ch_name": "FLEXJET OPERATIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "flightdatasystemslimited": {
+  "number": "08182992",
+  "ch_name": "FLIGHT DATA SYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "flightsafetyinternationalinc": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "US corporation, not the UK subsidiary FlightSafety International U.K. Ltd"
+ },
+ "flistuklimited": {
+  "number": "12095722",
+  "ch_name": "F. LIST UK LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "fliteteclimited": {
+  "number": "02868467",
+  "ch_name": "FLITETEC LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "flybelimited": {
+  "number": "12875147",
+  "ch_name": "FLYBE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "flyharrierlimited": {
+  "number": "09348283",
+  "ch_name": "FLY HARRIER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "flyingsmartmaintenancelimited": {
+  "number": "15894878",
+  "ch_name": "FLYING SMART MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "flylightairsportslimited": {
+  "number": "03018177",
+  "ch_name": "FLYLIGHT AIRSPORTS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "flymoorelimited": {
+  "number": "10600033",
+  "ch_name": "FLYMOORE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "foxaircraftengineering": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "low",
+  "source": "review",
+  "reason": "No company named Fox Aircraft Engineering; likely trading name/sole trader. Flying Fox Aviation Ltd 11242104 shares postcode YO7 2PH (Bagby) but name differs"
+ },
+ "fptindustrieslimited": {
+  "number": "15273876",
+  "ch_name": "F.P.T. INDUSTRIES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "franklinproductslimited": {
+  "number": "03662925",
+  "ch_name": "FRANKLIN PRODUCTS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "fraviationlimited": {
+  "number": "00845310",
+  "ch_name": "FR AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "freedomaviationlimited": {
+  "number": "05903693",
+  "ch_name": "FREEDOM AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "frequencialimited": {
+  "number": "07127853",
+  "ch_name": "FREQUENCIA LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "frmaviationserviceslimited": {
+  "number": "12260052",
+  "ch_name": "FRM AVIATION SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "ftaerolimited": {
+  "number": "12860903",
+  "ch_name": "FT AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "gamaaviationengineeringlimited": {
+  "number": "07842470",
+  "ch_name": "GAMA AVIATION (ENGINEERING) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "gamaaviationuklimited": {
+  "number": "01764148",
+  "ch_name": "GAMA AVIATION (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "gardneraerospacebasildonlimited": {
+  "number": "03921668",
+  "ch_name": "GARDNER AEROSPACE - BASILDON LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "garmineuropelimited": {
+  "number": "02724437",
+  "ch_name": "GARMIN (EUROPE) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "gasturbinesolutionslimited": {
+  "number": "SC357261",
+  "ch_name": "GAS TURBINE SOLUTIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "gcaviationmaintenancelimited": {
+  "number": "09356453",
+  "ch_name": "GC AVIATION MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "geaircraftengineserviceslimited": {
+  "number": "02605713",
+  "ch_name": "GE AIRCRAFT ENGINE SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "geaviationsystemslimited": {
+  "number": "00745917",
+  "ch_name": "GE AVIATION SYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "gecaledonianlimited": {
+  "number": "SC064580",
+  "ch_name": "GE CALEDONIAN LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "generalaeroserviceslimited": {
+  "number": "02827073",
+  "ch_name": "GENERAL AERO SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "gjdaerotechlimited": {
+  "number": "06437661",
+  "ch_name": "GJD AEROTECH LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "gknaerospaceserviceslimited": {
+  "number": "00355922",
+  "ch_name": "GKN AEROSPACE SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "gknaerospaceserviceslimitediow": {
+  "number": "00355922",
+  "ch_name": "GKN AEROSPACE SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name (IoW is site suffix), aerospace business"
+ },
+ "glennairtrainingcentrelimited": {
+  "number": "01565250",
+  "ch_name": "GLENNAIR TRAINING CENTRE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "globalaviationlimited": {
+  "number": "02845996",
+  "ch_name": "GLOBAL AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "globalaviationlimiteda825supp2": {
+  "number": "02845996",
+  "ch_name": "GLOBAL AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name, SIC 52230 air transport services; registered at accountant in Sutton Coldfield, CAA site Humberside DN39"
+ },
+ "goodrichactuationsystemslimited": {
+  "number": "04482320",
+  "ch_name": "SAFRAN ACTUATION SYSTEMS UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Previous name Goodrich Actuation Systems Limited (to Jul 2026), postcode WV10 7EH, SIC 30300"
+ },
+ "goodrichaerospaceuklimited": {
+  "number": "02426119",
+  "ch_name": "GOODRICH AEROSPACE UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "goodrichcontrolsystemsmarstongreen": {
+  "number": "04482312",
+  "ch_name": "GOODRICH CONTROL SYSTEMS",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name (unlimited company, formerly Goodrich Control Systems Limited), Solihull registered office near Marston Green site"
+ },
+ "goodwoodroadracingcompanylimited": {
+  "number": "00466176",
+  "ch_name": "GOODWOOD ROAD RACING COMPANY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "gpseuropelimited": {
+  "number": "SC136694",
+  "ch_name": "G.P.S. (EUROPE) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "griffithsaerolimited": {
+  "number": "06725523",
+  "ch_name": "GRIFFITHS AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "gulfstreamaerospacelimited": {
+  "number": "04690404",
+  "ch_name": "GULFSTREAM AEROSPACE, LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "h4aerospaceuklimited": {
+  "number": "04165823",
+  "ch_name": "H4 AEROSPACE (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "haecoglobalenginesupportlimited": {
+  "number": "13631334",
+  "ch_name": "HAECO GLOBAL ENGINE SUPPORT LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "hambleaerostructureslimited": {
+  "number": "12109077",
+  "ch_name": "HAMBLE AEROSTRUCTURES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "hanleysmithlimited": {
+  "number": "01775011",
+  "ch_name": "HANLEY SMITH LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "harrodsaviationlimited": {
+  "number": "02043317",
+  "ch_name": "HARRODS AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "haverfordwestaircharterserviceslimited": {
+  "number": "05252036",
+  "ch_name": "HAVERFORDWEST AIR CHARTER SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "heartsinetechnologieslimited": {
+  "number": "NI034331",
+  "ch_name": "HEARTSINE TECHNOLOGIES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "heliairlimited": {
+  "number": "02028932",
+  "ch_name": "HELI AIR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "helicentreaviationlimited": {
+  "number": "04200787",
+  "ch_name": "HELICENTRE AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "helicoptermaintenancelimited": {
+  "number": "04096979",
+  "ch_name": "HELICOPTER MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "heliflightaoclimited": {
+  "number": "06492999",
+  "ch_name": "HELIFLIGHT AOC LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "helimechlimited": {
+  "number": "05589497",
+  "ch_name": "HELIMECH LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "heliservelimited": {
+  "number": "09668586",
+  "ch_name": "HELISERVE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "heliserviceslimited": {
+  "number": "10236441",
+  "ch_name": "HELI SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "heliserviceuklimited": {
+  "number": "12820744",
+  "ch_name": "HELISERVICE U.K. LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "heliworkserviceslimited": {
+  "number": "01948441",
+  "ch_name": "HELIWORK (SERVICES) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "helixavlimited": {
+  "number": "10615728",
+  "ch_name": "HELIX AV LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "herculespropellerslimited": {
+  "number": "09526222",
+  "ch_name": "HERCULES PROPELLERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "heritageaircraftlimited": {
+  "number": "07084892",
+  "ch_name": "HERITAGE AIRCRAFT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "hfilimited": {
+  "number": "03207181",
+  "ch_name": "H.F.I. LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "highlandaviationtraininglimited": {
+  "number": "SC357935",
+  "ch_name": "HIGHLAND AVIATION TRAINING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "honeywelluklimited": {
+  "number": "00301598",
+  "ch_name": "HONEYWELL UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "horizonaircraftserviceslimited": {
+  "number": "08633304",
+  "ch_name": "HORIZON AIRCRAFT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "horizonaircraftserviceslimiteda825supp2": {
+  "number": "08633304",
+  "ch_name": "HORIZON AIRCRAFT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, registered at St Athan CF62 matching CAA area"
+ },
+ "horizondesignserviceslimited": {
+  "number": "12192553",
+  "ch_name": "HORIZON DESIGN SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, SIC 33160, Essex (Braintree) office near CAA SS3; note active proposal to strike off"
+ },
+ "hqaviationlimited": {
+  "number": "07587658",
+  "ch_name": "HQ AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "hrsmithtechnicaldevelopmentslimited": {
+  "number": "00878510",
+  "ch_name": "H.R. SMITH (TECHNICAL DEVELOPMENTS) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "hsmarstonaerospacelimited": {
+  "number": "02590031",
+  "ch_name": "HS MARSTON AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "hybridairvehicleslimited": {
+  "number": "06270723",
+  "ch_name": "HYBRID AIR VEHICLES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "iaelimited": {
+  "number": "04973750",
+  "ch_name": "INTERNATIONAL AEROSPACE ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "IAE Ltd website = International Aerospace Engineering; postcode MK44 2BN Little Staughton, SIC 33160"
+ },
+ "iasmedicallimited": {
+  "number": "05914453",
+  "ch_name": "IAS MEDICAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "iberialineasaereasdeespanasociedadanonimaoperadora": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Spanish S.A.; only a UK overseas-company registration exists (FC029928 / branch BR014912), not a UK company"
+ },
+ "icpsrl": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Italian Srl, not a UK company"
+ },
+ "imtaviationlimited": {
+  "number": "05105979",
+  "ch_name": "IMT AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "imtaviationscotlandlimited": {
+  "number": "SC262303",
+  "ch_name": "IMT AVIATION SCOTLAND LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "inflightperipheralslimited": {
+  "number": "03237153",
+  "ch_name": "INFLIGHT PERIPHERALS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "infliteengineeringserviceslimited": {
+  "number": "02171334",
+  "ch_name": "INFLITE ENGINEERING SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "inflitemroserviceslimited": {
+  "number": "04356041",
+  "ch_name": "INFLITE MRO SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "insightaviationgrouplimited": {
+  "number": "09579917",
+  "ch_name": "INSIGHT AVIATION GROUP LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "instituteofairtransportlimited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "low",
+  "source": "review",
+  "reason": "No Companies House company named Institute of Air Transport found; likely a non-UK organisation"
+ },
+ "instoneairserviceslimited": {
+  "number": "01295153",
+  "ch_name": "INSTONE AIR SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "interflighttechnicalserviceslimited": {
+  "number": "08612295",
+  "ch_name": "INTERFLIGHT TECHNICAL SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "interiorsnewcolimited": {
+  "number": "10909125",
+  "ch_name": "INTERIORS NEWCO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "invictaaircraftengineeringlimited": {
+  "number": "06017413",
+  "ch_name": "INVICTA AIRCRAFT ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "invictaaircraftengineeringlimiteda825supp2": {
+  "number": "06017413",
+  "ch_name": "INVICTA AIRCRAFT ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, Kent, aviation SIC 51102"
+ },
+ "ipecoholdingslimited": {
+  "number": "00672443",
+  "ch_name": "IPECO HOLDINGS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "iscavialimited": {
+  "number": "03156392",
+  "ch_name": "ISCAVIA LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "iscavialimiteda825supp2": {
+  "number": "03156392",
+  "ch_name": "ISCAVIA LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, registered office Exeter Airport EX5 2BD matches"
+ },
+ "islanderaircraftlimited": {
+  "number": "SC332375",
+  "ch_name": "ISLANDER AIRCRAFT LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "islesofscillyskybuslimited": {
+  "number": "01802523",
+  "ch_name": "ISLES OF SCILLY SKYBUS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "jcengineeringserviceslimited": {
+  "number": "05009822",
+  "ch_name": "J & C ENGINEERING SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jet2com": {
+  "number": "02739537",
+  "ch_name": "JET2.COM LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, postcode LS19 7TU matches"
+ },
+ "jet2comlimited": {
+  "number": "02739537",
+  "ch_name": "JET2.COM LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jetexchangelimited": {
+  "number": "06267960",
+  "ch_name": "JET EXCHANGE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jetflyaviationuklimited": {
+  "number": "06920905",
+  "ch_name": "JETFLY AVIATION UK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jetglowaircraftengineeringlimited": {
+  "number": "06691330",
+  "ch_name": "JETGLOW AIRCRAFT ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jetstreamaircraftmaintenancelimited": {
+  "number": "12492747",
+  "ch_name": "JETSTREAM AIRCRAFT MAINTENANCE LTD",
+  "status": "Dissolved",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jetworkslimited": {
+  "number": "03925509",
+  "ch_name": "JETWORKS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jmijetmaintenanceinternationallimited": {
+  "number": "11742670",
+  "ch_name": "JMI - JET MAINTENANCE INTERNATIONAL LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "jrbaviationlimited": {
+  "number": "01249830",
+  "ch_name": "JRB AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "justgoldlimited": {
+  "number": "01411845",
+  "ch_name": "JUSTGOLD LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "kalaviationserviceslimited": {
+  "number": "07482780",
+  "ch_name": "KAL AVIATION SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "kbaviationlimited": {
+  "number": "07630805",
+  "ch_name": "KB AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "kearsleyairwayslimited": {
+  "number": "00432769",
+  "ch_name": "KEARSLEY AIRWAYS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "kennetaviationlimited": {
+  "number": "11272745",
+  "ch_name": "KENNET AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "kennetaviationlimiteda823": {
+  "number": "11272745",
+  "ch_name": "KENNET AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, Old Warden Park, Biggleswade SG18 matches CAA postcode area"
+ },
+ "kennetaviationlimiteda825": {
+  "number": "11272745",
+  "ch_name": "KENNET AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name and postcode SG18 9DU (Old Warden)"
+ },
+ "kennetaviationlimiteda825supp2": {
+  "number": "11272745",
+  "ch_name": "KENNET AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, registered office Old Warden SG18 9DU matches"
+ },
+ "kingmooraviationlimited": {
+  "number": "04360602",
+  "ch_name": "KINGMOOR AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "klmukengineeringlimited": {
+  "number": "02513110",
+  "ch_name": "KLM UK ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "knsiaviationengineeringlimited": {
+  "number": "08831479",
+  "ch_name": "KNSI AVIATION ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "larchfieldaerospacegraphicslimited": {
+  "number": "08715870",
+  "ch_name": "LARCHFIELD AEROSPACE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Previous name matches exactly, postcode TN9 1GN matches"
+ },
+ "leadingedgeflighttraininglimited": {
+  "number": "SC544694",
+  "ch_name": "LEADING EDGE FLIGHT TRAINING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "leonardospa": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Italian S.p.A.; not a UK company (UK arm is Leonardo UK Ltd, a different entity)"
+ },
+ "leonardouklimited": {
+  "number": "02426132",
+  "ch_name": "LEONARDO UK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "liftwesthelicopterslimited": {
+  "number": "10918760",
+  "ch_name": "LIFT WEST (HELICOPTERS) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "liftwesthelicopterslimiteda825supp2": {
+  "number": "10918760",
+  "ch_name": "LIFT WEST (HELICOPTERS) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name and postcode TA18 8PA"
+ },
+ "lightaircraftassociationlimited": {
+  "number": "00606312",
+  "ch_name": "LIGHT AIRCRAFT ASSOCIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "lindstrandindustrieslimited": {
+  "number": "10981711",
+  "ch_name": "LINDSTRAND INDUSTRIES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "loadmasterslimited": {
+  "number": "05080998",
+  "ch_name": "LOADMASTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "loganairlimited": {
+  "number": "SC170072",
+  "ch_name": "LOGANAIR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "londondenhamaviationlimited": {
+  "number": "10083779",
+  "ch_name": "LONDON DENHAM AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "londonelstreeaviationlimited": {
+  "number": "03517334",
+  "ch_name": "LONDON ELSTREE AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "londonexecutiveaviationlimited": {
+  "number": "03117502",
+  "ch_name": "LONDON EXECUTIVE AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "londonsairambulancelimited": {
+  "number": "02337239",
+  "ch_name": "LONDON'S AIR AMBULANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "looporderlimited": {
+  "number": "02091552",
+  "ch_name": "LOOPORDER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "lrttlimited": {
+  "number": "04633192",
+  "ch_name": "LRTT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "lsairmotivelimited": {
+  "number": "10600108",
+  "ch_name": "LS AIRMOTIVE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "luftaviatechnicaltraininglimited": {
+  "number": "15092718",
+  "ch_name": "LUFTAVIA TECHNICAL TRAINING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "lufthansatechnicaltraininggmbh": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "German GmbH, not a UK company; LRTT Limited 04633192 is a separate UK entity"
+ },
+ "lyddairlimited": {
+  "number": "04287335",
+  "ch_name": "LYDDAIR LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "macaviationengineeringlimited": {
+  "number": "13241828",
+  "ch_name": "MAC AVIATION ENGINEERING LTD",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name, active, SIC 52230; registered office Folkestone not OX5"
+ },
+ "macavlimited": {
+  "number": "09838778",
+  "ch_name": "MACAV LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "maerskaircargouklimited": {
+  "number": "06503461",
+  "ch_name": "MAERSK AIR CARGO UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "mageriklimited": {
+  "number": "01633829",
+  "ch_name": "MAGERIK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "magnigyrolimited": {
+  "number": "03536957",
+  "ch_name": "MAGNI GYRO LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "manufakturalotniczaspzoo": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Polish Sp. z o.o.; not a UK company"
+ },
+ "maplewaydevelopmentslimited": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "low",
+  "source": "review",
+  "reason": "No Mapleway Developments Limited found on Companies House (only unrelated Mapleway/Mapleways companies)"
+ },
+ "marshallofcambridgeaerospacelimited": {
+  "number": "00245740",
+  "ch_name": "MARSHALL OF CAMBRIDGE AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "martinbakeraircraftcompanylimited": {
+  "number": "00868042",
+  "ch_name": "MARTIN-BAKER AIRCRAFT COMPANY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "martynandersonconsultinglimited": {
+  "number": "07955566",
+  "ch_name": "MARTYN ANDERSON CONSULTING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "mcaaviationlimited": {
+  "number": "05089423",
+  "ch_name": "M C A AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "meggittaerospacelimited": {
+  "number": "03477890",
+  "ch_name": "MEGGITT AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "meggittuklimited": {
+  "number": "00629814",
+  "ch_name": "MEGGITT (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "melaviationlimited": {
+  "number": "00939400",
+  "ch_name": "MEL AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "mgrfoamtexlimited": {
+  "number": "02204272",
+  "ch_name": "MGR FOAMTEX LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "middletonsheetmetalcompanylimited": {
+  "number": "00483626",
+  "ch_name": "MIDDLETON SHEET METAL CO.LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "midlandaerospacelimited": {
+  "number": "04326476",
+  "ch_name": "MIDLAND AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "mirusaircraftseatinglimited": {
+  "number": "09435825",
+  "ch_name": "MIRUS AIRCRAFT SEATING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "missionsystemswimbornelimited": {
+  "number": "00293529",
+  "ch_name": "MISSION SYSTEMS WIMBORNE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "mkaerosupportlimited": {
+  "number": "02956195",
+  "ch_name": "MK AERO SUPPORT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "modernairuklimited": {
+  "number": "02316401",
+  "ch_name": "MODERN AIR (U.K.) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "moogcontrolslimited": {
+  "number": "01171948",
+  "ch_name": "MOOG CONTROLS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "moogwolverhamptonlimited": {
+  "number": "07008386",
+  "ch_name": "MOOG WOLVERHAMPTON LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "morganwardndtlimited": {
+  "number": "01127975",
+  "ch_name": "MORGAN-WARD (NON-DESTRUCTIVE TESTING) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "NDT abbreviates Non-Destructive Testing; registered office SK22 4NW matches"
+ },
+ "morningtonsanfordaviationtraininglimited": {
+  "number": "06231024",
+  "ch_name": "MORNINGTON SANFORD AVIATION (TRAINING) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "morsonprojectslimited": {
+  "number": "01457298",
+  "ch_name": "MORSON PROJECTS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "muirheadaerospacelimited": {
+  "number": "00560015",
+  "ch_name": "MUIRHEAD AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "multiflightlimited": {
+  "number": "02956375",
+  "ch_name": "MULTIFLIGHT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "myhelilimited": {
+  "number": "11038943",
+  "ch_name": "MYHELI LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "naljetslimited": {
+  "number": "09812608",
+  "ch_name": "NALJETS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "namairlightaircraftmaintenancelimited": {
+  "number": "09768996",
+  "ch_name": "NAMAIR LIGHT AIRCRAFT MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "namasupportserviceslimited": {
+  "number": "SC542909",
+  "ch_name": "NAMA SUPPORT SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "nationalgridelectricitytransmissionplc": {
+  "number": "02366977",
+  "ch_name": "NATIONAL GRID ELECTRICITY TRANSMISSION PLC",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "nationalgridhelicopterslimited": {
+  "number": "02439215",
+  "ch_name": "NATIONAL GRID HELICOPTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "navywingsheritageflightlimited": {
+  "number": "07052646",
+  "ch_name": "NAVY WINGS HERITAGE FLIGHT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "navywingsheritageflightlimiteda825supp2": {
+  "number": "07052646",
+  "ch_name": "NAVY WINGS HERITAGE FLIGHT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, postcode BA22 8HT matches"
+ },
+ "nayaklmgermanygmbh": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "German GmbH; not a UK company"
+ },
+ "netjetsairtransportuklimited": {
+  "number": "11211178",
+  "ch_name": "NETJETS AIR TRANSPORT UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "newcastlecollegeaviationacademy": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Part of Newcastle College / NCG, a further education corporation, not a registered company"
+ },
+ "nhvhelicopterslimited": {
+  "number": "09900216",
+  "ch_name": "NHV HELICOPTERS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "nicholsonmclarenaviationlimited": {
+  "number": "05696256",
+  "ch_name": "NICHOLSON MCLAREN AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "noordzeehelikoptersvlaanderen": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Belgian company (NHV), not on Companies House"
+ },
+ "nordameuropelimited": {
+  "number": "03223042",
+  "ch_name": "NORDAM EUROPE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "norseatlanticuklimited": {
+  "number": "13384302",
+  "ch_name": "NORSE ATLANTIC UK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "northeastaeroengineeringlimited": {
+  "number": "15483675",
+  "ch_name": "NORTH EAST AERO ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "northumbriahelicopterslimited": {
+  "number": "03756681",
+  "ch_name": "NORTHUMBRIA HELICOPTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "northwalesmilitaryaviationserviceslimited": {
+  "number": "04271213",
+  "ch_name": "NORTH WALES MILITARY AVIATION SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "northwalesmilitaryaviationserviceslimiteda825supp2": {
+  "number": "04271213",
+  "ch_name": "NORTH WALES MILITARY AVIATION SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, postcode CH4 0GZ matches"
+ },
+ "norvicaeroengineslimited": {
+  "number": "03097233",
+  "ch_name": "NORVIC AERO ENGINES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "novasystemsinternationallimited": {
+  "number": "03752187",
+  "ch_name": "NOVA SYSTEMS (INTERNATIONAL) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "oakenhurstaircraftserviceslimited": {
+  "number": "02355638",
+  "ch_name": "OAKENHURST AIRCRAFT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "offshorehelicopterservicesuklimited": {
+  "number": "04278474",
+  "ch_name": "OFFSHORE HELICOPTER SERVICES UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "oliverwymanlimited": {
+  "number": "02995605",
+  "ch_name": "OLIVER WYMAN LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "oneairlimited": {
+  "number": "13410611",
+  "ch_name": "ONE AIR LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "onticengineeringandmanufacturinguklimited": {
+  "number": "06707516",
+  "ch_name": "ONTIC ENGINEERING & MANUFACTURING UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "onticengineeringmanufacturinguklimited": {
+  "number": "06707516",
+  "ch_name": "ONTIC ENGINEERING & MANUFACTURING UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "oriensflightoperationslimited": {
+  "number": "09446206",
+  "ch_name": "ORIENS FLIGHT OPERATIONS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "oriensmaintenanceserviceslimited": {
+  "number": "10712228",
+  "ch_name": "ORIENS MAINTENANCE SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "oxtedtrimmingcompanylimited": {
+  "number": "03326166",
+  "ch_name": "OXTED TRIMMING COMPANY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "palleuropelimited": {
+  "number": "07211681",
+  "ch_name": "PALL EUROPE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "panasonicavionicscorporation": {
+  "number": "BR002930",
+  "ch_name": "PANASONIC AVIONICS CORPORATION",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "pantonbrothersmuseumunlimited": {
+  "number": "07210575",
+  "ch_name": "PANTON BROTHERS MUSEUM UNLIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "paradigmprecisionburnleylimited": {
+  "number": "05137829",
+  "ch_name": "PARADIGM PRECISION BURNLEY LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "paramountpanelsinc": {
+  "number": "FC023939",
+  "ch_name": "PARAMOUNT PANELS, INC.",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "US corporation registered as overseas company; its UK establishment BR006598 'Paramount Panels UK' is at 5 Dundee Way, Enfield EN3 7SX, matching CAA"
+ },
+ "pbengineeringsolutionslimited": {
+  "number": "07459069",
+  "ch_name": "PB ENGINEERING SOLUTIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "pegasussportaviationlimited": {
+  "number": "12221150",
+  "ch_name": "PEGASUS SPORT AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "pennygilesaerospacelimited": {
+  "number": "02336358",
+  "ch_name": "PENNY & GILES AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "pennygilescontrolslimited": {
+  "number": "00843903",
+  "ch_name": "PENNY & GILES CONTROLS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "percivalaviationlimited": {
+  "number": "01458467",
+  "ch_name": "PERCIVAL AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "pilatusflugzeugwerkeag": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Swiss AG, foreign organisation"
+ },
+ "pipistreldooajdovscina": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Slovenian d.o.o., not on Companies House"
+ },
+ "planepaperworklimited": {
+  "number": "11416773",
+  "ch_name": "PLANE PAPERWORK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "planesailingairdisplayslimited": {
+  "number": "02378479",
+  "ch_name": "PLANE SAILING AIR DISPLAYS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "planeweighslimited": {
+  "number": "01301791",
+  "ch_name": "PLANEWEIGHS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "plmdollargrouplimited": {
+  "number": "SC157532",
+  "ch_name": "PLM DOLLAR GROUP LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "porvairfiltrationgrouplimited": {
+  "number": "00888596",
+  "ch_name": "PORVAIR FILTRATION GROUP LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "prattwhitneycanadauklimited": {
+  "number": "03324641",
+  "ch_name": "PRATT & WHITNEY CANADA (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "premierjetsupportlimited": {
+  "number": "08760422",
+  "ch_name": "PREMIER JET SUPPORT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "prestwickaerolimited": {
+  "number": "04867774",
+  "ch_name": "PRESTWICK AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "prestwickaerosystemslimited": {
+  "number": "05663660",
+  "ch_name": "PRESTWICK AEROSYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "prestwickaircraftmaintenancelimited": {
+  "number": "SC252985",
+  "ch_name": "PRESTWICK AIRCRAFT MAINTENANCE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "primeflightengineeringlimited": {
+  "number": "05773317",
+  "ch_name": "PRIMEFLIGHT ENGINEERING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "propshoplimited": {
+  "number": "02990031",
+  "ch_name": "PROPSHOP LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "pureaviationsupportserviceslimited": {
+  "number": "08449690",
+  "ch_name": "PURE AVIATION SUPPORT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "pwhitehead": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Sole trader (P Whitehead t/a Shropshire Light Aviation)"
+ },
+ "qinetiqlimited": {
+  "number": "03796233",
+  "ch_name": "QINETIQ LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "raytheonsystemslimited": {
+  "number": "00406809",
+  "ch_name": "RAYTHEON SYSTEMS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "rddsavionicslimited": {
+  "number": "03414444",
+  "ch_name": "RDDS AVIONICS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "redhillaircraftmaintenanceandaircraftleasinglimited": {
+  "number": "07680023",
+  "ch_name": "REDHILL AIRCRAFT MAINTENANCE AND AIRCRAFT LEASING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "regencyjetlimited": {
+  "number": "12065239",
+  "ch_name": "REGENCY JET LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "reheataerolimited": {
+  "number": "12743720",
+  "ch_name": "REHEAT AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "remotevisualinspectionslimited": {
+  "number": "04996931",
+  "ch_name": "REMOTE VISUAL INSPECTIONS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "repaerolimited": {
+  "number": "06753073",
+  "ch_name": "REPAERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "retroteclimited": {
+  "number": "02913156",
+  "ch_name": "RETROTEC LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "retrotrackairuklimited": {
+  "number": "04089644",
+  "ch_name": "RETRO TRACK AND AIR (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "retrotrackairuklimiteda825supp2": {
+  "number": "04089644",
+  "ch_name": "RETRO TRACK AND AIR (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Name matches (& vs and), SIC 30300/33160, Gloucestershire office near CAA GL11"
+ },
+ "rgvaviationlimited": {
+  "number": "02084097",
+  "ch_name": "RGV AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "richardshuttleworthtrustees": {
+  "number": "02712981",
+  "ch_name": "RICHARD SHUTTLEWORTH TRUSTEES",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "rohraeroserviceslimited": {
+  "number": "SC166785",
+  "ch_name": "ROHR AERO SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "rokkaerolimited": {
+  "number": "06738425",
+  "ch_name": "ROKK AERO LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "rollsroyceplc": {
+  "number": "01003142",
+  "ch_name": "ROLLS-ROYCE PLC",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "rotablerepairslimited": {
+  "number": "04336375",
+  "ch_name": "ROTABLE REPAIRS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "rotorbladeslimited": {
+  "number": "05062217",
+  "ch_name": "ROTOR BLADES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "russianradialslimited": {
+  "number": "06005289",
+  "ch_name": "RUSSIAN RADIALS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "russianradialslimiteda825supp2": {
+  "number": "06005289",
+  "ch_name": "RUSSIAN RADIALS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, SIC 33160; registered office Wickford vs CAA CV37"
+ },
+ "rvlairtechlimited": {
+  "number": "01994993",
+  "ch_name": "RVL AIRTECH LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "rvlaviationlimited": {
+  "number": "01880927",
+  "ch_name": "RVL AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "ryanairuklimited": {
+  "number": "01917579",
+  "ch_name": "RYANAIR UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "sabetiwainaerospacelimited": {
+  "number": "02094671",
+  "ch_name": "SABETI WAIN AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "safranactuationsystemsuklimited": {
+  "number": "04482320",
+  "ch_name": "SAFRAN ACTUATION SYSTEMS UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "safranaerosystemsservicesuklimited": {
+  "number": "05332361",
+  "ch_name": "SAFRAN AEROSYSTEMS SERVICES UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "safranelectricalpoweruklimited": {
+  "number": "08292872",
+  "ch_name": "SAFRAN ELECTRICAL & POWER UK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "safranhelicopterengines": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "medium",
+  "source": "review",
+  "reason": "French SAS (Safran Helicopter Engines, Bordes); Safran Helicopter Engines UK Limited 01148466 is a separate UK subsidiary"
+ },
+ "safranhelicopterenginesuklimited": {
+  "number": "01148466",
+  "ch_name": "SAFRAN HELICOPTER ENGINES UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "safranlandingsystemsservicesuklimited": {
+  "number": "03528628",
+  "ch_name": "SAFRAN LANDING SYSTEMS SERVICES UK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "safranseatsgblimited": {
+  "number": "00278391",
+  "ch_name": "SAFRAN SEATS GB LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "saiaerospacetraininglimited": {
+  "number": "SC813576",
+  "ch_name": "SAI AEROSPACE TRAINING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "samcoaircraftmaintenancebv": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Dutch B.V., not a UK company"
+ },
+ "satairuklimited": {
+  "number": "03141268",
+  "ch_name": "SATAIR UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "saxonaircharterlimited": {
+  "number": "06187045",
+  "ch_name": "SAXONAIR CHARTER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "saywellinternationallimited": {
+  "number": "00579488",
+  "ch_name": "SAYWELL INTERNATIONAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "scanrhoaviationlimited": {
+  "number": "02457197",
+  "ch_name": "SCANRHO AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "sdts": {
+  "number": "10646130",
+  "ch_name": "SDTS ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "low",
+  "source": "review",
+  "reason": "Only partial name match (CAA lists just 'SDTS'); engineering SIC 71129; no postcode to confirm"
+ },
+ "senioruklimited": {
+  "number": "01928053",
+  "ch_name": "SENIOR UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "setnixlimited": {
+  "number": "14679504",
+  "ch_name": "SETNIX LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "sevenairmaintenanceunipessoallda": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Portuguese Unipessoal Lda, foreign organisation"
+ },
+ "shenleyfarmsengineeringlimited": {
+  "number": "01000671",
+  "ch_name": "SHENLEY FARMS (ENGINEERING) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "sherburnengineeringlimited": {
+  "number": "01886939",
+  "ch_name": "SHERBURN ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "shippingandairlineslimited": {
+  "number": "00388582",
+  "ch_name": "SHIPPING AND AIRLINES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "shippingandairlinestra": {
+  "number": "00388582",
+  "ch_name": "SHIPPING AND AIRLINES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Name matches, registered office Biggin Hill TN16 3BN matches"
+ },
+ "shortbrothersplc": {
+  "number": "NI001062",
+  "ch_name": "SHORT BROTHERS PLC",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "sirsnavigationlimited": {
+  "number": "01333068",
+  "ch_name": "S.I.R.S. NAVIGATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "skfuklimitedaerospacedivisionclevedon": {
+  "number": "00107367",
+  "ch_name": "SKF (U.K.) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "SKF (UK) Limited is the legal entity; Clevedon aerospace division is a site"
+ },
+ "skyborneaviationlimited": {
+  "number": "10561676",
+  "ch_name": "SKYBORNE AVIATION TRAINING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Previous name Skyborne Aviation Limited; Gloucestershire Airport GL51 6SR matches CAA postcode"
+ },
+ "skycraftserviceslimited": {
+  "number": "02001043",
+  "ch_name": "SKYCRAFT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "skysmartmrolimited": {
+  "number": "04682337",
+  "ch_name": "SKYSMART MRO LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "skytechhelicopterslimited": {
+  "number": "04815121",
+  "ch_name": "SKYTECH HELICOPTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "skywardsaviationconsultantslimited": {
+  "number": "07026692",
+  "ch_name": "SKYWARDS AVIATION CONSULTANTS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "skywheelslimited": {
+  "number": "13161231",
+  "ch_name": "SKYWHEELS LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "sloanehelicopterslimited": {
+  "number": "02347024",
+  "ch_name": "SLOANE HELICOPTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "smithsaerospacelimited": {
+  "number": "00830345",
+  "ch_name": "SMITHS AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "solenthelicopterslimited": {
+  "number": "02974106",
+  "ch_name": "SOLENT HELICOPTERS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "southdownaeroserviceslimited": {
+  "number": "00720934",
+  "ch_name": "SOUTHDOWN AERO SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "southernairframeserviceslimited": {
+  "number": "07616725",
+  "ch_name": "SOUTHERN AIRFRAME SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "southernsailplaneslimited": {
+  "number": "01778101",
+  "ch_name": "SOUTHERN SAILPLANES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "sovereignplannedservicesonlinelimited": {
+  "number": "04847873",
+  "ch_name": "SOVEREIGN PLANNED SERVICES ON LINE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "specialistoverhaulandrepairaviationlimited": {
+  "number": "12271739",
+  "ch_name": "SPECIALIST OVERHAUL AND REPAIR AVIATION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "spiresaviationdesignandproductionlimited": {
+  "number": "07087871",
+  "ch_name": "SPIRES AVIATION DESIGN AND PRODUCTION LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "stanstedaerospacelimited": {
+  "number": "05033118",
+  "ch_name": "STANSTED AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "staplefordflyingclublimited": {
+  "number": "00967895",
+  "ch_name": "STAPLEFORD FLYING CLUB LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "starlingaerospacelimited": {
+  "number": "04199249",
+  "ch_name": "STARLING AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "starspeedlimited": {
+  "number": "01371670",
+  "ch_name": "STARSPEED LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "stctwentyonelimited": {
+  "number": "04765746",
+  "ch_name": "STC TWENTY ONE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "stgaerospacelimited": {
+  "number": "01934202",
+  "ch_name": "STG AEROSPACE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "stopchoclimited": {
+  "number": "01286216",
+  "ch_name": "STOP-CHOC LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "stormaviationlimited": {
+  "number": "05229468",
+  "ch_name": "STORM AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "stsaviationservicesuklimited": {
+  "number": "07186841",
+  "ch_name": "STS AVIATION SERVICES UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "stsengineserviceslimited": {
+  "number": "07301752",
+  "ch_name": "STS ENGINE SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "stylaviation": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "low",
+  "source": "review",
+  "reason": "No matching company found (Styles Aviation UK Ltd, Style Aviation Ltd differ); possibly foreign or unincorporated"
+ },
+ "summitaviationengineoverhaullimited": {
+  "number": "03077419",
+  "ch_name": "SUMMIT AVIATION ENGINE OVERHAUL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "supermarineaeroengineeringlimited": {
+  "number": "02546640",
+  "ch_name": "SUPERMARINE AERO ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "survitecgrouplimited": {
+  "number": "NF004330",
+  "ch_name": "SURVITEC GROUP LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "survivalequipmentserviceslimited": {
+  "number": "03572909",
+  "ch_name": "SURVIVAL EQUIPMENT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "survivalonelimited": {
+  "number": "SC188500",
+  "ch_name": "SURVIVAL-ONE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "swiftaeromaintenancelimited": {
+  "number": "15937541",
+  "ch_name": "SWIFT AERO MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "swifttgmaintenancelimited": {
+  "number": "06868226",
+  "ch_name": "SWIFT TG MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "swscertificationserviceslimited": {
+  "number": "05132691",
+  "ch_name": "SWS CERTIFICATION SERVICES LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "t6harvardlimitedtra": {
+  "number": "11989586",
+  "ch_name": "T6 HARVARD LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Name matches, registered office SY16 2AB matches"
+ },
+ "tagaviationuklimited": {
+  "number": "03640741",
+  "ch_name": "TAG AVIATION (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "tatenhillaviationlimited": {
+  "number": "04022826",
+  "ch_name": "TATENHILL AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "techtestlimited": {
+  "number": "01363570",
+  "ch_name": "TECHTEST LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "teledynelimited": {
+  "number": "03863642",
+  "ch_name": "TELEDYNE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "teledyneuklimited": {
+  "number": "00432014",
+  "ch_name": "TELEDYNE UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "testialimited": {
+  "number": "08360678",
+  "ch_name": "TESTIA LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "tgisaviationlimited": {
+  "number": "04507434",
+  "ch_name": "TGIS AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "thalesuklimited": {
+  "number": "00868273",
+  "ch_name": "THALES UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "thamesvalleyairambulance": {
+  "number": "04062250",
+  "ch_name": "THAMES VALLEY AIR AMBULANCE",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "theclassicaeroplanecompanylimited": {
+  "number": "09649962",
+  "ch_name": "THE CLASSIC AEROPLANE COMPANY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "thedefenceschoolofaeronauticalengineeringdsae": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Ministry of Defence training establishment, not a company"
+ },
+ "thefightercollectionlimited": {
+  "number": "01972741",
+  "ch_name": "FIGHTER COLLECTION LIMITED (THE)",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "thefightercollectionlimiteda825supp2": {
+  "number": "01972741",
+  "ch_name": "FIGHTER COLLECTION LIMITED (THE)",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, Duxford Airfield matches CAA CB22 4QR"
+ },
+ "thegillcorporationeuropelimited": {
+  "number": "NI032104",
+  "ch_name": "THE GILL CORPORATION EUROPE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "thehelicopterbusinesslimited": {
+  "number": "08855494",
+  "ch_name": "THE HELICOPTER BUSINESS LIMITED",
+  "status": "Dissolved",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "thelightaircraftcompanylimited": {
+  "number": "03324556",
+  "ch_name": "THE LIGHT AIRCRAFT COMPANY LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "thespitfirecompanybigginhilllimited": {
+  "number": "07578119",
+  "ch_name": "THE SPITFIRE COMPANY (BIGGIN HILL) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name and postcode TN16 3BN"
+ },
+ "thespitfirecompanybigginhilllimiteda825supp2": {
+  "number": "07578119",
+  "ch_name": "THE SPITFIRE COMPANY (BIGGIN HILL) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, registered office TN16 3BN matches (filed as dormant)"
+ },
+ "thompsonaeroseatinglimited": {
+  "number": "NI032654",
+  "ch_name": "THOMPSON AERO SEATING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, registered office BT63 5QE Portadown matches CAA area"
+ },
+ "thurstonaviationengineeringlimited": {
+  "number": "09410773",
+  "ch_name": "THURSTON AVIATION ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, Farnborough Airport GU14 6XA matches CAA postcode"
+ },
+ "tigeraviationengineeringlimited": {
+  "number": "10972824",
+  "ch_name": "TIGER AVIATION (ENGINEERING) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, Shobdon HR6 9NR matches CAA postcode"
+ },
+ "titanairwayslimited": {
+  "number": "02212225",
+  "ch_name": "TITAN AIRWAYS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "tlultralightsro": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Czech s.r.o., not on Companies House"
+ },
+ "touchdownengineeringlimited": {
+  "number": "05968575",
+  "ch_name": "TOUCHDOWN ENGINEERING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, postcode NR17 1PU matches (Old Buckenham Airfield)"
+ },
+ "tpaerospacetechnicsuklimited": {
+  "number": "11453112",
+  "ch_name": "TP AEROSPACE TECHNICS UK LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "transalaeroservicesbv": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Dutch B.V.; not a UK company"
+ },
+ "transportacademybairoood": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Bulgarian OOD, foreign organisation"
+ },
+ "trigavionicslimited": {
+  "number": "SC261888",
+  "ch_name": "TRIG AVIONICS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "triplejaviationengineeringlimited": {
+  "number": "13465174",
+  "ch_name": "TRIPLE J AVIATION ENGINEERING LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, SIC 33160; registered office Birmingham, OX5 site not matched"
+ },
+ "triumphaerospaceoperationsuklimited": {
+  "number": "00706645",
+  "ch_name": "TRIUMPH AEROSPACE OPERATIONS UK, LTD.",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "troughtonengineeringaircraftmaintenancelimited": {
+  "number": "NI602571",
+  "ch_name": "TROUGHTON ENGINEERING AIRCRAFT MAINTENANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "trtlimited": {
+  "number": "03924148",
+  "ch_name": "TRT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, postcode DE55 4RH matches"
+ },
+ "trustflightlimited": {
+  "number": "10989885",
+  "ch_name": "TRUSTFLIGHT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "tuiairwayslimited": {
+  "number": "00444359",
+  "ch_name": "TUI AIRWAYS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "turkhavayollariteknikas": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Turkish A.S. (Turkish Technic); not a UK company"
+ },
+ "turneraviationlimited": {
+  "number": "SC044355",
+  "ch_name": "TURNER AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name and postcode G46 8JQ, SIC 33160"
+ },
+ "ukaviationservicesenglimited": {
+  "number": "08187401",
+  "ch_name": "UK AVIATION SERVICES (ENG) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Exact name, SIC 33160; registered office Manchester, FY4 site not matched"
+ },
+ "ultrapcslimited": {
+  "number": "14356908",
+  "ch_name": "EATON AEROSPACE PCS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "review",
+  "reason": "Previous name ULTRA PCS LIMITED until Nov 2026 (acquired by Eaton); only such company"
+ },
+ "uniflyheliworxlimited": {
+  "number": "13433695",
+  "ch_name": "UNI-FLY HELIWORX LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "unilodeaviationsolutionsuklimited": {
+  "number": "01587601",
+  "ch_name": "UNILODE AVIATION SOLUTIONS UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "universityofsouthwales": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Higher education corporation, not a Companies House company"
+ },
+ "unumaircraftseatinglimited": {
+  "number": "12490023",
+  "ch_name": "UNUM AIRCRAFT SEATING LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "v21limited": {
+  "number": "03478429",
+  "ch_name": "V21 LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "vectoraerospaceinternationallimited": {
+  "number": "06404274",
+  "ch_name": "VECTOR AEROSPACE INTERNATIONAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "vectoraircraftserviceslimited": {
+  "number": "SC290961",
+  "ch_name": "VECTOR AIRCRAFT SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "venetzaerospacelimited": {
+  "number": "15674449",
+  "ch_name": "VENETZ AEROSPACE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "verticalaerospacegrouplimited": {
+  "number": "12590994",
+  "ch_name": "VERTICAL AEROSPACE GROUP LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "vintageaerolimited": {
+  "number": "03687733",
+  "ch_name": "VINTAGE AERO LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name, Kent (Maidstone office vs CAA CT21 Lympne area), SIC 74909"
+ },
+ "vintageaerolimiteda825supp2": {
+  "number": "03687733",
+  "ch_name": "VINTAGE AERO LIMITED",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "Exact name, Kent registered office (Maidstone) vs CAA CT21 postcode; SIC 74909 not aviation-specific"
+ },
+ "vintageenginetechnologylimited": {
+  "number": "02601072",
+  "ch_name": "VINTAGE ENGINE TECHNOLOGY LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "vintagefabricsaircraftmaintenanceessexlimited": {
+  "number": "09349827",
+  "ch_name": "VINTAGE FABRICS AIRCRAFT MAINTENANCE (ESSEX) LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "virginatlanticairwayslimited": {
+  "number": "01600117",
+  "ch_name": "VIRGIN ATLANTIC AIRWAYS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "virginatlanticinternationallimited": {
+  "number": "09539561",
+  "ch_name": "VIRGIN ATLANTIC INTERNATIONAL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "virtusaviationlimited": {
+  "number": "10814229",
+  "ch_name": "VIRTUS AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "visionaerospacelimited": {
+  "number": "03595581",
+  "ch_name": "VISION AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "vlllimited": {
+  "number": "05965737",
+  "ch_name": "VLL LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "vmiengineeringserviceslimited": {
+  "number": "05964426",
+  "ch_name": "VMI ENGINEERING SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "volareaviationlimited": {
+  "number": "08557765",
+  "ch_name": "VOLARE AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "voluxislimited": {
+  "number": "01170431",
+  "ch_name": "VOLUXIS LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "warwickshireaviationlimited": {
+  "number": "05211847",
+  "ch_name": "WARWICKSHIRE AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "westairengineeringserviceslimited": {
+  "number": "02134427",
+  "ch_name": "WESTAIR ENGINEERING SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "westatlanticuklimited": {
+  "number": "05059096",
+  "ch_name": "WEST ATLANTIC UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "westonaerospacelimited": {
+  "number": "04740406",
+  "ch_name": "WESTON AEROSPACE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "westyorkshirepolice": {
+  "number": null,
+  "ch_name": null,
+  "status": null,
+  "confidence": "high",
+  "source": "review",
+  "reason": "Police force (NPAS), government body, not a company"
+ },
+ "whitewalthamairfieldlimited": {
+  "number": "02718708",
+  "ch_name": "WHITE WALTHAM AIRFIELD LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "willisaviationserviceslimited": {
+  "number": "14002276",
+  "ch_name": "WILLIS AVIATION SERVICES LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "willisenginerepaircentreuklimited": {
+  "number": "10438325",
+  "ch_name": "WILLIS ENGINE REPAIR CENTRE (UK) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "willismitsuicompanyassetmanagementlimited": {
+  "number": "15983255",
+  "ch_name": "WILLIS MITSUI & CO ASSET MANAGEMENT LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "wiltshireaircraftmaintenancelimited": {
+  "number": "06983724",
+  "ch_name": "WILTSHIRE AIRCRAFT MAINTENANCE LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "wiltshireandbathairambulancecharity": {
+  "number": "07805796",
+  "ch_name": "WILTSHIRE AND BATH AIR AMBULANCE CHARITY",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "winggliderlimited": {
+  "number": "03213494",
+  "ch_name": "WINGGLIDER LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "wizzairuklimited": {
+  "number": "10982241",
+  "ch_name": "WIZZ AIR UK LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "woodgateaviationnilimited": {
+  "number": "NI072393",
+  "ch_name": "WOODGATE AVIATION (NI) LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "woodwardinternationalinc": {
+  "number": "SF000753",
+  "ch_name": "WOODWARD INTERNATIONAL, INC.",
+  "status": "Active",
+  "confidence": "medium",
+  "source": "review",
+  "reason": "US corporation registered as overseas company with Scottish UK establishment (Prestwick KA9); no UK Ltd company"
+ },
+ "worldaerolimited": {
+  "number": "03873645",
+  "ch_name": "WORLD AERO LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "yellowkayneaviationlimited": {
+  "number": "10236869",
+  "ch_name": "YELLOWKAYNE AVIATION LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact name",
+  "reason": ""
+ },
+ "yorkshireairambulancelimited": {
+  "number": "04053524",
+  "ch_name": "YORKSHIRE AIR AMBULANCE LIMITED",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ },
+ "zeroavialimited": {
+  "number": "11613702",
+  "ch_name": "ZEROAVIA LTD",
+  "status": "Active",
+  "confidence": "high",
+  "source": "exact and postcode",
+  "reason": ""
+ }
+}

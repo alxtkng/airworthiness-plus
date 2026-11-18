@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Competency Assessment</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"Geist Mono Embedded";src:url("/_blob/cbad824f95366da895c21559ece6cd03") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+tbody tr:last-child > td{border-bottom-color:transparent !important}
+ol > li:last-child{border-bottom-color:transparent !important}
+</style>
+</helmet>
+<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <div style="flex: 1 1 248px; max-width: 100%; display: flex">
+    <dc-import name="Sidebar" active="assessment" dark="{{dark}}" hint-size="248px,2500px"></dc-import>
+  </div>
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
+    <dc-import name="TopBar" trail="Training=RecurrentTraining.dc.html|Competency Assessments=Competence.dc.html" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.96px">Competency Assessment, [Name]</h1>
+        <span style="font-size: 14px; line-height: 20px; color: {{t.muted}}">Planner, Initial Assessment</span>
+      </div>
+      <button type="button" onClick="{{save}}" style="font: inherit; font-size: 14px; font-weight: 500; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">{{saveLabel}}</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); column-gap: 32px; row-gap: 16px; padding: 16px 20px; border: 1px solid {{t.border}}; border-radius: 6px">
+      <sc-for list="{{facts}}" as="f" hint-placeholder-count="5">
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{f.label}}</span><span style="font-size: 14px; line-height: 20px; font-weight: 500">{{f.value}}</span><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{f.dot}}; flex: none; display: {{f.dotShow}}"></span>{{f.sub}}</span></div>
+      </sc-for>
+    </div>
+
+    <section aria-labelledby="checks-h" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px"><h2 id="checks-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Pre-Interview Checks</h2><span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">{{checksDone}}</span></div>
+      <ol style="margin: 0; padding: 0; list-style: none; border-top: 1px solid {{t.border}}">
+        <sc-for list="{{checks}}" as="k" hint-placeholder-count="8">
+          <li style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; column-gap: 24px; row-gap: 8px; padding: 12px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+            <span style="flex: 999 1 360px; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{k.label}}</span><span style="color: {{t.muted}}">{{k.note}}</span></span>
+            <span role="group" aria-label="{{k.label}}" style="flex: 0 0 auto; display: inline-flex; padding: 2px; gap: 2px; border-radius: 6px; background: {{t.empty}}">
+              <sc-for list="{{k.options}}" as="o" hint-placeholder-count="3">
+                <button type="button" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="font: inherit; font-size: 14px; height: 32px; padding: 0 12px; border-radius: 4px; border: 0; cursor: pointer; background: {{o.bg}}; color: {{o.fg}}; box-shadow: {{o.shadow}}">{{o.label}}</button>
+              </sc-for>
+            </span>
+          </li>
+        </sc-for>
+      </ol>
+    </section>
+
+    <div style="display: flex; flex-direction: column; gap: 24px">
+      <div role="tablist" aria-label="Assessment Sections" style="display: flex; flex-wrap: wrap; column-gap: 24px; box-shadow: inset 0 -1px 0 {{t.border}}">
+        <sc-for list="{{tabs}}" as="tab" hint-placeholder-count="7">
+          <button type="button" role="tab" aria-selected="{{tab.selected}}" onClick="{{tab.pick}}" style="font: inherit; font-size: 14px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; color: {{tab.colour}}; box-shadow: {{tab.line}}; display: inline-flex; align-items: center; gap: 8px">{{tab.label}}<span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 12px; color: {{t.muted}}">{{tab.meta}}</span></button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{isQuestions}}" hint-placeholder-val="{{true}}">
+        <section aria-label="{{section.title}}" style="display: flex; flex-direction: column">
+          <ol style="margin: 0; padding: 0; list-style: none">
+            <sc-for list="{{questions}}" as="q" hint-placeholder-count="11">
+              <li style="display: flex; flex-direction: column; gap: 10px; padding: 14px 0; border-bottom: 1px solid {{t.border}}">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; column-gap: 24px; row-gap: 10px">
+                  <span style="flex: 999 1 420px; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 8px; font-size: 14px; line-height: 20px">
+                    <span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 13px; color: {{t.muted}}">{{q.code}}</span>
+                    <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{q.topic}}</span><span style="color: {{t.muted}}">{{q.text}}</span></span>
+                  </span>
+                  <span style="flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+                    <sc-if value="{{q.applicable}}" hint-placeholder-val="{{true}}">
+                      <span role="group" aria-label="Score for {{q.topic}}" style="display: inline-flex; flex-wrap: wrap; gap: 4px">
+                        <sc-for list="{{q.levels}}" as="l" hint-placeholder-count="10">
+                          <button type="button" aria-pressed="{{l.pressed}}" aria-label="Score {{l.n}}" onClick="{{l.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; border: 1px solid {{l.border}}; background: {{l.bg}}; color: {{l.fg}}">{{l.n}}</button>
+                        </sc-for>
+                      </span>
+                    </sc-if>
+                    <span style="display: inline-flex; align-items: center; gap: 16px; font-size: 13px; line-height: 18px; color: {{t.muted}}">
+                      <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; flex: none; display: {{q.lowShow}}"></span>{{q.note}}</span>
+                      <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer"><input type="checkbox" checked="{{q.na}}" onChange="{{q.toggleNa}}" style="width: 16px; height: 16px; margin: 0; accent-color: {{t.text}}">Not Applicable to Scope</label>
+                    </span>
+                  </span>
+                </div>
+                <sc-if value="{{q.applicable}}" hint-placeholder-val="{{true}}">
+                  <input type="text" aria-label="Feedback for {{q.topic}}" placeholder="Feedback" value="{{q.feedback}}" style="margin-left: 40px; font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}">
+                </sc-if>
+              </li>
+            </sc-for>
+          </ol>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isJob}}" hint-placeholder-val="{{false}}">
+        <section aria-label="On the Job Assessment" style="display: flex; flex-direction: column; gap: 16px">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Assessor<input type="text" value="[Name], Continuing Airworthiness Manager" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}"></label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Date Observed<input type="date" value="2026-11-18" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}"></label>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Activity Observed<textarea rows="2" style="font: inherit; font-size: 14px; line-height: 20px; padding: 8px 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; resize: vertical">Work Package for the G-ABCD 50-Hour Check, With the Deferred Left Landing Light and Directives Due in the Next 50 Hours</textarea></label>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">Score</span>
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+              <span role="group" aria-label="On the Job Score" style="display: inline-flex; flex-wrap: wrap; gap: 4px">
+                <sc-for list="{{job.levels}}" as="l" hint-placeholder-count="10">
+                  <button type="button" aria-pressed="{{l.pressed}}" aria-label="Score {{l.n}}" onClick="{{l.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; border: 1px solid {{l.border}}; background: {{l.bg}}; color: {{l.fg}}">{{l.n}}</button>
+                </sc-for>
+              </span>
+              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; flex: none; display: {{job.lowShow}}"></span>{{job.note}}</span>
+            </span>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Development Action<input type="text" value="Check Deferral Limits on the Defect Record Before Adding a Defect to a Package" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}"></label>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isSummary}}" hint-placeholder-val="{{false}}">
+        <section aria-label="Consolidated Assessment" style="display: flex; flex-direction: column; gap: 40px">
+          <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+            <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; line-height: 20px">
+              <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px">
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Section</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right; width: 120px">Scored</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right; width: 120px">Average</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right; width: 120px">Lowest</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; width: 200px">Status</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{summary}}" as="s" hint-placeholder-count="6">
+                  <tr>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.title}}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; text-align: right; white-space: nowrap">{{s.scored}}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; text-align: right; white-space: nowrap">{{s.average}}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; text-align: right; white-space: nowrap">{{s.lowest}}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{s.colour}}; flex: none"></span>{{s.below}}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <section aria-labelledby="below-h" style="display: flex; flex-direction: column; gap: 16px">
+            <h3 id="below-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Scores Below the Minimum of 5</h3>
+            <ol style="margin: 0; padding: 0; list-style: none; border-top: 1px solid {{t.border}}">
+              <sc-for list="{{belowList}}" as="b" hint-placeholder-count="2">
+                <li style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{b.topic}}</span><span style="color: {{t.muted}}">{{b.section}}</span></span><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; flex: none"></span>{{b.score}}</span></li>
+              </sc-for>
+            </ol>
+            <sc-if value="{{noneBelow}}" hint-placeholder-val="{{false}}"><span style="font-size: 14px; color: {{t.muted}}">None</span></sc-if>
+          </section>
+
+          <form onSubmit="{{signAssessor}}" style="display: flex; flex-direction: column; gap: 16px">
+            <h3 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Statement by Assessor</h3>
+            <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px">
+              <legend style="padding: 0 0 8px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Result</legend>
+              <sc-for list="{{verdicts}}" as="v" hint-placeholder-count="2">
+                <label style="display: flex; gap: 10px; align-items: center; font-size: 14px; cursor: pointer"><input type="radio" name="verdict" checked="{{v.checked}}" onChange="{{v.pick}}" style="width: 16px; height: 16px; margin: 0; accent-color: {{t.text}}">{{v.label}}</label>
+              </sc-for>
+              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FFB224; flex: none; display: {{verdictDot}}"></span>{{verdictHint}}</span>
+            </fieldset>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Support Measures<textarea rows="3" style="font: inherit; font-size: 14px; line-height: 20px; padding: 8px 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; resize: vertical">Mentoring With the Continuing Airworthiness Manager on Forecasting Airworthiness Directives and Maintenance Programme Review, Work Packages Checked Before Issue Until Reassessed on 18 January 2027</textarea></label>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+              <button type="submit" style="font: inherit; font-size: 14px; font-weight: 500; height: 40px; padding: 0 16px; border-radius: 6px; border: 0; background: {{t.pBg}}; color: {{t.pFg}}; cursor: pointer">{{assessorLabel}}</button>
+              <span style="font-size: 13px; color: {{t.muted}}">[Name], Continuing Airworthiness Manager</span>
+            </div>
+          </form>
+
+          <form onSubmit="{{signCandidate}}" style="display: flex; flex-direction: column; gap: 16px">
+            <h3 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Candidate Feedback</h3>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Comments After Discussion With the Line Manager<textarea rows="3" style="font: inherit; font-size: 14px; line-height: 20px; padding: 8px 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; resize: vertical"></textarea></label>
+            <button type="submit" style="align-self: flex-start; font: inherit; font-size: 14px; font-weight: 500; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">{{candidateLabel}}</button>
+          </form>
+        </section>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":2500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: 'caw', saved: false,
+      scores: { 'reg-A': 7, 'reg-B': 6, 'reg-C': 5, 'reg-D': 7, 'reg-E': 6, 'reg-F': 6, 'reg-G': 5, 'reg-H': 6, 'man-A1': 7, 'man-A2': 6, 'man-A3': 5, 'caw-A': 7, 'caw-B': 4, 'caw-C': 6, 'caw-D': 5, 'caw-F': 4, 'caw-G': 5, 'caw-I': 6, 'caw-J': 8, 'tech-D': 6, 'tech-H': 5, 'tech-O': 6, 'att-A': 7, 'att-B': 6, 'att-C': 8, 'att-D': 7, 'job': 6 },
+      na: { 'caw-H': true, 'caw-K': true, 'tech-J': true, 'tech-K': true, 'tech-L': true, 'att-H': true },
+      checks: { job: 'Yes', experience: 'Yes', licence: 'Not Applicable', type: 'Not Applicable', continuation: 'Not Applicable', hf: 'Yes', recency: 'Not Applicable', health: 'Yes' },
+      verdict: 'actions', assessorSigned: false, candidateSigned: false
+    };
+  }
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E', empty: '#1A1A1A', raised: '#2E2E2E' }
+      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB', empty: '#F2F2F2', raised: '#FFFFFF' };
+    const c = { red: '#FF5A4E', amber: '#FFB224', green: '#1FCB6E' };
+    const S = [
+      { key: 'reg', title: 'Regulatory', items: [
+        ['A', 'Civil Aviation Authority', 'What is the role of the UK Civil Aviation Authority?'],
+        ['B', 'Part 145', 'How do Part 145 and Part-CAMO organisations work together?'],
+        ['C', 'Part-147', 'How does Part-147 relate to Part-66?'],
+        ['D', 'Part-CAO and Part-CAMO', 'How does the organisation manage continuing airworthiness under Part-ML and Part-M?'],
+        ['E', 'Part-66', 'What are the responsibilities of a licensed engineer?'],
+        ['F', 'National Regulations', 'Where do you find national regulations and Civil Aviation Authority publications?'],
+        ['G', 'Management System', 'What are hazards, risks and risk mitigation?'],
+        ['H', 'Human Factors', 'What limits human performance, such as fatigue and distraction?'] ] },
+      { key: 'man', title: 'Manuals and Procedures', items: [
+        ['A1', 'Organisation Manuals', 'Which manuals does the organisation hold?'],
+        ['A2', 'Exposition and Procedures', 'Where do you find the exposition and its procedures?'],
+        ['A3', 'Reporting Problems', 'How, and to whom, do you report a problem with a manual or procedure?'] ] },
+      { key: 'caw', title: 'Continuing Airworthiness', items: [
+        ['A', 'Maintenance Data', 'What is approved data, how do you reach it and how do you know it is at the current revision?'],
+        ['B', 'Mandatory Requirements', 'How do you check that airworthiness directives and airworthiness limitations are complied with and recorded, and how are they forecast?'],
+        ['C', 'Inspections and Life Limits', 'Where do you find inspection types and life-limited parts in the data?'],
+        ['D', 'Task Cards', 'What goes into a task card, such as critical tasks, staging long tasks and updating component records?'],
+        ['E', 'Repairs', 'What data supports a release for a repair outside the structural repair manual?'],
+        ['F', 'Maintenance Programmes', 'How is the maintenance programme kept current and reviewed each year?'],
+        ['G', 'Critical Tasks', 'What are critical maintenance tasks and independent inspections, and when do they apply?'],
+        ['H', 'Penalty Factors', 'Which penalty factors apply to component lives because of how the aircraft is operated?'],
+        ['I', 'Work Packages', 'How does the organisation build and control work packages?'],
+        ['J', 'Records System', 'How is Airworthiness+ used to manage continuing airworthiness?'],
+        ['K', 'Operational Approvals', 'Which continuing airworthiness requirements come from operational approvals?'] ] },
+      { key: 'tech', title: 'Technical', items: [
+        ['A', 'Calibrated Tools', 'What are the user’s responsibilities for calibrated equipment and special tools?'],
+        ['B', 'Critical Parts', 'How are critical parts handled, stored, transported and fitted?'],
+        ['C', 'Shelf Life', 'What has a shelf life, beyond oils, greases and sealants?'],
+        ['D', 'Handover', 'What makes a good shift or task handover?'],
+        ['E', 'Control of Work', 'How do you manage breaks in a task, fatigue and distraction?'],
+        ['F', 'Occurrence Reporting', 'What must be reported, by when and how?'],
+        ['G', 'Maintenance Planning', 'Why does good maintenance planning matter?'],
+        ['H', 'Deferred Defects', 'How are deferred defects raised, limited and controlled?'],
+        ['I', 'Error Capture', 'How are maintenance errors caught, and how is an independent inspection done?'],
+        ['J', 'Fuel Sampling', 'What do you look for in a fuel sample, and how do you report it?'],
+        ['K', 'Monitoring Systems', 'Which requirements come from vibration or usage monitoring?'],
+        ['L', 'Minimum Equipment Lists', 'What is a minimum equipment list and how is it used?'],
+        ['M', 'Parts From Stores', 'What do you check before fitting a part, and which release certificates are acceptable?'],
+        ['N', 'Tool Control', 'What do you do if a tool is lost, and what do you check before closing a panel?'],
+        ['O', 'Logbooks', 'How do you know when maintenance is due?'] ] },
+      { key: 'att', title: 'Attitudes and Behaviours', items: [
+        ['A', 'Learning Culture', 'How do we learn from safety events, and what is your part in it?'],
+        ['B', 'Judgement', 'Anticipating problems and not jumping to conclusions'],
+        ['C', 'Integrity', 'Never cutting corners, including under pressure'],
+        ['D', 'Communication', 'Listening, and keeping records someone else would understand'],
+        ['E', 'Professionalism', 'Owning mistakes and following procedures under pressure'],
+        ['F', 'Internal Reporting', 'Knowing when and how to report'],
+        ['G', 'Adaptability', 'Learning from your own and others’ mistakes'],
+        ['H', 'Compliance Monitoring', 'Why compliance monitoring matters and what the Compliance Monitoring Manager does'],
+        ['I', 'Team Working', 'Offering support and recognising negative behaviour'],
+        ['J', 'Leadership', 'Setting an example and asking for help when needed'],
+        ['K', 'Flexibility', 'Changing approach for new situations'] ] }
+    ];
+    const st = this.state;
+    const setScore = (id, n) => this.setState({ scores: Object.assign({}, st.scores, { [id]: n }), saved: false });
+    const levelsFor = (id) => Array.from({ length: 10 }, (_, i) => {
+      const n = i + 1, on = st.scores[id] === n;
+      return { n: String(n), pressed: on ? 'true' : 'false', border: on ? t.pBg : t.sBorder, bg: on ? t.pBg : t.bg, fg: on ? t.pFg : t.text, pick: () => setScore(id, n) };
+    });
+    const noteFor = (s) => s == null ? 'Not Scored' : s < 5 ? 'Below Minimum, Needs a Support Measure' : s === 5 ? 'Minimum' : s >= 9 ? 'Could Train Others' : 'Above Minimum';
+    const stats = S.map(sec => {
+      const live = sec.items.filter(it => !st.na[sec.key + '-' + it[0]]);
+      const vals = live.map(it => st.scores[sec.key + '-' + it[0]]).filter(v => v != null);
+      const below = live.filter(it => { const v = st.scores[sec.key + '-' + it[0]]; return v != null && v < 5; });
+      return { sec, live: live.length, vals, below };
+    });
+    const avg = (v) => v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) : '—';
+    const tabDefs = stats.map(s => ({ key: s.sec.key, label: s.sec.title, meta: s.vals.length + '/' + s.live }))
+      .concat([{ key: 'job', label: 'On the Job', meta: st.scores.job ? '1/1' : '0/1' }, { key: 'summary', label: 'Consolidated', meta: '' }]);
+    const tabs = tabDefs.map(x => ({ label: x.label, meta: x.meta, selected: st.tab === x.key ? 'true' : 'false', colour: st.tab === x.key ? t.text : t.muted, line: st.tab === x.key ? 'inset 0 -2px 0 ' + t.text : 'none', pick: () => this.setState({ tab: x.key }) }));
+    const current = S.find(s => s.key === st.tab);
+    const questions = current ? current.items.map(it => {
+      const id = current.key + '-' + it[0], na = !!st.na[id], sc = st.scores[id];
+      return { code: it[0], topic: it[1], text: it[2], na, applicable: !na, levels: levelsFor(id), note: na ? '' : noteFor(sc), lowShow: !na && sc != null && sc < 5 ? 'inline-block' : 'none', feedback: '',
+        toggleNa: () => this.setState({ na: Object.assign({}, st.na, { [id]: !na }), saved: false }) };
+    }) : [];
+    const js = st.scores.job;
+    const job = { levels: levelsFor('job'), note: noteFor(js), lowShow: js != null && js < 5 ? 'inline-block' : 'none' };
+    const opt = (key, label) => { const on = st.checks[key] === label; return { label, pressed: on ? 'true' : 'false', bg: on ? t.raised : 'transparent', fg: on ? t.text : t.muted, shadow: on ? '0 0 0 1px ' + t.border : 'none', pick: () => this.setState({ checks: Object.assign({}, st.checks, { [key]: label }), saved: false }) }; };
+    const yn = (key) => ['Yes', 'No', 'Not Applicable'].map(l => opt(key, l));
+    const checks = [
+      { key: 'job', label: 'Meets the Job Description', note: 'Location, Working Pattern, Lone Working, Reporting Line' },
+      { key: 'experience', label: 'Experience for the Role', note: 'Against the Requirement for the Position' },
+      { key: 'licence', label: 'Valid Licence', note: 'Original Seen' },
+      { key: 'type', label: 'Part-147 Type Training', note: 'Certificate of Recognition Seen' },
+      { key: 'continuation', label: 'Continuation Training', note: 'Certifying Staff Only' },
+      { key: 'hf', label: 'Human Factors Training', note: 'Initial Course Booked 14 January 2027, Within 6 Months of Joining' },
+      { key: 'recency', label: 'Recent Maintenance Experience', note: '6 Months in 2 Years' },
+      { key: 'health', label: 'Occupational Health', note: 'Eyesight or Hearing Test if the Role Needs One' }
+    ].map(k => Object.assign({}, k, { options: yn(k.key) }));
+    const answered = checks.filter(k => st.checks[k.key]).length;
+    const allBelow = [];
+    stats.forEach(s => s.below.forEach(it => allBelow.push({ section: s.sec.title, topic: it[1], score: String(st.scores[s.sec.key + '-' + it[0]]) })));
+    if (js != null && js < 5) allBelow.push({ section: 'On the Job', topic: 'Activity Observed', score: String(js) });
+    const summary = stats.map(s => ({ title: s.sec.title, scored: s.vals.length + ' of ' + s.live, average: avg(s.vals), lowest: s.vals.length ? String(Math.min.apply(null, s.vals)) : '—', below: s.below.length ? s.below.length + ' Below 5' : 'None Below 5', colour: s.below.length ? c.red : c.green }))
+      .concat([{ title: 'On the Job', scored: js ? '1 of 1' : '0 of 1', average: js ? String(js) : '—', lowest: js ? String(js) : '—', below: js != null && js < 5 ? '1 Below 5' : 'None Below 5', colour: js != null && js < 5 ? c.red : c.green }]);
+    const total = stats.reduce((a, s) => a + s.live, 0) + 1;
+    const scored = stats.reduce((a, s) => a + s.vals.length, 0) + (js ? 1 : 0);
+    const facts = [
+      { label: 'Candidate', value: '[Name]', sub: 'Planner, Joined 1 September 2026' },
+      { label: 'Assessed For', value: 'Intended Position', sub: 'Planner, Work Packages' },
+      { label: 'Assessor', value: '[Name]', sub: 'Continuing Airworthiness Manager' },
+      { label: 'Licence', value: 'None Held', sub: 'Not Required for Role' },
+      { label: 'Progress', value: scored + ' of ' + total + ' Scored', sub: allBelow.length ? allBelow.length + ' Below the Minimum' : 'None Below the Minimum', low: allBelow.length > 0 }
+    ].map(f => Object.assign({ dot: c.red, dotShow: f.low ? 'inline-block' : 'none' }, f));
+    const verdicts = [
+      { label: 'Competent for the Intended Position', checked: st.verdict === 'competent', pick: () => this.setState({ verdict: 'competent', assessorSigned: false }) },
+      { label: 'Support Measures Before Authorisation', checked: st.verdict === 'actions', pick: () => this.setState({ verdict: 'actions', assessorSigned: false }) }
+    ];
+    const warn = allBelow.length > 0 && st.verdict === 'competent';
+    const prevent = (e) => { if (e && e.preventDefault) e.preventDefault(); };
+    return { t, dark, tabs, questions, job, checks, summary, belowList: allBelow, noneBelow: allBelow.length === 0, facts, verdicts,
+      checksDone: answered + ' of ' + checks.length + ' Answered',
+      verdictHint: warn ? 'Scores Below 5 Need a Support Measure First' : 'Authorisation Can Be Limited While Support Is in Progress',
+      verdictDot: warn ? 'inline-block' : 'none',
+      section: current || { title: '' }, isQuestions: !!current, isJob: st.tab === 'job', isSummary: st.tab === 'summary',
+      saveLabel: st.saved ? 'Saved' : 'Save Progress', save: () => this.setState({ saved: true }),
+      assessorLabel: st.assessorSigned ? 'Signed 18 November 2026' : 'Sign as Assessor',
+      candidateLabel: st.candidateSigned ? 'Signed by Candidate' : 'Sign as Candidate',
+      signAssessor: (e) => { prevent(e); if (!warn) this.setState({ assessorSigned: true }); },
+      signCandidate: (e) => { prevent(e); this.setState({ candidateSigned: true }); } };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>G-ABCD</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"Geist Mono Embedded";src:url("/_blob/cbad824f95366da895c21559ece6cd03") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+tbody tr:last-child > td{border-bottom-color:transparent !important}
+ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !important}
+</style>
+</helmet>
+<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <div style="flex: 1 1 248px; max-width: 100%; display: flex">
+    <dc-import name="Sidebar" active="aircraft" dark="{{dark}}" hint-size="248px,1900px"></dc-import>
+  </div>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 48px; display: flex; flex-direction: column; gap: 28px">
+    <dc-import name="TopBar" trail="Continuing Airworthiness=Fleet.dc.html|Aircraft=Fleet.dc.html" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.96px">G-ABCD</h1>
+        <span style="font-size: 14px; line-height: 20px; color: {{t.muted}}">Piper PA-28 Series (Lycoming)</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">Record a Defect</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); column-gap: 32px; row-gap: 16px; padding: 16px 20px; border-radius: 6px; border: 1px solid {{t.border}}">
+      <sc-for list="{{facts}}" as="f" hint-placeholder-count="6">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">{{f.label}}</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{f.colour}}; display: {{f.dot}}"></span>{{f.value}}</span>
+          <span style="font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">{{f.note}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div role="tablist" aria-label="Aircraft record" style="display: flex; flex-wrap: wrap; column-gap: 4px; box-shadow: inset 0 -1px 0 {{t.border}}">
+      <sc-for list="{{tabs}}" as="tab" hint-placeholder-count="8">
+        <button type="button" role="tab" aria-selected="{{tab.selected}}" onClick="{{tab.pick}}" style="font: inherit; font-size: 14px; font-weight: {{tab.weight}}; height: 44px; padding: 0 12px; border: 0; background: transparent; cursor: pointer; color: {{tab.colour}}; box-shadow: {{tab.line}}">{{tab.label}} <span style="color: {{t.muted}}; font-weight: 400">{{tab.count}}</span></button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{show.overview}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start">
+        <section aria-labelledby="due-heading" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+          <h2 id="due-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Next 120 Days</h2>
+          <ol style="margin: 0; padding: 0; list-style: none; border-top: 1px solid {{t.border}}">
+            <sc-for list="{{soon}}" as="s" hint-placeholder-count="6">
+              <li style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+                <span style="font-weight: 500">{{s.when}}</span>
+                <span style="display: flex; flex-direction: column; gap: 2px">
+                  <span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{s.colour}}; display: {{s.mark}}; flex: none"></span>{{s.what}}</span>
+                  <span style="color: {{t.body}}">{{s.note}}</span>
+                </span>
+              </li>
+            </sc-for>
+          </ol>
+        </section>
+        <section aria-labelledby="counter-heading" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px">
+          <h2 id="counter-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Counters</h2>
+          <dl style="margin: 0; border-top: 1px solid {{t.border}}">
+            <sc-for list="{{counters}}" as="k" hint-placeholder-count="5">
+              <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+                <dt style="color: {{t.body}}">{{k.label}}</dt>
+                <dd style="margin: 0; font-weight: 600">{{k.value}}</dd>
+              </div>
+            </sc-for>
+          </dl>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{show.log}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; gap: 28px">
+        <section aria-labelledby="defect-heading" style="display: flex; flex-direction: column; gap: 12px">
+          <h2 id="defect-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Defects</h2>
+          <div style="border-top: 1px solid {{t.border}}">
+            <sc-for list="{{defects}}" as="d" hint-placeholder-count="2">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 24px; row-gap: 8px; padding: 18px 0; border-bottom: 1px solid {{t.border}}">
+                <div style="flex: 999 1 420px; display: flex; flex-direction: column; gap: 4px">
+                  <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{d.colour}}; display: {{d.mark}}"></span>{{d.title}}</span>
+                  <span style="font-size: 14px; line-height: 20px; color: {{t.body}}">{{d.detail}}</span>
+                </div>
+                <div style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; text-align: right; font-size: 14px; line-height: 20px">
+                  <span style="font-weight: 500">{{d.state}}</span>
+                  <span style="color: {{t.muted}}">{{d.dates}}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+        <section aria-labelledby="log-heading" style="display: flex; flex-direction: column; gap: 12px">
+          <h2 id="log-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Technical Log</h2>
+          <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+            <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+              <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Date</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Pilot</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Route</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Hours</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Landings</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Airframe Total</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Defects Entered</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{flights}}" as="l" hint-placeholder-count="5">
+                  <tr style="background: {{l.xBg}}"><td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{l.xLine}}"><button type="button" aria-expanded="{{l.xExp}}" aria-label="Show Details" onClick="{{l.xTog}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{l.xRot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td><td style="padding: 12px 16px; border-bottom: 1px solid {{l.xLine}}; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{l.date}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{l.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{l.pilot}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{l.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{l.route}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{l.xLine}}; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{l.hours}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{l.xLine}}; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{l.landings}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{l.xLine}}; text-align: right; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{l.total}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{l.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{l.defect}}</td></tr><sc-if value="{{l.xOpen}}" hint-placeholder-val="{{false}}"><tr style="background: {{l.xBg}}"><td colspan="8" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}; white-space: normal"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px"><sc-for list="{{l.xFacts}}" as="xf" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{xf.label}}</span><span style="font-size: 14px; line-height: 20px">{{xf.value}}</span></div></sc-for></div></td></tr></sc-if>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{show.forecast}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px">
+          <h2 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Maintenance Programme, Owner Declared, Issue 3</h2>
+          <a href="WorkPackages.dc.html" style="font-size: 14px; font-weight: 500; color: {{t.text}}; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: {{t.sBorder}}">Build a Work Package</a>
+        </div>
+        <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+          <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+            <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th>
+              <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Task</th>
+              <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Interval</th>
+              <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Last Done</th>
+              <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Next Due</th>
+              <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Remaining</th>
+              <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Forecast Date</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{programme}}" as="r" hint-placeholder-count="7">
+                <tr style="background: {{r.xBg}}"><td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{r.xLine}}"><button type="button" aria-expanded="{{r.xExp}}" aria-label="Show Details" onClick="{{r.xTog}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{r.xRot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{r.colour}}; display: {{r.mark}}; flex: none"></span>{{r.task}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.interval}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.last}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.next}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.remaining}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.forecast}}</td></tr><sc-if value="{{r.xOpen}}" hint-placeholder-val="{{false}}"><tr style="background: {{r.xBg}}"><td colspan="7" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}; white-space: normal"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px"><sc-for list="{{r.xFacts}}" as="xf" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{xf.label}}</span><span style="font-size: 14px; line-height: 20px">{{xf.value}}</span></div></sc-for></div></td></tr></sc-if>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{show.directives}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; gap: 28px">
+        <section aria-labelledby="ad-heading" style="display: flex; flex-direction: column; gap: 12px">
+          <h2 id="ad-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Airworthiness Directives and Service Bulletins</h2>
+          <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+            <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+              <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Reference</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Type</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Subject</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Method of Compliance</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Last Done</th>
+                <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right">Remaining</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{directives}}" as="d" hint-placeholder-count="6">
+                  <tr style="background: {{d.xBg}}"><td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{d.xLine}}"><button type="button" aria-expanded="{{d.xExp}}" aria-label="Show Details" onClick="{{d.xTog}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{d.xRot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td><td style="padding: 12px 16px; border-bottom: 1px solid {{d.xLine}}; font-family: 'Geist Mono Embedded', monospace; font-size: 13px; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{d.ref}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{d.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{d.type}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{d.xLine}}; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{d.subject}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{d.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{d.method}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{d.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{d.last}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{d.xLine}}; text-align: right; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{d.remaining}}</td></tr><sc-if value="{{d.xOpen}}" hint-placeholder-val="{{false}}"><tr style="background: {{d.xBg}}"><td colspan="7" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}; white-space: normal"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px"><sc-for list="{{d.xFacts}}" as="xf" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{xf.label}}</span><span style="font-size: 14px; line-height: 20px">{{xf.value}}</span></div></sc-for></div></td></tr></sc-if>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section aria-labelledby="mod-heading" style="display: flex; flex-direction: column; gap: 12px">
+          <h2 id="mod-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Modifications and Repairs</h2>
+          <div style="border-top: 1px solid {{t.border}}">
+            <sc-for list="{{mods}}" as="m" hint-placeholder-count="3">
+              <div style="display: grid; grid-template-columns: 140px minmax(0, 1fr) 260px; gap: 16px; padding: 14px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+                <span style="font-weight: 500">{{m.date}}</span>
+                <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{m.title}}</span><span style="color: {{t.body}}">{{m.detail}}</span></span>
+                <span style="color: {{t.muted}}; text-align: right">{{m.approval}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{show.components}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+        <section aria-labelledby="tree-h" style="flex: 1 1 400px; max-width: 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+            <h2 id="tree-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Product Structure</h2>
+            <span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">{{cfgCount}}</span>
+          </div>
+          <input type="search" value="{{cfgQ}}" onChange="{{onCfgQ}}" aria-label="Find a Position" placeholder="Find a Position, Part or Serial Number" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}">
+          <div role="group" aria-label="Show" style="display: inline-flex; flex-wrap: wrap; align-self: flex-start; padding: 3px; border-radius: 6px; background: {{t.empty}}; gap: 2px">
+            <sc-for list="{{cfgFilters}}" as="f" hint-placeholder-count="5">
+              <button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 10px; border-radius: 6px; border: 0; cursor: pointer; color: {{t.text}}; background: {{f.bg}}; box-shadow: {{f.shadow}}">{{f.label}} <span style="color: {{t.muted}}">{{f.count}}</span></button>
+            </sc-for>
+          </div>
+          <div style="border: 1px solid {{t.border}}; border-radius: 6px; padding: 6px">
+            <sc-for list="{{tree}}" as="pr" hint-placeholder-count="3">
+              <div>
+                <button type="button" aria-expanded="{{pr.expanded}}" onClick="{{pr.toggle}}" style="font: inherit; width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; border-radius: 6px; height: 36px; padding: 0 8px; font-size: 14px; font-weight: 600"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none; transform: rotate({{pr.rot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg><span style="flex: 1">{{pr.name}}</span><span style="font-size: 13px; font-weight: 400; color: {{t.muted}}">{{pr.count}}</span></button>
+                <sc-if value="{{pr.open}}" hint-placeholder-val="{{true}}">
+                  <sc-for list="{{pr.chapters}}" as="ch" hint-placeholder-count="4">
+                    <div>
+                      <button type="button" aria-expanded="{{ch.expanded}}" onClick="{{ch.toggle}}" style="font: inherit; width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; border-radius: 6px; height: 34px; padding: 0 8px 0 28px; font-size: 14px; font-weight: 500"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none; transform: rotate({{ch.rot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg><span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 13px; color: {{t.muted}}; width: 22px">{{ch.ata}}</span><span style="flex: 1">{{ch.name}}</span><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{ch.colour}}; display: {{ch.mark}}; flex: none"></span><span style="font-size: 13px; font-weight: 400; color: {{t.muted}}">{{ch.count}}</span></button>
+                      <sc-if value="{{ch.open}}" hint-placeholder-val="{{false}}">
+                        <sc-for list="{{ch.items}}" as="it" hint-placeholder-count="3">
+                          <button type="button" aria-pressed="{{it.pressed}}" onClick="{{it.pick}}" style="font: inherit; width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; border-radius: 6px; min-height: 34px; padding: 6px 8px 6px 80px; font-size: 14px; background: {{it.bg}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{it.colour}}; display: {{it.mark}}; flex: none"></span><span style="flex: 1">{{it.name}}</span><span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 12px; color: {{t.muted}}">{{it.sub}}</span></button>
+                        </sc-for>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">Baseline Signed 14 March 2026, Airworthiness Review</span>
+        </section>
+
+        <section aria-labelledby="pos-h" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <h2 id="pos-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">{{pos.name}}</h2>
+              <span style="font-size: 14px; line-height: 20px; color: {{t.muted}}">{{pos.path}}</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">Record a Removal</button>
+              <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 14px; border-radius: 6px; border: 0; background: {{t.pBg}}; color: {{t.pFg}}; cursor: pointer">Record an Installation</button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); column-gap: 32px; row-gap: 16px; padding: 16px 20px; border: 1px solid {{t.border}}; border-radius: 6px">
+            <sc-for list="{{pos.facts}}" as="f" hint-placeholder-count="6">
+              <div style="display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{f.label}}</span>
+                <span style="font-size: 14px; line-height: 20px; font-weight: 500">{{f.value}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 32px">
+            <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px">
+              <h3 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px">Allowed Configuration</h3>
+              <sc-for list="{{pos.allowed}}" as="a" hint-placeholder-count="2"><span style="font-size: 14px; line-height: 20px">{{a.text}}</span></sc-for>
+              <span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">{{pos.req}}</span>
+            </div>
+            <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px">
+              <h3 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px">Rules</h3>
+              <sc-for list="{{pos.rules}}" as="r" hint-placeholder-count="2"><span style="font-size: 14px; line-height: 20px">{{r.text}}</span></sc-for>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <h3 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px">Linked Records</h3>
+            <sc-for list="{{pos.links}}" as="l" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{l.colour}}; display: {{l.mark}}; flex: none"></span>{{l.text}}</span></sc-for>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <h3 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px">Installation History</h3>
+            <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+              <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+                <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Date</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Event</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Reference</th></tr></thead>
+                <tbody><sc-for list="{{pos.history}}" as="h" hint-placeholder-count="2"><tr style="background: transparent"><td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px">{{h.date}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px">{{h.event}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px">{{h.ref}}</td></tr></sc-for></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{show.review}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start">
+        <section aria-labelledby="arc-heading" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <h2 id="arc-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Next Airworthiness Review</h2>
+          <ol style="margin: 0; padding: 0; list-style: none; border-top: 1px solid {{t.border}}">
+            <sc-for list="{{arcSteps}}" as="a" hint-placeholder-count="4">
+              <li style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+                <span style="font-weight: 500">{{a.when}}</span>
+                <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{a.what}}</span><span style="color: {{t.body}}">{{a.note}}</span></span>
+              </li>
+            </sc-for>
+          </ol>
+          <a href="Reviews.dc.html" style="align-self: flex-start; font-size: 14px; font-weight: 500; height: 40px; line-height: 40px; padding: 0 16px; border-radius: 6px; background: {{t.pBg}}; color: {{t.pFg}}">Plan the Review</a>
+        </section>
+        <section aria-labelledby="past-heading" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px">
+          <h2 id="past-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Previous Reviews</h2>
+          <div style="border-top: 1px solid {{t.border}}">
+            <sc-for list="{{pastReviews}}" as="p" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+                <span style="font-weight: 500">{{p.date}}</span><span style="color: {{t.body}}">{{p.note}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{show.documents}}" hint-placeholder-val="{{false}}">
+      <div style="border-top: 1px solid {{t.border}}">
+        <sc-for list="{{documents}}" as="d" hint-placeholder-count="7">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; column-gap: 24px; row-gap: 8px; padding: 14px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+            <span style="flex: 999 1 360px; display: flex; flex-direction: column; gap: 2px"><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{d.colour}}; display: {{d.mark}}; flex: none"></span>{{d.name}}</span><span style="color: {{t.body}}">{{d.note}}</span></span>
+            <span style="flex: 1 1 200px; color: {{t.muted}}; text-align: right">{{d.valid}}</span>
+            <button type="button" style="font: inherit; font-size: 14px; height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">View</button>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{show.history}}" hint-placeholder-val="{{false}}">
+      <ol style="margin: 0; padding: 0; list-style: none; border-top: 1px solid {{t.border}}">
+        <sc-for list="{{history}}" as="w" hint-placeholder-count="5">
+          <li style="display: grid; grid-template-columns: 160px minmax(0, 1fr) 220px; gap: 16px; padding: 16px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
+            <span style="font-weight: 500">{{w.date}}</span>
+            <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{w.what}}</span><span style="color: {{t.body}}">{{w.detail}}</span></span>
+            <span style="color: {{t.muted}}; text-align: right">{{w.by}}</span>
+          </li>
+        </sc-for>
+      </ol>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'overview', cfgQ: '', cfgF: 'all', open: { Airframe: true, Engine: true, Propeller: true, 'Airframe|33': true }, sel: 'land' }; }
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E' }
+      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB' };
+    const c = { red: '#FF5A4E', amber: '#FFB224', green: '#1FCB6E', none: 'transparent' };
+    const fact = (label, value, note, colour) => ({ label, value, note, colour: colour || c.none, dot: colour ? 'inline-block' : 'none' });
+    const facts = [
+      fact('Status', 'Serviceable', '1 Deferred Defect, Limit 3 December', c.green),
+      fact('Airframe Hours', '6,412.6', 'Last Flight 16 November 2026'),
+      fact('Review Certificate Valid To', '14 March 2027', 'Review From 14 December'),
+      fact('Next Work Package', '19 November', 'Landing Light Replacement, Bay 1'),
+      fact('Owned By', 'Pilot-Owner', '[Owner Name]'),
+      fact('Serial Number', '[Serial Number]', '')
+    ];
+    const soon = [
+      { when: '19 November 2026', what: 'Landing Light Replacement', note: 'WP-2026-047', colour: c.amber },
+      { when: '3 December 2026', what: 'Deferred Defect Limit', note: 'Left Landing Light', colour: c.amber },
+      { when: '14 December 2026', what: 'Airworthiness Review Window Opens', note: 'Keeps the 14 March Anniversary', colour: c.green },
+      { when: 'February 2027', what: 'Emergency Locator Transmitter Battery', note: '', colour: c.green },
+      { when: '2 March 2027', what: 'Maintenance Programme Annual Review', note: '', colour: c.green },
+      { when: 'Early March 2027', what: '100-Hour Check', note: 'Forecast at 6,475.0 Hours', colour: c.green }
+    ];
+    const counters = [
+      { label: 'Landings', value: '[Landings]' },
+      { label: 'Engine Hours Since Overhaul', value: '764.0' },
+      { label: 'Propeller Hours Since Overhaul', value: '1,136.0' },
+      { label: 'Average Use, Last 6 Months', value: '17 Hours a Month' }
+    ];
+    const defects = [
+      { title: 'Left Landing Light Inoperative', detail: 'Daylight Only, WP-2026-047', state: 'Deferred, 15 Days Left', dates: 'Raised 3 November, Limit 3 December 2026', colour: c.amber },
+      { title: 'Right Main Tyre Worn to Limit', detail: 'Pilot-Owner Maintenance', state: 'Closed', dates: 'Raised 20 October, Closed 22 October 2026', colour: c.green }
+    ];
+    const flights = [
+      { date: '16 November 2026', pilot: 'Pilot-Owner', route: 'Local', hours: '1.4', landings: '2', total: '6,412.6', defect: 'None' },
+      { date: '14 November 2026', pilot: 'Pilot-Owner', route: '[Airfield] to [Airfield] and Back', hours: '2.1', landings: '3', total: '6,411.2', defect: 'None' },
+      { date: '9 November 2026', pilot: 'Pilot-Owner', route: 'Local', hours: '0.9', landings: '1', total: '6,409.1', defect: 'None' },
+      { date: '7 November 2026', pilot: 'Pilot-Owner', route: 'Local', hours: '1.6', landings: '4', total: '6,408.2', defect: 'None' },
+      { date: '3 November 2026', pilot: 'Pilot-Owner', route: 'Local', hours: '1.2', landings: '2', total: '6,406.6', defect: 'Left Landing Light Inoperative' }
+    ];
+    const programme = [
+      { task: '50-Hour Check', interval: 'Every 50 Hours', last: '6,375.0 Hours, 12 September 2026', next: '6,425.0 Hours', remaining: '12.4 Hours', forecast: 'Early December 2026', colour: c.amber },
+      { task: '100-Hour or Annual Check', interval: '100 Hours or 12 Months', last: '6,375.0 Hours, 12 September 2026', next: '6,475.0 Hours or 12 September 2027', remaining: '62.4 Hours', forecast: 'Early March 2027', colour: c.green },
+      { task: 'Emergency Locator Transmitter Battery', interval: 'By the Date on the Battery', last: 'Fitted February 2022', next: 'February 2027', remaining: '3 Months', forecast: 'February 2027', colour: c.green },
+      { task: 'Compass Swing', interval: '24 Months or After Relevant Change', last: '2 March 2025', next: 'March 2027', remaining: '4 Months', forecast: 'March 2027', colour: c.green },
+      { task: 'Transponder Test', interval: 'Every 24 Months', last: '18 August 2025', next: 'August 2027', remaining: '9 Months', forecast: 'August 2027', colour: c.green },
+      { task: 'Altimeter and Static System Test', interval: 'Every 24 Months', last: '18 August 2025', next: 'August 2027', remaining: '9 Months', forecast: 'August 2027', colour: c.green },
+      { task: 'Maintenance Programme Annual Review', interval: 'Every 12 Months', last: '2 March 2026', next: '2 March 2027', remaining: '3 Months', forecast: '2 March 2027', colour: c.green }
+    ];
+    const directives = [
+      { ref: '[Reference]', type: 'Directive', subject: 'Vacuum Pump Drive Coupling Inspection', method: 'Repetitive Inspection', last: '6,300.0 Hours', remaining: '112 Hours' },
+      { ref: '[Reference]', type: 'Directive', subject: 'Exhaust Muffler Crack Inspection', method: 'Repetitive Inspection', last: '6,224.6 Hours', remaining: '412 Hours' },
+      { ref: '[Reference]', type: 'Directive', subject: 'Stabilator Attachment Fitting Inspection', method: 'Repetitive Inspection', last: '5,600.6 Hours', remaining: '1,188 Hours' },
+      { ref: '[Reference]', type: 'Directive', subject: 'Fuel Selector Valve Placard', method: 'One-Off, Placard Replaced', last: 'March 2024', remaining: 'Complete' },
+      { ref: '[Reference]', type: 'Service Bulletin', subject: 'Engine Valve Guide Inspection', method: 'Recommended, Every 100-Hour Check', last: '6,375.0 Hours', remaining: 'At Next 100-Hour Check' },
+      { ref: '[Reference]', type: 'Service Bulletin', subject: 'Seat Rail and Stop Inspection', method: 'Recommended, Every 50-Hour Check', last: '6,375.0 Hours', remaining: 'At Next 50-Hour Check' }
+    ];
+    const mods = [
+      { date: 'May 2022', title: 'Mode S Transponder with Position Output', detail: 'Weight and Balance Updated', approval: 'Standard Change, [Reference]' },
+      { date: 'June 2019', title: 'Light-Emitting Diode Strobe Lights', detail: 'Replaced Original Strobes', approval: 'Minor Change, [Reference]' },
+      { date: 'April 2018', title: '8.33 Kilohertz Radio', detail: '', approval: 'Standard Change, [Reference]' }
+    ];
+    const components = [
+      { name: 'Engine', part: 'Lycoming O-320, Serial Number [Serial Number]', interval: '2,000 Hours, Manufacturer Recommendation', since: '764.0 Hours', remaining: '1,236 Hours', forecast: 'About 2033', colour: c.green },
+      { name: 'Propeller', part: 'Fixed Pitch, Part Number [Part Number]', interval: '2,000 Hours or 6 Years, Manufacturer Recommendation', since: '1,136.0 Hours, Overhauled [Date]', remaining: '864 Hours', forecast: '2031 by Hours, or 6-Year Date if Sooner', colour: c.green },
+      { name: 'Vacuum Pump', part: 'Part Number [Part Number]', interval: '500 Hours, Manufacturer Recommendation', since: '182.0 Hours', remaining: '318 Hours', forecast: 'About Mid 2028', colour: c.green },
+      { name: 'Magnetos', part: 'Left and Right, Serial Numbers [Serial Number]', interval: '500-Hour Inspection, Manufacturer Recommendation', since: '[Hours]', remaining: '[Hours]', forecast: '[Date]', colour: c.green },
+      { name: 'Emergency Locator Transmitter Battery', part: 'Part Number [Part Number]', interval: 'By the Date on the Battery', since: 'Fitted February 2022', remaining: '3 Months', forecast: 'February 2027', colour: c.green },
+      { name: 'Fire Extinguisher', part: 'Part Number [Part Number]', interval: 'Inspection by the Date on the Label', since: '[Date]', remaining: '[Months]', forecast: '[Date]', colour: c.green }
+    ];
+    const arcSteps = [
+      { when: '14 December 2026', what: 'Review Window Opens', note: 'Keeps 14 March Anniversary' },
+      { when: 'Early March 2027', what: 'Suggested Review Date', note: 'With 100-Hour Check, Aircraft in Hangar' },
+      { when: '14 March 2027', what: 'Current Certificate Expires', note: 'No Flying After Expiry Without Review' },
+      { when: 'After the Review', what: 'Certificate Issued and Copies Sent', note: 'Copy to Civil Aviation Authority Within 10 Days' }
+    ];
+    const pastReviews = [
+      { date: '14 March 2026', note: 'Valid to 14 March 2027, No Findings' },
+      { date: '14 March 2025', note: '1 Finding, Compass Swing Record, Closed Before Issue' },
+      { date: '14 March 2024', note: 'No Findings' }
+    ];
+    const documents = [
+      { name: 'Certificate of Airworthiness', note: 'Issued [Date], Valid With Review Certificate', valid: 'Does Not Expire', colour: c.green },
+      { name: 'Airworthiness Review Certificate', note: 'Issued 14 March 2026, Airworthiness Review Staff', valid: 'Valid to 14 March 2027', colour: c.green },
+      { name: 'Certificate of Registration', note: '[Owner Name]', valid: 'Does Not Expire', colour: c.green },
+      { name: 'Noise Certificate', note: 'Issued [Date]', valid: 'Does Not Expire', colour: c.green },
+      { name: 'Aircraft Radio Licence', note: 'Held by Owner', valid: '[Date]', colour: c.green },
+      { name: 'Weight and Balance Schedule', note: 'Updated May 2022, Transponder Change', valid: 'Until the Next Change', colour: c.green },
+      { name: 'Maintenance Programme, Issue 3', note: 'Owner Declared', valid: 'Review Due 2 March 2027', colour: c.green }
+    ];
+    const history = [
+      { date: '3 November 2026', what: 'Defect Raised', detail: 'Left Landing Light Inoperative, Deferred', by: 'Pilot-Owner' },
+      { date: '22 October 2026', what: 'Pilot-Owner Maintenance', detail: 'Right Main Tyre Replaced, Release by Pilot-Owner', by: 'Pilot-Owner' },
+      { date: '12 September 2026', what: '100-Hour Check', detail: 'Released at 6,375.0 Hours', by: '[Your Organisation]' },
+      { date: '14 March 2026', what: 'Airworthiness Review', detail: 'Certificate Valid to 14 March 2027', by: 'Airworthiness Review Staff' },
+      { date: '2 March 2026', what: 'Maintenance Programme Reviewed', detail: 'Issue 3 Confirmed, No Changes', by: 'Continuing Airworthiness Manager' }
+    ];
+    [soon, defects, programme, components, documents].forEach(l => l.forEach(i => { i.mark = i.colour === c.green ? 'none' : 'inline-block'; }));
+
+    const CFG = [{"product": "Airframe", "ata": "53", "chap": "Fuselage", "id": "fus", "name": "Fuselage", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Primary Structure"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": "Structure, no part number tracked"}, {"product": "Airframe", "ata": "57", "chap": "Wings", "id": "wingl", "name": "Left Wing", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Primary Structure"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "57", "chap": "Wings", "id": "wingr", "name": "Right Wing", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Primary Structure"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "55", "chap": "Stabilisers", "id": "stab", "name": "Stabilator", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Primary Structure", "Flight Controls"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": ["Directive [Reference], Stabilator Attachment Fitting Inspection, Next Due 7,600.6 Hours"], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "55", "chap": "Stabilisers", "id": "fin", "name": "Vertical Stabiliser", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Primary Structure"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "27", "chap": "Flight Controls", "id": "ail", "name": "Ailerons, Left and Right", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Flight Controls"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "27", "chap": "Flight Controls", "id": "rud", "name": "Rudder", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Flight Controls"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "27", "chap": "Flight Controls", "id": "trim", "name": "Stabilator Trim System", "pn": "[Part Number]", "sn": "", "fitted": "Original", "release": "", "life": {}, "flags": ["Flight Controls"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [["12 September 2026", "Inspected, 100-Hour Check", "Work Order 2026-098"]], "att": "", "note": ""}, {"product": "Airframe", "ata": "27", "chap": "Flight Controls", "id": "flap", "name": "Flaps, Left and Right", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": ["Flight Controls"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "32", "chap": "Landing Gear", "id": "mlg", "name": "Main Landing Gear, Left and Right", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "32", "chap": "Landing Gear", "id": "nlg", "name": "Nose Landing Gear Oleo Strut", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "32", "chap": "Landing Gear", "id": "tyrer", "name": "Right Main Tyre", "pn": "[Part Number]", "sn": "", "fitted": "22 October 2026, 6,402.1 Hours", "release": "Certificate of Conformity, [Supplier]", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [["22 October 2026", "Fitted, Worn Tyre Replaced", "Pilot-Owner Maintenance"], ["22 October 2026", "Removed, Worn to Limit", "Defect Closed"]], "att": "", "note": ""}, {"product": "Airframe", "ata": "28", "chap": "Fuel", "id": "tankl", "name": "Left Wing Fuel Tank", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "28", "chap": "Fuel", "id": "tankr", "name": "Right Wing Fuel Tank", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "28", "chap": "Fuel", "id": "sel", "name": "Fuel Selector Valve", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": ["Directive [Reference] Revision 2, Fuel Selector Valve Placard, Complete March 2024"], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "28", "chap": "Fuel", "id": "efp", "name": "Electric Fuel Pump", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "24", "chap": "Electrical Power", "id": "bat", "name": "Battery", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "[Date]", "release": "CAA Form 1, [Tracking Number]", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "24", "chap": "Electrical Power", "id": "alt", "name": "Alternator", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "[Date]", "release": "CAA Form 1, [Tracking Number]", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "33", "chap": "Lights", "id": "land", "name": "Landing Light", "pn": "[Part Number]", "sn": "", "fitted": "Original", "release": "", "life": {}, "flags": [], "req": "Part-NCO, Night Flight Only", "allowed": ["[Part Number], Lamp", "[Part Number], Light-Emitting Diode Lamp, With Standard Change"], "links": ["Defect, Left Landing Light Inoperative, Deferred to 3 December 2026", "WP-2026-047, Replace Lamp and Check Circuit, 19 November"], "history": [["3 November 2026", "Defect Raised, Inoperative", "Technical Log"], ["16 November 2026", "Replacement Lamp Received", "Goods In, WP-2026-047"]], "att": "due", "note": ""}, {"product": "Airframe", "ata": "33", "chap": "Lights", "id": "strobe", "name": "Anti-Collision Strobe Lights", "pn": "[Part Number]", "sn": "", "fitted": "June 2019", "release": "Minor Change, [Reference]", "life": {}, "flags": [], "req": "Part-NCO, Night Flight Only", "allowed": [], "links": ["Modification, Light-Emitting Diode Strobe Lights, Minor Change [Reference]"], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "33", "chap": "Lights", "id": "nav", "name": "Navigation Lights", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Part-NCO, Night Flight Only", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "25", "chap": "Equipment and Furnishings", "id": "elt", "name": "Emergency Locator Transmitter", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Part-NCO", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "25", "chap": "Equipment and Furnishings", "id": "eltb", "name": "Emergency Locator Transmitter Battery", "pn": "[Part Number]", "sn": "", "fitted": "February 2022", "release": "CAA Form 1, [Tracking Number]", "life": {"limit": "Date on Battery", "used": "Fitted February 2022", "remaining": "3 Months, February 2027"}, "flags": ["Life-Limited"], "req": "Part-NCO", "allowed": [], "links": ["Maintenance Programme, Battery Replacement, Due February 2027"], "history": [], "att": "due", "note": ""}, {"product": "Airframe", "ata": "25", "chap": "Equipment and Furnishings", "id": "ext", "name": "Fire Extinguisher", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {"limit": "Inspection by Date on Label", "used": "[Date]", "remaining": "[Months]"}, "flags": ["Life-Limited"], "req": "", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "25", "chap": "Equipment and Furnishings", "id": "seats", "name": "Seats and Seat Rails", "pn": "", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": ["Service Bulletin [Reference], Seat Rail and Stop Inspection, Every 50-Hour Check"], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "25", "chap": "Equipment and Furnishings", "id": "belts", "name": "Seat Belts and Harnesses", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "34", "chap": "Navigation", "id": "asi", "name": "Airspeed Indicator", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual, Part-NCO", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "34", "chap": "Navigation", "id": "altm", "name": "Altimeter", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {"limit": "Test Every 24 Months", "used": "Tested 18 August 2025", "remaining": "9 Months, August 2027"}, "flags": ["Life-Limited"], "req": "Type Certificate Data Sheet and Flight Manual, Part-NCO", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "34", "chap": "Navigation", "id": "comp", "name": "Magnetic Compass", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {"limit": "Swing Every 24 Months", "used": "Swung 2 March 2025", "remaining": "4 Months, March 2027"}, "flags": ["Life-Limited"], "req": "Type Certificate Data Sheet and Flight Manual, Part-NCO", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "34", "chap": "Navigation", "id": "ai", "name": "Attitude Indicator", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {}, "flags": [], "req": "", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "34", "chap": "Navigation", "id": "hi", "name": "Heading Indicator", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {}, "flags": [], "req": "", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "34", "chap": "Navigation", "id": "xpdr", "name": "Mode S Transponder", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "May 2022", "release": "Standard Change, [Reference]", "life": {"limit": "Test Every 24 Months", "used": "Tested 18 August 2025", "remaining": "9 Months, August 2027"}, "flags": ["Life-Limited"], "req": "Airspace", "allowed": ["[Part Number], With Standard Change [Reference]"], "links": ["Modification, Mode S Transponder with Position Output, Standard Change [Reference]"], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "23", "chap": "Communications", "id": "com", "name": "Very High Frequency Radio, 8.33 Kilohertz", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "April 2018", "release": "Standard Change, [Reference]", "life": {}, "flags": [], "req": "Airspace", "allowed": [], "links": ["Modification, 8.33 Kilohertz Radio, Standard Change [Reference]"], "history": [], "att": "", "note": ""}, {"product": "Airframe", "ata": "37", "chap": "Vacuum", "id": "vac", "name": "Vacuum Pump", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "[Date], 6,230.6 Hours", "release": "CAA Form 1, [Tracking Number]", "life": {"limit": "500 Hours, Manufacturer Recommendation", "used": "182.0 Hours", "remaining": "318 Hours, Mid 2028"}, "flags": ["Life-Limited"], "req": "", "allowed": [], "links": ["Directive [Reference] Revision 1, Vacuum Pump Drive Coupling Inspection, 112 Hours Left"], "history": [], "att": "", "note": ""}, {"product": "Engine", "ata": "72", "chap": "Engine", "id": "eng", "name": "Engine, Lycoming O-320", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "[Date], 5,648.6 Hours", "release": "CAA Form 1, Overhaul, [Tracking Number]", "life": {"limit": "2,000 Hours or 12 Years, Manufacturer Recommendation", "used": "764.0 Hours Since Overhaul", "remaining": "1,236 Hours, About 2033"}, "flags": ["Life-Limited"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": ["Lycoming O-320 Series, As Listed on the Type Certificate Data Sheet"], "links": ["Service Bulletin [Reference], Engine Valve Guide Inspection, Every 100-Hour Check"], "history": [["[Date]", "Fitted After Overhaul, 5,648.6 Airframe Hours", "CAA Form 1, [Tracking Number]"], ["12 September 2026", "Compression Check, All Within Limits", "100-Hour Check"]], "att": "", "note": ""}, {"product": "Engine", "ata": "74", "chap": "Ignition", "id": "magl", "name": "Left Magneto", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {"limit": "500-Hour Inspection, Manufacturer Recommendation", "used": "[Hours]", "remaining": "[Hours]"}, "flags": ["Life-Limited"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Engine", "ata": "74", "chap": "Ignition", "id": "magr", "name": "Right Magneto", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {"limit": "500-Hour Inspection, Manufacturer Recommendation", "used": "[Hours]", "remaining": "[Hours]"}, "flags": ["Life-Limited"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Engine", "ata": "74", "chap": "Ignition", "id": "plugs", "name": "Spark Plugs, 8", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Engine", "ata": "73", "chap": "Engine Fuel and Control", "id": "carb", "name": "Carburettor", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Engine", "ata": "78", "chap": "Exhaust", "id": "muff", "name": "Exhaust Muffler", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": ["Directive [Reference], Exhaust Muffler Inspection for Cracks, Next Due 6,824.6 Hours"], "history": [], "att": "", "note": ""}, {"product": "Engine", "ata": "79", "chap": "Oil", "id": "filt", "name": "Oil Filter", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": ["[Part Number], Received 16 November, Reserved for WP-2026-047"], "links": ["WP-2026-047, Engine Oil and Filter Change, 19 November"], "history": [], "att": "due", "note": ""}, {"product": "Engine", "ata": "80", "chap": "Starting", "id": "start", "name": "Starter Motor", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Engine", "ata": "77", "chap": "Engine Indicating", "id": "tach", "name": "Tachometer", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}, {"product": "Propeller", "ata": "61", "chap": "Propellers", "id": "prop", "name": "Propeller, Fixed Pitch", "pn": "[Part Number]", "sn": "[Serial Number]", "fitted": "[Date]", "release": "CAA Form 1, Overhaul, [Tracking Number]", "life": {"limit": "2,000 Hours or 6 Years, Manufacturer Recommendation", "used": "1,136.0 Hours Since Overhaul, Overhauled [Date]", "remaining": "864 Hours, or by the 6-Year Date if Sooner"}, "flags": ["Life-Limited"], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": ["[Part Number], As Listed on the Type Certificate Data Sheet"], "links": ["Directive [Reference], Constant Speed Propeller Hub Inspection, Not Applicable, Fixed Pitch Fitted"], "history": [], "att": "", "note": ""}, {"product": "Propeller", "ata": "61", "chap": "Propellers", "id": "spin", "name": "Spinner", "pn": "[Part Number]", "sn": "", "fitted": "", "release": "", "life": {}, "flags": [], "req": "Type Certificate Data Sheet and Flight Manual", "allowed": [], "links": [], "history": [], "att": "", "note": ""}];
+    const amber = c.amber, red = c.red;
+    const cq = this.state.cfgQ.trim().toLowerCase();
+    const cf = this.state.cfgF;
+    const isRecorded = x => !!(x.pn || x.sn) || /Structure/.test((x.flags || []).join(' '));
+    const fdefs = [
+      ['all', 'All', x => true],
+      ['life', 'Life-Limited', x => x.flags.indexOf('Life-Limited') !== -1],
+      ['req', 'Required', x => !!x.req],
+      ['att', 'Needs Attention', x => !!x.att],
+      ['nr', 'Not Recorded', x => !isRecorded(x)]
+    ];
+    const fsel = fdefs.find(f => f[0] === cf) || fdefs[0];
+    const qm = x => !cq || (x.name + ' ' + x.pn + ' ' + x.sn + ' ' + x.ata + ' ' + x.chap).toLowerCase().indexOf(cq) !== -1;
+    const vis = CFG.filter(x => fsel[2](x) && qm(x));
+    const cfgFilters = fdefs.map(f => { const on = f[0] === cf; return { label: f[1], count: String(CFG.filter(x => f[2](x) && qm(x)).length), pressed: on ? 'true' : 'false', bg: on ? t.bg : 'transparent', shadow: on ? '0 1px 2px rgba(0,0,0,0.12)' : 'none', pick: () => this.setState({ cfgF: f[0] }) }; });
+    const filtering = cf !== 'all' || !!cq;
+    const open = this.state.open;
+    const tog = k => () => { const o = Object.assign({}, this.state.open); o[k] = !o[k]; this.setState({ open: o }); };
+    const markOf = a => a === 'stop' ? [red, 'inline-block'] : a === 'due' ? [amber, 'inline-block'] : ['transparent', 'none'];
+    const tree = ['Airframe', 'Engine', 'Propeller'].map(prod => {
+      const items = vis.filter(x => x.product === prod);
+      const chaps = [];
+      items.forEach(x => { if (!chaps.find(c2 => c2.ata === x.ata)) chaps.push({ ata: x.ata, name: x.chap }); });
+      chaps.sort((a, b) => parseInt(a.ata, 10) - parseInt(b.ata, 10));
+      const po = filtering || !!open[prod];
+      return { name: prod, count: String(items.length), open: po, expanded: po ? 'true' : 'false', rot: po ? '90deg' : '0deg', toggle: tog(prod),
+        chapters: chaps.map(ch => {
+          const its = items.filter(x => x.ata === ch.ata);
+          const k = prod + '|' + ch.ata;
+          const co = filtering || !!open[k];
+          const att = its.some(x => x.att === 'stop') ? 'stop' : its.some(x => x.att) ? 'due' : '';
+          const m = markOf(att);
+          return { ata: ch.ata, name: ch.name, count: String(its.length), open: co, expanded: co ? 'true' : 'false', rot: co ? '90deg' : '0deg', toggle: tog(k), colour: m[0], mark: m[1],
+            items: its.map(x => { const mm = markOf(x.att); const on = this.state.sel === x.id; return { name: x.name, sub: x.sn ? x.sn : (isRecorded(x) ? '' : 'Not Recorded'), colour: mm[0], mark: mm[1], bg: on ? t.sidebar : 'transparent', pressed: on ? 'true' : 'false', pick: () => this.setState({ sel: x.id }) }; }) };
+        }) };
+    });
+    const cur = CFG.find(x => x.id === this.state.sel) || CFG[0];
+    const ruleText = { 'Primary Structure': 'Primary Structure: Replacement Parts Need a CAA Form 1, Owner Acceptance Not Permitted, 21.A.307', 'Flight Controls': 'Flight Controls: Replacement Parts Need a CAA Form 1, Owner Acceptance Not Permitted, 21.A.307', 'Life-Limited': 'Life-Limited: Tracked by Serial Number Across Aircraft' };
+    const life = cur.life || {};
+    const pos = {
+      name: cur.name, path: cur.product + ', Chapter ' + cur.ata + ' ' + cur.chap,
+      facts: [
+        { label: 'Part Number', value: cur.pn || (isRecorded(cur) ? 'Not Tracked' : 'Not Recorded') },
+        { label: 'Serial Number', value: cur.sn || 'Not Serialised' },
+        { label: 'Fitted', value: cur.fitted || 'Not Recorded' },
+        { label: 'Release Document', value: cur.release || 'Not Recorded' }
+      ].concat(life.limit ? [{ label: 'Limit', value: life.limit }, { label: 'Used', value: life.used }, { label: 'Remaining', value: life.remaining }] : []),
+      allowed: (cur.allowed.length ? cur.allowed : ['As Listed in the Illustrated Parts Catalogue, [Reference]']).map(s => ({ text: s })),
+      req: cur.req ? 'Required by ' + cur.req : 'Optional Equipment',
+      rules: (cur.flags.length ? cur.flags.map(f => ruleText[f] || f) : ['Standard Eligibility, 21.A.307']).map(s => ({ text: s })),
+      links: (cur.links.length ? cur.links : ['None']).map(s => { const a = /Defect|WP-/.test(s) && cur.att ? [amber, 'inline-block'] : ['transparent', 'none']; return { text: s, colour: a[0], mark: a[1] }; }),
+      history: (cur.history.length ? cur.history : [['Baseline', 'Recorded at Configuration Baseline', '14 March 2026']]).map(h => ({ date: h[0], event: h[1], ref: h[2] }))
+    };
+    const cfgCount = vis.length + ' of ' + CFG.length + ' Positions';
+    const tab = this.state.tab;
+    const mk = (key, label, count) => ({ label, count: count ? String(count) : '', selected: tab === key ? 'true' : 'false', colour: tab === key ? t.text : t.muted, weight: '400', line: tab === key ? 'inset 0 -2px 0 ' + t.text : 'none', pick: () => this.setState({ tab: key }) });
+    const tabs = [
+      mk('overview', 'Overview'),
+      mk('log', 'Technical Log and Defects', 1),
+      mk('forecast', 'Maintenance Forecast'),
+      mk('directives', 'Directives and Modifications'),
+      mk('components', 'Configuration'),
+      mk('review', 'Airworthiness Review'),
+      mk('documents', 'Documents'),
+      mk('history', 'Work History')
+    ];
+    const keys = ['overview', 'log', 'forecast', 'directives', 'components', 'review', 'documents', 'history'];
+    const show = {};
+    keys.forEach(k => { show[k] = tab === k; });
+    const X = (id, list, cols, extra) => list.map((r, i) => {
+      const k = id + '|' + i, on = !!(this.state.xo || {})[k];
+      const facts = cols.filter(c => c[1] && r[c[1]]).map(c => ({ label: c[0], value: String(r[c[1]]) })).concat(extra ? extra(r).filter(f => f.value) : []);
+      return Object.assign({}, r, { xOpen: on, xExp: on ? 'true' : 'false', xRot: on ? '90deg' : '0deg', xLine: on ? 'transparent' : t.row, xBg: on ? t.sidebar : 'transparent', xFacts: facts,
+        xTog: () => { const n = Object.assign({}, this.state.xo || {}); n[k] = !n[k]; this.setState({ xo: n }); } });
+    });
+    return { t, dark, tree, pos, cfgFilters, cfgCount, cfgQ: this.state.cfgQ, onCfgQ: e => this.setState({ cfgQ: e.target.value }), facts, tabs, show, soon, counters, defects, flights: X('flights', flights, [["Date", "date"], ["Pilot", "pilot"], ["Route", "route"], ["Hours", "hours"], ["Landings", "landings"], ["Airframe Total", "total"], ["Defects Entered", "defect"]]), programme: X('programme', programme, [["Task", "task"], ["Interval", "interval"], ["Last Done", "last"], ["Next Due", "next"], ["Remaining", "remaining"], ["Forecast Date", "forecast"]]), directives: X('directives', directives, [["Reference", "ref"], ["Type", "type"], ["Subject", "subject"], ["Method of Compliance", "method"], ["Last Done", "last"], ["Remaining", "remaining"]]), mods, components, arcSteps, pastReviews, documents, history };
+  }
+}
+</script>
+</body>
+</html>

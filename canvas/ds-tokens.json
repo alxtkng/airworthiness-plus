@@ -1,0 +1,290 @@
+{
+  "name": "Airworthiness+",
+  "version": 2,
+  "color": {
+    "themes": [
+      {
+        "id": "light",
+        "name": "Light"
+      },
+      {
+        "id": "dark",
+        "name": "Dark"
+      }
+    ],
+    "tokens": [
+      {
+        "name": "background-100",
+        "value": {
+          "light": "#ffffff",
+          "dark": "#0a0a0a"
+        },
+        "usage": "Geist Background 1. The default background for the page and every element. The go-to."
+      },
+      {
+        "name": "background-200",
+        "value": {
+          "light": "#fafafa",
+          "dark": "#000000"
+        },
+        "usage": "Geist Background 2. Secondary background, used sparingly: the sidebar and table header rows."
+      },
+      {
+        "name": "gray-100",
+        "value": {
+          "light": "#f2f2f2",
+          "dark": "#1a1a1a"
+        },
+        "usage": "Hover background on Background 1, and the filter group track."
+      },
+      {
+        "name": "gray-200",
+        "value": {
+          "light": "#ebebeb",
+          "dark": "#1f1f1f"
+        },
+        "usage": "Active background on Background 1."
+      },
+      {
+        "name": "gray-400",
+        "value": {
+          "light": "#ebebeb",
+          "dark": "#2e2e2e"
+        },
+        "usage": "Default border: dividers, tables, cards, inputs and secondary buttons."
+      },
+      {
+        "name": "gray-500",
+        "value": {
+          "light": "#c9c9c9",
+          "dark": "#454545"
+        },
+        "usage": "Hover border."
+      },
+      {
+        "name": "gray-900",
+        "value": {
+          "light": "#666666",
+          "dark": "#a1a1a1"
+        },
+        "usage": "Secondary text and icons: the line under a title, table headers, labels above values."
+      },
+      {
+        "name": "gray-1000",
+        "value": {
+          "light": "#171717",
+          "dark": "#ededed"
+        },
+        "usage": "Primary text and icons, and the primary button fill. Almost all text."
+      },
+      {
+        "name": "status-ok",
+        "value": "#1fcb6e",
+        "usage": "Round status dot in a Status column only."
+      },
+      {
+        "name": "status-due",
+        "value": "#ffb224",
+        "usage": "Round status dot for due soon, deferred or waiting."
+      },
+      {
+        "name": "status-stop",
+        "value": "#ff5a4e",
+        "usage": "Round status dot for unserviceable, overdue or quarantined."
+      }
+    ]
+  },
+  "type": {
+    "fonts": [
+      {
+        "family": "Geist",
+        "file": "fonts/Geist-Variable.woff2",
+        "weight": "100 900"
+      },
+      {
+        "family": "Geist Mono",
+        "file": "fonts/GeistMono-Variable.woff2",
+        "weight": "100 900"
+      }
+    ],
+    "families": {
+      "sans": "Geist, system-ui, sans-serif",
+      "mono": "\"Geist Mono\", ui-monospace, monospace"
+    },
+    "groups": [
+      {
+        "name": "Heading",
+        "family": "sans",
+        "styles": [
+          {
+            "name": "heading-24",
+            "fontSize": "24px",
+            "lineHeight": "32px",
+            "fontWeight": 600,
+            "letterSpacing": "-0.96px",
+            "sample": "G-ABCD",
+            "usage": "The one page title. Never larger inside the app."
+          },
+          {
+            "name": "heading-16",
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontWeight": 600,
+            "letterSpacing": "-0.32px",
+            "sample": "Open Defects",
+            "usage": "Section headings, like Usage and Projects on the Vercel dashboard."
+          },
+          {
+            "name": "heading-14",
+            "fontSize": "14px",
+            "lineHeight": "20px",
+            "fontWeight": 600,
+            "letterSpacing": "-0.28px",
+            "sample": "Departures",
+            "usage": "A heading inside a section, sparingly."
+          }
+        ]
+      },
+      {
+        "name": "Label",
+        "family": "sans",
+        "styles": [
+          {
+            "name": "label-14",
+            "fontSize": "14px",
+            "lineHeight": "20px",
+            "fontWeight": 400,
+            "sample": "Piper PA-28-140",
+            "usage": "The most common style: table values, menus, sidebar items, tabs. Strong (500) for the first column, titles of list rows and fact values."
+          },
+          {
+            "name": "label-13",
+            "fontSize": "13px",
+            "lineHeight": "16px",
+            "fontWeight": 400,
+            "sample": "Limit 3 December 2026",
+            "usage": "A secondary line beside or under other labels, in gray-900. Tabular figures for numbers."
+          },
+          {
+            "name": "label-13-mono",
+            "fontSize": "13px",
+            "lineHeight": "16px",
+            "fontWeight": 400,
+            "family": "mono",
+            "sample": "WP-2026-047",
+            "usage": "References, paired with Label 14."
+          }
+        ]
+      },
+      {
+        "name": "Copy",
+        "family": "sans",
+        "styles": [
+          {
+            "name": "copy-14",
+            "fontSize": "14px",
+            "lineHeight": "20px",
+            "fontWeight": 400,
+            "sample": "Deferred by the pilot-in-command on 3 November.",
+            "usage": "Multi-line text, in gray-1000."
+          },
+          {
+            "name": "copy-13",
+            "fontSize": "13px",
+            "lineHeight": "18px",
+            "fontWeight": 400,
+            "sample": "4 of 6 inputs complete",
+            "usage": "Secondary text where space is limited, in gray-900."
+          }
+        ]
+      },
+      {
+        "name": "Button",
+        "family": "sans",
+        "styles": [
+          {
+            "name": "button-14",
+            "fontSize": "14px",
+            "lineHeight": "20px",
+            "fontWeight": 500,
+            "sample": "Record a Defect",
+            "usage": "Default button, 40px high."
+          }
+        ]
+      }
+    ]
+  },
+  "spacing": {
+    "tokens": [
+      {
+        "name": "space-1",
+        "value": "4px",
+        "usage": "Between a value and the meta line under it."
+      },
+      {
+        "name": "space-2",
+        "value": "8px",
+        "usage": "Between buttons, and between a status square and its word."
+      },
+      {
+        "name": "space-3",
+        "value": "12px",
+        "usage": "Between a section title and its content."
+      },
+      {
+        "name": "space-4",
+        "value": "16px",
+        "usage": "Table cell padding, sideways and summary strip padding."
+      },
+      {
+        "name": "space-6",
+        "value": "24px",
+        "usage": "Between groups inside a section."
+      },
+      {
+        "name": "space-8",
+        "value": "32px",
+        "usage": "Page padding at the top, and the page padding at the sides is space-10."
+      },
+      {
+        "name": "space-10",
+        "value": "40px",
+        "usage": "Between sections, and page padding at the sides."
+      }
+    ]
+  },
+  "radius": {
+    "tokens": [
+      {
+        "name": "material-base",
+        "value": "6px",
+        "usage": "Geist material base, for everyday surfaces: tables, cards, fact panels, buttons, inputs, sidebar items."
+      },
+      {
+        "name": "material-medium",
+        "value": "12px",
+        "usage": "Raised surfaces and menus."
+      },
+      {
+        "name": "material-fullscreen",
+        "value": "16px",
+        "usage": "Fullscreen overlays only."
+      },
+      {
+        "name": "status-dot",
+        "value": "9999px",
+        "usage": "The round 10px status dot."
+      }
+    ]
+  },
+  "border": {
+    "tokens": [
+      {
+        "name": "hairline",
+        "value": "1px",
+        "usage": "The only line width. Every divider, table border and control border."
+      }
+    ]
+  },
+  "source": "Geist design system by Vercel: vercel.com/geist. Roles and usage follow the published Typography, Colors and Materials pages. Pixel values follow the Geist Tailwind preset."
+}

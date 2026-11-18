@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Top Bar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+</style>
+</helmet>
+<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; display: flex; align-items: center; min-height: 48px; margin: -16px -40px 0; padding: 0 40px 4px; border-bottom: {{rule}}">
+  <nav aria-label="Breadcrumb">
+    <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px; font-size: 14px; line-height: 20px; font-weight: 400">
+      <sc-for list="{{crumbs}}" as="c" hint-placeholder-count="2">
+        <li style="display: inline-flex; align-items: center; gap: 8px">
+          <sc-if value="{{c.link}}" hint-placeholder-val="{{true}}"><a href="{{c.href}}" style="color: {{t.muted}}">{{c.label}}</a></sc-if>
+          <sc-if value="{{c.here}}" hint-placeholder-val="{{false}}"><span aria-current="page" style="color: {{t.text}}; font-weight: 500">{{c.label}}</span></sc-if>
+          <sc-if value="{{c.sep}}" hint-placeholder-val="{{true}}"><span aria-hidden="true" style="color: {{t.sep}}">/</span></sc-if>
+        </li>
+      </sc-for>
+    </ol>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"trail":{"editor":"text","default":"Continuing Airworthiness=Fleet.dc.html|Aircraft Configuration"},"line":{"editor":"boolean","default":true},"dark":{"editor":"boolean","default":false},"$preview":{"width":1200,"height":56}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { text: '#EDEDED', muted: '#A1A1A1', border: '#2E2E2E', sep: '#454545' }
+      : { text: '#171717', muted: '#666666', border: '#EBEBEB', sep: '#C9C9C9' };
+    const parts = String(this.props.trail || '').split('|').filter(Boolean).map(p => { const [label, href] = p.split('='); return { label, href: href || '' }; });
+    const crumbs = parts.map((p, i) => ({ label: p.label, href: p.href, link: !!p.href, here: !p.href, sep: i < parts.length - 1 }));
+    const line = !(this.props.line === false || this.props.line === 'false');
+    return { t, crumbs, rule: line ? '1px solid ' + t.border : '0' };
+  }
+}
+</script>
+</body>
+</html>

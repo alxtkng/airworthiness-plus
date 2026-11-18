@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Actions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"Geist Mono Embedded";src:url("/_blob/cbad824f95366da895c21559ece6cd03") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+body{margin:0}
+a{text-decoration:none}
+tbody tr:last-child > td{border-bottom-color:transparent !important}
+ol > li:last-child{border-bottom-color:transparent !important}
+</style>
+</helmet>
+<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <div style="flex: 1 1 248px; max-width: 100%; display: flex">
+    <dc-import name="Sidebar" active="actions" dark="{{dark}}" hint-size="248px,1100px"></dc-import>
+  </div>
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
+    <dc-import name="TopBar" trail="Management System=Main.dc.html|Actions" line="true" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
+    <h1 style="position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Actions</h1>
+    <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: -16px"><button type="button" style="font: inherit; font-size: 14px; font-weight: 500; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">Export</button></div>
+    <div style="display: flex; flex-wrap: wrap; column-gap: 40px; row-gap: 8px; padding: 14px 16px; border-radius: 6px; border: 1px solid {{t.border}}; font-size: 14px; line-height: 20px; font-weight: 400; color: {{t.muted}}"><span><span style="color: {{t.text}}; font-weight: 500">{{openCount}}</span> Open Actions</span><span><span style="color: {{t.text}}; font-weight: 500">{{soon}}</span> Due in 30 Days</span><span><span style="color: {{t.text}}; font-weight: 500">{{overdue}}</span> Overdue</span><span><span style="color: {{t.text}}; font-weight: 500">{{awaiting}}</span> Awaiting Verification</span></div>
+    <section aria-labelledby="act-h" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px"><h2 id="act-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Open Actions</h2><div role="group" aria-label="Source" style="display: inline-flex; flex-wrap: wrap; padding: 3px; border-radius: 6px; background: {{t.empty}}; gap: 2px"><sc-for list="{{filters}}" as="f" hint-placeholder-count="4"><button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; height: 32px; padding: 0 12px; border-radius: 6px; border: 0; cursor: pointer; color: {{t.text}}; background: {{f.bg}}; box-shadow: {{f.shadow}}">{{f.label}} <span style="color: {{t.muted}}">{{f.count}}</span></button></sc-for></div></div>
+      <p style="margin: 0; font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">Closing an Action Updates the Hazard or Finding It Came From</p>
+      <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
+        <table style="width: 100%; min-width: 1100px; border-collapse: collapse; font-size: 14px; line-height: 20px">
+          <thead><tr style="background: {{t.sidebar}}; color: {{t.muted}}; font-size: 13px; text-align: left"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left">Action</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 200px">From</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 240px">Owner</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 170px">Due</th><th scope="col" style="padding: 12px 16px; font-weight: 500; white-space: nowrap; border-bottom: 1px solid {{t.border}}; text-align: left; width: 210px">Status</th></tr></thead>
+          <tbody>
+            <sc-for list="{{actions}}" as="r" hint-placeholder-count="9">
+              <tr style="background: {{r.bg}}"><td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{r.line}}; vertical-align: middle"><button type="button" aria-expanded="{{r.exp}}" aria-label="Show Details" onClick="{{r.tog}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{r.rot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; text-align: left"><span style="font-weight: 500">{{r.action}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; text-align: left"><a href="{{r.href}}" style="color: {{t.text}}; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: {{t.sBorder}}">{{r.from}}</a></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; text-align: left"><span style="font-weight: 400">{{r.owner}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; text-align: left"><span style="font-weight: 400">{{r.due}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.line}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; text-align: left"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{r.sm.mc}}; box-shadow: {{r.sm.mr}}; display: {{r.sm.md}}; flex: none"></span><span>{{r.status}}</span></span></td></tr>
+              <sc-if value="{{r.open}}" hint-placeholder-val="{{false}}"><tr style="background: {{r.bg}}"><td colspan="6" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px"><sc-for list="{{r.facts}}" as="d" hint-placeholder-count="6"><div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{d.label}}</span><span style="font-size: 14px; line-height: 20px">{{d.value}}</span></div></sc-for></div></td></tr></sc-if>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = {"open": {}, "show": "all"}; }
+  renderVals() {
+    const dark = this.props.dark === true || this.props.dark === 'true';
+    const t = dark
+      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E', empty: '#1A1A1A', raised: '#2E2E2E', note: '#000000', error: '#FF6166' }
+      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB', empty: '#F2F2F2', raised: '#FFFFFF', note: '#FAFAFA', error: '#CB2A2F' };
+    const M = { r: '#FF5A4E', a: '#FFB224', g: '#1FCB6E' };
+    const mark = k => k === 'o' ? { mc: 'transparent', mr: 'inset 0 0 0 1.5px ' + t.muted, md: 'inline-block' } : (k ? { mc: M[k], mr: 'none', md: 'inline-block' } : { mc: 'transparent', mr: 'none', md: 'none' });
+    const ui = id => { const on = !!(this.state.open || {})[id]; return { open: on, exp: on ? 'true' : 'false', rot: on ? '90deg' : '0deg', line: on ? 'transparent' : t.row, bg: on ? t.sidebar : 'transparent',
+      tog: () => { const n = Object.assign({}, this.state.open); n[id] = !n[id]; this.setState({ open: n }); } }; };
+    const seg = (key, opts) => opts.map(([k, label, n]) => { const on = this.state[key] === k; return { label, count: n === undefined ? '' : String(n), pressed: on ? 'true' : 'false', bg: on ? t.raised : 'transparent', shadow: on ? '0 1px 2px rgba(0,0,0,0.12)' : 'none', pick: () => this.setState({ [key]: k }) }; });
+    const fact = (label, value) => ({ label, value });
+
+    const sevL = { 5: 'Catastrophic', 4: 'Hazardous', 3: 'Major', 2: 'Minor', 1: 'Negligible' };
+    const likL = { 5: 'Frequent', 4: 'Occasional', 3: 'Remote', 2: 'Improbable', 1: 'Extremely Improbable' };
+    const grid = {
+      5: ['Review', 'Unacceptable', 'Unacceptable', 'Unacceptable', 'Unacceptable'],
+      4: ['Acceptable', 'Review', 'Unacceptable', 'Unacceptable', 'Unacceptable'],
+      3: ['Acceptable', 'Review', 'Review', 'Unacceptable', 'Unacceptable'],
+      2: ['Acceptable', 'Acceptable', 'Review', 'Review', 'Unacceptable'],
+      1: ['Acceptable', 'Acceptable', 'Acceptable', 'Acceptable', 'Review']
+    };
+    const clsMark = { Unacceptable: 'r', Review: 'a', Acceptable: 'o' };
+    const risk = (s, l) => { const cls = grid[s][l - 1]; return { s, l, cls, index: s * l, label: (s * l) + ' ' + cls, detail: sevL[s] + ' ' + s + ', ' + likL[l] + ' ' + l, m: mark(clsMark[cls]) }; };
+    const hazardData = [
+      { ref: '2026-0007', title: 'Hours Carried Forward Incorrectly When Paper Logbook Entries Are Transferred', source: 'Safety Report SR-2026-014', raised: '4 November 2026', existing: 'Second Person Checks the Totals When a Logbook Is Transferred', now: [3, 4], further: 'Import Totals Directly From the Technical Log, Reject Any Entry Where Hours Go Backwards', after: [3, 2], owner: 'Continuing Airworthiness Manager', due: '31 December 2026', days: 43, second: '', lastReview: '4 November 2026', nextReview: '18 December 2026' },
+      { ref: '2026-0003', title: 'Airworthiness Directive Applicability Missed After a Propeller Change', source: 'Internal Safety Investigation', raised: '9 April 2026', existing: 'Directive Applicability Checked at Each Airworthiness Review', now: [4, 2], further: 'Re-Check Directive Applicability Whenever a Component Is Changed', after: [4, 1], owner: 'Continuing Airworthiness Manager', due: '15 January 2027', days: 58, second: 'Safety Manager', lastReview: '30 September 2026', nextReview: '31 December 2026' },
+      { ref: '2026-0005', title: 'Airworthiness Review Certificate Expiry Not Tracked for Syndicate Aircraft', source: 'Hazard Report', raised: '22 June 2026', existing: 'Planner Keeps a Calendar Reminder', now: [3, 3], further: 'Alert the Owner and the Organisation 60 Days and 30 Days Before Expiry', after: [3, 1], owner: 'Lucy Grant', due: '30 November 2026', days: 12, second: 'Safety Manager', lastReview: '30 September 2026', nextReview: '31 December 2026' },
+      { ref: '2026-0006', title: 'Contracted Maintenance Organisation Late Sending Certificates of Release to Service', source: 'Finding 2026-F03', raised: '25 September 2026', existing: 'Contract Sets a Deadline for Sending the Release', now: [2, 4], further: 'Review Contractor Performance Monthly, Hold the Aircraft Until the Release Is Received', after: [2, 2], owner: 'Compliance Monitoring Manager', due: '23 December 2026', days: 35, second: '', lastReview: '30 September 2026', nextReview: '31 December 2026' },
+      { ref: '2026-0002', title: 'Defect Deferred Beyond Its Limit Without Approval', source: 'Safety Survey', raised: '3 March 2026', existing: 'Deferral Limit Written on the Defect Form', now: [3, 2], further: 'Show a Countdown on Every Deferred Defect, Block Release Once the Limit Passes', after: [3, 1], owner: 'Safety Manager', due: '31 December 2026', days: 43, second: '[Accountable Manager]', lastReview: '30 September 2026', nextReview: '31 December 2026' },
+      { ref: '2026-0004', title: 'Emergency Locator Transmitter Battery Replacement Date Not Recorded', source: 'Airworthiness Review, G-CDEF', raised: '11 November 2026', existing: 'None in Place', now: [2, 3], further: 'Add the Battery Date to the Maintenance Programme as a Recurring Item', after: [2, 1], owner: 'Lucy Grant', due: '30 November 2026', days: 12, second: 'Safety Manager', lastReview: '11 November 2026', nextReview: '31 December 2026' },
+      { ref: '2026-0001', title: 'Calibration Overdue on Tooling Used by a Contracted Engineer', source: 'Management of Change', raised: '20 January 2026', existing: 'Calibration Certificates Checked When the Contract Starts', now: [2, 2], further: 'Ask for Current Calibration Certificates at Every Visit', after: [2, 1], owner: 'Compliance Monitoring Manager', due: '28 February 2027', days: 102, second: 'Safety Manager', lastReview: '30 September 2026', nextReview: '31 December 2026' }
+    ].map(h => ({ ...h, now: risk(h.now[0], h.now[1]), after: risk(h.after[0], h.after[1]) }));
+
+    const findingData = [
+      { ref: '2026-F05', title: 'No Minutes Kept for the July Safety Committee Meeting', area: 'Safety Risk Management Audit', level: 'Level 2', raised: '20 October 2026', due: '20 January 2027', days: 63, owner: 'Safety Manager', cause: 'Nobody Given the Job of Taking Minutes', immediate: 'Meeting Outcomes Reconstructed and Signed by the Attendees', plan: 'Minute Taker Named on Every Agenda, Minutes Stored Within 5 Days', state: 'open', note: 'Plan Accepted 27 October 2026', linked: 'None' },
+      { ref: '2026-F04', title: 'Annual Review of the Maintenance Programme Not Recorded for Two Aircraft', area: 'Maintenance Programmes Audit', level: 'Level 2', raised: '2 September 2026', due: '2 December 2026', days: 14, owner: 'Continuing Airworthiness Manager', cause: 'Review Dates Not Tracked, Relied on Memory', immediate: 'Reviews Carried Out and Recorded for G-BXYZ and G-FMNO', plan: 'Review Date Added to Every Programme, Alert 30 Days Before', state: 'verify', note: 'Action Submitted 14 November 2026', linked: 'None' },
+      { ref: '2026-F03', title: 'Certificates of Release to Service Sent Late on Three Occasions', area: 'Contracted Maintenance Audit, Unannounced', level: 'Level 2', raised: '23 September 2026', due: '23 December 2026', days: 35, owner: 'Compliance Monitoring Manager', cause: 'Contract Deadline Not Followed in Practice', immediate: 'Outstanding Releases Obtained for All Three Aircraft', plan: 'Monthly Contractor Performance Review, Aircraft Held Until the Release Is Received', state: 'open', note: 'Plan Accepted 30 September 2026', linked: 'Hazard 2026-0006' },
+      { ref: '2026-F02', title: 'Certificate of Release to Service Entered in Records After 30 Days', area: 'Records and Technical Logs Audit', level: 'Level 2', raised: '17 June 2026', due: '17 September 2026', days: -62, owner: 'Continuing Airworthiness Manager', cause: 'Paper Release Held Until the Next Office Visit', immediate: 'Release Entered for G-EJKL', plan: 'Releases Scanned in on the Day of Issue', state: 'closed', note: 'Verified 28 July 2026', linked: 'None' },
+      { ref: '2026-F01', title: 'Directive Check Sheet Missing a Signature', area: 'Airworthiness Directives Audit', level: 'Level 2', raised: '8 April 2026', due: '8 July 2026', days: -133, owner: 'Continuing Airworthiness Manager', cause: 'Check Sheet Had No Signature Box', immediate: 'Sheet Signed by the Person Who Did the Check', plan: 'Check Sheet Redesigned With a Signature Box', state: 'closed', note: 'Verified 3 May 2026', linked: 'None' }
+    ];
+
+    const st = this.state;
+    const fromHazards = hazardData.filter(h => h.ref !== '2026-0006').map(h => ({ kind: 'hazard', action: h.further, about: h.title, from: 'Hazard ' + h.ref, href: 'Main.dc.html', also: 'None', owner: h.owner, due: h.due, days: h.days, state: 'open', raised: h.raised }));
+    const fromFindings = findingData.filter(x => x.state !== 'closed').map(x => ({ kind: 'finding', action: x.plan, about: x.title, from: 'Finding ' + x.ref, href: 'Audit.dc.html', also: x.linked === 'None' ? 'None' : 'Closes ' + x.linked, owner: x.owner, due: x.due, days: x.days, state: x.state, raised: x.raised }));
+    const all = fromHazards.concat(fromFindings).sort((a, b) => a.days - b.days);
+    const stat = a => a.state === 'verify' ? ['Awaiting Verification', 'o'] : (a.days < 0 ? ['Overdue', 'r'] : (a.days <= 30 ? ['Due in ' + a.days + ' Days', 'a'] : ['On Track', 'g']));
+    const keep = (a, f) => f === 'all' || (f === 'soon' ? a.days <= 30 : a.kind === f);
+    const cnt = f => all.filter(a => keep(a, f)).length;
+    const filters = seg('show', [['all', 'All', cnt('all')], ['soon', 'Due in 30 Days', cnt('soon')], ['hazard', 'From Hazards', cnt('hazard')], ['finding', 'From Findings', cnt('finding')]]);
+    const actions = all.filter(a => keep(a, st.show)).map((a, i) => { const s = stat(a); return { ...a, ...ui(a.from), status: s[0], sm: mark(s[1]),
+      facts: [fact('Action', a.action), fact('From', a.from), fact('About', a.about), fact('Also', a.also), fact('Raised', a.raised), fact('Owner', a.owner), fact('Due', a.due), fact('Status', s[0])] }; });
+    return { t, dark, actions, filters, openCount: all.length, soon: cnt('soon'), overdue: all.filter(a => a.days < 0).length, awaiting: all.filter(a => a.state === 'verify').length };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,916 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-17T23:40:00Z"
+  },
+  "title": "Airworthiness+ Web App",
+  "launch": {
+    "view": "canvas",
+    "page": "overview"
+  },
+  "pages": [
+    {
+      "id": "overview",
+      "name": "Overview and Shared Parts"
+    },
+    {
+      "id": "aircraft",
+      "name": "Continuing Airworthiness"
+    },
+    {
+      "id": "safety",
+      "name": "Management System"
+    },
+    {
+      "id": "planning",
+      "name": "Planning"
+    },
+    {
+      "id": "tools",
+      "name": "Logistics"
+    },
+    {
+      "id": "people",
+      "name": "People"
+    },
+    {
+      "id": "training",
+      "name": "Training"
+    },
+    {
+      "id": "documentation",
+      "name": "Documentation"
+    },
+    {
+      "id": "organisation",
+      "name": "Organisation"
+    },
+    {
+      "id": "commercial",
+      "name": "Commercial"
+    },
+    {
+      "id": "settings",
+      "name": "Settings and Help"
+    }
+  ],
+  "boards": {
+    "Home.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 2690,
+      "title": "Dashboard",
+      "page": "overview",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Sidebar.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 248,
+      "h": 1900,
+      "title": "Shared Sidebar",
+      "page": "overview"
+    },
+    "Tabs.dc.html": {
+      "x": 1848,
+      "y": 260,
+      "w": 960,
+      "h": 64,
+      "title": "Shared Section Tabs",
+      "page": "overview"
+    },
+    "Fleet.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 1160,
+      "title": "Aircraft, All Aircraft",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Reviews.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 1360,
+      "title": "Aircraft, Airworthiness Reviews",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Aircraft.dc.html": {
+      "x": 4560,
+      "y": 260,
+      "w": 1440,
+      "h": 1900,
+      "title": "Aircraft Record, G-ABCD",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Main.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 1500,
+      "title": "Hazard Log, Light",
+      "page": "safety",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Dark.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 1500,
+      "title": "Hazard Log, Dark",
+      "page": "safety",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Reports.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Safety Reports",
+      "page": "safety",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "SafetyReport.dc.html": {
+      "x": 4560,
+      "y": 260,
+      "w": 1440,
+      "h": 1500,
+      "title": "Report a Safety Issue",
+      "page": "safety",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Audit.dc.html": {
+      "x": 6080,
+      "y": 260,
+      "w": 1440,
+      "h": 1560,
+      "title": "Compliance Monitoring",
+      "page": "safety",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Actions.dc.html": {
+      "x": 7600,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Actions",
+      "page": "safety",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "WorkPackages.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 2300,
+      "title": "Work Packages",
+      "page": "planning",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Plan.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 1860,
+      "title": "Manhours and Capacity, Manhour Plan",
+      "page": "planning",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Load.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Manhours and Capacity, Load and Capacity",
+      "page": "planning",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Roster.dc.html": {
+      "x": 4560,
+      "y": 260,
+      "w": 1440,
+      "h": 1620,
+      "title": "Manhours and Capacity, Staff Roster",
+      "page": "planning",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Tools.dc.html": {
+      "x": 0,
+      "y": 2340,
+      "w": 1440,
+      "h": 1950,
+      "title": "Tools and Equipment, Register",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Tool.dc.html": {
+      "x": 1520,
+      "y": 2340,
+      "w": 1440,
+      "h": 1650,
+      "title": "Tool Record, Torque Wrench 0142",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Providers.dc.html": {
+      "x": 3040,
+      "y": 2340,
+      "w": 1440,
+      "h": 1300,
+      "title": "Service Providers",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "AltTool.dc.html": {
+      "x": 4560,
+      "y": 2340,
+      "w": 1440,
+      "h": 1400,
+      "title": "Alternative Tooling",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "ToolNeed.dc.html": {
+      "x": 6080,
+      "y": 2340,
+      "w": 1440,
+      "h": 1450,
+      "title": "Tooling Need Evaluations",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Staff.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 1200,
+      "title": "Staff, All Staff",
+      "page": "people",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Recency.dc.html": {
+      "x": 4560,
+      "y": 260,
+      "w": 1440,
+      "h": 1250,
+      "title": "Authorisations, Recency",
+      "page": "people",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Logbook.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1300,
+      "title": "Aircraft Maintenance Licence, Experience Logbook",
+      "page": "training",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Training.dc.html": {
+      "x": 6080,
+      "y": 260,
+      "w": 1440,
+      "h": 1760,
+      "title": "Aircraft Maintenance Licence, On the Job Training",
+      "page": "training",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Competence.dc.html": {
+      "x": 7600,
+      "y": 260,
+      "w": 1440,
+      "h": 1540,
+      "title": "Competency Assessments",
+      "page": "training",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Assessment.dc.html": {
+      "x": 9120,
+      "y": 260,
+      "w": 1440,
+      "h": 2500,
+      "title": "Competency Assessment Form",
+      "page": "training",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Settings.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 2620,
+      "title": "Settings, Organisation",
+      "page": "settings",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "PlanSettings.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 2550,
+      "title": "Settings, Planning",
+      "page": "settings",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Guide.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 4500,
+      "title": "Help, Assessor Guide",
+      "page": "settings",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Defects.dc.html": {
+      "x": 0,
+      "y": 2540,
+      "w": 1440,
+      "h": 1300,
+      "title": "Defects, Open and Deferred",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Programmes.dc.html": {
+      "x": 3040,
+      "y": 2540,
+      "w": 1440,
+      "h": 1800,
+      "title": "Maintenance Programmes",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Directives.dc.html": {
+      "x": 1520,
+      "y": 5020,
+      "w": 1440,
+      "h": 1600,
+      "title": "Aircraft Configuration, Airworthiness Directives",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Mods.dc.html": {
+      "x": 3040,
+      "y": 5020,
+      "w": 1440,
+      "h": 1500,
+      "title": "Aircraft Configuration, Modifications and Repairs",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Reliability.dc.html": {
+      "x": 1520,
+      "y": 2540,
+      "w": 1440,
+      "h": 1200,
+      "title": "Defects, Repeat Defects",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Weighing.dc.html": {
+      "x": 4560,
+      "y": 5020,
+      "w": 1440,
+      "h": 1100,
+      "title": "Aircraft Configuration, Weight and Balance",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Transfers.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1400,
+      "title": "Aircraft, Transfers",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Components.dc.html": {
+      "x": 0,
+      "y": 5020,
+      "w": 1440,
+      "h": 1700,
+      "title": "Aircraft Configuration, Components and Life Limits",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "PartsReceived.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 1800,
+      "title": "Goods In, Receiving Inspection",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Stores.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 1760,
+      "title": "Stores, Stock",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Quarantine.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1260,
+      "title": "Stores, Quarantine and Scrap",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "TopBar.dc.html": {
+      "x": 1848,
+      "y": 404,
+      "w": 1200,
+      "h": 56,
+      "title": "Shared Top Bar",
+      "page": "overview"
+    },
+    "AddAircraft.dc.html": {
+      "x": 6080,
+      "y": 260,
+      "w": 1440,
+      "h": 1500,
+      "title": "Aircraft, Add an Aircraft",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Marketplace.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 1700,
+      "title": "Marketplace",
+      "page": "commercial",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "ConfigSetup.dc.html": {
+      "x": 7600,
+      "y": 260,
+      "w": 1440,
+      "h": 1300,
+      "title": "Aircraft, Set Up Configuration",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "ReleaseToService.dc.html": {
+      "x": 4560,
+      "y": 2540,
+      "w": 1440,
+      "h": 1300,
+      "title": "Release to Service",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Contracts.dc.html": {
+      "x": 6080,
+      "y": 2540,
+      "w": 1440,
+      "h": 1300,
+      "title": "Contracts",
+      "page": "aircraft",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Occurrences.dc.html": {
+      "x": 9120,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Occurrence Reports",
+      "page": "safety",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Suppliers.dc.html": {
+      "x": 4560,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Suppliers",
+      "page": "tools",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Authorisations.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1300,
+      "title": "Authorisations",
+      "page": "people",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Approval.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 1300,
+      "title": "Approval and Scope",
+      "page": "organisation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Exposition.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 3900,
+      "title": "Combined Airworthiness Exposition",
+      "page": "documentation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Changes.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Changes",
+      "page": "organisation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Oversight.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Oversight",
+      "page": "organisation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "RecurrentTraining.dc.html": {
+      "w": 1440,
+      "expand": "fill",
+      "is_interactive": true,
+      "x": 0,
+      "y": 260,
+      "h": 1240,
+      "title": "Recurrent Training",
+      "page": "training"
+    },
+    "BasicExaminations.dc.html": {
+      "w": 1440,
+      "expand": "fill",
+      "is_interactive": true,
+      "x": 1520,
+      "y": 260,
+      "h": 1640,
+      "title": "Aircraft Maintenance Licence, Basic Examinations",
+      "page": "training"
+    },
+    "TypeTraining.dc.html": {
+      "w": 1440,
+      "expand": "fill",
+      "is_interactive": true,
+      "x": 4560,
+      "y": 260,
+      "h": 1260,
+      "title": "Aircraft Maintenance Licence, Type Training",
+      "page": "training"
+    },
+    "OrgChart.dc.html": {
+      "w": 1440,
+      "expand": "fill",
+      "is_interactive": true,
+      "y": 260,
+      "x": 1520,
+      "h": 1300,
+      "title": "Staff, Organisation Chart",
+      "page": "people"
+    },
+    "Enquiries.dc.html": {
+      "x": 1520,
+      "y": 260,
+      "w": 1440,
+      "h": 1250,
+      "title": "Enquiries and Quotes, Enquiries",
+      "page": "commercial",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Quotes.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1300,
+      "title": "Enquiries and Quotes, Quotes",
+      "page": "commercial",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Customers.dc.html": {
+      "x": 4560,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Customers",
+      "page": "commercial",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Invoices.dc.html": {
+      "x": 6080,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Invoices",
+      "page": "commercial",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Manuals.dc.html": {
+      "x": 0,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Manuals and Procedures",
+      "page": "documentation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Revisions.dc.html": {
+      "x": 4560,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Revisions",
+      "page": "documentation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "RequiredReading.dc.html": {
+      "x": 6080,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Required Reading",
+      "page": "documentation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Notices.dc.html": {
+      "x": 7600,
+      "y": 260,
+      "w": 1440,
+      "h": 1100,
+      "title": "Notices",
+      "page": "documentation",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "MaintenanceData.dc.html": {
+      "x": 3040,
+      "y": 260,
+      "w": 1440,
+      "h": 1500,
+      "title": "Maintenance Data",
+      "page": "documentation",
+      "expand": "fill",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Home.dc.html",
+    "Sidebar.dc.html",
+    "Tabs.dc.html",
+    "TopBar.dc.html",
+    "Fleet.dc.html",
+    "Reviews.dc.html",
+    "Aircraft.dc.html",
+    "AddAircraft.dc.html",
+    "ConfigSetup.dc.html",
+    "Main.dc.html",
+    "Dark.dc.html",
+    "Reports.dc.html",
+    "SafetyReport.dc.html",
+    "Audit.dc.html",
+    "Actions.dc.html",
+    "WorkPackages.dc.html",
+    "Plan.dc.html",
+    "Load.dc.html",
+    "Roster.dc.html",
+    "Tools.dc.html",
+    "Tool.dc.html",
+    "Providers.dc.html",
+    "AltTool.dc.html",
+    "ToolNeed.dc.html",
+    "Staff.dc.html",
+    "Recency.dc.html",
+    "Logbook.dc.html",
+    "Training.dc.html",
+    "Competence.dc.html",
+    "Assessment.dc.html",
+    "Settings.dc.html",
+    "PlanSettings.dc.html",
+    "Guide.dc.html",
+    "Defects.dc.html",
+    "Programmes.dc.html",
+    "Directives.dc.html",
+    "Mods.dc.html",
+    "Reliability.dc.html",
+    "Weighing.dc.html",
+    "Transfers.dc.html",
+    "Components.dc.html",
+    "PartsReceived.dc.html",
+    "Stores.dc.html",
+    "Quarantine.dc.html",
+    "Marketplace.dc.html",
+    "ReleaseToService.dc.html",
+    "Contracts.dc.html",
+    "Occurrences.dc.html",
+    "Suppliers.dc.html",
+    "Authorisations.dc.html",
+    "Manuals.dc.html",
+    "MaintenanceData.dc.html",
+    "Revisions.dc.html",
+    "RequiredReading.dc.html",
+    "Notices.dc.html",
+    "Approval.dc.html",
+    "Exposition.dc.html",
+    "Changes.dc.html",
+    "Oversight.dc.html",
+    "RecurrentTraining.dc.html",
+    "BasicExaminations.dc.html",
+    "TypeTraining.dc.html",
+    "OrgChart.dc.html",
+    "Enquiries.dc.html",
+    "Quotes.dc.html",
+    "Customers.dc.html",
+    "Invoices.dc.html"
+  ],
+  "notes": {
+    "overview": {
+      "x": 0,
+      "y": 0,
+      "text": "Overview and Shared Parts",
+      "kind": "title1",
+      "maxW": 3048,
+      "page": "overview"
+    },
+    "safety": {
+      "x": 0,
+      "y": 0,
+      "text": "Management System",
+      "kind": "title1",
+      "maxW": 10560,
+      "page": "safety"
+    },
+    "planning": {
+      "x": 0,
+      "y": 0,
+      "text": "Planning",
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "planning"
+    },
+    "people": {
+      "x": 0,
+      "y": 0,
+      "text": "People",
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "people"
+    },
+    "settings": {
+      "x": 0,
+      "y": 0,
+      "text": "Settings and Help",
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "settings"
+    },
+    "ca-aircraft": {
+      "x": 0,
+      "y": 0,
+      "text": "Aircraft",
+      "kind": "title1",
+      "maxW": 9040,
+      "page": "aircraft"
+    },
+    "ca-defects": {
+      "x": 0,
+      "y": 2280,
+      "text": "Defects and Maintenance Programmes",
+      "kind": "title1",
+      "maxW": 7520,
+      "page": "aircraft"
+    },
+    "ca-config": {
+      "x": 0,
+      "y": 4760,
+      "text": "Aircraft Configuration",
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "aircraft"
+    },
+    "pt-parts": {
+      "x": 0,
+      "y": 0,
+      "text": "Goods In and Stores",
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "tools"
+    },
+    "pt-tools": {
+      "x": 0,
+      "y": 2080,
+      "text": "Tools and Equipment",
+      "kind": "title1",
+      "maxW": 7520,
+      "page": "tools"
+    },
+    "commercial": {
+      "x": 0,
+      "y": 0,
+      "text": "Commercial",
+      "kind": "title1",
+      "maxW": 7520,
+      "page": "commercial"
+    },
+    "organisation": {
+      "x": 0,
+      "y": 0,
+      "text": "Organisation",
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "organisation"
+    },
+    "training": {
+      "x": 0,
+      "y": 0,
+      "text": "Training",
+      "kind": "title1",
+      "maxW": 10560,
+      "page": "training"
+    },
+    "documentation": {
+      "x": 0,
+      "y": 0,
+      "text": "Documentation",
+      "kind": "title1",
+      "maxW": 9040,
+      "page": "documentation"
+    }
+  },
+  "designSystems": [
+    {
+      "title": "Airworthiness+",
+      "namespace": "airworthinessplus",
+      "artifact": "https://claude.ai/artifact/R1xLbrRNKy2GuqJW2f3cDr",
+      "version": "1794991395-8aa6",
+      "copiedAt": "2026-11-18T08:45:21Z"
+    }
+  ]
+}
