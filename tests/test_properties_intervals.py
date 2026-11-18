@@ -88,6 +88,11 @@ def test_what_comes_first_has_the_smallest_projection(
     first = comes_first(found, utilisation)
     assert first
     assert set(first) <= set(found)
+    reached = tuple(limit for limit in found if limit.remaining <= 0)
+    if reached:
+        # A limit already reached needs no projection: all reached limits come first.
+        assert first == reached
+        return
     days = {limit.unit: projected_days(limit, utilisation) for limit in found}
     soonest = min(value for value in days.values() if value is not None)
     assert all(days[limit.unit] == soonest for limit in first)
