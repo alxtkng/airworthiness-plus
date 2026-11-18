@@ -32,6 +32,16 @@ uv run pytest
 uv run python tools/check_traceability.py
 ```
 
+The application reads its settings from the environment and has no defaults for secrets, so the type check and the tests need three values and a running PostgreSQL (version 16 or later) in which the named user may create a database:
+
+```
+export AIRWORTHINESS_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(50))')"
+export AIRWORTHINESS_DATABASE_NAME=airworthiness
+export AIRWORTHINESS_DATABASE_USER=<your database user>
+```
+
+`AIRWORTHINESS_DATABASE_PASSWORD`, `AIRWORTHINESS_DATABASE_HOST` and `AIRWORTHINESS_DATABASE_PORT` are read when set. Never put these values in a file in the repository.
+
 The pipeline also scans dependencies for known vulnerabilities, scans for committed secrets, and produces a software bill of materials (a list of every component in the build). A dependency is added or updated only by changing `pyproject.toml`, running `uv lock`, and committing both files in a pull request of its own.
 
 ## Licence and Outside Contributions

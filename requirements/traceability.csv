@@ -2,7 +2,7 @@ Requirement,Module,Priority,Verification Method,Design Element,Test Identifiers,
 REQ-001,Organisation and Access,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-002,Organisation and Access,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-003,Organisation and Access,Must,Test: every endpoint tried against another organisation's records,To Be Designed,None,None,No Test
-REQ-004,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
+REQ-004,Organisation and Access,Must,Test,airworthiness_plus.settings: no administration interface installed. Rest To Be Designed,test_application: administration_interface_is_absent (T-SEC-018),None,Partly Tested: Administration Interface Absent; No Write Path Yet
 REQ-005,Organisation and Access,Must,"Test, Inspection",To Be Designed,None,None,No Test; Source To Be Checked
 REQ-006,Organisation and Access,Must,Test: every action against every role,To Be Designed,None,None,No Test
 REQ-007,Organisation and Access,Must,Inspection,To Be Designed,None,None,No Test
@@ -76,13 +76,13 @@ REQ-115,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-116,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-130,Records,Must,Test,To Be Designed,None,None,No Test
 REQ-131,Records,Must,Test: no delete path in the application; the database refuses update and delete on history,To Be Designed,None,None,No Test
-REQ-132,Records,Must,Test; penetration test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-132,Records,Must,Test; penetration test,"airworthiness_plus.settings: HTTPS redirect, Strict Transport Security, secure cookies. Rest To Be Designed","test_application: plain_http_is_redirected (T-SEC-008), cookies (T-SEC-003), deployment_checks",None,Partly Tested: Transport and Cookie Settings; Source To Be Checked
 REQ-133,Records,Must,Inspection: the system has no automatic removal at all in private beta,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-134,Records,Must,Test: export compared with the database for every record type,To Be Designed,None,None,No Test
 REQ-135,Records,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
 REQ-136,Records,Must,Test: the build fails,To Be Designed,None,None,No Test
-REQ-137,Records,Must,Boundary tests,airworthiness_rules.dates.uk_today,test_golden_review: uk_today,assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
-REQ-138,Records,Must,Test,To Be Designed,None,None,No Test
+REQ-137,Records,Must,Boundary tests,"airworthiness_rules.dates.uk_today; airworthiness_plus.settings: USE_TZ, TIME_ZONE","test_golden_review: uk_today; test_application: entry_times, database session",assurance/independent-verification/review-and-dates.md,Rule Tested and Independently Recomputed; Interface Not Built; Open Readings in Evidence
+REQ-138,Records,Must,Test,airworthiness_plus.settings: ATOMIC_REQUESTS,test_application: each_request_is_one_transaction,None,Partly Tested: Setting Only; No Write Path Yet
 REQ-139,Records,Must,"Inspection, Test",To Be Designed,None,None,No Test
 REQ-150,Backup and Recovery,Must,Demonstration; backup logs,To Be Designed,None,None,No Test
 REQ-151,Backup and Recovery,Must,Inspection,To Be Designed,None,None,No Test; Source To Be Checked
