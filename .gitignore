@@ -1,0 +1,35 @@
+# Secrets and local environment: never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Regulatory source documents: fetch from the Civil Aviation Authority, do not commit
+sources/
+*.pdf
+
+# Operating system and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Python (scripts/)
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Build and test output
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# Database dumps and backups: never commit
+*.dump
+*.sql.gz
+backups/
