@@ -240,12 +240,40 @@ def _identifier(name: str) -> str:
     return name
 
 
+CREATE_SAME_ORGANISATION = """
+CREATE FUNCTION history_same_organisation() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    parent_table text := TG_ARGV[0];
+    parent_column text := TG_ARGV[1];
+    parent_id uuid := (to_jsonb(NEW) ->> parent_column)::uuid;
+    parent_organisation uuid;
+BEGIN
+    IF parent_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    EXECUTE format('SELECT organisation_id FROM %I WHERE id = $1', parent_table)
+       INTO parent_organisation
+      USING parent_id;
+    IF parent_organisation IS DISTINCT FROM (to_jsonb(NEW) ->> 'organisation_id')::uuid THEN
+        RAISE EXCEPTION 'A record refers only to records of its own organisation'
+            USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    RETURN NEW;
+END
+$$;
+"""
+
+DROP_SAME_ORGANISATION = "DROP FUNCTION history_same_organisation();"
+
+
 def protect_record_table(
     table: str,
     *,
     organisation_column: str = "organisation_id",
     privileges: tuple[str, ...] = ("SELECT", "INSERT", "UPDATE"),
     omitted: tuple[str, ...] = (),
+    parents: tuple[tuple[str, str], ...] = (),
 ) -> tuple[str, str]:
     """Return the SQL that puts a record table under the rules, and its reverse.
 
@@ -255,7 +283,10 @@ def protect_record_table(
 
     ``privileges`` never includes DELETE or TRUNCATE. ``omitted`` names
     columns, such as a password, whose values are kept out of the history;
-    that they changed is still recorded.
+    that they changed is still recorded. ``parents`` lists each column that
+    refers to another record, with the table it refers to: the database
+    then refuses a row that refers to a record of another organisation
+    (REQ-002, threat TH-020).
     """
     _identifier(table)
     _identifier(organisation_column)
@@ -278,8 +309,17 @@ CREATE TRIGGER history_refuse_delete BEFORE DELETE ON {table}
 CREATE TRIGGER history_refuse_truncate BEFORE TRUNCATE ON {table}
     FOR EACH STATEMENT EXECUTE FUNCTION history_refuse();
 """
+    reverse_parents = ""
+    for column, parent in parents:
+        _identifier(column)
+        _identifier(parent)
+        forward += f"""
+CREATE TRIGGER same_organisation_{column} BEFORE INSERT OR UPDATE ON {table}
+    FOR EACH ROW EXECUTE FUNCTION history_same_organisation('{parent}', '{column}');
+"""
+        reverse_parents += f"DROP TRIGGER same_organisation_{column} ON {table};\n"
     reverse = f"""
-DROP TRIGGER history_refuse_truncate ON {table};
+{reverse_parents}DROP TRIGGER history_refuse_truncate ON {table};
 DROP TRIGGER history_refuse_delete ON {table};
 DROP TRIGGER history_write ON {table};
 REVOKE ALL ON {table} FROM {APPLICATION_ROLE};

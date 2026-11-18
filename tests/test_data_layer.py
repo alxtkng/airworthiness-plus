@@ -178,17 +178,49 @@ def test_every_table_is_under_the_record_rules() -> None:
     # Sessions are made and removed as users sign in and out. They are not records.
     assert tables["django_session"][4] == ["DELETE", "INSERT", "SELECT", "UPDATE"]
 
+    # Every other table is a table of records. A new one needs no entry here
+    # unless it is given less than, or something beyond, the usual.
     records = set(tables) - FRAMEWORK_TABLES - {"history_event", "accounts_accessentry"}
-    assert records == {"organisations_organisation", "accounts_user"}
+    assert {"organisations_organisation", "accounts_user", "aircraft_aircraft"} <= records
+    usual = ["INSERT", "SELECT", "UPDATE"]
+    privileges_expected = {
+        # The application cannot create an organisation (REQ-004).
+        "organisations_organisation": ["SELECT", "UPDATE"],
+        # An entry of hours and cycles is added and never changed (REQ-025).
+        "aircraft_utilisationentry": ["INSERT", "SELECT"],
+    }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
-    for name in records:
+    extra_triggers = {"aircraft_utilisationentry": {"utilisation_fits"}}
+    required_triggers = {"history_refuse_delete", "history_refuse_truncate", "history_write"}
+    for name in sorted(records):
         enabled, forced, policies, triggers, privileges = tables[name]
         assert (enabled, forced) == (True, True), name
         assert policies == ["organisation_scope", *extra_policies.get(name, [])], name
-        assert triggers == ["history_refuse_delete", "history_refuse_truncate", "history_write"]
-        assert set(privileges) <= {"SELECT", "INSERT", "UPDATE"}, name
-    assert tables["organisations_organisation"][4] == ["SELECT", "UPDATE"]
+        assert required_triggers <= set(triggers), name
+        others = set(triggers) - required_triggers - extra_triggers.get(name, set())
+        assert all(trigger.startswith("same_organisation_") for trigger in others), name
+        assert privileges == privileges_expected.get(name, usual), name
+
+    # A record refers only to records of its own organisation: every column
+    # that refers to another record has the trigger that checks it.
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT child.relname, attribute.attname::text, parent.relname "
+            "FROM pg_constraint c "
+            "JOIN pg_class child ON child.oid = c.conrelid "
+            "JOIN pg_class parent ON parent.oid = c.confrelid "
+            "JOIN pg_attribute attribute "
+            "  ON attribute.attrelid = c.conrelid AND attribute.attnum = c.conkey[1] "
+            "WHERE c.contype = 'f' ORDER BY 1, 2"
+        )
+        references = cursor.fetchall()
+    checked = 0
+    for child, column, parent in references:
+        if child in records and parent in records and parent != "organisations_organisation":
+            assert f"same_organisation_{column}" in tables[child][3], f"{child}.{column}"
+            checked += 1
+    assert checked >= 3
 
     # The access log is added to and never changed (REQ-009).
     enabled, forced, policies, triggers, privileges = tables["accounts_accessentry"]

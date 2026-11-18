@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ aircraft.registration }}{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+<dl>
+<dt>Aircraft Registration</dt><dd>{{ aircraft.registration }}</dd>
+<dt>Type Rating</dt><dd>{{ aircraft.type_rating }}</dd>
+<dt>Serial Number</dt><dd>{{ aircraft.serial_number }}</dd>
+<dt>Owned By</dt><dd>{{ aircraft.owner }}</dd>
+<dt>Regime</dt><dd>{{ aircraft.regime }}</dd>
+<dt>Status</dt><dd>{{ aircraft.status }}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
+{% if aircraft.stage == "Transfer In" %}<dt>Transfer In</dt><dd>Records {{ aircraft.records_received }} of {{ aircraft.records_expected }} Received</dd>{% endif %}
+</dl>
+{% if aircraft.regime == "Non-Part 21" %}<p>Calculations Not Yet Supported for Non-Part 21 Aircraft</p>{% endif %}
+{% if aircraft.stage == "Transfer In" %}<p>No Due Items Until Records Are Complete</p>{% endif %}
+<p>
+<a href="{% url 'enter_utilisation' aircraft.id %}">Enter Hours and Cycles</a>
+<a href="{% url 'add_counter' aircraft.id %}">Add an Engine or Propeller</a>
+{% if aircraft.status == "Serviceable" %}<a href="{% url 'make_unserviceable' aircraft.id %}">Record as Unserviceable</a>{% endif %}
+</p>
+{% if aircraft.status == "Unserviceable" %}
+<form method="post" action="{% url 'make_serviceable' aircraft.id %}">
+{% csrf_token %}
+<button type="submit">Record as Serviceable</button>
+</form>
+{% endif %}
+{% for counter, current, entries in counters %}
+<h2>{{ counter.kind }}{% if counter.position %}, {{ counter.position }}{% endif %}</h2>
+<dl>
+<dt>Serial Number</dt><dd>{{ counter.serial_number }}</dd>
+<dt>Hours</dt><dd>{{ current.hours|hours }}</dd>
+<dt>Cycles</dt><dd>{{ current.cycles|whole }}</dd>
+<dt>Entered For</dt><dd>{{ current.on|long_date }}</dd>
+</dl>
+<table>
+<thead><tr><th>Date</th><th>Total Hours</th><th>Total Cycles</th><th>Entry</th></tr></thead>
+<tbody>
+{% for entry in entries %}
+<tr>
+<td>{{ entry.dated|long_date }}</td>
+<td>{{ entry.hours|hours }}</td>
+<td>{{ entry.cycles|whole }}</td>
+<td>{% if entry.superseded_by %}Superseded{% else %}Current{% endif %}{% if entry.supersedes_id %}, Correction{% endif %}{% if entry.confirmed_unusual %}, Unusual Increase Confirmed{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endfor %}
+{% endblock %}
