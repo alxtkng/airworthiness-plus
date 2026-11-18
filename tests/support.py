@@ -20,6 +20,8 @@ from airworthiness_plus.organisations.models import Organisation, Privilege
 from airworthiness_plus.organisations.provisioning import provision_organisation
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis, InspectionCategory, Task
+from airworthiness_plus.reviews import services as review_services
+from airworthiness_plus.reviews.models import Certificate, ReviewStaff
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 from tests.conftest import as_owner
 
@@ -232,3 +234,65 @@ def add_sample_programmes(sample: Sample, fleet: dict[str, Aircraft]) -> dict[st
         )
         programme_services.record_review(cdef, date(2026, 11, 11))
     return tasks
+
+
+# SampleData.md, Fleet: Review Certificate Valid To. G-CDEF is shown after its
+# review of 11 November 2026; before it the certificate was valid to 2 December 2026.
+CERTIFICATES_BEFORE = (
+    ("G-DGHI", date(2027, 5, 19)),
+    ("G-EJKL", date(2026, 12, 6)),
+    ("G-ABCD", date(2027, 3, 14)),
+    ("G-BXYZ", date(2027, 8, 2)),
+    ("G-FMNO", date(2027, 4, 27)),
+    ("G-CDEF", date(2026, 12, 2)),
+)
+
+
+@dataclass(frozen=True)
+class SampleReviews:
+    """The review staff and the certificate issued for G-CDEF."""
+
+    lucy: ReviewStaff
+    reviewer: ReviewStaff
+    cdef: Certificate
+
+
+def add_sample_reviews(sample: Sample, fleet: dict[str, Aircraft]) -> SampleReviews:
+    """Add the review staff and certificates of SampleData.md.
+
+    Lucy Grant: accepted 9 June 2023; last review 11 November 2026, G-CDEF.
+    The other review staff member: 4 months of continuing airworthiness
+    work, recency lapsing 2 December 2026, so their last review is taken
+    as 2 December 2025.
+    """
+    with working_for(sample.ours.id, sample.administrator.id):
+        lucy = review_services.add_review_staff(
+            user=sample.lucy,
+            authorisation_reference="[Authorisation Reference 1]",
+            accepted_on=date(2023, 6, 9),
+            # Her review of G-BXYZ, whose certificate runs to 2 August 2027.
+            last_review_before_records=date(2026, 8, 2),
+        )
+        reviewer = review_services.add_review_staff(
+            user=sample.reviewer,
+            authorisation_reference="[Authorisation Reference 2]",
+            accepted_on=date(2021, 3, 1),
+            months_involved=4,
+            last_review_before_records=date(2025, 12, 2),
+        )
+    with working_for(sample.ours.id, sample.lucy.id):
+        for registration, valid_to in CERTIFICATES_BEFORE:
+            review_services.record_certificate(
+                fleet[registration],
+                reference=f"[Certificate Reference {registration}]",
+                issued_on=valid_to.replace(year=valid_to.year - 1),
+                valid_to=valid_to,
+                issued_elsewhere_by="[Recorded From the Aircraft Records]",
+            )
+        cdef = review_services.issue_certificate(
+            fleet["G-CDEF"],
+            staff=lucy,
+            issued_on=date(2026, 11, 11),
+            airframe_hours=Decimal("7720.0"),
+        )
+    return SampleReviews(lucy, reviewer, cdef)

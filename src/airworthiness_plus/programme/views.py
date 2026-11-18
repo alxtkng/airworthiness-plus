@@ -25,6 +25,7 @@ from airworthiness_plus.programme.forms import (
     WorkForm,
 )
 from airworthiness_plus.programme.models import Basis, Programme, Task, WorkDone
+from airworthiness_plus.reviews import services as review_services
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 
 
@@ -43,7 +44,7 @@ def programme_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
     programme = Programme.objects.filter(aircraft=aircraft).first()
     today = aircraft_services.today()
-    lines = due.due_lines(aircraft, today)
+    lines = due.due_lines(aircraft, today, review_services.current_valid_to(aircraft))
     review = (
         due.review_line(programme, today, due.thresholds_of(aircraft.organisation))
         if programme
