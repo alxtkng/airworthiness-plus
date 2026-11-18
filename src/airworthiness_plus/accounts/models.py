@@ -1,6 +1,6 @@
-"""The user record (REQ-005, REQ-006, REQ-007, REQ-010)."""
+"""The user record and the access log (REQ-005 to REQ-010)."""
 
-from typing import Any, ClassVar
+from typing import Any, ClassVar, NoReturn
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models import Q
 
 from airworthiness_plus.accounts.roles import Action, Role, permitted
-from airworthiness_plus.history.models import Record, RecordQuerySet
+from airworthiness_plus.history.models import Record, RecordQuerySet, RecordsAreNeverDeletedError
 from airworthiness_plus.organisations.models import Organisation
 
 
@@ -45,6 +45,10 @@ class User(Record, AbstractBaseUser):
     full_name = models.CharField(max_length=200)
     is_active = models.BooleanField(default=True)
     roles = ArrayField(models.CharField(max_length=40, choices=Role.choices), default=list)
+    # The secret shared with the user's authenticator application. It is kept
+    # out of the history. A user signs in only once it is confirmed (REQ-008).
+    second_factor_secret = models.CharField(max_length=64, blank=True)
+    second_factor_confirmed = models.BooleanField(default=False)
 
     objects: ClassVar[UserManager] = UserManager()
 
@@ -69,3 +73,49 @@ class User(Record, AbstractBaseUser):
         that permits the action is enough.
         """
         return self.is_active and permitted(self.roles, action)
+
+
+class AccessKind(models.TextChoices):
+    """What an entry in the access log records (REQ-009)."""
+
+    SIGNED_IN = "Signed In", "Signed In"
+    SIGN_IN_FAILED = "Sign-In Failed", "Sign-In Failed"
+    SIGN_IN_REFUSED_WHILE_LOCKED = "Sign-In Refused While Locked", "Sign-In Refused While Locked"
+    SECOND_FACTOR_SET_UP = "Second Factor Set Up", "Second Factor Set Up"
+    SIGNED_OUT = "Signed Out", "Signed Out"
+    ACTION_REFUSED = "Action Refused", "Action Refused"
+
+
+class AccessEntry(models.Model):
+    """One entry in the access log: a sign-in, a failed sign-in or a refused action.
+
+    Entries are added and never changed or removed; the database refuses
+    both. The time is set by the database. A failed sign-in with a user
+    name that belongs to nobody has no organisation and no user.
+    """
+
+    organisation = models.ForeignKey(
+        Organisation, on_delete=models.PROTECT, null=True, related_name="+"
+    )
+    user = models.ForeignKey(User, on_delete=models.PROTECT, null=True, related_name="+")
+    username = models.CharField(max_length=254)
+    kind = models.CharField(max_length=40, choices=AccessKind.choices)
+    detail = models.CharField(max_length=200, blank=True)
+    at = models.DateTimeField(null=True)
+    code_counter = models.BigIntegerField(null=True)
+    address = models.GenericIPAddressField(null=True)
+
+    objects = RecordQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["id"]
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Add the entry. An entry that exists is never saved again."""
+        if self.pk is not None:
+            raise RecordsAreNeverDeletedError("The access log is never changed")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> NoReturn:
+        """Refuse. The database refuses too, whoever asks."""
+        raise RecordsAreNeverDeletedError("The access log is never deleted")

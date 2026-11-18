@@ -20,7 +20,7 @@ import pytest
 from django.apps import apps
 from django.db import DatabaseError, IntegrityError, connection, transaction
 
-from airworthiness_plus.accounts.models import User
+from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.history import chain
 from airworthiness_plus.history.models import Event, Record, RecordsAreNeverDeletedError
 from airworthiness_plus.history.session import _current, _set, working_for
@@ -173,18 +173,29 @@ def test_every_table_is_under_the_record_rules() -> None:
         tables = {row[0]: row[1:] for row in cursor.fetchall()}
 
     assert FRAMEWORK_TABLES <= set(tables)
-    for name in FRAMEWORK_TABLES:
+    for name in FRAMEWORK_TABLES - {"django_session"}:
         assert tables[name][4] == [], f"{name}: the application has no access"
+    # Sessions are made and removed as users sign in and out. They are not records.
+    assert tables["django_session"][4] == ["DELETE", "INSERT", "SELECT", "UPDATE"]
 
-    records = set(tables) - FRAMEWORK_TABLES - {"history_event"}
+    records = set(tables) - FRAMEWORK_TABLES - {"history_event", "accounts_accessentry"}
     assert records == {"organisations_organisation", "accounts_user"}
+    # While a user name is being checked at sign-in, that one user can be read.
+    extra_policies = {"accounts_user": ["sign_in_lookup"]}
     for name in records:
         enabled, forced, policies, triggers, privileges = tables[name]
         assert (enabled, forced) == (True, True), name
-        assert policies == ["organisation_scope"], name
+        assert policies == ["organisation_scope", *extra_policies.get(name, [])], name
         assert triggers == ["history_refuse_delete", "history_refuse_truncate", "history_write"]
         assert set(privileges) <= {"SELECT", "INSERT", "UPDATE"}, name
     assert tables["organisations_organisation"][4] == ["SELECT", "UPDATE"]
+
+    # The access log is added to and never changed (REQ-009).
+    enabled, forced, policies, triggers, privileges = tables["accounts_accessentry"]
+    assert (enabled, forced) == (True, True)
+    assert policies == ["entries_added", "organisation_scope", "sign_in_lookup"]
+    assert triggers == ["access_time", "history_refuse_change", "history_refuse_truncate"]
+    assert privileges == ["INSERT", "SELECT"]
 
     enabled, forced, policies, triggers, privileges = tables["history_event"]
     assert (enabled, forced) == (True, True)
@@ -198,7 +209,7 @@ def test_every_model_is_a_record_or_the_history() -> None:
     for model in apps.get_models():
         if model._meta.db_table in FRAMEWORK_TABLES:
             continue
-        assert issubclass(model, Record) or model is Event, model
+        assert issubclass(model, Record) or model in (Event, AccessEntry), model
 
 
 def test_a_record_table_is_never_given_delete() -> None:

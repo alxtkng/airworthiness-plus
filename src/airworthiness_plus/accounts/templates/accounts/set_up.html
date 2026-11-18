@@ -1,0 +1,20 @@
+{% extends "accounts/base.html" %}
+{% block title %}Set Up Authenticator{% endblock %}
+{% block content %}
+<h1>Set Up Authenticator</h1>
+{% if failed %}<p role="alert">Code Not Accepted</p>{% endif %}
+<dl>
+<dt>Key for Your Authenticator Application</dt>
+<dd><code>{{ secret }}</code></dd>
+<dt>Type</dt>
+<dd>Time Based, 6 Digits, 30 Seconds</dd>
+<dt>Set-Up Address</dt>
+<dd><code>{{ address }}</code></dd>
+</dl>
+<form method="post" autocomplete="off">
+{% csrf_token %}
+<p><label for="code">Code From Your Authenticator Application</label><br>
+<input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" autofocus required maxlength="12"></p>
+<p><button type="submit">Confirm and Sign In</button></p>
+</form>
+{% endblock %}

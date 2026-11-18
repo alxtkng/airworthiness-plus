@@ -78,6 +78,13 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 - An extension is open to the Continuing Airworthiness Manager and to Airworthiness Review Staff, because the regulation gives the privilege to the organisation under both continuing airworthiness management and airworthiness review (CAO.A.095(b)(4), (c)(1)(ii)). Who within the organisation signs an extension is for its exposition; this reading is to be confirmed by Alex King.
 - Only the Continuing Airworthiness Manager changes the maintenance programme and decides whether a directive applies (hazard H-002). The programme review may also be recorded by Airworthiness Review Staff, who may carry it out with the airworthiness review (ML.A.302(c)(9)).
 - Second factor at sign-in, decided 18 November 2026: codes from an authenticator application, the time-based one-time password of RFC 6238. It needs no new dependency. A code can be phished where a passkey cannot, so passkeys are considered again when the verification level is set in Step 7 (REQ-008).
+- Sign-in, decided 18 November 2026 (REQ-008, REQ-009; threats TH-001, TH-002). These numbers are ours, to be set against the verification level in Step 7:
+  - a password of at least 12 characters, then a code; the code must follow the password within 5 minutes; a code is accepted for its own 30 seconds and the 30 seconds either side, and only once
+  - the first time, the user adds the account to an authenticator application from a key shown once, and confirms a code
+  - 5 failed attempts for a user name within 15 minutes, counted since the last sign-in, lock that name until 15 minutes after the fifth; wrong codes count as wrong passwords do
+  - a session ends when the browser closes, 30 minutes after its last request, 12 hours after sign-in whatever happens, when the user signs out, when the user is made inactive, and when the password changes
+  - the page gives the same answer for an unknown name, a wrong password, an inactive user and a locked name; the reason is in the access log
+- Access log, decided 18 November 2026 (REQ-009): every sign-in, failed sign-in, sign-out, second factor set-up and refused action, with the user name, the time from the database clock and the network address. It is added to and never changed. An organisation sees its own entries. A change of role is in the history of the user record instead.
 
 | Action | Administrator | Continuing Airworthiness Manager | Airworthiness Review Staff | Planning and Records | Read Only |
 |---|---|---|---|---|---|

@@ -38,6 +38,15 @@ The account the running application signs in to the database with must be a memb
 - Update, delete and truncate on `history_event`, and delete and truncate on every record table, are refused by trigger whoever asks, and the application's role is not granted them.
 - Each entry carries a SHA-256 hash over all its fields and the hash of the entry before it for the same record. The exact form is written in `airworthiness_plus/history/chain.py`. The database computes it; `chain.problems` computes it again separately in Python and reports an altered entry, a broken link or a missing entry.
 
+### Sign-In and the Access Log
+
+Added 18 November 2026.
+
+- While a user name is being checked no organisation is known. For that moment a third session setting, `airworthiness.signing_in`, lets the application read the one user with that name and the access log entries for that name. It can change neither user nor organisation by it.
+- The access log, `accounts_accessentry`, is not a record with a history: it is itself a log. It has row-level security, takes its time from the database clock, and refuses update, delete and truncate whoever asks.
+- The log decides whether a user name is locked and whether a code has been used, so there is no counter to reset and signing in does not change the user record.
+- The session table is Django's. Sessions are made, renewed and removed, so the application's role may delete from that one table. A session holds the user and the organisation it was made for; the user is then read under row-level security, so a session cannot resolve to a user of another organisation.
+
 ### Keeping It That Way
 
 `tests/test_data_layer.py` reads the database catalogue and fails the build if any table lacks row-level security, the history trigger or the refusal of deletion, or if the application's role holds a privilege it should not. A new record table is put under the rules by one call, `protect_record_table`, in its migration.

@@ -1,0 +1,12 @@
+{% extends "accounts/base.html" %}
+{% block title %}Authenticator Code{% endblock %}
+{% block content %}
+<h1>Authenticator Code</h1>
+{% if failed %}<p role="alert">Code Not Accepted</p>{% endif %}
+<form method="post" autocomplete="off">
+{% csrf_token %}
+<p><label for="code">Code From Your Authenticator Application</label><br>
+<input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" autofocus required maxlength="12"></p>
+<p><button type="submit">Sign In</button></p>
+</form>
+{% endblock %}

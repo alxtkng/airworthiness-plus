@@ -57,8 +57,8 @@ Hazards answered: H-004, H-003.
 |---|---|---|---|
 | C3.1 Organisation scoping is enforced in the data layer, not only in the interface | AMC1 CAO.A.100(f) point (d)(2): each organisation has access to its own data only and data is entered only by its own personnel. Enforcement below the interface survives an interface mistake | `architecture/decisions/ADR-0002-data-layer.md`; `tests/test_data_layer.py` | Partial |
 | C3.2 Every endpoint refuses reads and writes of another organisation's records | Tested by trying, for every endpoint | Automated cross-organisation isolation tests in continuous integration (Step 7) | Planned |
-| C3.3 Write access is by role | CAP 562 C-90: only authorised persons may alter records | Role matrix in requirements; access control tests | Planned |
-| C3.4 Accounts resist takeover | Threat model, account takeover threats | `assurance/asvs.md` authentication and session results | Planned |
+| C3.3 Write access is by role | CAP 562 C-90: only authorised persons may alter records | Role matrix in `design-system/Decisions.md`; `tests/test_roles.py`, `tests/test_sign_in.py` | Partial |
+| C3.4 Accounts resist takeover | Threat model, account takeover threats | `tests/test_sign_in.py`, `tests/test_totp.py`; `assurance/asvs.md` authentication and session results, to come | Partial |
 | C3.5 An external tester has tried to defeat the controls | C-90 expects the assessor to try to beat the system; independent testing before customer data | Penetration test report (Issue, cost is Alex's decision) | Planned |
 
 ## C4. Availability and Recovery
