@@ -41,6 +41,8 @@ The Fleet table shows results. These are the inputs that produce them, added on 
 - G-BXYZ: due at 3,359.0 hours (41.0 hours remaining) or on 30 July 2027 (254 days). At 0.5 hours a day 41.0 hours is 82 days, so hours come first.
 - G-FMNO: due at 5,012.0 hours (61.8 hours remaining) or on 4 February 2027 (78 days). At 0.2 hours a day 61.8 hours is 309 days, so the calendar limit comes first.
 
+Added on 18 November 2026 for the programme pages, to be confirmed by Alex King: G-ABCD and G-CDEF are taken to be on the design approval holder's instructions. G-CDEF's engine counts hours since its last overhaul, 0.0 on 12 March 2019, and reads 1,780.0; the overhaul is taken as every 2,000 hours, so 220.0 remain. The Fleet table writes this as 220 Hours; the system writes hours to one decimal place, 220.0 Hours. G-CDEF's programme was last reviewed with its airworthiness review on 11 November 2026. The G-ABCD tyre was replaced at 6,390.0 airframe hours.
+
 The basis of each aircraft's maintenance programme is not yet recorded here. The tolerance cases, added on 18 November 2026, take G-BXYZ and G-FMNO to be on the Minimum Inspection Programme (ML.A.302(d)(1): tolerance 1 month or 10 hours); to be confirmed by Alex King.
 
 - G-BXYZ: the tolerance ends at 3,369.0 hours (51.0 hours remaining) or on 30 August 2027 (285 days). The review certificate is valid to 2 August 2027, so the calendar tolerance ends after it.
