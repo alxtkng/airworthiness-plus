@@ -1,0 +1,19 @@
+# Issue labels for Airworthiness+. One label per Issue.
+- name: requirement
+  color: "1d76db"
+  description: Something the software must do, traced to a source reference
+- name: hazard
+  color: "b60205"
+  description: A way the software could harm airworthiness, tracked in the hazard log
+- name: defect
+  color: "d93f0b"
+  description: The software does not meet a requirement
+- name: security
+  color: "5319e7"
+  description: A vulnerability, threat or security control
+- name: decision
+  color: "fbca04"
+  description: A decision only Alex can make, or one waiting to be recorded
+- name: backlog
+  color: "c5def5"
+  description: Out of scope for the private beta slice, recorded for later

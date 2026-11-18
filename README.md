@@ -9,3 +9,26 @@ Continuing airworthiness web app for United Kingdom owners, operators, Part-CAO,
 - `research/`: reading notes on UK Regulation (EU) No 1321/2014, CAP 562 and document control systems.
 
 Regulatory source documents are not stored here; fetch them from the Civil Aviation Authority.
+
+## Private Beta
+
+The project follows the UK Government Service Manual phases. Discovery and alpha are finished. Private beta is the current phase: the first real version is built and verified, and used internally only. No customer data enters the system in this phase.
+
+Scope is one slice, the Part-CAO core loop for Part-ML aircraft: Organisation and Access, Aircraft, Maintenance Programme, Airworthiness Directives, Maintenance Data, Airworthiness Review, Records. Everything else in the canvas is backlog.
+
+| Folder | Holds |
+|---|---|
+| `prompts/private-beta.md` | The working brief for this phase |
+| `assurance/` | Assurance case, hazard log, NCSC Software Security Code of Practice self-assessment, readiness review |
+| `requirements/` | Numbered requirements and the traceability matrix |
+| `architecture/` | Architecture Decision Records and the threat model |
+| `operations/` | Backup and restore, monitoring, incident response, data protection |
+
+Rules for this phase:
+
+- The regulation is the requirements specification. Every requirement cites its source.
+- Every requirement traces to a test. A requirement with no test is a visible gap in `requirements/traceability.csv`.
+- Changes reach `main` only by pull request with passing checks. See `CONTRIBUTING.md`.
+- Vulnerabilities are reported as set out in `SECURITY.md`.
+- No licence has been chosen. Until one is, all rights are reserved by Airworthiness Limited.
+- Public beta does not start until `assurance/readiness-review.md` is signed off by Alex King.
