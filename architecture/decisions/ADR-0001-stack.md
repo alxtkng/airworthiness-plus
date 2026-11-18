@@ -54,7 +54,7 @@ Option A.
 | Pages | Django templates, CSS built from `design-system/tokens.json`, Geist font files served from the application, htmx for expand on click | No build chain for the interface; no third-party requests from the browser |
 | Calculations | A separate pure Python package, `airworthiness_rules`, with no Django or database imports: dates, intervals, next due, review validity, recency | Can be tested, property-tested and independently recomputed on its own |
 | Tests | pytest, Hypothesis | Golden cases and property-based tests |
-| Checks | mypy in strict mode, ruff, pip-audit, gitleaks, CycloneDX software bill of materials | Step 5 pipeline |
+| Checks | mypy in strict mode, ruff, pip-audit, detect-secrets, CycloneDX software bill of materials exported by uv | Step 5 pipeline. Amended 18 November 2026: detect-secrets replaces gitleaks so that every tool is installed from the lock file with verified hashes |
 | Dependencies | uv, with a lock file that pins versions and hashes | Pinned dependencies (Step 5) |
 | Continuous integration | GitHub Actions | Runs on every pull request; free for this scale |
 | Deployment | One Docker image, deployed by Coolify from `main` to the existing server | Uses the server as it is; nothing else on it is touched |

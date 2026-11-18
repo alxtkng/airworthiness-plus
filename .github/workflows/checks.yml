@@ -1,0 +1,71 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Tests, Types, Lint, Dependencies, Secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # Actions are pinned to a commit, not a moving tag (threat TH-061).
+      - name: Check Out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set Up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: python -m pip install --disable-pip-version-check "uv==0.11.32"
+
+      - name: Install Dependencies From the Lock File
+        # --locked fails if uv.lock is out of date; hashes are verified on install (TH-060).
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format
+        run: uv run ruff format --check .
+
+      - name: Type Check
+        run: uv run mypy
+
+      - name: Test
+        run: uv run pytest
+
+      - name: Dependency Vulnerability Scan
+        run: |
+          uv export --locked --no-emit-project --format requirements.txt -o requirements-audit.txt
+          uv run pip-audit --require-hashes --disable-pip -r requirements-audit.txt
+
+      - name: Secret Scan
+        # Fails on any secret not already recorded in the baseline (TH-063).
+        run: git ls-files -z | xargs -0 uv run detect-secrets-hook --baseline .secrets.baseline --exclude-files '^uv\.lock$'
+
+      - name: Traceability Matrix Is Complete
+        run: uv run python tools/check_traceability.py
+
+      - name: Software Bill of Materials
+        run: uv export --locked --no-dev --format cyclonedx1.5 -o sbom.cdx.json
+
+      - name: Keep Software Bill of Materials
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: software-bill-of-materials
+          path: sbom.cdx.json
+          retention-days: 90

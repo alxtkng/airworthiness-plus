@@ -20,6 +20,20 @@ How changes reach `main`. The same steps apply to code, requirements and assuran
 - Tests use the sample organisation and fleet in `design-system/SampleData.md`. Today in the sample world is 18 November 2026.
 - Nothing is deleted from records, in the product or in this repository's record documents. Superseded entries stay and are marked superseded.
 
+## The Checks
+
+Every pull request runs `.github/workflows/checks.yml`. The same checks run locally:
+
+```
+uv sync --locked                      # install exactly what the lock file pins
+uv run ruff check . && uv run ruff format --check .
+uv run mypy
+uv run pytest
+uv run python tools/check_traceability.py
+```
+
+The pipeline also scans dependencies for known vulnerabilities, scans for committed secrets, and produces a software bill of materials (a list of every component in the build). A dependency is added or updated only by changing `pyproject.toml`, running `uv lock`, and committing both files in a pull request of its own.
+
 ## Licence and Outside Contributions
 
 The code is AGPL-3.0-only, copyright Airworthiness Limited (`LICENSE`). Contributions from outside Airworthiness Limited are not accepted until a contributor agreement exists, so that the copyright stays in one place and the licence can be offered commercially or changed later.

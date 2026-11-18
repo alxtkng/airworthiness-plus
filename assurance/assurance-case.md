@@ -84,8 +84,8 @@ Hazards answered: H-003, H-004 (as causes), and supply-chain threats in the thre
 | Sub-claim | Argument | Evidence | Status |
 |---|---|---|---|
 | C5.1 Development follows an established framework | NIST SP 800-218 Secure Software Development Framework, and the NCSC Software Security Code of Practice | `assurance/ncsc-self-assessment.md` | Partial |
-| C5.2 Every change is reviewed and checked before merge | Protected `main`, pull requests only, continuous integration: tests, type checks, linting, dependency vulnerability scan, secret scanning | Branch protection settings; continuous integration configuration and run history | Planned |
-| C5.3 The composition of the software is known | Pinned dependencies and a software bill of materials generated at each build | Lock file; software bill of materials artefact | Planned |
+| C5.2 Every change is reviewed and checked before merge | Protected `main`, pull requests only, continuous integration: tests, type checks, linting, dependency vulnerability scan, secret scanning | Branch protection settings; continuous integration configuration and run history | Partial |
+| C5.3 The composition of the software is known | Pinned dependencies and a software bill of materials generated at each build | Lock file; software bill of materials artefact | Available |
 | C5.4 Secrets are never in the repository | Secrets only in the server environment | Secret scanning results; `.gitignore` | Partial |
 | C5.5 Threats are identified and each is linked to a requirement and a test | STRIDE against the data flows | `architecture/threat-model.md` | Partial |
 | C5.6 The application meets a chosen and justified verification level | OWASP Application Security Verification Standard 5.0 | `assurance/asvs.md` | Planned |
