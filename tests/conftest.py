@@ -44,3 +44,9 @@ def as_owner() -> Iterator[None]:
     finally:
         with connection.cursor() as cursor:
             cursor.execute(f"SET ROLE {APPLICATION_ROLE}")
+
+
+@pytest.fixture(autouse=True)
+def fast_passwords(settings: Any) -> None:
+    """Hash passwords quickly in tests. One test puts the real hasher back."""
+    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

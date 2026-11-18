@@ -1,0 +1,14 @@
+{% extends "accounts/base.html" %}
+{% block title %}Sign In{% endblock %}
+{% block content %}
+<h1>Sign In</h1>
+{% if failed %}<p role="alert">User Name or Password Not Accepted</p>{% endif %}
+<form method="post" autocomplete="on">
+{% csrf_token %}
+<p><label for="username">User Name</label><br>
+<input id="username" name="username" type="text" autocomplete="username" autofocus required maxlength="254"></p>
+<p><label for="password">Password</label><br>
+<input id="password" name="password" type="password" autocomplete="current-password" required></p>
+<p><button type="submit">Continue</button></p>
+</form>
+{% endblock %}

@@ -1,0 +1,129 @@
+"""Sign in, set up a second factor, sign out, and the first page after sign-in."""
+
+from datetime import datetime, timedelta
+
+from django.contrib.auth import login, logout
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect, render
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_http_methods, require_POST
+
+from airworthiness_plus.accounts import sign_in, totp
+from airworthiness_plus.accounts.middleware import (
+    LAST_SEEN_KEY,
+    ORGANISATION_KEY,
+    SIGNED_IN_AT_KEY,
+)
+from airworthiness_plus.accounts.models import User
+from airworthiness_plus.accounts.permissions import address_of, requires
+from airworthiness_plus.accounts.roles import Action
+
+BACKEND = "airworthiness_plus.accounts.backends.OrganisationBackend"
+PENDING_KEY = "password_accepted_for"
+PENDING_AT_KEY = "password_accepted_at"
+
+# The code must follow the password within this time. Ours.
+PENDING_MINUTES = 5
+
+
+def _pending(request: HttpRequest) -> str | None:
+    """Return the user name whose password this session has just had accepted."""
+    username = request.session.get(PENDING_KEY)
+    accepted = request.session.get(PENDING_AT_KEY)
+    if not isinstance(username, str) or not isinstance(accepted, str):
+        return None
+    try:
+        accepted_at = datetime.fromisoformat(accepted)
+    except ValueError:
+        return None
+    if sign_in.current_time() - accepted_at > timedelta(minutes=PENDING_MINUTES):
+        return None
+    return username
+
+
+def _complete(request: HttpRequest, user: User) -> HttpResponse:
+    """Sign the user in. Django gives the session a new key here (threat TH-002)."""
+    login(request, user, backend=BACKEND)
+    now = sign_in.current_time().isoformat()
+    request.session[ORGANISATION_KEY] = str(user.organisation_id)
+    request.session[SIGNED_IN_AT_KEY] = now
+    request.session[LAST_SEEN_KEY] = now
+    request.session.pop(PENDING_KEY, None)
+    request.session.pop(PENDING_AT_KEY, None)
+    return redirect("home")
+
+
+@never_cache
+@require_http_methods(["GET", "POST"])
+def sign_in_page(request: HttpRequest) -> HttpResponse:
+    """First step: user name and password."""
+    failed = False
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        user = sign_in.check_password_for(username, password, address_of(request))
+        if user is not None:
+            request.session[PENDING_KEY] = user.username
+            request.session[PENDING_AT_KEY] = sign_in.current_time().isoformat()
+            return redirect("code" if user.second_factor_confirmed else "set_up")
+        failed = True
+    return render(request, "accounts/sign_in.html", {"failed": failed})
+
+
+@never_cache
+@require_http_methods(["GET", "POST"])
+def code_page(request: HttpRequest) -> HttpResponse:
+    """Second step: the code from the authenticator application."""
+    username = _pending(request)
+    if username is None:
+        return redirect("sign_in")
+    failed = False
+    if request.method == "POST":
+        user = sign_in.check_code_for(username, request.POST.get("code", ""), address_of(request))
+        if user is not None:
+            return _complete(request, user)
+        failed = True
+    return render(request, "accounts/code.html", {"failed": failed})
+
+
+@never_cache
+@require_http_methods(["GET", "POST"])
+def set_up_page(request: HttpRequest) -> HttpResponse:
+    """First sign-in: add the account to an authenticator application and confirm a code."""
+    username = _pending(request)
+    if username is None:
+        return redirect("sign_in")
+    secret = sign_in.secret_to_set_up(username)
+    if secret is None:
+        return redirect("code")
+    failed = False
+    if request.method == "POST":
+        user = sign_in.check_code_for(username, request.POST.get("code", ""), address_of(request))
+        if user is not None:
+            return _complete(request, user)
+        failed = True
+    grouped = " ".join(secret[index : index + 4] for index in range(0, len(secret), 4))
+    return render(
+        request,
+        "accounts/set_up.html",
+        {"failed": failed, "secret": grouped, "address": totp.set_up_address(secret, username)},
+    )
+
+
+@require_POST
+def sign_out(request: HttpRequest) -> HttpResponse:
+    """End the session on the server."""
+    user = request.user
+    if isinstance(user, User):
+        sign_in.log_signed_out(user, address_of(request))
+    logout(request)
+    return redirect("sign_in")
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def home(request: HttpRequest) -> HttpResponse:
+    """The first page after sign-in. The Fleet takes its place when it is built."""
+    user = request.user
+    assert isinstance(user, User)  # noqa: S101  guaranteed by ``requires``
+    return render(request, "accounts/home.html", {"organisation": user.organisation})

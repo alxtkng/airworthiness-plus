@@ -9,6 +9,8 @@ or change its data (REQ-004, AMC1 CAO.A.100(f) point (d)(2)).
 import uuid
 from collections.abc import Sequence
 
+from django.contrib.auth.password_validation import validate_password
+
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.history.session import working_for
@@ -23,8 +25,14 @@ def provision_organisation(
     scope_of_work: str,
     first_user_username: str,
     first_user_full_name: str,
+    first_user_password: str | None = None,
 ) -> tuple[Organisation, User]:
-    """Create the organisation and one Administrator, who can then add the others."""
+    """Create the organisation and one Administrator, who can then add the others.
+
+    With no password the Administrator cannot sign in until one is set.
+    """
+    if first_user_password is not None:
+        validate_password(first_user_password)
     identifier = uuid.uuid4()
     with working_for(identifier):
         organisation = Organisation.objects.create(
@@ -40,5 +48,6 @@ def provision_organisation(
             username=first_user_username,
             full_name=first_user_full_name,
             roles=[Role.ADMINISTRATOR],
+            password=first_user_password,
         )
     return organisation, user

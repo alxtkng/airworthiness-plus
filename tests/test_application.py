@@ -89,6 +89,7 @@ def test_each_request_is_one_transaction() -> None:
     assert settings.DATABASES["default"]["ATOMIC_REQUESTS"] is True
 
 
+@pytest.mark.django_db
 def test_the_administration_interface_is_absent() -> None:
     """REQ-004, threat TH-024, planned test T-SEC-018."""
     assert "django.contrib.admin" not in settings.INSTALLED_APPS

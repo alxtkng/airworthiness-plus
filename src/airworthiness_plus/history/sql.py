@@ -288,3 +288,74 @@ ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY;
 ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;
 """
     return forward, reverse
+
+
+# Sign-in (REQ-008, REQ-009). While a user name is being checked, before any
+# organisation is known, the application may read the one user with that
+# name and the access log entries for that name, and nothing else.
+SIGNING_IN_SETTING = "airworthiness.signing_in"
+
+CREATE_SIGN_IN = f"""
+CREATE FUNCTION airworthiness_signing_in() RETURNS text
+LANGUAGE sql STABLE AS $$
+    SELECT NULLIF(current_setting('{SIGNING_IN_SETTING}', true), '')
+$$;
+
+CREATE POLICY sign_in_lookup ON accounts_user FOR SELECT
+    USING (username = airworthiness_signing_in());
+
+-- The secret shared with the authenticator application stays out of the history.
+DROP TRIGGER history_write ON accounts_user;
+CREATE TRIGGER history_write AFTER INSERT OR UPDATE ON accounts_user
+    FOR EACH ROW EXECUTE FUNCTION
+    history_write_event('organisation_id', '{{password,second_factor_secret}}');
+
+CREATE FUNCTION accounts_accessentry_before_insert() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.at := now();
+    RETURN NEW;
+END
+$$;
+
+ALTER TABLE accounts_accessentry ENABLE ROW LEVEL SECURITY;
+ALTER TABLE accounts_accessentry FORCE ROW LEVEL SECURITY;
+CREATE POLICY organisation_scope ON accounts_accessentry FOR SELECT
+    USING (organisation_id = airworthiness_organisation());
+CREATE POLICY sign_in_lookup ON accounts_accessentry FOR SELECT
+    USING (username = airworthiness_signing_in());
+CREATE POLICY entries_added ON accounts_accessentry FOR INSERT
+    WITH CHECK (organisation_id = airworthiness_organisation()
+                OR username = airworthiness_signing_in());
+REVOKE ALL ON accounts_accessentry FROM PUBLIC;
+GRANT SELECT, INSERT ON accounts_accessentry TO {APPLICATION_ROLE};
+CREATE TRIGGER access_time BEFORE INSERT ON accounts_accessentry
+    FOR EACH ROW EXECUTE FUNCTION accounts_accessentry_before_insert();
+CREATE TRIGGER history_refuse_change BEFORE UPDATE OR DELETE ON accounts_accessentry
+    FOR EACH ROW EXECUTE FUNCTION history_refuse();
+CREATE TRIGGER history_refuse_truncate BEFORE TRUNCATE ON accounts_accessentry
+    FOR EACH STATEMENT EXECUTE FUNCTION history_refuse();
+
+-- Sessions are not records: they are made, renewed and removed as users
+-- sign in and out.
+GRANT SELECT, INSERT, UPDATE, DELETE ON django_session TO {APPLICATION_ROLE};
+"""
+
+DROP_SIGN_IN = f"""
+REVOKE ALL ON django_session FROM {APPLICATION_ROLE};
+DROP TRIGGER history_refuse_truncate ON accounts_accessentry;
+DROP TRIGGER history_refuse_change ON accounts_accessentry;
+DROP TRIGGER access_time ON accounts_accessentry;
+REVOKE ALL ON accounts_accessentry FROM {APPLICATION_ROLE};
+DROP POLICY entries_added ON accounts_accessentry;
+DROP POLICY sign_in_lookup ON accounts_accessentry;
+DROP POLICY organisation_scope ON accounts_accessentry;
+ALTER TABLE accounts_accessentry NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE accounts_accessentry DISABLE ROW LEVEL SECURITY;
+DROP FUNCTION accounts_accessentry_before_insert();
+DROP TRIGGER history_write ON accounts_user;
+CREATE TRIGGER history_write AFTER INSERT OR UPDATE ON accounts_user
+    FOR EACH ROW EXECUTE FUNCTION history_write_event('organisation_id', '{{password}}');
+DROP POLICY sign_in_lookup ON accounts_user;
+DROP FUNCTION airworthiness_signing_in();
+"""
