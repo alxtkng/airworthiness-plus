@@ -4,7 +4,7 @@ Airworthiness+ is in private beta. It holds no customer data and has no outside 
 
 ## Reporting a Vulnerability
 
-Contact: security@airworthiness.co
+Contact: contact@airworthiness.co
 
 When the repository is public, GitHub private vulnerability reporting is the preferred route. Do not open a public Issue for a vulnerability.
 
