@@ -1,6 +1,6 @@
 # ADR-0001: Technology Stack
 
-Status: **Proposed. Waiting for Alex King's approval. No product code is written until this is Accepted.**
+Status: **Accepted by Alex King, 18 November 2026** (Issue #26).
 
 Date: 18 November 2026
 
@@ -91,7 +91,6 @@ Option A.
 | Coolify server | Existing |
 | Off-server backup storage | Paid, small. Provider and cost are Alex's decision (Issue #27) |
 
-## Open Before Acceptance
+## Open Before First Deployment
 
-1. Alex approves or changes the stack (Issue #26).
-2. The current state of the Coolify server (free memory and disk, other services running) has not been inspected. It is checked, without changing anything, before the first deployment.
+1. The current state of the Coolify server (free memory and disk, other services running) has not been inspected. It is checked, without changing anything, before the first deployment.
