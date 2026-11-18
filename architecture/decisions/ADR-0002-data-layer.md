@@ -28,6 +28,7 @@ The account the running application signs in to the database with must be a memb
 - Row-level security is enabled and forced on every table, so it applies to the owner as well.
 - The policy compares the row's organisation with a setting on the database session, `airworthiness.organisation`. The application sets it for one transaction at a time (`airworthiness_plus.history.session.working_for`). With none set, no rows are returned and no row can be written.
 - Identifiers are random, so one record's address says nothing about another's (threat TH-006).
+- A record refers only to records of its own organisation. Every column that refers to another record has a trigger that refuses a row whose parent belongs elsewhere, for the application and the owner alike. Added 18 November 2026.
 
 ### History
 

@@ -120,6 +120,8 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 | T-SEC-004 | test_sign_in: session_cookie_is_secure_and_changes_at_sign_in, sign_out_ends_the_session_on_the_server |
 | T-SEC-005 | test_sign_in: forged_request_is_refused. To be repeated for every write endpoint as each is added |
 | T-SEC-008 | test_application: plain_http_is_redirected_to_https |
+| T-SEC-010 | test_aircraft: another_organisations_aircraft_is_not_found_on_any_page, record_cannot_refer_to_another_organisations_record. To be repeated for every endpoint as each is added |
+| T-SEC-011 | test_aircraft: every_aircraft_page_follows_the_role_matrix. To be repeated for every endpoint as each is added |
 | T-SEC-013 | test_data_layer: with_no_organisation_set_there_are_no_rows |
 | T-SEC-014 | test_data_layer: application_cannot_change_or_remove_history, owner_of_the_tables_cannot_change_or_remove_history_either |
 | T-SEC-015 | test_data_layer: chain_holds, altered_entry_is_detected, removed_entry_is_detected |
