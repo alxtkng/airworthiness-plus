@@ -24,6 +24,7 @@ from airworthiness_rules.intervals import (
     Interval,
     Limit,
     Reading,
+    State,
     TaskKind,
     Tolerance,
     ToleranceNotPermittedError,
@@ -31,6 +32,7 @@ from airworthiness_rules.intervals import (
     comes_first,
     is_due,
     limits,
+    task_state,
     tolerance_outlasts_certificate,
 )
 
@@ -269,3 +271,37 @@ def test_g_fmno_tolerance_ends_before_the_review_certificate() -> None:
     certificate is valid to 27 April 2027."""
     calendar = inspection(G_FMNO_DONE, Reading(TODAY, D("4950.2")))[1]
     assert not tolerance_outlasts_certificate(calendar, date(2027, 4, 27))
+
+
+@pytest.mark.parametrize(
+    ("hours_now", "hours_state", "whole_task"),
+    [
+        (D("3318.0"), State.NOT_DUE, State.NOT_DUE),
+        (D("3359.0"), State.DUE, State.DUE),
+        (D("3364.0"), State.WITHIN_TOLERANCE, State.WITHIN_TOLERANCE),  # passed by 5.0
+        (D("3369.1"), State.OVERDUE, State.OVERDUE),  # passed by 10.1
+    ],
+)
+def test_the_worst_limit_gives_the_state_of_the_task(
+    hours_now: Decimal, hours_state: State, whole_task: State
+) -> None:
+    """REQ-056. Found by the independent recompute. G-BXYZ on 20 June 2027:
+    the calendar limit of 30 July 2027 is 40 days away (10 left in June, 30
+    in July) and Not Due throughout, but the task is never shown by it."""
+    found = inspection(G_BXYZ_DONE, Reading(date(2027, 6, 20), hours_now))
+    hours, calendar = found
+    assert calendar.remaining == 40
+    assert calendar.state is State.NOT_DUE
+    assert hours.state is hours_state
+    assert task_state(found) is whole_task
+
+
+def test_a_task_with_no_tolerance_goes_from_due_to_overdue() -> None:
+    """REQ-056, REQ-049. With no tolerance there is no Within Tolerance."""
+    interval = Interval(hours=D("50"))
+    done = Reading(TODAY, D("100.0"))
+    states = [
+        task_state(limits(interval, done, Reading(TODAY, hours)))
+        for hours in (D("149.9"), D("150.0"), D("150.1"))
+    ]
+    assert states == [State.NOT_DUE, State.DUE, State.OVERDUE]

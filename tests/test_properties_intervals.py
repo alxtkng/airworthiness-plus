@@ -12,6 +12,7 @@ from airworthiness_rules.intervals import (
     MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
     Interval,
     Reading,
+    State,
     TaskKind,
     Unit,
     Utilisation,
@@ -19,6 +20,7 @@ from airworthiness_rules.intervals import (
     is_due,
     limits,
     projected_days,
+    task_state,
 )
 
 DATES = st.dates(min_value=date(1950, 1, 1), max_value=date(2100, 12, 31))
@@ -167,6 +169,11 @@ def test_a_tolerance_changes_nothing_but_when_a_limit_is_overdue(
         if with_tolerance.overdue:
             assert without.overdue
         assert not (with_tolerance.overdue and with_tolerance.within_tolerance)
+    # The task is never shown better than its worst limit.
+    whole = task_state(toleranced)
+    assert (whole is State.OVERDUE) == any(limit.overdue for limit in toleranced)
+    assert (whole is State.NOT_DUE) == (not is_due(toleranced))
+    assert all(list(State).index(limit.state) <= list(State).index(whole) for limit in toleranced)
 
 
 @given(TENTHS, TENTHS, st.integers(min_value=0, max_value=800), DATES)

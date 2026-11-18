@@ -42,6 +42,15 @@ class TaskKind(Enum):
     LIFE_LIMIT = "Life Limit"
 
 
+class State(Enum):
+    """Where a limit, or a whole task, stands (REQ-056). Listed from best to worst."""
+
+    NOT_DUE = "Not Due"
+    DUE = "Due"
+    WITHIN_TOLERANCE = "Within Tolerance"
+    OVERDUE = "Overdue"
+
+
 class ToleranceNotPermittedError(ValueError):
     """The tolerance asked for is not one the regulation gives."""
 
@@ -156,6 +165,17 @@ class Limit:
         """Return whether the limit has been passed but its tolerance has not (REQ-056)."""
         return self.remaining < 0 and not self.overdue
 
+    @property
+    def state(self) -> State:
+        """Return where the limit stands (REQ-056)."""
+        if self.overdue:
+            return State.OVERDUE
+        if self.within_tolerance:
+            return State.WITHIN_TOLERANCE
+        if self.remaining == 0:
+            return State.DUE
+        return State.NOT_DUE
+
 
 def _check_tolerance(kind: TaskKind | None, tolerance: Tolerance) -> None:
     """Refuse any tolerance the regulation does not give (REQ-048, REQ-049)."""
@@ -257,6 +277,19 @@ def is_due(found: tuple[Limit, ...]) -> bool:
     (REQ-056).
     """
     return any(limit.remaining <= 0 for limit in found)
+
+
+def task_state(found: tuple[Limit, ...]) -> State:
+    """Return where the task stands: the worst state among its limits (REQ-056).
+
+    One limit overdue makes the task overdue, however far away the others
+    are. Found by the independent recompute: a task must never be shown by
+    its best limit.
+    """
+    if not found:
+        raise ValueError("A task has at least one limit")
+    order = list(State)
+    return max((limit.state for limit in found), key=order.index)
 
 
 def projected_days(limit: Limit, utilisation: Utilisation | None) -> int | None:
