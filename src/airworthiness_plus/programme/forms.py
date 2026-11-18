@@ -6,6 +6,12 @@ from django import forms
 
 from airworthiness_plus.aircraft.models import Counter
 from airworthiness_plus.programme.models import TASK_KINDS, Basis, InspectionCategory, Task
+from airworthiness_rules.intervals import TaskKind
+
+# An airworthiness directive is recorded under Airworthiness Directives.
+PROGRAMME_TASK_KINDS = [
+    choice for choice in TASK_KINDS if choice[0] != TaskKind.AIRWORTHINESS_DIRECTIVE.value
+]
 
 
 class ProgrammeForm(forms.Form):
@@ -30,7 +36,7 @@ class TaskForm(forms.Form):
     """Add a task to the programme."""
 
     title = forms.CharField(label="Task", max_length=200)
-    kind = forms.ChoiceField(label="Kind", choices=TASK_KINDS)
+    kind = forms.ChoiceField(label="Kind", choices=PROGRAMME_TASK_KINDS)
     counter = forms.ModelChoiceField(label="Runs Against", queryset=Counter.objects.none())
     source = forms.CharField(label="Source", max_length=200)
     interval_hours = forms.DecimalField(

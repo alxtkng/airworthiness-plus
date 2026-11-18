@@ -315,6 +315,7 @@ def due_lines(aircraft: Aircraft, today: date) -> list[DueLine]:
     return [
         due_line(task, programme, today, thresholds)
         for task in programme.tasks.filter(retired=False).select_related("counter")
+        if not (task.once and task.work_done.exists())
     ]
 
 
