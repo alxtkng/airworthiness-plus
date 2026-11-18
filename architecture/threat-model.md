@@ -114,13 +114,30 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 
 | Planned Test | Test |
 |---|---|
-| T-SEC-003 | test_application: cookies_are_secure_and_hidden_from_scripts |
+| T-SEC-001 | test_sign_in: password_alone_signs_nobody_in |
+| T-SEC-002 | test_sign_in: five_failures_lock_the_name_for_15_minutes, wrong_codes_count_towards_the_lock |
+| T-SEC-003 | test_application: cookies_are_secure_and_hidden_from_scripts; test_sign_in: session_cookie_is_secure_and_changes_at_sign_in |
+| T-SEC-004 | test_sign_in: session_cookie_is_secure_and_changes_at_sign_in, sign_out_ends_the_session_on_the_server |
+| T-SEC-005 | test_sign_in: forged_request_is_refused. To be repeated for every write endpoint as each is added |
 | T-SEC-008 | test_application: plain_http_is_redirected_to_https |
 | T-SEC-013 | test_data_layer: with_no_organisation_set_there_are_no_rows |
 | T-SEC-014 | test_data_layer: application_cannot_change_or_remove_history, owner_of_the_tables_cannot_change_or_remove_history_either |
 | T-SEC-015 | test_data_layer: chain_holds, altered_entry_is_detected, removed_entry_is_detected |
 | T-SEC-016 | test_data_layer: change_with_no_signed_in_user_is_refused, every_change_writes_who_when_what_before_and_after |
 | T-SEC-018 | test_application: administration_interface_is_absent |
+
+## Known Gaps in Sign-In
+
+Recorded 18 November 2026, to be settled when the verification level is chosen in Step 7 (`assurance/asvs.md`).
+
+- The key shared with the authenticator application is stored as it is, not encrypted, in a column kept out of the history. Encrypting it needs a cryptography dependency and a key in the server environment.
+- A new password is checked for length and against Django's list of common passwords, not against a list of breached passwords (threat TH-001).
+- The first time, the second factor is set up by whoever holds the password. An account's first password must therefore reach its user by a route that is not the system itself.
+- The key is shown as text and as a set-up address, with no code to scan.
+- There is no page yet for a user to change a password or for an Administrator to add a user; both come with the Users page.
+- The access log holds the network address of each attempt, which is personal data. It goes in the record of processing in Step 8.
+- Behind the reverse proxy the address seen is the proxy's until the proxy's forwarded address is trusted, which is a deployment setting (Step 8).
+- Django's development server reads the migrations table, which the application's database role cannot. The service runs under a WSGI server, to be chosen and added as a dependency before the first deployment.
 
 ## Not Yet Covered
 
