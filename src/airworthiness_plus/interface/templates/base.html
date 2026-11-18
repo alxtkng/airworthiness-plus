@@ -19,8 +19,10 @@
 <a href="{% url 'records_export' %}">Records Export</a>
 <a href="{% url 'problem_log' %}">Problem Log</a>
 <a href="{% url 'organisation' %}">Organisation</a>
+<a href="{% url 'users' %}">Users</a>
 </nav>
 <p>{{ request.user.full_name }}, {{ request.user.roles|join:", " }}</p>
+<p><a href="{% url 'change_password' %}">Change Password</a></p>
 <form method="post" action="{% url 'sign_out' %}">
 {% csrf_token %}
 <button type="submit">Sign Out</button>
