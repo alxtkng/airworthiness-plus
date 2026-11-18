@@ -20,6 +20,12 @@ How changes reach `main`. The same steps apply to code, requirements and assuran
 - Tests use the sample organisation and fleet in `design-system/SampleData.md`. Today in the sample world is 18 November 2026.
 - Nothing is deleted from records, in the product or in this repository's record documents. Superseded entries stay and are marked superseded.
 
+## Licence and Outside Contributions
+
+The code is AGPL-3.0-only, copyright Airworthiness Limited (`LICENSE`). Contributions from outside Airworthiness Limited are not accepted until a contributor agreement exists, so that the copyright stays in one place and the licence can be offered commercially or changed later.
+
+Third-party code is added only as a pinned dependency with a licence compatible with AGPL-3.0, recorded in the software bill of materials. Nothing is copied in.
+
 ## Never Commit
 
 - Secrets: passwords, tokens, keys, `.env` files. Secrets live in the environment of the server only.
