@@ -3,6 +3,7 @@
 from django.urls import URLPattern, URLResolver, path
 
 from airworthiness_plus.acceptance import views as acceptance
+from airworthiness_plus.accounts import user_views as users
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
 from airworthiness_plus.directives import views as directives
@@ -149,6 +150,17 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("organisation/", acceptance.organisation_page, name="organisation"),
     path("organisation/approval/", acceptance.record_approval, name="record_records_approval"),
     path("organisation/parallel-run/", acceptance.record_parallel_run, name="record_parallel_run"),
+    path("users/", users.users_page, name="users"),
+    path("users/add/", users.add_user, name="add_user"),
+    path("users/<uuid:user_id>/roles/", users.set_roles, name="set_user_roles"),
+    path("users/<uuid:user_id>/active/", users.set_active, name="set_user_active"),
+    path("users/<uuid:user_id>/password/", users.reset_password, name="reset_user_password"),
+    path(
+        "users/<uuid:user_id>/second-factor/",
+        users.reset_second_factor,
+        name="reset_user_second_factor",
+    ),
+    path("account/password/", users.change_password, name="change_password"),
     path("sign-in/", accounts.sign_in_page, name="sign_in"),
     path("sign-in/code/", accounts.code_page, name="code"),
     path("sign-in/set-up/", accounts.set_up_page, name="set_up"),

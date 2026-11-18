@@ -49,6 +49,8 @@ class User(Record, AbstractBaseUser):
     # out of the history. A user signs in only once it is confirmed (REQ-008).
     second_factor_secret = models.CharField(max_length=64, blank=True)
     second_factor_confirmed = models.BooleanField(default=False)
+    # A password given by an Administrator is changed by the user before anything else.
+    password_must_change = models.BooleanField(default=False)
 
     objects: ClassVar[UserManager] = UserManager()
 
@@ -85,6 +87,13 @@ class AccessKind(models.TextChoices):
     SIGNED_OUT = "Signed Out", "Signed Out"
     ACTION_REFUSED = "Action Refused", "Action Refused"
     RECORDS_EXPORTED = "Records Exported", "Records Exported"
+    # These two are names of events, not passwords.
+    PASSWORD_CHANGED = "Password Changed", "Password Changed"  # pragma: allowlist secret
+    PASSWORD_RESET = (
+        "Password Set by an Administrator",  # pragma: allowlist secret
+        "Password Set by an Administrator",
+    )
+    SECOND_FACTOR_RESET = "Second Factor Reset", "Second Factor Reset"
 
 
 class AccessEntry(models.Model):

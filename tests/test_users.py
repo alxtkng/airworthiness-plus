@@ -1,0 +1,376 @@
+"""The Users page and the change of password (REQ-005 to REQ-010; threats TH-001, TH-002, TH-008).
+
+The people are those of design-system/SampleData.md. Passwords are made
+afresh for each run.
+"""
+
+import secrets
+
+import pytest
+from django.http import HttpResponse
+from django.test import Client
+
+from airworthiness_plus.accounts import sign_in, users
+from airworthiness_plus.accounts.models import AccessEntry, User
+from airworthiness_plus.accounts.roles import Action, Role, permitted
+from airworthiness_plus.history.models import Event
+from airworthiness_plus.history.session import working_for
+from tests.conftest import as_owner
+from tests.support import Sample, make_sample, signed_in
+from tests.test_sign_in import Clock, code_now, get, give_password, post
+
+pytestmark = pytest.mark.django_db
+
+FIRST = secrets.token_urlsafe(18)
+SECOND = secrets.token_urlsafe(18)
+THIRD = secrets.token_urlsafe(18)
+NEW = "new.person@your-organisation.example"
+# Two passwords the rules refuse: one too short, one on the list of common passwords.
+WEAK = "short"
+COMMON = "pass" + "word12345"
+
+
+@pytest.fixture
+def clock(monkeypatch: pytest.MonkeyPatch) -> Clock:
+    moving = Clock()
+    monkeypatch.setattr(sign_in, "current_time", moving.read)
+    return moving
+
+
+@pytest.fixture
+def sample() -> Sample:
+    return make_sample()
+
+
+@pytest.fixture
+def new_user(sample: Sample) -> User:
+    """A user added by the Administrator with a first password."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        return users.add_user(
+            organisation=sample.ours,
+            username=NEW,
+            full_name="[New Person]",
+            roles=[Role.PLANNING_AND_RECORDS],
+            password=FIRST,
+        )
+
+
+def page(client: Client, path: str) -> str:
+    response = get(client, path)
+    assert response.status_code == 200, path
+    return response.content.decode()
+
+
+def sign_in_with(client: Client, clock: Clock, username: str, password: str) -> HttpResponse:
+    """Password, then the code, setting the second factor up on the first occasion."""
+    clock.advance(seconds=31)
+    first = give_password(client, username, password)
+    assert first.status_code == 302, "password refused"
+    if first["Location"] == "/sign-in/set-up/":
+        assert get(client, "/sign-in/set-up/").status_code == 200
+    return post(client, first["Location"], code=code_now(username, clock))
+
+
+def log_of(user: User) -> list[tuple[str, str]]:
+    with as_owner():
+        return [(entry.kind, entry.detail) for entry in AccessEntry.objects.filter(user_id=user.pk)]
+
+
+# Adding a user
+
+
+def test_the_administrator_adds_a_user_with_roles_and_a_first_password(sample: Sample) -> None:
+    """REQ-005, REQ-007. The addition is in the history, and the password is not."""
+    administrator = signed_in(sample.administrator)
+    response = post(
+        administrator,
+        "/users/add/",
+        full_name="[New Person]",
+        username=NEW,
+        roles="Planning and Records",
+        password=FIRST,
+    )
+    assert response.status_code == 302
+    with working_for(sample.ours.id, sample.administrator.id):
+        person = User.objects.get(username=NEW)
+        assert person.roles == ["Planning and Records"]
+        assert person.organisation_id == sample.ours.id
+        assert person.password_must_change
+        created = Event.of(person).get()
+        assert created.actor_id == sample.administrator.id
+        assert "password" not in (created.after_json or "").replace("password_must_change", "")
+    body = page(administrator, "/users/")
+    assert "<td>[New Person]</td>" in body
+    assert "<td>Active, Password to Be Changed</td>" in body
+    assert "<td>Not Set Up</td>" in body
+    assert FIRST not in body
+
+
+@pytest.mark.parametrize(
+    ("values", "message"),
+    [
+        ({"password": WEAK}, "This password is too short"),
+        ({"password": COMMON}, "This password is too common"),
+        ({"username": "not an address"}, "Give a Full Name, a User Name That Is an Email"),
+        ({"full_name": ""}, "Give a Full Name"),
+        ({"roles": "Owner"}, "Give a Full Name"),
+        # Taken in this organisation, and taken in another: the same answer (TH-001).
+        ({"username": "lucy.grant@your-organisation.example"}, "This User Name Cannot Be Used"),
+        ({"username": "name@other-organisation.example"}, "This User Name Cannot Be Used"),
+    ],
+)
+def test_a_user_who_cannot_be_added_is_refused_with_the_reason(
+    sample: Sample, values: dict[str, str], message: str
+) -> None:
+    """REQ-005, threat TH-001."""
+    administrator = signed_in(sample.administrator)
+    given = {
+        "full_name": "[New Person]",
+        "username": NEW,
+        "roles": "Read Only",
+        "password": FIRST,
+    } | values
+    response = post(administrator, "/users/add/", **given)
+    assert response.status_code == 200
+    assert message in response.content.decode()
+    with as_owner():
+        assert not User.objects.filter(full_name="[New Person]").exists()
+
+
+# The first password
+
+
+def test_a_first_password_is_changed_before_anything_else(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """REQ-008, threat TH-001. Every page sends the user to change it, and nothing is done."""
+    client = Client()
+    assert sign_in_with(client, clock, NEW, FIRST).status_code == 302
+    for path in ("/", "/reviews/", "/records-export/"):
+        response = get(client, path)
+        assert (response.status_code, response["Location"]) == (302, "/account/password/")
+    response = post(client, "/problem-log/add/", problem="[Problem]")
+    assert (response.status_code, response["Location"]) == (302, "/account/password/")
+    assert "changed before anything else" in page(client, "/account/password/")
+
+    refusals = [
+        ({"current": SECOND, "new": SECOND, "again": SECOND}, "The Current Password Is Not Right"),
+        ({"current": FIRST, "new": SECOND, "again": THIRD}, "The Two New Passwords Differ"),
+        ({"current": FIRST, "new": FIRST, "again": FIRST}, "The New Password Is the Same"),
+        ({"current": FIRST, "new": WEAK, "again": WEAK}, "This password is too short"),
+        ({"current": FIRST, "new": SECOND}, "Give the Current Password and the New Password"),
+    ]
+    for values, message in refusals:
+        assert message in post(client, "/account/password/", **values).content.decode()
+    done = post(client, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
+    assert (done.status_code, done["Location"]) == (302, "/")
+    # This session continues, and the pages now answer.
+    assert get(client, "/").status_code == 200
+    assert post(client, "/problem-log/add/", problem="[Problem]").status_code == 302
+    assert ("Password Changed", "") in log_of(new_user)
+    # The first password no longer signs in; the new one does.
+    clock.advance(seconds=31)
+    assert give_password(Client(), NEW, FIRST).status_code == 200
+    assert sign_in_with(Client(), clock, NEW, SECOND)["Location"] == "/"
+
+
+def test_changing_a_password_ends_the_users_other_sessions(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """Threat TH-002. The session that made the change continues; any other ends."""
+    here, elsewhere = Client(), Client()
+    sign_in_with(here, clock, NEW, FIRST)
+    sign_in_with(elsewhere, clock, NEW, FIRST)
+    post(here, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
+    assert get(here, "/").status_code == 200
+    response = get(elsewhere, "/")
+    assert (response.status_code, response["Location"][:9]) == (302, "/sign-in/")
+
+
+def test_every_role_can_change_its_own_password(sample: Sample) -> None:
+    """REQ-008. The page needs sign-in and no role."""
+    for user in sample.by_role().values():
+        assert "<h1>Change Password</h1>" in page(signed_in(user), "/account/password/")
+    response = get(Client(), "/account/password/")
+    assert (response.status_code, response["Location"][:9]) == (302, "/sign-in/")
+
+
+# Roles and leaving
+
+
+def test_roles_are_set_by_the_administrator_and_the_change_is_in_the_history(
+    sample: Sample, new_user: User
+) -> None:
+    """REQ-006, REQ-007."""
+    administrator = signed_in(sample.administrator)
+    address = f"/users/{new_user.id}/roles/"
+    key = f"{new_user.id}-roles"
+    response = administrator.post(
+        address, {key: ["Read Only", "Planning and Records"]}, secure=True
+    )
+    assert response.status_code == 302
+    with working_for(sample.ours.id, sample.administrator.id):
+        person = User.objects.get(pk=new_user.pk)
+        # Stored in the order of the matrix, whatever order they were ticked in.
+        assert person.roles == ["Planning and Records", "Read Only"]
+        last = Event.of(person).order_by("-sequence")[0]
+        assert (last.changed, last.actor_id) == (["roles"], sample.administrator.id)
+    refused = administrator.post(address, {key: ["Owner"]}, secure=True)
+    assert "A Role Is One of the Five Roles" in refused.content.decode()
+    # No role at all is allowed: the user can then do nothing.
+    administrator.post(address, {}, secure=True)
+    with working_for(sample.ours.id, sample.administrator.id):
+        person = User.objects.get(pk=new_user.pk)
+        assert person.roles == []
+        assert not any(permitted(person.roles, action) for action in Action)
+
+
+def test_an_organisation_always_has_an_active_administrator(sample: Sample, new_user: User) -> None:
+    """REQ-005. The last Administrator cannot lose the role or be made inactive."""
+    administrator = signed_in(sample.administrator)
+    own = sample.administrator.id
+    lost = administrator.post(f"/users/{own}/roles/", {f"{own}-roles": ["Read Only"]}, secure=True)
+    assert "An Organisation Always Has an Active Administrator" in lost.content.decode()
+    gone = post(administrator, f"/users/{own}/active/", active="no")
+    assert "A User Does Not Make Themselves Inactive" in gone.content.decode()
+    # With a second Administrator, the first may give the role up.
+    key = f"{new_user.id}-roles"
+    administrator.post(f"/users/{new_user.id}/roles/", {key: ["Administrator"]}, secure=True)
+    with working_for(sample.ours.id, sample.administrator.id):
+        with pytest.raises(users.RefusedError, match="Always Has an Active Administrator"):
+            # An inactive Administrator does not count.
+            User.objects.filter(pk=new_user.pk).update(is_active=False)
+            users.set_roles(User.objects.get(pk=own), [Role.READ_ONLY])
+        User.objects.filter(pk=new_user.pk).update(is_active=True)
+    done = administrator.post(f"/users/{own}/roles/", {f"{own}-roles": ["Read Only"]}, secure=True)
+    assert done.status_code == 302
+    # No longer an Administrator: the page now refuses.
+    assert get(administrator, "/users/").status_code == 403
+
+
+def test_a_user_made_inactive_is_signed_out_and_stays_in_the_record(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """REQ-010. Nothing is deleted; the user can be made active again."""
+    client = Client()
+    sign_in_with(client, clock, NEW, FIRST)
+    administrator = signed_in(sample.administrator)
+    assert post(administrator, f"/users/{new_user.id}/active/", active="no").status_code == 302
+    response = get(client, "/account/password/")
+    assert (response.status_code, response["Location"][:9]) == (302, "/sign-in/")
+    clock.advance(seconds=31)
+    assert give_password(Client(), NEW, FIRST).status_code == 200
+    assert "<td>Inactive, Password to Be Changed</td>" in page(administrator, "/users/")
+    post(administrator, f"/users/{new_user.id}/active/", active="yes")
+    assert sign_in_with(Client(), clock, NEW, FIRST).status_code == 302
+
+
+# Lost passwords and lost authenticators
+
+
+def test_the_administrator_sets_a_new_first_password(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """REQ-008, threat TH-002. The user's sessions end, and the new password is changed first."""
+    client = Client()
+    sign_in_with(client, clock, NEW, FIRST)
+    post(client, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
+    administrator = signed_in(sample.administrator)
+    weak = post(administrator, f"/users/{new_user.id}/password/", password=WEAK)
+    assert "This password is too short" in weak.content.decode()
+    assert post(administrator, f"/users/{new_user.id}/password/", password=THIRD).status_code == 302
+    response = get(client, "/")
+    assert (response.status_code, response["Location"][:9]) == (302, "/sign-in/")
+    again = Client()
+    assert sign_in_with(again, clock, NEW, THIRD).status_code == 302
+    assert get(again, "/")["Location"] == "/account/password/"
+    assert ("Password Set by an Administrator", "By [Accountable Manager]") in log_of(new_user)
+    with working_for(sample.ours.id, sample.administrator.id):
+        last = Event.of(new_user).order_by("-sequence")[0]
+        assert "password" in last.changed
+        assert THIRD not in (last.after_json or "")
+
+
+def test_the_administrator_resets_a_lost_second_factor(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """REQ-008. The user sets a second factor up again at their next sign-in."""
+    sign_in_with(Client(), clock, NEW, FIRST)
+    administrator = signed_in(sample.administrator)
+    assert "<td>Set Up</td>" in page(administrator, "/users/")
+    assert post(administrator, f"/users/{new_user.id}/second-factor/").status_code == 302
+    clock.advance(seconds=31)
+    first = give_password(Client(), NEW, FIRST)
+    assert first["Location"] == "/sign-in/set-up/"
+    assert ("Second Factor Reset", "By [Accountable Manager]") in log_of(new_user)
+
+
+# Other organisations (T-SEC-010), roles (T-SEC-011) and forged writes (T-SEC-005)
+
+
+def addresses(user: User):  # type: ignore[no-untyped-def]
+    manage = Action.MANAGE_USERS_AND_ROLES
+    return [
+        ("GET", "/users/", manage),
+        ("POST", "/users/add/", manage),
+        ("POST", f"/users/{user.id}/roles/", manage),
+        ("POST", f"/users/{user.id}/active/", manage),
+        ("POST", f"/users/{user.id}/password/", manage),
+        ("POST", f"/users/{user.id}/second-factor/", manage),
+    ]
+
+
+def call(client: Client, method: str, path: str) -> HttpResponse:
+    return get(client, path) if method == "GET" else post(client, path)
+
+
+def test_another_organisations_users_are_not_shown_or_changed(
+    sample: Sample, new_user: User
+) -> None:
+    """REQ-003, REQ-004, threat TH-020, planned test T-SEC-010. The stranger is an Administrator."""
+    stranger = signed_in(sample.stranger)
+    body = page(stranger, "/users/")
+    assert "[New Person]" not in body
+    assert "Lucy Grant" not in body
+    for method, path, _ in addresses(new_user)[2:]:
+        assert call(stranger, method, path).status_code == 404, path
+    with as_owner():
+        person = User.objects.get(pk=new_user.pk)
+        assert (person.is_active, person.roles) == (True, ["Planning and Records"])
+
+
+@pytest.mark.parametrize(
+    "role",
+    [
+        "Continuing Airworthiness Manager",
+        "Airworthiness Review Staff",
+        "Planning and Records",
+        "Read Only",
+    ],
+)
+def test_only_the_administrator_manages_users(sample: Sample, new_user: User, role: str) -> None:
+    """REQ-006, threat TH-008, planned test T-SEC-011. Refusals are logged."""
+    user = sample.by_role()[role]
+    client = signed_in(user)
+    for method, path, _ in addresses(new_user):
+        assert call(client, method, path).status_code == 403, f"{role} {method} {path}"
+    with working_for(sample.ours.id, user.id):
+        assert AccessEntry.objects.filter(user=user, kind="Action Refused").count() == 6
+
+
+def test_the_users_pages_need_sign_in_and_refuse_forged_writes(
+    sample: Sample, new_user: User
+) -> None:
+    """REQ-008, threats TH-003 and TH-008, planned test T-SEC-005."""
+    anonymous = Client()
+    for method, path, _ in addresses(new_user):
+        response = call(anonymous, method, path)
+        assert response.status_code == 302, path
+        assert response["Location"].startswith("/sign-in/")
+    forged = Client(enforce_csrf_checks=True)
+    forged.force_login(
+        sample.administrator, backend="airworthiness_plus.accounts.backends.OrganisationBackend"
+    )
+    for method, path, _ in [*addresses(new_user), ("POST", "/account/password/", None)]:
+        if method == "POST":
+            assert post(forged, path).status_code == 403, path

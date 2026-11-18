@@ -12,6 +12,7 @@ from typing import Any
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Action
@@ -42,6 +43,8 @@ def requires(
             user = request.user
             if not isinstance(user, User):
                 return redirect_to_login(request.get_full_path())
+            if user.password_must_change:
+                return redirect("change_password")
             if not user.may(action):
                 raise ActionRefusedError(action)
             return view(request, *args, **kwargs)
@@ -49,3 +52,15 @@ def requires(
         return wrapped
 
     return decorate
+
+
+def signed_in(view: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
+    """Let the view run for any signed-in user, whatever their roles."""
+
+    @wraps(view)
+    def wrapped(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not isinstance(request.user, User):
+            return redirect_to_login(request.get_full_path())
+        return view(request, *args, **kwargs)
+
+    return wrapped
