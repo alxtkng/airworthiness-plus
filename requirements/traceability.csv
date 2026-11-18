@@ -9,7 +9,7 @@ REQ-007,Organisation and Access,Must,Inspection,To Be Designed,None,None,No Test
 REQ-008,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
 REQ-009,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
 REQ-010,Organisation and Access,Must,Test,To Be Designed,None,None,No Test
-REQ-020,Aircraft,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-020,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-021,Aircraft,Must,Test: stored value equals source value byte for byte,To Be Designed,None,None,No Test
 REQ-022,Aircraft,Must,Test,To Be Designed,None,None,No Test
 REQ-023,Aircraft,Must,Test,To Be Designed,None,None,No Test
@@ -35,13 +35,13 @@ REQ-053,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test; Source
 REQ-054,Maintenance Programme,Must,"Inspection, Test",To Be Designed,None,None,No Test
 REQ-055,Maintenance Programme,Must,Test,To Be Designed,None,None,No Test
 REQ-060,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
-REQ-061,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-061,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-062,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-063,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-064,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-065,Airworthiness Directives,Must,"Test, Independent",To Be Designed,None,None,No Test
 REQ-066,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-067,Airworthiness Directives,Must,"Test, Golden",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-067,Airworthiness Directives,Must,"Test, Golden",To Be Designed,None,None,No Test
 REQ-068,Airworthiness Directives,Must,Test,To Be Designed,None,None,No Test
 REQ-080,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
 REQ-081,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
@@ -55,18 +55,18 @@ REQ-088,Maintenance Data,Must,Golden,To Be Designed,None,None,No Test
 REQ-089,Maintenance Data,Must,Test,To Be Designed,None,None,No Test
 REQ-100,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test
 REQ-101,Airworthiness Review,Must,"Test, Independent",To Be Designed,None,None,No Test
-REQ-102,Airworthiness Review,Must,"Golden, boundary tests at 90 and 91 days, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-102,Airworthiness Review,Must,"Golden, boundary tests at 90 and 91 days, Independent",To Be Designed,None,None,No Test
 REQ-103,Airworthiness Review,Must,Golden once sourced,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-104,Airworthiness Review,Must,"Test, Independent",To Be Designed,None,None,No Test; Source To Be Checked
-REQ-105,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-106,Airworthiness Review,Must,Boundary tests at 30 and 31 days,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-107,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-108,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-109,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
+REQ-104,Airworthiness Review,Must,"Test, Independent",To Be Designed,None,None,No Test
+REQ-105,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
+REQ-106,Airworthiness Review,Must,Boundary tests at 30 and 31 days,To Be Designed,None,None,No Test
+REQ-107,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test
+REQ-108,Airworthiness Review,Must,Inspection against the UK text; Test,To Be Designed,None,None,No Test
+REQ-109,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-110,Airworthiness Review,Must,"Test, concurrency test",To Be Designed,None,None,No Test
-REQ-111,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-111,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test
 REQ-112,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test; Source To Be Checked
-REQ-113,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test; Source To Be Checked
+REQ-113,Airworthiness Review,Must,"Golden, Independent",To Be Designed,None,None,No Test
 REQ-114,Airworthiness Review,Should,Test,To Be Designed,None,None,No Test
 REQ-115,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
 REQ-116,Airworthiness Review,Must,Test,To Be Designed,None,None,No Test
