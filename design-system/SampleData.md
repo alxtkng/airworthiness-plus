@@ -91,6 +91,8 @@ Reporting lines: the three managers report to the Accountable Manager. Continuin
 
 Employment: the Part-66 L2 [Name] is Contracted; everyone else is Employed.
 
+Added on 18 November 2026 for the review pages, to be confirmed by Alex King: Lucy Grant's review of G-BXYZ is taken as 2 August 2026, the day its certificate runs from, so that she is recent when she reviews G-CDEF on 11 November 2026. The other review staff member's last review is taken as 2 December 2025, from the lapse date of 2 December 2026. Each certificate in the Fleet table other than G-CDEF's is recorded as issued one year before its valid-to date, with a placeholder reference. G-CDEF's is the first certificate issued in the system: UK.CAO.[Number]-ARC-0001, at 7,720.0 airframe hours.
+
 Recency figures: experience in the last 2 years is Chris Moore 214 days, Sam Patel 176 days, L2 [Name] 61 days (last maintenance 14 August 2025). Lucy Grant has 5 reviews in 12 months (G-DGHI, G-ABCD, G-BXYZ, G-FMNO, G-CDEF). The lapsing review [Name] has 4 months of continuing airworthiness work; the G-EJKL review by 6 December 2026 keeps them current. Chris Moore's last work is WP-2026-046; Sam Patel's is WP-2026-043.
 
 | Ellie Ward | Mechanic, Trainee | Working toward Part-66 B1.2 | Joined 6 January 2025; on the job training for Cessna/Reims-Cessna 172/F172 Series (Lycoming) on G-BXYZ, 31 of 40 tasks; mentor Sam Patel, assessor Chris Moore |
