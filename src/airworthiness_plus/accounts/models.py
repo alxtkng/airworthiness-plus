@@ -84,6 +84,7 @@ class AccessKind(models.TextChoices):
     SECOND_FACTOR_SET_UP = "Second Factor Set Up", "Second Factor Set Up"
     SIGNED_OUT = "Signed Out", "Signed Out"
     ACTION_REFUSED = "Action Refused", "Action Refused"
+    RECORDS_EXPORTED = "Records Exported", "Records Exported"
 
 
 class AccessEntry(models.Model):

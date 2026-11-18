@@ -1,0 +1,511 @@
+"""The export of records (REQ-134 to REQ-136; hazard H-012; threats TH-080 to TH-082).
+
+The records are those of design-system/SampleData.md, with one of every
+type of record so that every type is compared with the database.
+"""
+
+import hashlib
+import io
+import json
+import secrets
+import zipfile
+from datetime import date
+from decimal import Decimal
+from pathlib import Path
+from typing import Any
+
+import pytest
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.db import connection
+from django.http import HttpResponse
+from django.test import Client
+
+from airworthiness_plus.accounts.models import AccessEntry, User
+from airworthiness_plus.accounts.roles import Action, permitted
+from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
+from airworthiness_plus.directives import services as directive_services
+from airworthiness_plus.directives.models import Decision
+from airworthiness_plus.exports.build import _entry, build, neutralised
+from airworthiness_plus.exports.registry import REGISTRY
+from airworthiness_plus.exports.verify import entry_hash, verify
+from airworthiness_plus.history import chain
+from airworthiness_plus.history.models import Event
+from airworthiness_plus.history.session import working_for
+from airworthiness_plus.maintenance_data import services as data_services
+from airworthiness_plus.maintenance_data.models import Kind
+from airworthiness_plus.programme import services as programme_services
+from airworthiness_plus.programme.models import Basis
+from airworthiness_plus.reviews import services as review_services
+from airworthiness_rules.intervals import Interval, Reading
+from tests.conftest import as_owner
+from tests.support import (
+    TODAY,
+    Sample,
+    add_sample_fleet,
+    add_sample_programmes,
+    add_sample_reviews,
+    make_sample,
+    signed_in,
+)
+
+pytestmark = pytest.mark.django_db
+D = Decimal
+FORMULA = "=HYPERLINK([Address])"
+KEY = secrets.token_hex(16).upper()
+
+
+@pytest.fixture(autouse=True)
+def day(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
+
+
+@pytest.fixture
+def sample() -> Sample:
+    return make_sample()
+
+
+@pytest.fixture
+def fleet(sample: Sample) -> dict[str, Aircraft]:
+    """The sample fleet with at least one record of every type."""
+    fleet = add_sample_fleet(sample)
+    add_sample_programmes(sample, fleet)
+    reviews = add_sample_reviews(sample, fleet)
+    ejkl = fleet["G-EJKL"]
+    with working_for(sample.ours.id, sample.lucy.id):
+        airframe = Counter.objects.get(aircraft=ejkl, kind=CounterKind.AIRFRAME)
+        # An entry that is corrected: both stay in the record.
+        wrong = aircraft_services.enter_utilisation(airframe, Reading(TODAY, D("11208.6"), 0))
+        aircraft_services.enter_utilisation(
+            airframe, Reading(TODAY, D("11206.8"), 0), supersedes=wrong
+        )
+        programme_services.set_up_programme(
+            ejkl, basis=Basis.INSTRUCTIONS, reference="[Programme Reference]"
+        )
+        directive = directive_services.record_directive(
+            organisation=sample.ours,
+            number="[Directive Number]",
+            authority="Civil Aviation Authority",
+            subject="[Directive Subject]",
+            effective_date=date(2026, 6, 1),
+        )
+        decision = directive_services.decide(
+            directive=directive,
+            aircraft=ejkl,
+            decision=Decision.APPLICABLE,
+            basis="[Basis]",
+            decided_by=sample.lucy,
+            action=directive_services.Action(
+                counter=airframe,
+                starts=Reading(date(2026, 6, 1), D("11100.0"), 0),
+                first=Interval(hours=D("200")),
+            ),
+        )
+        directive_services.record_compliance(
+            decision, method="[Method]", dated=date(2026, 9, 1), hours=D("11150.0"), cycles=0
+        )
+        data = data_services.record_data(
+            organisation=sample.ours,
+            title="[Maintenance Manual]",
+            author=FORMULA,
+            kind=Kind.INSTRUCTIONS,
+            applies_to=[ejkl.type_rating],
+            revision="[Revision 1]",
+            revision_date=date(2025, 1, 1),
+        )
+        data_services.add_revision(data, revision="[Revision 2]", revision_date=date(2026, 1, 1))
+        data_services.record_check(
+            data,
+            checked_by=sample.lucy,
+            checked_on=date(2026, 11, 1),
+            result="[Current]",
+            next_due=date(2027, 2, 1),
+        )
+        User.objects.filter(pk=sample.reviewer.pk).update(second_factor_secret=KEY)
+    with working_for(sample.ours.id, sample.reviewer.id):
+        review = review_services.start_review(ejkl, staff=reviews.reviewer)
+    with working_for(sample.ours.id, sample.lucy.id):
+        certificate = review_services.current_certificate(ejkl)
+        assert certificate is not None
+        review_services.extend_certificate(
+            certificate,
+            extended_by=sample.lucy,
+            managed_for_12_months=True,
+            maintained_by_approved_organisations=True,
+            no_evidence_not_airworthy=True,
+        )
+    assert review is not None
+    return fleet
+
+
+def opened(content: bytes) -> dict[str, Any]:
+    """Return every file of an export, the JSON ones parsed."""
+    archive = zipfile.ZipFile(io.BytesIO(content))
+    files: dict[str, Any] = {}
+    for name in archive.namelist():
+        data = archive.read(name)
+        files[name] = json.loads(data) if name.endswith(".json") else data.decode()
+    return files
+
+
+def rewritten(content: bytes, change: dict[str, bytes], *, fix_manifest: bool) -> bytes:
+    """Return the export with some files replaced, as someone altering it would."""
+    archive = zipfile.ZipFile(io.BytesIO(content))
+    files = {name: archive.read(name) for name in archive.namelist()}
+    files.update(change)
+    if fix_manifest:
+        manifest = json.loads(files["manifest.json"])
+        for name in change:
+            manifest["files"][name] = hashlib.sha256(files[name]).hexdigest()
+        files["manifest.json"] = json.dumps(manifest).encode()
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as new:
+        for name, data in files.items():
+            new.writestr(name, data)
+    return out.getvalue()
+
+
+def rows(table: str, organisation_column: str, organisation: Any, omitted: list[str]) -> Any:
+    """Return every row of a table for one organisation, as the database holds it."""
+    with as_owner(), connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT (to_jsonb(t) - %s::text[])::text FROM {table} t "  # noqa: S608
+            f"WHERE {organisation_column} = %s ORDER BY id",
+            [omitted, organisation],
+        )
+        return [json.loads(row[0]) for row in cursor.fetchall()]
+
+
+def get(client: Client, path: str) -> HttpResponse:
+    return client.get(path, secure=True)  # type: ignore[return-value]
+
+
+def post(client: Client, path: str) -> HttpResponse:
+    return client.post(path, secure=True)  # type: ignore[return-value]
+
+
+# Completeness
+
+
+def test_every_type_of_record_is_in_the_export() -> None:
+    """REQ-136, hazard H-012. A table of records that is not exported fails the build."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT c.relname FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid "
+            "WHERE t.tgname = 'history_write'"
+        )
+        with_history = {row[0] for row in cursor.fetchall()}
+    exported = [one.table for one in REGISTRY]
+    assert len(exported) == len(set(exported))
+    assert set(exported) == with_history
+
+
+def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-135. Every type of record, compared with the database, with its whole history."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy)
+    files = opened(export.content)
+    manifest = files["manifest.json"]
+    assert manifest["organisation"]["approval_reference"] == "UK.CAO.[Number]"
+    assert manifest["aircraft"] is None
+    assert manifest["exported_by"] == "Lucy Grant"
+    for one in REGISTRY:
+        column = "id" if one.table == "organisations_organisation" else "organisation_id"
+        omitted = ["password", "second_factor_secret"] if one.table == "accounts_user" else []
+        held = rows(one.table, column, sample.ours.id, omitted)
+        assert held, one.table  # the sample has at least one record of every type
+        assert files[f"records/{one.table}.json"] == held, one.table
+        with as_owner():
+            entries = Event.objects.filter(
+                organisation_id=sample.ours.id, record_type=one.table
+            ).count()
+        assert len(files[f"history/{one.table}.json"]) == entries, one.table
+        assert manifest["counts"][one.table] == {"records": len(held), "history": entries}
+    # Nothing of the other organisation.
+    assert str(sample.other.id) not in export.content.decode("latin-1")
+    text = json.dumps(files)
+    assert str(sample.other.id) not in text
+    assert "[Other Name]" not in text
+    assert files["access-log.json"] == []
+    assert "people.json" not in files
+
+
+def test_an_export_carries_no_password_and_no_second_factor_key(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-132. That each changed is in the history; what it was is not."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy)
+    files = opened(export.content)
+    assert all("password" not in user for user in files["records/accounts_user.json"])
+    assert all("second_factor_secret" not in user for user in files["records/accounts_user.json"])
+    text = json.dumps(files)
+    assert KEY not in text
+    changes = [
+        entry["changed"]
+        for entry in files["history/accounts_user.json"]
+        if entry["record_id"] == str(sample.reviewer.id)
+    ]
+    assert ["second_factor_secret"] in changes
+
+
+def test_the_export_of_an_aircraft_is_its_complete_record_and_no_other(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-134. Full history and superseded entries; nothing of any other aircraft."""
+    ejkl = fleet["G-EJKL"]
+    with working_for(sample.ours.id, sample.planner.id):
+        export = build(sample.ours, by=sample.planner, aircraft=ejkl)
+    assert export.name == "G-EJKL-records-2026-11-18.zip"
+    files = opened(export.content)
+    assert files["manifest.json"]["aircraft"] == {"id": str(ejkl.id), "registration": "G-EJKL"}
+    assert [one["registration"] for one in files["records/aircraft_aircraft.json"]] == ["G-EJKL"]
+    text = json.dumps(files)
+    for registration, other in fleet.items():
+        if registration != "G-EJKL":
+            assert str(other.id) not in text, registration
+    # The corrected entry of hours is there with the entry that replaced it.
+    entries = files["records/aircraft_utilisationentry.json"]
+    assert sorted(entry["hours"] for entry in entries) == [11206.8, 11206.8, 11208.6]
+    assert sum(1 for entry in entries if entry["supersedes_id"]) == 1
+    expected = {
+        "aircraft_counter": 1,
+        "programme_programme": 1,
+        "programme_task": 1,  # the action of the directive
+        "programme_workdone": 1,  # the directive compliance
+        "directives_directive": 1,
+        "directives_applicability": 1,
+        "directives_compliance": 1,
+        "maintenance_data_dataset": 1,
+        "maintenance_data_revision": 2,
+        "maintenance_data_amendmentcheck": 1,
+        "reviews_certificate": 1,
+        "reviews_extension": 1,
+        "reviews_review": 1,
+        "reviews_reviewitem": 16,
+    }
+    for table, count in expected.items():
+        assert len(files[f"records/{table}.json"]) == count, table
+    # A record that was changed keeps both entries: the first revision, then superseded.
+    revisions = files["history/maintenance_data_revision.json"]
+    assert sorted(entry["action"] for entry in revisions) == ["Changed", "Created", "Created"]
+    # The organisation's own records are not part of an aircraft's.
+    for table in ("organisations_organisation", "accounts_user", "reviews_reviewstaff"):
+        assert f"records/{table}.json" not in files
+    assert {"id": str(sample.lucy.id), "full_name": "Lucy Grant"} in files["people.json"]["users"]
+    assert "@" not in json.dumps(files["people.json"])  # names, not user names
+    assert "access-log.json" not in files
+
+
+# Verification (T-SEC-019)
+
+
+def test_the_export_agrees_with_itself_and_with_the_chain_in_the_database(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-134, threat TH-081. The check in the export is the check the system makes."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy)
+        events = list(Event.objects.all())
+        assert chain.problems(events) == []
+        assert all(entry_hash(_entry(event)) == chain.expected_hash(event) for event in events)
+    verdict = verify(export.content)
+    assert verdict.problems == ()
+    assert verdict.manifest_sha256 == export.manifest_sha256
+
+
+def test_an_altered_export_fails_verification(sample: Sample, fleet: dict[str, Aircraft]) -> None:
+    """Threat TH-081, planned test T-SEC-019."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy, aircraft=fleet["G-EJKL"])
+    archive = zipfile.ZipFile(io.BytesIO(export.content))
+    records_name = "records/reviews_certificate.json"
+    history_name = "history/reviews_certificate.json"
+    records = archive.read(records_name).replace(b"2026-12-06", b"2028-12-06")
+    assert records != archive.read(records_name)
+
+    # A record changed, and nothing else.
+    verdict = verify(rewritten(export.content, {records_name: records}, fix_manifest=False))
+    assert verdict.problems[0] == f"{records_name}: has been altered since the export was made"
+    assert len(verdict.problems) == 2  # and the record no longer agrees with its history
+
+    # A record changed and the manifest made to match: the history disagrees.
+    verdict = verify(rewritten(export.content, {records_name: records}, fix_manifest=True))
+    assert len(verdict.problems) == 1
+    assert "is not what the last entry of its history says" in verdict.problems[0]
+    assert verdict.manifest_sha256 != export.manifest_sha256
+
+    # The history changed to match as well: the hash of the entry disagrees.
+    history = archive.read(history_name).replace(b"2026-12-06", b"2028-12-06")
+    verdict = verify(
+        rewritten(export.content, {records_name: records, history_name: history}, fix_manifest=True)
+    )
+    assert any("has been altered since it was written" in one for one in verdict.problems)
+
+    # An entry removed from the middle of a record's history.
+    entries = json.loads(archive.read("history/maintenance_data_revision.json"))
+    changed = next(entry for entry in entries if entry["action"] == "Changed")
+    first = next(
+        entry
+        for entry in entries
+        if entry["record_id"] == changed["record_id"] and entry["sequence"] == 1
+    )
+    entries.remove(first)
+    verdict = verify(
+        rewritten(
+            export.content,
+            {"history/maintenance_data_revision.json": json.dumps(entries).encode()},
+            fix_manifest=True,
+        )
+    )
+    assert any("an entry is missing before this one" in one for one in verdict.problems)
+
+    # A file added, a file removed, and something that is not an export at all.
+    verdict = verify(rewritten(export.content, {"extra.json": b"[]"}, fix_manifest=False))
+    assert verdict.problems == ("extra.json: is not in the manifest",)
+    assert verify(b"not a zip").problems != ()
+
+
+def test_the_command_checks_an_export_without_the_database(
+    sample: Sample, fleet: dict[str, Aircraft], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Threat TH-081. Whoever receives an export can check it."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy, aircraft=fleet["G-EJKL"])
+    good = tmp_path / export.name
+    good.write_bytes(export.content)
+    call_command("verify_export", str(good))
+    assert f"Manifest SHA-256 {export.manifest_sha256}" in capsys.readouterr().out
+    bad = tmp_path / "altered.zip"
+    bad.write_bytes(rewritten(export.content, {"people.json": b"{}"}, fix_manifest=False))
+    with pytest.raises(CommandError, match="does not agree with itself"):
+        call_command("verify_export", str(bad))
+
+
+# Spreadsheets (T-SEC-020)
+
+
+def test_a_value_that_looks_like_a_formula_is_not_run_by_a_spreadsheet(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """Threat TH-082, planned test T-SEC-020. The JSON keeps the value as it was entered."""
+    for value in ("=1+1", "+1", "-1", "@SUM(A1)", "\tx", "\rx"):
+        assert neutralised(value) == "'" + value
+    assert neutralised("G-EJKL") == "G-EJKL"
+    assert neutralised(-1) == "-1"  # a number is not text
+    assert neutralised(None) == ""
+    assert neutralised(True) == "Yes"
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy, aircraft=fleet["G-EJKL"])
+    files = opened(export.content)
+    assert files["records/maintenance_data_dataset.json"][0]["author"] == FORMULA
+    assert f",'{FORMULA}," in files["records/maintenance_data_dataset.csv"]
+    assert f",{FORMULA}," not in files["records/maintenance_data_dataset.csv"]
+
+
+# The pages
+
+
+def test_an_export_is_sent_as_a_file_and_logged_with_its_checksum(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-009, REQ-134, threats TH-080 and TH-081."""
+    client = signed_in(sample.planner)
+    response = post(client, f"/aircraft/{fleet['G-EJKL'].id}/export/")
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/zip"
+    assert response["Content-Disposition"] == 'attachment; filename="G-EJKL-records-2026-11-18.zip"'
+    assert "no-store" in response["Cache-Control"]
+    verdict = verify(response.content)
+    assert verdict.problems == ()
+    with working_for(sample.ours.id, sample.planner.id):
+        entry = AccessEntry.objects.get(kind="Records Exported")
+        assert entry.user == sample.planner
+        assert entry.detail == f"G-EJKL, SHA-256 {verdict.manifest_sha256}"
+    body = get(client, "/records-export/").content.decode()
+    assert f"<td>G-EJKL, SHA-256 {verdict.manifest_sha256}</td>" in body
+    assert "<td>[Planning and Records Name]</td>" in body
+    assert "Export the Record of [Your Organisation]</button>" in body
+
+    whole = post(client, "/records-export/organisation/")
+    assert (
+        whole["Content-Disposition"]
+        == 'attachment; filename="Your-Organisation-records-2026-11-18.zip"'
+    )
+    files = opened(whole.content)
+    # The export of the organisation includes the log of the export before it.
+    assert [entry["kind"] for entry in files["access-log.json"]] == ["Records Exported"]
+    assert verify(whole.content).problems == ()
+
+
+def addresses(fleet: dict[str, Aircraft]):  # type: ignore[no-untyped-def]
+    return [
+        ("GET", "/records-export/", Action.EXPORT_RECORDS),
+        ("POST", "/records-export/organisation/", Action.EXPORT_RECORDS),
+        ("POST", f"/aircraft/{fleet['G-EJKL'].id}/export/", Action.EXPORT_RECORDS),
+    ]
+
+
+def call(client: Client, method: str, path: str) -> HttpResponse:
+    return get(client, path) if method == "GET" else post(client, path)
+
+
+def test_another_organisations_aircraft_cannot_be_exported(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-003, threats TH-020 and TH-080, planned test T-SEC-010."""
+    stranger = signed_in(sample.stranger)
+    assert post(stranger, f"/aircraft/{fleet['G-EJKL'].id}/export/").status_code == 404
+    assert "G-EJKL" not in get(stranger, "/records-export/").content.decode()
+    whole = post(stranger, "/records-export/organisation/")
+    text = json.dumps(opened(whole.content))
+    assert "G-EJKL" not in text
+    assert "Lucy Grant" not in text
+    assert str(sample.ours.id) not in text
+    assert "[Other Organisation]" in text
+
+
+@pytest.mark.parametrize(
+    "role", ["Administrator", "Airworthiness Review Staff", "Planning and Records", "Read Only"]
+)
+def test_the_export_pages_follow_the_role_matrix(
+    sample: Sample, fleet: dict[str, Aircraft], role: str
+) -> None:
+    """REQ-006, threat TH-008, planned test T-SEC-011. Refusals are logged."""
+    user = sample.by_role()[role]
+    client = signed_in(user)
+    refusals = 0
+    for method, path, action in addresses(fleet):
+        status = call(client, method, path).status_code
+        if permitted(user.roles, action):
+            assert status == 200, f"{role} {method} {path}"
+        else:
+            assert status == 403, f"{role} {method} {path}"
+            refusals += 1
+    with working_for(sample.ours.id, user.id):
+        logged = AccessEntry.objects.filter(user=user, kind="Action Refused").count()
+    assert logged == refusals
+    assert refusals == (3 if role == "Read Only" else 0)
+
+
+def test_the_export_pages_need_sign_in_and_refuse_forged_requests(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-008, threats TH-003 and TH-008, planned test T-SEC-005."""
+    anonymous = Client()
+    for method, path, _ in addresses(fleet):
+        response = call(anonymous, method, path)
+        assert response.status_code == 302, path
+        assert response["Location"].startswith("/sign-in/")
+    forged = Client(enforce_csrf_checks=True)
+    forged.force_login(
+        sample.lucy, backend="airworthiness_plus.accounts.backends.OrganisationBackend"
+    )
+    for method, path, _ in addresses(fleet):
+        if method == "POST":
+            assert post(forged, path).status_code == 403, path
+    with working_for(sample.ours.id, sample.lucy.id):
+        assert AccessEntry.objects.filter(kind="Records Exported").count() == 0

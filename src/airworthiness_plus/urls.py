@@ -5,6 +5,7 @@ from django.urls import URLPattern, URLResolver, path
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
 from airworthiness_plus.directives import views as directives
+from airworthiness_plus.exports import views as exports
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.reviews import views as reviews
@@ -133,6 +134,9 @@ urlpatterns: list[URLPattern | URLResolver] = [
         reviews.extension_copy_sent,
         name="extension_copy_sent",
     ),
+    path("records-export/", exports.exports_page, name="records_export"),
+    path("records-export/organisation/", exports.export_organisation, name="export_organisation"),
+    path("aircraft/<uuid:aircraft_id>/export/", exports.export_aircraft, name="export_aircraft"),
     path("sign-in/", accounts.sign_in_page, name="sign_in"),
     path("sign-in/code/", accounts.code_page, name="code"),
     path("sign-in/set-up/", accounts.set_up_page, name="set_up"),
