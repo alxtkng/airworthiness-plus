@@ -35,6 +35,8 @@ class Organisation(Record):
         max_length=20, choices=ApprovalType.choices, default=ApprovalType.PART_CAO
     )
     approval_reference = models.CharField(max_length=40)
+    # CAA Form 15c carries the organisation's name, address and approval reference.
+    address = models.CharField(max_length=300, blank=True)
     privileges = ArrayField(models.CharField(max_length=40, choices=Privilege.choices))
     scope_of_work = models.TextField()
     # How close a limit must be to count as Due Soon (REQ-055). Ours, not the

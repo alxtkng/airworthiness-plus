@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ aircraft.registration }}, Airworthiness Review{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+<h2>Airworthiness Review of {{ aircraft.registration }}</h2>
+{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+<dl>
+<dt>Review Staff</dt><dd>{{ review.staff.user.full_name }}, {{ review.staff.authorisation_reference }}</dd>
+<dt>Started</dt><dd>{{ review.started_on|long_date }}</dd>
+<dt>Assisted at the Survey By</dt><dd>{{ review.assisted_by }}</dd>
+<dt>Airframe Flight Hours at the Review</dt><dd>{{ review.airframe_hours|hours }}</dd>
+<dt>Maintenance Programme</dt><dd>{{ review.programme_discrepancy }}</dd>
+<dt>Certificate</dt><dd>{% if review.certificate %}<a href="{% url 'certificate' review.certificate.id %}">{{ review.certificate.reference }}</a>{% else %}Not Yet Issued{% endif %}</dd>
+</dl>
+<table>
+<thead>
+<tr><th>Point</th><th>To Be Verified</th><th>Result</th><th>Evidence Sampled</th><th>Finding</th><th>Record</th></tr>
+</thead>
+<tbody>
+{% for item in items %}
+<tr>
+<td>{{ item.reference }}</td>
+<td>{{ item.label }}</td>
+<td>{% if item.result %}{{ item.result }}{% else %}To Be Verified{% endif %}</td>
+<td>{{ item.evidence }}</td>
+<td>{% if item.finding %}{{ item.finding }}{% if item.closed_on %}, Closed {{ item.closed_on|long_date }}, {{ item.closure }}{% else %}, Open{% endif %}{% endif %}</td>
+<td>{% if not review.certificate %}
+<form method="post" action="{% url 'record_review_item' item.id %}">{% csrf_token %}{% for field in item_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Record {{ item.reference }}</button></form>
+{% if item.open_finding %}<form method="post" action="{% url 'close_review_finding' item.id %}">{% csrf_token %}{% for field in closure_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Close Finding</button></form>{% endif %}
+{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% if not review.certificate %}
+<h2>Survey, Hours and Maintenance Programme</h2>
+<form method="post" action="{% url 'review_details' review.id %}">
+{% csrf_token %}
+{% for field in details_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}<p><button type="submit">Save</button></p>
+</form>
+<h2>Issue the Certificate for {{ aircraft.registration }}</h2>
+{% if outstanding %}
+<ul>
+{% for reason in outstanding %}<li>{{ reason }}</li>
+{% endfor %}</ul>
+{% else %}
+<form method="post" action="{% url 'issue_certificate' review.id %}">
+{% csrf_token %}
+<button type="submit">Issue Airworthiness Review Certificate for {{ aircraft.registration }}</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

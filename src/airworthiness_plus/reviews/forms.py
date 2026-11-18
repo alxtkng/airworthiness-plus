@@ -3,7 +3,7 @@
 from django import forms
 
 from airworthiness_plus.accounts.models import User
-from airworthiness_plus.reviews.models import ReviewStaff
+from airworthiness_plus.reviews.models import ProgrammeDiscrepancy, Result, ReviewStaff
 
 
 class CertificateForm(forms.Form):
@@ -97,3 +97,41 @@ class RestorationForm(forms.Form):
         self.fields["supervisor"].queryset = ReviewStaff.objects.filter(  # type: ignore[attr-defined]
             left_on__isnull=True
         )
+
+
+class ItemForm(forms.Form):
+    """Record the result of one point of a review. No result is chosen in advance."""
+
+    result = forms.ChoiceField(label="Result", choices=[("", "Choose"), *Result.choices])
+    evidence = forms.CharField(label="Evidence Sampled", max_length=300)
+    finding = forms.CharField(label="Finding", max_length=300, required=False)
+
+
+class ClosureForm(forms.Form):
+    """Record how a finding was closed."""
+
+    closure = forms.CharField(label="How It Was Closed", max_length=300)
+
+
+class DetailsForm(forms.Form):
+    """Record who assisted at the survey, the airframe hours and the state of the programme."""
+
+    assisted_by = forms.CharField(label="Assisted at the Survey By", max_length=200, required=False)
+    airframe_hours = forms.DecimalField(
+        label="Airframe Flight Hours at the Review",
+        max_digits=8,
+        decimal_places=1,
+        min_value=0,
+        required=False,
+    )
+    programme_discrepancy = forms.ChoiceField(
+        label="Maintenance Programme",
+        choices=[("", "Choose"), *ProgrammeDiscrepancy.choices],
+        required=False,
+    )
+
+
+class VoidForm(forms.Form):
+    """Void a certificate."""
+
+    reason = forms.CharField(label="Reason", max_length=200)

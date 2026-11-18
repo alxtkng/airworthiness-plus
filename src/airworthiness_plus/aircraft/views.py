@@ -22,6 +22,7 @@ from airworthiness_plus.aircraft import services
 from airworthiness_plus.aircraft.forms import (
     AddAircraftForm,
     CounterForm,
+    DetailsForm,
     RecordsReceivedForm,
     UnserviceableForm,
     UtilisationForm,
@@ -129,7 +130,29 @@ def aircraft_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
         (counter, services.current_reading(counter), list(counter.entries.all()))
         for counter in aircraft.counters.all()
     ]
-    return render(request, "aircraft/aircraft.html", {"aircraft": aircraft, "counters": counters})
+    details = DetailsForm(
+        initial={
+            "serial_number": aircraft.serial_number,
+            "manufacturer": aircraft.manufacturer,
+            "designation": aircraft.designation,
+        }
+    )
+    return render(
+        request,
+        "aircraft/aircraft.html",
+        {"aircraft": aircraft, "counters": counters, "details_form": details},
+    )
+
+
+@requires(Action.ADD_OR_CHANGE_AIRCRAFT)
+@require_POST
+def record_details(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """Record the serial number, manufacturer and designation of an aircraft."""
+    aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
+    form = DetailsForm(request.POST)
+    if form.is_valid():
+        services.record_details(aircraft, **form.cleaned_data)
+    return redirect("aircraft", aircraft_id=aircraft.id)
 
 
 @never_cache
@@ -152,6 +175,8 @@ def add_aircraft(request: HttpRequest) -> HttpResponse:
                     registration=data["registration"],
                     type_rating=data["type_rating"],
                     serial_number=data["serial_number"],
+                    manufacturer=data["manufacturer"],
+                    designation=data["designation"],
                     owner=data["owner"],
                     regime=Regime(data["regime"]),
                     airframe=airframe,

@@ -14,6 +14,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("transfers/", aircraft.transfers, name="transfers"),
     path("aircraft/add/", aircraft.add_aircraft, name="add_aircraft"),
     path("aircraft/<uuid:aircraft_id>/", aircraft.aircraft_page, name="aircraft"),
+    path("aircraft/<uuid:aircraft_id>/details/", aircraft.record_details, name="aircraft_details"),
     path(
         "aircraft/<uuid:aircraft_id>/hours-and-cycles/",
         aircraft.enter_utilisation,
@@ -113,6 +114,14 @@ urlpatterns: list[URLPattern | URLResolver] = [
         reviews.record_certificate,
         name="record_certificate",
     ),
+    path("aircraft/<uuid:aircraft_id>/review/start/", reviews.start_review, name="start_review"),
+    path("reviews/<uuid:review_id>/", reviews.review_page, name="review"),
+    path("reviews/<uuid:review_id>/details/", reviews.review_details, name="review_details"),
+    path("reviews/<uuid:review_id>/issue/", reviews.issue, name="issue_certificate"),
+    path("review-items/<uuid:item_id>/", reviews.record_item, name="record_review_item"),
+    path("review-items/<uuid:item_id>/close/", reviews.close_finding, name="close_review_finding"),
+    path("certificates/<uuid:certificate_id>/", reviews.certificate_page, name="certificate"),
+    path("certificates/<uuid:certificate_id>/void/", reviews.void, name="void_certificate"),
     path("certificates/<uuid:certificate_id>/extend/", reviews.extend, name="extend_certificate"),
     path(
         "certificates/<uuid:certificate_id>/copy-sent/",

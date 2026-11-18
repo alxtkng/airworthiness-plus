@@ -146,7 +146,7 @@ def test_g_cdef_early_review_keeps_the_pattern_and_the_copy_is_owed(
     assert "<td>379 Days</td>" in cdef  # 12 in November, 365 to 30 November 2027, 2 in December
     assert "<td>To Be Sent by 21 November 2026, Due Soon</td>" in cdef
     detail = page(signed_in(sample.reader), f"/aircraft/{fleet['G-CDEF'].id}/review/")
-    assert "<td>UK.CAO.[Number]-ARC-0001</td>" in detail
+    assert ">UK.CAO.[Number]-ARC-0001</a></td>" in detail
     assert "<td>Lucy Grant, [Authorisation Reference 1]</td>" in detail
     assert "<td>Superseded</td>" in detail
 

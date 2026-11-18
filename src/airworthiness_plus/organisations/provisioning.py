@@ -26,6 +26,7 @@ def provision_organisation(
     first_user_username: str,
     first_user_full_name: str,
     first_user_password: str | None = None,
+    address: str = "",
 ) -> tuple[Organisation, User]:
     """Create the organisation and one Administrator, who can then add the others.
 
@@ -40,6 +41,7 @@ def provision_organisation(
             name=name,
             approval_type=ApprovalType.PART_CAO,
             approval_reference=approval_reference,
+            address=address,
             privileges=list(privileges),
             scope_of_work=scope_of_work,
         )

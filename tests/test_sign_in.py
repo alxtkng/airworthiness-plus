@@ -546,6 +546,7 @@ def test_an_organisation_is_set_up_from_the_command_line(
         [
             "[Your Organisation]",
             "UK.CAO.[Number]",
+            "[Organisation Address]",
             "Aeroplanes 2,730 Kilograms Maximum Take-Off Mass or Less",
             "Yes",
             "Yes",
@@ -560,6 +561,7 @@ def test_an_organisation_is_set_up_from_the_command_line(
     with as_owner():
         call_command("set_up_organisation")
         organisation = Organisation.objects.get()
+    assert organisation.address == "[Organisation Address]"
     assert organisation.privileges == [
         "Maintenance",
         "Continuing Airworthiness Management",
@@ -570,8 +572,8 @@ def test_an_organisation_is_set_up_from_the_command_line(
 
 def test_a_weak_password_is_refused_at_set_up(monkeypatch: pytest.MonkeyPatch) -> None:
     """Threat TH-001. At least 12 characters, and not a common password."""
-    answers = iter(["[Your Organisation]", "UK.CAO.[Number]", "Scope", "Yes", "No", "No", "No"])
-    answers = iter([*answers, "Lucy Grant", LUCY])
+    answers = iter(["[Your Organisation]", "UK.CAO.[Number]", "[Organisation Address]", "Scope"])
+    answers = iter([*answers, "Yes", "No", "No", "No", "Lucy Grant", LUCY])
     monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
     monkeypatch.setattr("getpass.getpass", lambda prompt: "password")
     with as_owner(), pytest.raises(CommandError, match="too short"):

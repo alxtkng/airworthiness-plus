@@ -42,6 +42,9 @@ class Aircraft(Record):
     registration = models.CharField("Aircraft Registration", max_length=10)
     type_rating = models.CharField("Type Rating", max_length=200)
     serial_number = models.CharField("Serial Number", max_length=60, blank=True)
+    # As CAA Form 15c asks for them, beside the type rating.
+    manufacturer = models.CharField("Aircraft Manufacturer", max_length=100, blank=True)
+    designation = models.CharField("Manufacturer's Designation", max_length=100, blank=True)
     owner = models.CharField("Owned By", max_length=200)
     regime = models.CharField("Regime", max_length=20, choices=Regime.choices)
     status = models.CharField(

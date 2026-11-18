@@ -200,6 +200,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
         "reviews_certificate": {"certificate_serial", "certificate_fixed"},
+        "reviews_review": {"review_fixed"},
+        "reviews_reviewitem": {"reviewitem_fixed"},
     }
     required_triggers = {"history_refuse_delete", "history_refuse_truncate", "history_write"}
     for name in sorted(records):

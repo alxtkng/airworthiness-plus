@@ -8,6 +8,8 @@
 <dt>Aircraft Registration</dt><dd>{{ aircraft.registration }}</dd>
 <dt>Type Rating</dt><dd>{{ aircraft.type_rating }}</dd>
 <dt>Serial Number</dt><dd>{{ aircraft.serial_number }}</dd>
+<dt>Aircraft Manufacturer</dt><dd>{{ aircraft.manufacturer }}</dd>
+<dt>Manufacturer&#8217;s Designation</dt><dd>{{ aircraft.designation }}</dd>
 <dt>Owned By</dt><dd>{{ aircraft.owner }}</dd>
 <dt>Regime</dt><dd>{{ aircraft.regime }}</dd>
 <dt>Status</dt><dd>{{ aircraft.status }}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
@@ -30,6 +32,12 @@
 <button type="submit">Record as Serviceable</button>
 </form>
 {% endif %}
+<h2>Details of {{ aircraft.registration }}</h2>
+<form method="post" action="{% url 'aircraft_details' aircraft.id %}">
+{% csrf_token %}
+{% for field in details_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}<p><button type="submit">Save Details of {{ aircraft.registration }}</button></p>
+</form>
 {% for counter, current, entries in counters %}
 <h2>{{ counter.kind }}{% if counter.position %}, {{ counter.position }}{% endif %}</h2>
 <dl>

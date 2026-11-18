@@ -13,6 +13,10 @@ class AddAircraftForm(forms.Form):
     registration = forms.CharField(label="Aircraft Registration", max_length=10)
     type_rating = forms.CharField(label="Type Rating", max_length=200, strip=False)
     serial_number = forms.CharField(label="Serial Number", max_length=60, required=False)
+    manufacturer = forms.CharField(label="Aircraft Manufacturer", max_length=100, required=False)
+    designation = forms.CharField(
+        label="Manufacturer's Designation", max_length=100, required=False
+    )
     owner = forms.CharField(label="Owned By", max_length=200)
     regime = forms.ChoiceField(label="Regime", choices=Regime.choices)
     dated = forms.DateField(label="Date of Airframe Hours", required=False)
@@ -31,6 +35,18 @@ class AddAircraftForm(forms.Form):
         if any(given) and not all(given):
             raise forms.ValidationError("Give the Date, Hours and Cycles Together")
         return cleaned
+
+
+class DetailsForm(forms.Form):
+    """The entries CAA Form 15c carries for the aircraft besides its registration."""
+
+    serial_number = forms.CharField(label="Aircraft Serial Number", max_length=60, required=False)
+    manufacturer = forms.CharField(label="Aircraft Manufacturer", max_length=100, required=False)
+    designation = forms.CharField(
+        label="Manufacturer\N{RIGHT SINGLE QUOTATION MARK}s Designation",
+        max_length=100,
+        required=False,
+    )
 
 
 class UtilisationForm(forms.Form):
