@@ -1,5 +1,7 @@
 """The organisation record (REQ-001)."""
 
+from decimal import Decimal
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
@@ -35,6 +37,11 @@ class Organisation(Record):
     approval_reference = models.CharField(max_length=40)
     privileges = ArrayField(models.CharField(max_length=40, choices=Privilege.choices))
     scope_of_work = models.TextField()
+    # How close a limit must be to count as Due Soon (REQ-055). Ours, not the
+    # regulation's, and each organisation may set its own.
+    due_soon_days = models.PositiveSmallIntegerField(default=30)
+    due_soon_hours = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal("10.0"))
+    due_soon_cycles = models.PositiveSmallIntegerField(default=10)
 
     class Meta:
         constraints = [
@@ -49,6 +56,10 @@ class Organisation(Record):
                     ]
                 ),
                 name="organisation_has_known_privileges",
+            ),
+            models.CheckConstraint(
+                condition=Q(due_soon_hours__gte=0),
+                name="organisation_due_soon_hours_not_below_zero",
             ),
             # CAO.A.095(c): airworthiness review is open to an organisation
             # whose approval includes maintenance or continuing airworthiness

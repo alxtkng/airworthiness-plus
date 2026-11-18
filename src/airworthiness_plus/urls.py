@@ -4,6 +4,7 @@ from django.urls import URLPattern, URLResolver, path
 
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
+from airworthiness_plus.programme import views as programme
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
@@ -31,6 +32,21 @@ urlpatterns: list[URLPattern | URLResolver] = [
         aircraft.records_received,
         name="records_received",
     ),
+    path("aircraft/<uuid:aircraft_id>/programme/", programme.programme_page, name="programme"),
+    path(
+        "aircraft/<uuid:aircraft_id>/programme/set-up/",
+        programme.set_up_programme,
+        name="set_up_programme",
+    ),
+    path("aircraft/<uuid:aircraft_id>/programme/tasks/add/", programme.add_task, name="add_task"),
+    path(
+        "aircraft/<uuid:aircraft_id>/programme/review/",
+        programme.record_review,
+        name="record_review",
+    ),
+    path("aircraft/<uuid:aircraft_id>/work/add/", programme.record_work, name="record_work"),
+    path("tasks/<uuid:task_id>/retire/", programme.retire_task, name="retire_task"),
+    path("work/<uuid:work_id>/release/", programme.record_release, name="record_release"),
     path("sign-in/", accounts.sign_in_page, name="sign_in"),
     path("sign-in/code/", accounts.code_page, name="code"),
     path("sign-in/set-up/", accounts.set_up_page, name="set_up"),

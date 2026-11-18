@@ -14,11 +14,13 @@ from django.utils import timezone
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.aircraft import services
-from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.aircraft.models import Aircraft, CounterKind
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.organisations.models import Organisation, Privilege
 from airworthiness_plus.organisations.provisioning import provision_organisation
-from airworthiness_rules.intervals import Reading
+from airworthiness_plus.programme import services as programme_services
+from airworthiness_plus.programme.models import Basis, InspectionCategory, Task
+from airworthiness_rules.intervals import Interval, Reading, TaskKind
 from tests.conftest import as_owner
 
 TODAY = date(2026, 11, 18)
@@ -147,3 +149,86 @@ def signed_in(user: User) -> Client:
     session["last_seen"] = now
     session.save()
     return client
+
+
+def add_sample_programmes(sample: Sample, fleet: dict[str, Aircraft]) -> dict[str, Task]:
+    """Add the programmes, tasks and work done of SampleData.md, Maintenance Programme Inputs.
+
+    G-BXYZ and G-FMNO are taken to be on the Minimum Inspection Programme.
+    G-ABCD and G-CDEF are on the design approval holder's instructions.
+    """
+    tasks: dict[str, Task] = {}
+
+    def airframe(registration: str):  # type: ignore[no-untyped-def]
+        return fleet[registration].counters.get(kind=CounterKind.AIRFRAME)
+
+    def done(registration: str, task: Task, on: date, hours: str) -> None:
+        programme_services.record_work(
+            fleet[registration],
+            task=task,
+            description=task.title,
+            dated=on,
+            hours=Decimal(hours),
+            cycles=0,
+            release_reference="[Release Reference]",
+            release_recorded_on=on,
+        )
+
+    with working_for(sample.ours.id, sample.lucy.id):
+        abcd = programme_services.set_up_programme(
+            fleet["G-ABCD"],
+            basis=Basis.INSTRUCTIONS,
+            reference="[Programme Reference]",
+            hours_per_day=Decimal("0.8"),
+        )
+        tasks["G-ABCD"] = programme_services.add_task(
+            abcd,
+            title="50-Hour Check",
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=airframe("G-ABCD"),
+            source="[Maintenance Manual Reference]",
+            interval=Interval(hours=Decimal("50")),
+        )
+        done("G-ABCD", tasks["G-ABCD"], date(2026, 10, 2), "6375.0")
+
+        for registration, title, on, hours, rate in (
+            ("G-BXYZ", "100-Hour or Annual Check", date(2026, 7, 30), "3259.0", "0.5"),
+            ("G-FMNO", "Annual Check", date(2026, 2, 4), "4912.0", "0.2"),
+        ):
+            programme = programme_services.set_up_programme(
+                fleet[registration],
+                basis=Basis.MINIMUM_INSPECTION_PROGRAMME,
+                inspection_category=InspectionCategory.AEROPLANE,
+                reference="[Programme Reference]",
+                hours_per_day=Decimal(rate),
+            )
+            tasks[registration] = programme_services.add_task(
+                programme,
+                title=title,
+                kind=TaskKind.MINIMUM_INSPECTION_PROGRAMME,
+                counter=airframe(registration),
+                source="ML.A.302(d), AMC1 ML.A.302(d)",
+                interval=Interval(hours=Decimal("100"), months=12),
+            )
+            done(registration, tasks[registration], on, hours)
+
+        # G-CDEF: the engine counts hours since its overhaul; overhaul every 2,000 hours.
+        cdef = programme_services.set_up_programme(
+            fleet["G-CDEF"],
+            basis=Basis.INSTRUCTIONS,
+            reference="[Programme Reference]",
+            hours_per_day=Decimal("0.6"),
+        )
+        engine = services.add_counter(fleet["G-CDEF"], CounterKind.ENGINE, "Engine 1")
+        services.enter_utilisation(engine, Reading(TODAY, Decimal("1780.0"), 0))
+        tasks["G-CDEF"] = programme_services.add_task(
+            cdef,
+            title="Engine Overhaul",
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=engine,
+            source="[Engine Manufacturer's Service Instruction]",
+            interval=Interval(hours=Decimal("2000")),
+            starts=Reading(date(2019, 3, 12), Decimal("0.0"), 0),
+        )
+        programme_services.record_review(cdef, date(2026, 11, 11))
+    return tasks

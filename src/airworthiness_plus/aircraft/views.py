@@ -7,6 +7,7 @@ is not found, because the database does not show it (REQ-003).
 
 import uuid
 from dataclasses import dataclass
+from datetime import date
 
 from django.db import DatabaseError, transaction
 from django.http import HttpRequest, HttpResponse
@@ -32,15 +33,34 @@ from airworthiness_rules.utilisation import EntryRefusedError
 
 @dataclass(frozen=True)
 class FleetRow:
-    """One line of the Fleet: the aircraft and its current airframe total."""
+    """One line of the Fleet: the aircraft, what is due next and its airframe total."""
 
     aircraft: Aircraft
     airframe: Reading | None
+    next_due: str
 
 
 def _airframe(aircraft: Aircraft) -> Reading | None:
     counter = aircraft.counters.filter(kind=CounterKind.AIRFRAME).first()
     return services.current_reading(counter) if counter is not None else None
+
+
+def _next_due(aircraft: Aircraft, today: date) -> str:
+    """Return what is due next on the aircraft, as the Fleet shows it (REQ-043, REQ-044).
+
+    The order across tasks is a projection from the planning utilisation.
+    When some task cannot be placed in it, the Fleet says so.
+    """
+    from airworthiness_plus.programme import due
+
+    lines = due.due_lines(aircraft, today)
+    if not lines:
+        return ""
+    first, complete = due.next_due(lines)
+    if not first:
+        return "Not Ranked, No Planning Utilisation"
+    shown = "; ".join(line.summary for line in first)
+    return shown if complete else f"{shown}; Other Tasks Not Ranked"
 
 
 def _user(request: HttpRequest) -> User:
@@ -53,7 +73,11 @@ def _user(request: HttpRequest) -> User:
 @requires(Action.VIEW_RECORDS)
 def fleet(request: HttpRequest) -> HttpResponse:
     """The Fleet: aircraft under management (Decisions.md, Interface)."""
-    rows = [FleetRow(a, _airframe(a)) for a in Aircraft.objects.filter(stage=Stage.FLEET)]
+    today = services.today()
+    rows = [
+        FleetRow(aircraft, _airframe(aircraft), _next_due(aircraft, today))
+        for aircraft in Aircraft.objects.filter(stage=Stage.FLEET)
+    ]
     return render(request, "aircraft/fleet.html", {"rows": rows})
 
 
