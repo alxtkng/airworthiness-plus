@@ -60,6 +60,7 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Status dots: amber and red only, green only in a Status column.
 - Percentages use the % sign.
 - Day counts are exact: from 18 November to 6 December is 18 days. Amber for due soon, red only when overdue.
+- Tolerance, decided 18 November 2026: a tolerance never moves a due point. Each limit shows its due point and, where a tolerance applies, the last point the tolerance allows. A limit that has been passed while its tolerance has not is Within Tolerance, shown in amber with the words and what remains of the tolerance; it is Overdue, in red, only once the tolerance is passed. The task counts as due from the limit itself, and the task is shown by its worst limit: one limit Overdue makes the task Overdue. A tolerance is accepted only for an inspection of the Minimum Inspection Programme (ML.A.302(d)(1)) and is refused for an airworthiness directive, an airworthiness limitation or a life limit (ML.A.303, GM1 ML.A.302(c)(4)). When the calendar tolerance ends after the airworthiness review certificate, the system says so (AMC1 ML.A.302(d)). The states, words and colours are ours, not the regulation's.
 - Whichever comes first, decided 18 November 2026: every limit of a task (hours, cycles, calendar) is always calculated exactly and shown. To say which comes first, limits in hours or cycles are projected to a date using the aircraft's planning utilisation, rounded down to whole days so the projection is never late. Limits that fall on the same day are shown together. With no planning utilisation recorded, no limit is ranked above another and all are shown. The projection is for planning only; the task is due when any limit is reached.
 - A calendar interval in months lands on the same day of the month, or on the last day of a shorter month (31 January plus 1 month is 28 or 29 February). Our rule, not the regulation's.
 - Due Soon defaults, decided 18 November 2026 and adjustable for each organisation: 30 days, 10.0 hours or 10 cycles remaining, whichever limit governs. An airworthiness review certificate is Due Soon at 30 days; the 90-day early review window is shown in words, not colour. A regulatory deadline of 30 days or fewer (release to service in the records, copy of the review certificate to the Civil Aviation Authority) is Due Soon from the day it starts. These numbers are ours, not the regulation's.
@@ -74,7 +75,7 @@ The running record for Airworthiness+. Read it before any change, and check ever
 
 ## Regulation Facts in Use
 
-Confirmed against the UK text in the Civil Aviation Authority Regulatory Library (regulatorylibrary.caa.co.uk/1321-2014) on 18 November 2026: ML.A.305, ML.A.901, ML.A.903 and AMC1 CAO.A.045. Other rows are as recorded during discovery and are confirmed as each is used (Issue #38).
+Confirmed against the UK text in the Civil Aviation Authority Regulatory Library (regulatorylibrary.caa.co.uk/1321-2014) on 18 November 2026: ML.A.302, ML.A.303, ML.A.305, ML.A.901, ML.A.903, AMC1 ML.A.302, AMC1 ML.A.302(c), AMC1 ML.A.302(d), GM1 ML.A.302, GM1 ML.A.302(c)(3), GM1 ML.A.302(c)(4) and AMC1 CAO.A.045. That reading corrected two sources below: the Minimum Inspection Programme intervals and tolerance are in the rule itself, ML.A.302(d)(1), and the annual review of the programme is ML.A.302(c)(9). Other rows are as recorded during discovery and are confirmed as each is used (Issue #38).
 
 | Fact | Value | Source |
 |---|---|---|
@@ -86,8 +87,13 @@ Confirmed against the UK text in the Civil Aviation Authority Regulatory Library
 | Copy of review certificate to the Civil Aviation Authority | Within 10 days of the date of issue or extension | ML.A.903(f) |
 | Airworthiness review staff recency | 6 months of continuing airworthiness management in every 2-year period, or 1 review in the last 12-month period | CAO.A.045(c), AMC1 CAO.A.045(c), CAMO.A.305 |
 | Certifying staff authorisation | Licence valid, 6 months (or 100 days) of experience in 2 years, recurrent training in 2 years | CAO.A.040, 66.A.20(b), 145.A.35 |
-| Minimum Inspection Programme | Annual or 100 hours, whichever first; tolerance 1 month or 10 hours, next interval from when done | AMC ML.A.302 |
-| Maintenance programme review | At least annually | ML.A.302 |
+| Minimum Inspection Programme | Aeroplanes, touring motor gliders and balloons: annual or 100 hours, whichever first, tolerance 1 month or 10 hours. Sailplanes and powered sailplanes other than touring motor gliders: annual, tolerance 1 month. Next interval from when the inspection is done | ML.A.302(d)(1)(a), (b); AMC1 ML.A.302(d) |
+| Tolerance and the review certificate | Using the 1-month tolerance for the annual inspection may result in an expired airworthiness review certificate | AMC1 ML.A.302(d) |
+| Tolerance is a one-time extension | The tolerance is a permitted variation for a one-time extension of the interval; scheduled maintenance does not otherwise deviate from the programme | GM1 ML.A.302(c)(3), GM1 ML.A.302 |
+| No Minimum Inspection Programme for airships and rotorcraft | Programme based on the design approval holder's instructions | ML.A.302(d) |
+| Airworthiness directive | Carried out within the requirements of the directive unless the Civil Aviation Authority specifies otherwise | ML.A.303 |
+| Mandatory continuing airworthiness information | Intervals cannot be extended by a CAMO or CAO; escalation is approved by the Civil Aviation Authority | GM1 ML.A.302(c)(4) |
+| Maintenance programme review | At least annually | ML.A.302(c)(9) |
 | Occurrence report | Within 72 hours, then a follow-up | ML.A.202, M.A.202 |
 | Part-CAO own-procedure changes | Notified within 15 days | CAO.A.105 |
 | Level 2 finding | Corrective action within 3 months, extendable with a plan | CAO.B.050, CAMO.B.350 |
