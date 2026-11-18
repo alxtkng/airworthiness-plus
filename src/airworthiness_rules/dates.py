@@ -50,3 +50,17 @@ def add_years(start: date, years: int) -> date:
         return start.replace(year=start.year + years)
     except ValueError:
         return start.replace(year=start.year + years, day=28)
+
+
+def add_months(start: date, months: int) -> date:
+    """Return the same day of the month ``months`` months later (REQ-047).
+
+    Lands on the last day of the month when that month is shorter:
+    31 January plus 1 month is 28 or 29 February.
+    """
+    index = start.year * 12 + (start.month - 1) + months
+    year, month = divmod(index, 12)
+    month += 1
+    first_of_next = date(year + (month == 12), month % 12 + 1, 1)
+    last_day = (first_of_next - timedelta(days=1)).day
+    return date(year, month, min(start.day, last_day))
