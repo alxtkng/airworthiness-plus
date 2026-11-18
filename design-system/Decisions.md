@@ -60,6 +60,8 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Status dots: amber and red only, green only in a Status column.
 - Percentages use the % sign.
 - Day counts are exact: from 18 November to 6 December is 18 days. Amber for due soon, red only when overdue.
+- Whichever comes first, decided 18 November 2026: every limit of a task (hours, cycles, calendar) is always calculated exactly and shown. To say which comes first, limits in hours or cycles are projected to a date using the aircraft's planning utilisation, rounded down to whole days so the projection is never late. Limits that fall on the same day are shown together. With no planning utilisation recorded, no limit is ranked above another and all are shown. The projection is for planning only; the task is due when any limit is reached.
+- A calendar interval in months lands on the same day of the month, or on the last day of a shorter month (31 January plus 1 month is 28 or 29 February). Our rule, not the regulation's.
 - Due Soon defaults, decided 18 November 2026 and adjustable for each organisation: 30 days, 10.0 hours or 10 cycles remaining, whichever limit governs. An airworthiness review certificate is Due Soon at 30 days; the 90-day early review window is shown in words, not colour. A regulatory deadline of 30 days or fewer (release to service in the records, copy of the review certificate to the Civil Aviation Authority) is Due Soon from the day it starts. These numbers are ours, not the regulation's.
 - The Fleet lists aircraft under management. An aircraft being transferred in appears on the Transfers tab until its records are complete.
 

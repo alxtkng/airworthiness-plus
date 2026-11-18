@@ -53,10 +53,10 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | REQ-041 | A programme task has an interval in hours, calendar time, cycles, or any combination | Brief Part 5; ML.A.302 (R) | Must | Test |
 | REQ-042 | For each task the system calculates the next due point for each limit it has: a due date, due hours and due cycles | ML.A.302 (R) | Must | Test, Golden, Independent |
 | REQ-043 | Whichever limit comes first governs. The system shows which limit governs and the remaining amount in that limit's unit | Brief Part 5; AMC ML.A.302 (R, Minimum Inspection Programme: annual or 100 hours, whichever first) | Must | Golden (G-BXYZ, 100-Hour or Annual Check, 41.0 hours), property-based, Independent |
-| REQ-044 | Where limits in different units cannot be ranked without a forecast, the system shows every limit's remaining amount and does not guess a utilisation rate | Hazard H-001 | Must | Test |
+| REQ-044 | Hours and cycles limits are ranked against calendar limits by projecting them to a date with the aircraft's planning utilisation, rounded down to whole days. Limits on the same day are shown together. With no planning utilisation recorded, no limit is ranked above another and every limit is shown. The projection is never used to decide that a task is not yet due | Decisions.md, Interface (D, decided 18 November 2026); hazard H-001 | Must | Test |
 | REQ-045 | Remaining hours are due hours minus current hours. Golden: G-ABCD 50-Hour Check, 12.4 hours | ML.A.302 (R); SampleData.md, Fleet | Must | Golden, Independent |
 | REQ-046 | Remaining days are an exact count of UK local dates from today to the due date. From 18 November 2026 to 6 December 2026 is 18 days. Golden: G-FMNO Annual Check, 78 days | Decisions.md, Interface | Must | Golden, Independent, boundary tests (leap years, month ends, British Summer Time changes) |
-| REQ-047 | A calendar interval in months lands on the same day of the month, or the last day of a shorter month. The rule is stated once and used everywhere | (D) to be recorded as an Architecture Decision Record; no regulatory source found, To Be Checked | Must | Test, property-based |
+| REQ-047 | A calendar interval in months lands on the same day of the month, or the last day of a shorter month. The rule is stated once and used everywhere | Decisions.md, Interface (D, decided 18 November 2026). Our rule, not the regulation's | Must | Test, property-based |
 | REQ-048 | For the Minimum Inspection Programme the tolerance is 1 month or 10 hours, and when the tolerance is used the next interval runs from when the task was done | AMC ML.A.302 (R) | Must | Test, Independent |
 | REQ-049 | A tolerance or permitted variation is never applied to an airworthiness directive, an airworthiness limitation or a life limit | CAP 562 5-30, 5-40 (R, national regime); Part-ML equivalent To Be Checked | Must | Test |
 | REQ-050 | Each accomplishment of a task is recorded with the date, hours and cycles at accomplishment and the release to service reference. Earlier accomplishments are kept | ML.A.305 (R); CAP 562 C-90 (R) | Must | Test |
@@ -174,5 +174,4 @@ These block verification of the requirements named, not the start of building.
 |---|---|---|
 | Confirm every (N) reference against the UK text | All with (N) | Issue #38 |
 | Last day of validity of a certificate that does not keep the pattern. ML.A.901(a) says only "valid for 1 year"; CAA Form 15c not yet read | REQ-103 | Issue #38 |
-| Month-interval rule at month ends | REQ-047 | Architecture Decision Record, Step 4 |
 | Role matrix | REQ-006, REQ-007 | Decisions.md, with Step 4 |

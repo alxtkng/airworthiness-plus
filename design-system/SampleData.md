@@ -27,6 +27,20 @@ Every page uses this data. Placeholders in square brackets stand for real values
 | G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Engine Overhaul, 220 Hours | 2 December 2027 | 7,731.5 |
 | G-HKLM | Piper PA-38 Series (Lycoming) | [Owner Name] | Transfer In | Records 14 of 18 Received | | |
 
+## Maintenance Programme Inputs
+
+The Fleet table shows results. These are the inputs that produce them, added on 18 November 2026 so that the golden test cases can be worked by hand. They are chosen to agree with the Fleet table; nothing in the Fleet table changes.
+
+| Aircraft Registration | Task | Interval | Last Done | Airframe Hours When Done | Planning Utilisation |
+|---|---|---|---|---|---|
+| G-ABCD | 50-Hour Check | 50 hours | 2 October 2026 | 6,375.0 | 0.8 hours a day |
+| G-BXYZ | 100-Hour or Annual Check | 100 hours or 12 months, whichever comes first | 30 July 2026 | 3,259.0 | 0.5 hours a day |
+| G-FMNO | Annual Check | 100 hours or 12 months, whichever comes first | 4 February 2026 | 4,912.0 | 0.2 hours a day |
+
+- G-ABCD: due at 6,425.0 hours; 6,425.0 less 6,412.6 is 12.4 hours.
+- G-BXYZ: due at 3,359.0 hours (41.0 hours remaining) or on 30 July 2027 (254 days). At 0.5 hours a day 41.0 hours is 82 days, so hours come first.
+- G-FMNO: due at 5,012.0 hours (61.8 hours remaining) or on 4 February 2027 (78 days). At 0.2 hours a day 61.8 hours is 309 days, so the calendar limit comes first.
+
 ## Work in Progress
 
 - WP-2026-046, G-DGHI, stabilator trim cable rectification, 5 of 7 tasks closed.
