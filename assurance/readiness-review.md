@@ -24,7 +24,7 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 643 tests pass, on every change, against PostgreSQL in the pipeline. Eight of them run the table script in a real browser.
+- 645 tests pass, on every change, against PostgreSQL in the pipeline. Eight of them run the table script in a real browser.
 
 The eleven that are not:
 
@@ -54,7 +54,7 @@ Carried with it: the readings of the regulation that those records mark for Alex
 
 **Met, as far as our own testing can say.**
 
-- Open defect Issues: 69 (seven ASVS requirements met in part when raised; four since met, three left) and 71 (three differences found by dogfooding; D-3 since fixed, D-4 and D-5 are questions). Neither is high severity.
+- Open defect Issues: 69 (seven ASVS requirements met in part when raised; five since met, two accepted for private beta) and 71 (three differences found by dogfooding; D-3 fixed, D-5 decided, D-4 a question). Neither is high severity.
 - `pip-audit` passes on every change. No vulnerability report has been received.
 - Defects found during the build were fixed as found, among them: a server error on a sign-in with no user name; work from before the records began shown as entered late; a certificate serial that would have repeated after a restore; a review that could be issued by someone other than its reviewer.
 
@@ -78,14 +78,14 @@ It was run in the build environment. It has not been run on the server, where no
 
 | Result | Requirements |
 |---|---|
-| Met | 140 |
+| Met | 141 |
 | Not Applicable | 89 |
 | To Be Verified at Deployment | 17 |
-| Partly Met | 5 |
+| Partly Met | 4 |
 | Not Met | 2 |
 
 - The 17 are checks of the server and the reverse proxy, listed in `operations/deployment.md`.
-- Of the 7 not met or met in part, three need a decision (Issue 69: breached passwords, a list of sessions, and passkeys) and four are to be settled before customer data: a vault for secrets, logs kept apart from the server, encryption of second-factor keys with a period for the access log, and a named key management standard. Two more were settled on 19 November 2026: the session limits were set against NIST SP 800-63B, and the export of an organisation is limited to 6 in an hour.
+- Of the 6 not met or met in part, two were accepted for private beta on 19 November 2026 after Alex King asked us to decide (a full check against breached passwords, and passkeys in place of codes; `design-system/Decisions.md`), and four are to be settled before customer data: a vault for secrets, logs kept apart from the server, encryption of second-factor keys with a period for the access log, and a named key management standard. Issue 69 has no item left that waits on a decision.
 
 The level itself, Level 2, is our choice and is for Alex King to confirm.
 
@@ -122,7 +122,7 @@ In rough order.
 1. **Give access to the server**, so that it can be looked at without changing anything, and the service deployed. He enters every password and key himself.
 2. **Decide the paid services** (Issue 27): storage for backups away from the server, any monitoring, the penetration test (Issue 40), Cyber Essentials Plus.
 3. **Confirm the readings of the regulation** listed under Questions. Until then four hazards cannot be Verified.
-4. **Decide the three ASVS items left** (Issue 69) and confirm Level 2. The other four were met on 19 November 2026 after this review was first written: first passwords made by the system and good for 7 days, a code before a change to how someone signs in, a name for the hashing method in every history entry, and what each action may set written down.
+4. **Confirm Level 2**, and the two ASVS items accepted for private beta on his instruction to decide (breached passwords, passkeys). The other five items of Issue 69 were met on 19 November 2026.
 5. **Confirm the operating figures**: recovery point 24 hours, recovery time the next working day, how long backups and logs are kept.
 6. **Say who acts when he is away.** One person receives every alert and leads every incident.
 7. **Have the data protection documents and the contract drafts reviewed** by someone qualified, and fill in the company's details.
@@ -172,7 +172,7 @@ Each is recorded where it arose; this is the list in one place.
 | A certificate the organisation's own review staff issued before these records is recorded as theirs only if dated no later than the person's last review before these records, which the Administrator states. Is that the right limit? | Ours; built 19 November 2026 (Issue 71, D-3) |
 | A first password works for 7 days. A change to how someone signs in needs a sign-in within the last 5 minutes or a code | Ours; built 19 November 2026 (Issue 69) |
 | A one-time code is good for 30 seconds only. Workable in practice? | Enforced, to meet ASVS 6.5.5 |
-| Authenticator codes now, passkeys later? | Codes |
+| Authenticator codes now, passkeys before public beta | Decided as ours, 19 November 2026 |
 | An Administrator can reset both factors of another user and so sign in as them. It is logged, not prevented | As stated |
 | A failed sign-in logs the user name as typed, which could be a password typed in the wrong box | As stated |
 

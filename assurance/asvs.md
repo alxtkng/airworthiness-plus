@@ -20,8 +20,8 @@ Level 2 means every Level 1 and Level 2 requirement: 70 and 183, 253 in all, of 
 
 | Result | Meaning | Requirements |
 |---|---|---|
-| Met | Shown by a test, or by the code and settings named | 140 |
-| Partly Met | Met in part; what is missing is stated | 5 |
+| Met | Shown by a test, or by the code and settings named | 141 |
+| Partly Met | Met in part; what is missing is stated | 4 |
 | Not Met | Not met today; what is needed is stated | 2 |
 | To Be Verified at Deployment | Depends on the server or the reverse proxy. The service is not yet deployed. Each is listed with its check in `operations/deployment.md` | 17 |
 | Not Applicable | The application has nothing of the kind | 89 |
@@ -33,10 +33,9 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 
 | Requirement | Result | What Is Missing | Where It Goes |
 |---|---|---|---|
-| 6.2.12 | Partly Met | Checked against the 20,000 most common passwords, which come from breaches. A full set of breached passwords is not checked: it needs either a large file kept up to date or a request to another service | Issue 69; decision by Alex King |
-| 7.5.2 | Partly Met | A user can end every other session. They cannot see a list of them, and are not asked to sign in again first | Issue 69; decision by Alex King |
+| 6.2.12 | Partly Met | Checked against the 20,000 most common passwords, which come from breaches. A full set of breached passwords is not checked: it needs either a large file kept up to date or a request to another service | Accepted for private beta on 19 November 2026 (`design-system/Decisions.md`); looked at again before public beta |
 | 11.1.1 | Partly Met | `operations/keys-and-secrets.md` gives the rules and when each key is replaced. It has not been set against a named key management standard | To be settled before customer data; in the readiness review |
-| 11.4.1 | Partly Met | SHA-256 for the history chain, checksums and signatures of sessions. One-time codes use HMAC-SHA-1, which the standard lists as legacy and allows for compatibility: it is what RFC 6238 defaults to and what authenticator applications support. Passkeys would remove it | Issue 69; decision by Alex King |
+| 11.4.1 | Partly Met | SHA-256 for the history chain, checksums and signatures of sessions. One-time codes use HMAC-SHA-1, which the standard lists as legacy and allows for compatibility: it is what RFC 6238 defaults to and what authenticator applications support. Passkeys would remove it | Accepted for private beta on 19 November 2026 (`design-system/Decisions.md`); looked at again before public beta |
 | 13.3.1 | Not Met | Secrets are environment values on the server, not in a vault. A decision for private beta, with its reasons, in `operations/keys-and-secrets.md`; to be weighed again before customer data | To be settled before customer data; in the readiness review |
 | 14.2.4 | Partly Met | Met except for two things the classification asks for: second-factor keys are not encrypted in the database, and no period is set for keeping the access log | To be settled before customer data; in the readiness review |
 | 16.4.3 | Not Met | The history and the access log leave the server once a day in the backup. The server and proxy logs stay on the one server (`operations/monitoring.md`). To be decided before customer data | To be settled before customer data; in the readiness review |
@@ -201,7 +200,7 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 | 7.4.4 | 2 | Met | Sign Out is in the sidebar of every page |
 | 7.4.5 | 2 | Met | End Sessions of a user, on the Users page (`test_security: a_users_sessions_can_all_be_ended`) |
 | 7.5.1 | 2 | Met | A user cannot change their own user name or second factor. A change of password, and an Administrator's new first password or reset of a second factor, need a sign-in within the last 5 minutes or a code (`test_users: a_change_of_password_needs_a_code_unless_just_signed_in, the_administrator_gives_a_code_to_change_how_another_signs_in`) |
-| 7.5.2 | 2 | Partly Met | A user can end every other session. They cannot see a list of them, and are not asked to sign in again first |
+| 7.5.2 | 2 | Met | The Change Password page lists the user's live sessions: when each began, when it was last used, where from and in what browser. One is ended, or every other, after a sign-in within the last 5 minutes or a code (`test_users: a_user_sees_their_sessions_and_ends_one, ending_a_session_needs_a_code_unless_just_signed_in`) |
 | 7.6.1 | 2 | Not Applicable | No identity provider |
 | 7.6.2 | 2 | Met | A session is made only by signing in |
 
