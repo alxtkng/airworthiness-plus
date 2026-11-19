@@ -290,6 +290,34 @@ def test_a_request_that_is_too_large_is_refused(sample: Sample) -> None:
         assert Problem.objects.count() == 0
 
 
+def test_a_write_is_kept_only_if_the_whole_request_succeeds(
+    sample: Sample, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """REQ-138, hazard H-003. A request that fails after writing leaves nothing behind,
+    so a page never reports as saved what was not."""
+    from airworthiness_plus.acceptance.models import Problem
+
+    def fails(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("after the write")
+
+    # The entry is written, and then the answer to the browser fails.
+    monkeypatch.setattr("airworthiness_plus.acceptance.views.redirect", fails)
+    client = signed_in(sample.planner)
+    client.raise_request_exception = False
+    response = client.post("/problem-log/add/", {"problem": "[Problem]"}, secure=True)
+    assert response.status_code == 500
+    assert b"after the write" not in response.content
+    with working_for(sample.ours.id, sample.planner.id):
+        assert Problem.objects.count() == 0
+    # The same request, when nothing fails, is kept.
+    monkeypatch.undo()
+    assert (
+        post(signed_in(sample.planner), "/problem-log/add/", problem="[Problem]").status_code == 302
+    )
+    with working_for(sample.ours.id, sample.planner.id):
+        assert Problem.objects.count() == 1
+
+
 def test_an_error_page_says_nothing_of_the_inside(sample: Sample) -> None:
     """OWASP ASVS 5.0, 13.4.2, 16.5.1. No debug page, no trace, no setting."""
     assert settings.DEBUG is False

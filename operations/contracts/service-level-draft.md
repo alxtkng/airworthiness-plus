@@ -19,6 +19,7 @@ The service runs on one server and is operated by one person. A promise sized fo
 | A Security Vulnerability | High severity fixed within 14 days, and at once if being used | `vulnerability-management.md` |
 | Notice of a Personal Data Breach | Within [24] hours of becoming aware | Data processing agreement, clause 8 |
 | Export | The customer can export all its records itself at any time, with no request to us | REQ-134, REQ-135 |
+| Notice Before the Service or Its Maintenance Ends | At least 1 year | NCSC Software Security Code of Practice, principle 4.2 |
 
 ## What the Customer Does
 

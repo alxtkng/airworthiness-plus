@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Once a week, so that a vulnerability published while the repository is quiet
+  # is still found (operations/vulnerability-management.md).
+  schedule:
+    - cron: "17 5 * * 1"
 
 permissions:
   contents: read
