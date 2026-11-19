@@ -21,6 +21,7 @@ dev = [
     "detect-secrets>=1.5",
     "django-stubs>=5.2,<5.3",
     "pytest-django>=4.9",
+    "playwright>=1.63",
 ]
 
 [build-system]
