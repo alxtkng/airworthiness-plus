@@ -49,7 +49,7 @@ The quoted text does not state these outright. Each needs a source or a decision
 | Point | Reading Implemented | Requirement | Status |
 |---|---|---|---|
 | "1 month or 10 h": whether both may be used, each on its own limit, or only one of the two | Each on its own limit: 1 month on the annual limit, 10 hours on the 100-hour limit. The sailplane and touring motor glider programme in AMC1 ML.A.302(d) says "as applicable" | REQ-048 | To Be Checked |
-| Whether the tolerance may be used at two inspections in a row. GM1 ML.A.302(c)(3) calls it a one-time interval extension | Not refused. Each use is visible from the reading at which the inspection was done | REQ-056 | To Be Checked |
+| Whether the tolerance may be used at two inspections in a row. GM1 ML.A.302(c)(3) calls it a one-time interval extension | Not refused. Since 19 November 2026 a use is said on the programme page, and a use at two inspections in a row, done or about to be, is said with the words of the guidance. Decided as ours after Alex King asked us to decide | REQ-056 | To Be Checked: whether it should be refused |
 | Whether a programme based on the design approval holder's instructions may carry a tolerance stated in those instructions | Refused: ML.A.302(d)(1) gives a tolerance to the Minimum Inspection Programme only | REQ-049 | To Be Checked |
 | Whether the last hour or day of the tolerance may be used | Yes: reaching the end of the tolerance exactly is Within Tolerance; passing it is Overdue. The same reading as a limit reached exactly | REQ-056 | To Be Checked, with the open reading on a calendar limit at 0 days |
 | What 1 month and annual mean in days | 12 months and 1 month by the month-end rule of REQ-047. Our rule, not the regulation's | REQ-047, REQ-048 | Decision on record |
@@ -67,3 +67,7 @@ The quoted text does not state these outright. Each needs a source or a decision
 | The warning about the review certificate is separate from the state of the task: Within Tolerance to 30 August 2027 does not show that the certificate ends 2 August 2027 | Interface: REQ-057 beside every calendar tolerance |
 | Whether the valid-to date of a certificate is itself a valid day | Already open in `review-and-dates.md` |
 | "Unless otherwise specified by the CAA" in ML.A.303, and any allowance written in a directive itself | Airworthiness directive module (REQ-065): the directive's own requirements are the limit |
+
+## Added 19 November 2026: Whether the Tolerance Was Used
+
+`tolerance_used` says whether an inspection was done past a limit and inside every tolerance. It was not recomputed by a separate person. It rests on `limits` and `task_state`, which were. It is held to them by one case worked by hand, G-FMNO inspected on 20 February 2027 and again on 5 March 2028 with each boundary day and tenth of an hour (`tests/test_golden_tolerance.py`), and by a property test that works the answer from the numbers alone: past 100 hours or 12 months, and not past 110 hours or 13 months (`tests/test_properties_intervals.py`).

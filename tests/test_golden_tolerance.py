@@ -34,6 +34,7 @@ from airworthiness_rules.intervals import (
     limits,
     task_state,
     tolerance_outlasts_certificate,
+    tolerance_used,
 )
 
 TODAY = date(2026, 11, 18)
@@ -165,6 +166,40 @@ def test_an_inspection_done_inside_the_tolerance_shows_that_it_was() -> None:
     assert calendar.within_tolerance
     assert not hours.within_tolerance
     assert hours.remaining == D("52.0")
+
+
+def used(previous: Reading, done: Reading) -> bool:
+    return tolerance_used(INTERVAL, previous, done, kind=INSPECTION, tolerance=TOLERANCE)
+
+
+def test_g_fmno_uses_the_tolerance_at_two_inspections_in_a_row() -> None:
+    """REQ-056; GM1 ML.A.302(c)(3). By hand.
+
+    Done 4 February 2026 at 4,912.0: due 4 February 2027 or 5,012.0.
+    Inspected 20 February 2027 at 4,960.0: 16 days past the calendar limit
+    and inside its 1 month, so the tolerance was used. Next due 20 February
+    2028 or 5,060.0. Inspected 5 March 2028 at 5,000.0: 9 days to the end of
+    February in a leap year and 5 more, 14 days past, inside the 1 month to
+    20 March 2028: used again.
+
+    Not used: on the due day itself, the day before, or early. Not used but
+    late: past the end of the tolerance, which is Overdue, not a use of it.
+    """
+    first, second = Reading(date(2027, 2, 20), D("4960.0")), Reading(date(2028, 3, 5), D("5000.0"))
+    assert used(G_FMNO_DONE, first)
+    assert used(first, second)
+    assert not used(G_FMNO_DONE, Reading(date(2027, 2, 4), D("4960.0")))  # on the due day
+    assert not used(G_FMNO_DONE, Reading(date(2027, 2, 3), D("4960.0")))
+    assert used(G_FMNO_DONE, Reading(date(2027, 2, 5), D("4960.0")))  # the first day past it
+    assert used(G_FMNO_DONE, Reading(date(2027, 3, 4), D("4960.0")))  # the last day of the month
+    assert not used(G_FMNO_DONE, Reading(date(2027, 3, 5), D("4960.0")))  # past it: overdue
+    # By hours: due at 5,012.0, tolerance to 5,022.0.
+    assert not used(G_FMNO_DONE, Reading(date(2026, 12, 1), D("5012.0")))
+    assert used(G_FMNO_DONE, Reading(date(2026, 12, 1), D("5012.1")))
+    assert used(G_FMNO_DONE, Reading(date(2026, 12, 1), D("5022.0")))
+    assert not used(G_FMNO_DONE, Reading(date(2026, 12, 1), D("5022.1")))
+    # One limit past its tolerance and the other inside it: the inspection was overdue.
+    assert not used(G_FMNO_DONE, Reading(date(2027, 2, 20), D("5022.1")))
 
 
 @pytest.mark.parametrize(

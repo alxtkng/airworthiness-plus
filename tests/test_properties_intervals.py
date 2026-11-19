@@ -21,6 +21,7 @@ from airworthiness_rules.intervals import (
     limits,
     projected_days,
     task_state,
+    tolerance_used,
 )
 
 DATES = st.dates(min_value=date(1950, 1, 1), max_value=date(2100, 12, 31))
@@ -192,3 +193,28 @@ def test_the_next_interval_depends_only_on_when_the_inspection_was_done(
     )
     assert hours.due == done.hours + Decimal("100")
     assert calendar.due == add_months(done.on, 12)
+
+
+@given(
+    TENTHS,
+    DATES,
+    st.integers(min_value=0, max_value=1_300).map(lambda n: Decimal(n) / 10),
+    st.integers(min_value=0, max_value=450),
+)
+def test_the_tolerance_was_used_only_between_a_limit_and_the_end_of_its_tolerance(
+    done_at: Decimal, done_on: date, flown: Decimal, elapsed: int
+) -> None:
+    """REQ-056. Worked here from the numbers alone: past 100 hours or 12 months,
+    and not past 110 hours or 13 months by the month rule."""
+    previous = Reading(done_on, done_at)
+    inspected = Reading(done_on + timedelta(days=elapsed), done_at + flown)
+    due_on = add_months(done_on, 12)
+    past_a_limit = flown > 100 or inspected.on > due_on
+    past_a_tolerance = flown > 110 or inspected.on > add_months(due_on, 1)
+    assert tolerance_used(
+        MINIMUM_INSPECTION_PROGRAMME_INTERVAL,
+        previous,
+        inspected,
+        kind=TaskKind.MINIMUM_INSPECTION_PROGRAMME,
+        tolerance=MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
+    ) == (past_a_limit and not past_a_tolerance)
