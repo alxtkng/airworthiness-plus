@@ -142,7 +142,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             file_name="certificates.csv",
             content=(
                 ",".join(CERTIFICATES) + "\r\nG-ABCD,[Earlier Reference],2025-03-14,2026-03-14,"
-                "[Issuing Organisation],\r\n"
+                "[Issuing Organisation],,\r\n"
             ).encode(),
         )
         first = loaded.values.all()[0]

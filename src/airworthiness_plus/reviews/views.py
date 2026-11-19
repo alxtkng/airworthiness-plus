@@ -90,7 +90,7 @@ def aircraft_review_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpRe
 @requires(Action.ADD_OR_CHANGE_AIRCRAFT)
 @require_POST
 def record_certificate(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
-    """Record a certificate issued elsewhere, as when an aircraft is taken on."""
+    """Record a certificate issued elsewhere, or by the organisation before these records."""
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
     form = CertificateForm(request.POST)
     if form.is_valid():

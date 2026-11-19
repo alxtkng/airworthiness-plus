@@ -21,11 +21,11 @@
 {% for certificate, extensions in certificates %}
 <tr>
 <td><a href="{% url 'certificate' certificate.id %}">{{ certificate.reference }}</a></td>
-<td>{% if certificate.issued_by %}{{ certificate.issued_by.user.full_name }}, {{ certificate.issued_by.authorisation_reference }}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
+<td>{% if certificate.issued_by %}{{ certificate.issued_by.user.full_name }}, {{ certificate.issued_by.authorisation_reference }}{% if certificate.from_before_records %}, Before These Records{% endif %}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
 <td>{{ certificate.issued_on|long_date }}</td>
 <td>{{ certificate.valid_to|long_date }}</td>
 <td>{% if certificate.voided %}Void, {{ certificate.void_reason }}{% elif certificate == line.certificate %}Current{% else %}Superseded{% endif %}</td>
-<td>{% if not certificate.issued_by %}{% elif certificate.copy_sent_on %}Sent {{ certificate.copy_sent_on|long_date }}{% else %}
+<td>{% if not certificate.issued_by or certificate.from_before_records %}{% elif certificate.copy_sent_on %}Sent {{ certificate.copy_sent_on|long_date }}{% else %}
 <form method="post" action="{% url 'certificate_copy_sent' certificate.id %}">{% csrf_token %}{{ copy_form.on.label_tag }} {{ copy_form.on }} <button type="submit">Record Copy Sent</button></form>{% endif %}</td>
 </tr>
 {% for extension in extensions %}
@@ -57,7 +57,7 @@
 {% csrf_token %}
 <button type="submit">Start an Airworthiness Review of {{ aircraft.registration }}</button>
 </form>
-<h2>Record a Certificate Issued Elsewhere for {{ aircraft.registration }}</h2>
+<h2>Record a Certificate Issued Elsewhere or Before These Records for {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'record_certificate' aircraft.id %}">
 {% csrf_token %}
 {% if certificate_form.non_field_errors %}<p role="alert">{{ certificate_form.non_field_errors|join:", " }}</p>{% endif %}

@@ -4,6 +4,7 @@
 {% block content %}
 <h1>Airworthiness Review Certificate</h1>
 <p>CAA Form 15c, for Aircraft Complying with Part-ML</p>
+{% if certificate.from_before_records %}<p>Recorded From Before These Records</p>{% endif %}
 {% if certificate.voided %}<p role="alert">Void, {{ certificate.void_reason }}</p>{% endif %}
 <dl>
 <dt>Certificate Reference</dt><dd>{{ certificate.reference }}</dd>

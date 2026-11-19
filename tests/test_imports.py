@@ -24,6 +24,7 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.imports import services
 from airworthiness_plus.imports.layouts import AIRCRAFT, CERTIFICATES, DIRECTIVES
 from airworthiness_plus.imports.models import Load, LoadedValue, LoadKind, ValueCheck
+from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import Certificate
 from tests.conftest import as_owner
 from tests.support import TODAY, Sample, make_sample, signed_in
@@ -106,17 +107,16 @@ DIRECTIVE_ROWS = (
 )
 DIRECTIVE_FILE = csv_of(DIRECTIVES, *DIRECTIVE_ROWS)
 
-CERTIFICATE_FILE = csv_of(
-    CERTIFICATES,
-    (
-        "G-EJKL",
-        "[Certificate Reference G-EJKL]",
-        "6 December 2025",
-        "6 December 2026",
-        "[Issuing Organisation]",
-        "11100.0",
-    ),
+CERTIFICATE_ROW = (
+    "G-EJKL",
+    "[Certificate Reference G-EJKL]",
+    "6 December 2025",
+    "6 December 2026",
+    "[Issuing Organisation]",
+    "",
+    "11100.0",
 )
+CERTIFICATE_FILE = csv_of(CERTIFICATES, CERTIFICATE_ROW)
 
 
 def load(sample: Sample, kind: LoadKind, content: bytes, source: str = "[Logbooks]") -> Load:
@@ -219,6 +219,55 @@ def test_directive_status_and_review_certificates_are_loaded(
             date(2026, 12, 6),
         )
         assert certificate.airframe_hours == D("11100.0")
+
+
+def test_a_certificate_of_the_organisations_own_is_loaded_against_its_review_staff(
+    sample: Sample, fleet_load: Load
+) -> None:
+    """REQ-170, REQ-110; Issue 71, D-3. The row names the review staff member by
+    authorisation reference in place of an issuer elsewhere. The certificate keeps
+    its reference and is held to the person's last review before these records."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        lucy = review_services.add_review_staff(
+            user=sample.lucy,
+            authorisation_reference="[Authorisation Reference 1]",
+            accepted_on=date(2023, 6, 9),
+            last_review_before_records=date(2025, 12, 6),
+        )
+    row = dict(zip(CERTIFICATES, CERTIFICATE_ROW, strict=True))
+    own = row | {
+        "Issued By": "",
+        "Review Staff Authorisation Reference": lucy.authorisation_reference,
+    }
+    for change, message in (
+        ({"Issued By": "[Issuing Organisation]"}, "Row 2: A Certificate Is Issued by Review Staff"),
+        ({"Review Staff Authorisation Reference": "[Unknown]"}, "Row 2: [Unknown] Is Not the"),
+        ({"Date of Issue": "7 December 2025"}, "Row 2: A Certificate From Before These Records"),
+    ):
+        refused_row = own | change
+        content = csv_of(CERTIFICATES, tuple(refused_row[column] for column in CERTIFICATES))
+        with pytest.raises(services.RefusedError) as refused:
+            load(sample, LoadKind.CERTIFICATES, content)
+        assert message in str(refused.value)
+    neither = row | {"Issued By": ""}
+    with pytest.raises(services.RefusedError, match="Has Its Reference and Its Issuer"):
+        load(
+            sample,
+            LoadKind.CERTIFICATES,
+            csv_of(CERTIFICATES, tuple(neither[column] for column in CERTIFICATES)),
+        )
+    load(
+        sample,
+        LoadKind.CERTIFICATES,
+        csv_of(CERTIFICATES, tuple(own[column] for column in CERTIFICATES)),
+    )
+    with working_for(sample.ours.id, sample.lucy.id):
+        certificate = Certificate.objects.get()
+        assert (certificate.issued_by, certificate.from_before_records) == (lucy, True)
+        assert (certificate.reference, certificate.serial_number) == (
+            "[Certificate Reference G-EJKL]",
+            None,
+        )
 
 
 @pytest.mark.parametrize(

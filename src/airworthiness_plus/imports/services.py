@@ -27,6 +27,7 @@ from airworthiness_plus.imports.models import Load, LoadedValue, LoadKind, Value
 from airworthiness_plus.interface.formatting import MONTHS
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.reviews import services as review_services
+from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_rules.intervals import Reading
 from airworthiness_rules.utilisation import EntryRefusedError
 
@@ -158,6 +159,15 @@ def _load_directive(organisation: Organisation, by: User, row: Row) -> str:
 def _load_certificate(organisation: Organisation, by: User, row: Row) -> str:
     aircraft = _aircraft(row)
     column = "Airframe Flight Hours at the Time of Review"
+    authorisation = row["Review Staff Authorisation Reference"]
+    staff = None
+    if authorisation:
+        found = list(ReviewStaff.objects.filter(authorisation_reference=authorisation)[:2])
+        if len(found) != 1:
+            raise RowError(
+                f"{authorisation} Is Not the Authorisation Reference of One Review Staff Member"
+            )
+        staff = found[0]
     try:
         review_services.record_certificate(
             aircraft,
@@ -165,6 +175,7 @@ def _load_certificate(organisation: Organisation, by: User, row: Row) -> str:
             issued_on=_date(row, "Date of Issue"),
             valid_to=_date(row, "Date of Expiry"),
             issued_elsewhere_by=row["Issued By"],
+            issued_by=staff,
             airframe_hours=_hours(row, column) if row[column] else None,
         )
     except review_services.RefusedError as error:

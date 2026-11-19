@@ -151,6 +151,12 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
   - the address logged for a request is the one the reverse proxy saw, and only when the service is told it runs behind one
   - unexpected errors go to standard error, one line each with the time in Coordinated Universal Time. No request body, password or session identifier is logged
   - every entry of the history names how its hash was made, decided 19 November 2026 to meet OWASP ASVS 5.0 11.2.2. The name today is `sha256-fields-1`: SHA-256 over the fields of the entry in the order the export's README gives. If the way of hashing is ever changed, new entries carry a new name and the entries written before are still checked by the old one. The check in the system and the check that comes with an export both report an entry whose name they do not know
+- Certificates from before these records, decided 19 November 2026 (REQ-110, REQ-113; dogfooding D-3). Ours:
+  - a certificate the organisation's own review staff issued before these records is recorded against that person, with the reference it was issued with and no serial of the system. It is entered on the aircraft's Airworthiness Review page or loaded by an import, by whoever may add or change aircraft
+  - it is dated no later than the person's last review before these records, which the Administrator states on the review staff record. Recording one therefore cannot change whether the person has recent experience, and cannot stand in for a review carried out in these records. The database holds to the same rule
+  - the Administrator cannot move that date to before a certificate of the person already recorded
+  - no copy to the Civil Aviation Authority is tracked for it: that copy was owed under the records it came from
+  - the copy of an extension is tracked whoever issued the certificate, because the extension is the organisation's own (ML.A.903(f)). Before 19 November 2026 it was tracked only for certificates issued in the system; dogfooding D-6
 - Access log, decided 18 November 2026 (REQ-009): every sign-in, failed sign-in, sign-out, second factor set-up and refused action, with the user name, the time from the database clock and the network address. It is added to and never changed. An organisation sees its own entries. A change of role is in the history of the user record instead.
 
 | Action | Administrator | Continuing Airworthiness Manager | Airworthiness Review Staff | Planning and Records | Read Only |

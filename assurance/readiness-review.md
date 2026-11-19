@@ -54,7 +54,7 @@ Carried with it: the readings of the regulation that those records mark for Alex
 
 **Met, as far as our own testing can say.**
 
-- Open defect Issues: 69 (seven ASVS requirements met in part when raised; three since met, four left) and 71 (three differences found by dogfooding). Neither is high severity.
+- Open defect Issues: 69 (seven ASVS requirements met in part when raised; three since met, four left) and 71 (three differences found by dogfooding; D-3 since fixed, D-4 and D-5 are questions). Neither is high severity.
 - `pip-audit` passes on every change. No vulnerability report has been received.
 - Defects found during the build were fixed as found, among them: a server error on a sign-in with no user name; work from before the records began shown as entered late; a certificate serial that would have repeated after a restore; a review that could be issued by someone other than its reviewer.
 
@@ -170,7 +170,8 @@ Each is recorded where it arose; this is the list in one place.
 | The certificate reference, UK.CAO.[Number]-ARC-0001 | Ours |
 | An import's hours and cycles must be checked by a second person. A one-person organisation cannot complete that | Enforced |
 | Which records a real migration needs beyond aircraft, directive status and certificates | Three kinds of file |
-| A certificate from before the records began cannot be recorded as the organisation's own | Issue 71, D-3 |
+| A certificate the organisation's own review staff issued before these records is recorded as theirs only if dated no later than the person's last review before these records, which the Administrator states. Is that the right limit? | Ours; built 19 November 2026 (Issue 71, D-3) |
+| A first password works for 7 days. A change to how someone signs in needs a sign-in within the last 5 minutes or a code | Ours; built 19 November 2026 (Issue 69) |
 | A one-time code is good for 30 seconds only. Workable in practice? | Enforced, to meet ASVS 6.5.5 |
 | Authenticator codes now, passkeys later? | Codes |
 | An Administrator can reset both factors of another user and so sign in as them. It is logged, not prevented | As stated |
