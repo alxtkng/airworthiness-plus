@@ -22,6 +22,7 @@ from airworthiness_rules.intervals import (
     Interval,
     Limit,
     Reading,
+    State,
     TaskKind,
     Tolerance,
     Unit,
@@ -29,7 +30,9 @@ from airworthiness_rules.intervals import (
     comes_first,
     limits,
     projected_days,
+    task_state,
     tolerance_outlasts_certificate,
+    tolerance_used,
 )
 from airworthiness_rules.programme import (
     Flag,
@@ -103,6 +106,8 @@ class DueLine:
     reading: Reading | None
     never_done: bool
     problem: str
+    # What is said when the tolerance was used at the last inspection (REQ-056).
+    tolerance_note: str = ""
 
     @property
     def first(self) -> tuple[ExplainedLimit, ...]:
@@ -321,7 +326,47 @@ def due_line(
         reading=counter_reading if needs_counter else None,
         never_done=never_done,
         problem="",
+        tolerance_note=_tolerance_note(task, tolerance, found),
     )
+
+
+ONE_TIME = "GM1 ML.A.302(c)(3) Calls the Tolerance a One-Time Extension"
+
+
+def _tolerance_note(task: Task, tolerance: Tolerance | None, found: tuple[Limit, ...]) -> str:
+    """Return what to say when the tolerance was used at the last inspection.
+
+    Nothing is refused. A use is shown, and a use at two inspections in a
+    row, done or about to be, is shown with what the guidance says of it.
+    """
+    if tolerance is None:
+        return ""
+    done = list(task.work_done.order_by("dated", "hours"))
+    used: list[bool] = []
+    previous = task.starts
+    for position, work in enumerate(done):
+        interval = task.first_interval if position == 0 else task.interval
+        try:
+            used.append(
+                previous is not None
+                and tolerance_used(
+                    interval, previous, work.reading, kind=task.task_kind, tolerance=tolerance
+                )
+            )
+        except ValueError:
+            used.append(False)
+        previous = work.reading
+    if not used or not used[-1]:
+        return ""
+    last = formatting.long_date(done[-1].dated)
+    if len(used) > 1 and used[-2]:
+        return f"Tolerance Used at the Last Two Inspections, the Latest on {last}. {ONE_TIME}"
+    if task_state(found) is State.WITHIN_TOLERANCE:
+        return (
+            f"Within Tolerance Again: the Tolerance Was Used at the Last Inspection, {last}. "
+            f"{ONE_TIME}"
+        )
+    return f"Tolerance Used at the Last Inspection, {last}"
 
 
 def due_lines(

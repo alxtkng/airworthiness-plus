@@ -270,6 +270,28 @@ def limits(
     return tuple(found)
 
 
+def tolerance_used(
+    interval: Interval,
+    previous: Reading,
+    done: Reading,
+    *,
+    kind: TaskKind | None,
+    tolerance: Tolerance,
+) -> bool:
+    """Return whether an inspection done at ``done`` used the tolerance (REQ-056).
+
+    It did if, at the reading when it was done, a limit counted from the
+    inspection before had been passed and none had passed its tolerance.
+    Done on or before every limit, nothing was used. Done past the end of a
+    tolerance, the inspection was overdue, which is not a use of it.
+
+    GM1 ML.A.302(c)(3) calls the tolerance a one-time extension of the
+    interval, so a use at two inspections in a row is worth saying.
+    """
+    found = limits(interval, previous, done, kind=kind, tolerance=tolerance)
+    return task_state(found) is State.WITHIN_TOLERANCE
+
+
 def is_due(found: tuple[Limit, ...]) -> bool:
     """Return whether the task is due: any limit reached or passed (REQ-043).
 

@@ -155,6 +155,63 @@ def test_g_fmno_calendar_limit_is_projected_first(
     assert "Projected First" in calendar_row[: calendar_row.index("</tr>")]
 
 
+def test_g_fmno_shows_when_the_tolerance_was_used_and_when_twice_running(
+    sample: Sample, fleet: dict[str, Aircraft], tasks: dict[str, Task], day: Day
+) -> None:
+    """REQ-056; GM1 ML.A.302(c)(3). Nothing is refused; what happened is said.
+
+    By hand. Due 4 February 2027 or 5,012.0. Inspected 20 February 2027 at
+    4,960.0, 16 days past the calendar limit: the tolerance was used. Next
+    due 20 February 2028 or 5,060.0. On 5 March 2028 at 5,000.0 it is 14
+    days past again, Within Tolerance: said before the inspection is done.
+    Inspected that day: used at two in a row. Next due 5 March 2029.
+    Inspected 1 March 2029 at 5,040.0, on time: nothing more is said.
+    """
+    fmno = fleet["G-FMNO"]
+    path = f"/aircraft/{fmno.id}/programme/"
+    reader = signed_in(sample.reader)
+    assert "Tolerance Used" not in page(reader, path)
+
+    def inspect(on: date, hours: str) -> None:
+        day.today = on
+        with working_for(sample.ours.id, sample.lucy.id):
+            aircraft = Aircraft.objects.get(pk=fmno.pk)
+            aircraft_services.enter_utilisation(
+                aircraft.counters.get(kind="Airframe"), Reading(on, D(hours), 0), confirmed=True
+            )
+            services.record_work(
+                aircraft,
+                task=tasks["G-FMNO"],
+                description="Annual Check",
+                dated=on,
+                hours=D(hours),
+                cycles=0,
+            )
+
+    inspect(date(2027, 2, 20), "4960.0")
+    body = page(reader, path)
+    assert '<td colspan="7">Tolerance Used at the Last Inspection, 20 February 2027</td>' in body
+    assert "One-Time Extension" not in body
+
+    day.today = date(2028, 3, 5)
+    body = page(reader, path)
+    assert dot("Within Tolerance") in body
+    assert (
+        "Within Tolerance Again: the Tolerance Was Used at the Last Inspection, 20 February "
+        "2027. GM1 ML.A.302(c)(3) Calls the Tolerance a One-Time Extension"
+    ) in body
+
+    inspect(date(2028, 3, 5), "5000.0")
+    body = page(reader, path)
+    assert (
+        "Tolerance Used at the Last Two Inspections, the Latest on 5 March 2028. "
+        "GM1 ML.A.302(c)(3) Calls the Tolerance a One-Time Extension"
+    ) in body
+
+    inspect(date(2029, 3, 1), "5040.0")
+    assert "Tolerance Used" not in page(reader, path)
+
+
 def test_g_abcd_task_has_no_tolerance_and_one_limit(
     sample: Sample, fleet: dict[str, Aircraft], tasks: dict[str, Task]
 ) -> None:
