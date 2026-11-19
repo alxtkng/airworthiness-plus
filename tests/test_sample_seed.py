@@ -234,6 +234,20 @@ def test_the_due_items_are_those_worked_by_hand(
     assert row_of(cdef, "Engine Overhaul")[1:4] == ["Hours", "2,000.0 Hours", "220.0 Hours"]
 
 
+def test_the_fleet_opens_with_what_needs_attention_first(reader: Client) -> None:
+    """Dogfooding D-5, decided 19 November 2026. The Unserviceable aircraft, then
+    whatever is marked, then the soonest due.
+
+    By hand. G-DGHI is Unserviceable. G-EJKL's review is 18 days away, which is
+    Due Soon, and nothing else is marked. Then by days to what is next due:
+    G-ABCD 12.4 hours at 0.8 a day is 15 days; G-FMNO 78 days; G-BXYZ 41.0
+    hours at 0.5 a day is 82 days; G-CDEF 220.0 hours at 0.6 a day is 366
+    days, rounded down.
+    """
+    order = [row[0] for row in rows(reader, "/")]
+    assert order == ["G-DGHI", "G-EJKL", "G-ABCD", "G-FMNO", "G-BXYZ", "G-CDEF"]
+
+
 # SampleData.md, review certificates and review staff
 
 

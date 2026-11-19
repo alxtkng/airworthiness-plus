@@ -37,7 +37,8 @@ from airworthiness_plus.aircraft.models import (
 )
 from airworthiness_plus.interface import formatting
 from airworthiness_rules.dates import days_between
-from airworthiness_rules.intervals import Reading, Unit
+from airworthiness_rules.intervals import Limit, Reading, Unit
+from airworthiness_rules.programme import Flag, limit_flag
 from airworthiness_rules.utilisation import EntryRefusedError
 
 
@@ -49,6 +50,8 @@ class FleetRow:
     airframe: Reading | None
     next_due: str
     review_valid_to: date | None
+    # Where the aircraft comes in the Fleet: what needs attention first.
+    rank: tuple[int, int, int, str] = (0, 0, 0, "")
 
 
 def _airframe(aircraft: Aircraft) -> Reading | None:
@@ -56,8 +59,29 @@ def _airframe(aircraft: Aircraft) -> Reading | None:
     return services.current_reading(counter) if counter is not None else None
 
 
-def _next_due(aircraft: Aircraft, today: date, review_valid_to: date | None) -> str:
-    """Return what is due next on the aircraft, as the Fleet shows it (REQ-043, REQ-044, REQ-100).
+# The order of the Fleet (dogfooding D-5): how serious a mark is, worst first.
+SEVERITY = {
+    Flag.OVERDUE: 4,
+    Flag.WITHIN_TOLERANCE: 3,
+    Flag.DUE: 2,
+    Flag.DUE_SOON: 1,
+    Flag.NONE: 0,
+}
+CANNOT_BE_CALCULATED = 5
+NOT_KNOWN = 1_000_000
+
+
+def _next_due(
+    aircraft: Aircraft, today: date, review_valid_to: date | None
+) -> tuple[str, tuple[int, int, int, str]]:
+    """Return what is due next on the aircraft, and where it comes in the Fleet.
+
+    The first value is as the Fleet shows it (REQ-043, REQ-044, REQ-100).
+    The second puts the Fleet in order: an Unserviceable aircraft, then
+    whatever is marked with the worst mark first, then the soonest due by
+    the projected days, then by Aircraft Registration. An aircraft with a
+    task that cannot be calculated comes before every mark: nobody knows
+    where it stands.
 
     An Unserviceable aircraft is to be rectified before anything else. The
     airworthiness review is set beside the tasks of the programme by its
@@ -67,12 +91,18 @@ def _next_due(aircraft: Aircraft, today: date, review_valid_to: date | None) -> 
     """
     from airworthiness_plus.programme import due
 
+    registration = aircraft.registration
     if aircraft.status == Status.UNSERVICEABLE:
-        return "Rectify Defect"
+        return "Rectify Defect", (0, 0, 0, registration)
+    thresholds = due.thresholds_of(aircraft.organisation)
     lines = due.due_lines(aircraft, today)
     first, complete = due.next_due(lines)
     candidates: list[tuple[int, str]] = []
     unranked = bool(lines) and not first
+    severity = max(
+        (CANNOT_BE_CALCULATED if line.needs_attention else SEVERITY[line.flag] for line in lines),
+        default=0,
+    )
     if first:
         urgent = any(line.needs_attention or line.reached for line in first)
         projected = [limit.projected for line in first for limit in line.first]
@@ -84,11 +114,16 @@ def _next_due(aircraft: Aircraft, today: date, review_valid_to: date | None) -> 
         remaining = days_between(today, review_valid_to)
         review = f"Airworthiness Review, {formatting.amount(Unit.CALENDAR, remaining)}"
         candidates.append((min(remaining, -1) if remaining <= 0 else remaining, review))
+        expiry = Limit(Unit.CALENDAR, review_valid_to, remaining)
+        severity = max(severity, SEVERITY[limit_flag(expiry, thresholds)])
     if not candidates:
-        return "Not Ranked, No Planning Utilisation" if unranked else ""
+        text = "Not Ranked, No Planning Utilisation" if unranked else ""
+        return text, (1, -severity, NOT_KNOWN, registration)
     soonest = min(days for days, _ in candidates)
     shown = "; ".join(text for days, text in candidates if days == soonest)
-    return f"{shown}; Tasks Not Ranked, No Planning Utilisation" if unranked else shown
+    if unranked:
+        shown = f"{shown}; Tasks Not Ranked, No Planning Utilisation"
+    return shown, (1, -severity, soonest, registration)
 
 
 def _user(request: HttpRequest) -> User:
@@ -107,9 +142,10 @@ def fleet(request: HttpRequest) -> HttpResponse:
     rows = []
     for aircraft in Aircraft.objects.filter(stage=Stage.FLEET):
         valid_to = review_services.current_valid_to(aircraft)
-        rows.append(
-            FleetRow(aircraft, _airframe(aircraft), _next_due(aircraft, today, valid_to), valid_to)
-        )
+        next_due, rank = _next_due(aircraft, today, valid_to)
+        rows.append(FleetRow(aircraft, _airframe(aircraft), next_due, valid_to, rank))
+    # What needs attention first (dogfooding D-5). A column heading sorts it another way.
+    rows.sort(key=lambda row: row.rank)
     return render(request, "aircraft/fleet.html", {"rows": rows})
 
 
