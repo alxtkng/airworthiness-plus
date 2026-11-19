@@ -65,6 +65,8 @@ def requires(
                 raise ActionRefusedError(action)
             return view(request, *args, **kwargs)
 
+        # Read by interface.field_rules, which writes down what each action may set.
+        wrapped.action = action  # type: ignore[attr-defined]
         return wrapped
 
     return decorate
