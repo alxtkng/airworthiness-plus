@@ -30,7 +30,7 @@
 <h2>Tasks</h2>
 <table>
 <thead>
-<tr><th>Task</th><th>Limit</th><th>Due</th><th>Remaining</th><th>Tolerance Ends</th><th>Status</th><th>Comes First</th></tr>
+<tr><th>Task</th><th>Limit</th><th>Due</th><th class="number">Remaining</th><th>Tolerance Ends</th><th>Status</th><th>Comes First</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -45,7 +45,7 @@
 <td>{{ line.task.title }}</td>
 <td>{{ item.limit.unit.value }}</td>
 <td>{{ item.due_text }}</td>
-<td>{{ item.remaining_text }}</td>
+<td class="number">{{ item.remaining_text }}</td>
 <td>{{ item.tolerance_text }}{% if item.certificate_ends_first %}, After the Review Certificate Ends {{ item.certificate_ends_first|long_date }}{% endif %}</td>
 <td>{{ item.flag.value|status }}</td>
 <td>{% if item.first and line.ranked %}{% if line.limits|length > 1 %}Projected First{% else %}Only Limit{% endif %}{% elif not line.ranked %}Not Ranked{% endif %}</td>
@@ -73,14 +73,14 @@
 <h2>Work Done</h2>
 <table>
 <thead>
-<tr><th>Completed</th><th>Work</th><th>Hours</th><th>Certificate of Release to Service</th><th>Pilot-Owner</th><th data-detail>How the 30 Days Were Calculated</th></tr>
+<tr><th>Completed</th><th>Work</th><th class="number">Hours</th><th>Certificate of Release to Service</th><th>Pilot-Owner</th><th data-detail>How the 30 Days Were Calculated</th></tr>
 </thead>
 <tbody>
 {% for line in work %}
 <tr>
 <td>{{ line.work.dated|long_date }}</td>
 <td>{{ line.work.description }}</td>
-<td>{{ line.work.hours|hours }}</td>
+<td class="number">{{ line.work.hours|hours }}</td>
 <td>{% if line.work.release_reference %}{{ line.work.release_reference }}, Recorded {{ line.work.release_recorded_on|long_date }}{% if line.release_late %}, After the 30 Days{% endif %}{% else %}To Be Recorded by {{ line.release_deadline|long_date }}, {{ line.release_flag.value }}
 <form method="post" action="{% url 'record_release' line.work.id %}">
 {% csrf_token %}

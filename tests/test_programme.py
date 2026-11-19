@@ -115,10 +115,10 @@ def test_g_bxyz_programme_page_shows_every_limit_and_its_working(
     body = page(signed_in(sample.reader), f"/aircraft/{fleet['G-BXYZ'].id}/programme/")
     for text in (
         "<td>3,359.0 Hours</td>",
-        "<td>41.0 Hours</td>",
+        '<td class="number">41.0 Hours</td>',
         "<td>3,369.0 Hours</td>",
         "<td>30 July 2027</td>",
-        "<td>254 Days</td>",
+        '<td class="number">254 Days</td>',
         "<td>30 August 2027</td>",
         "<dd>Minimum Inspection Programme, Aeroplane, Touring Motor Glider or Balloon</dd>",
         "<dd>0.5 Hours a Day</dd>",
@@ -144,7 +144,11 @@ def test_g_fmno_calendar_limit_is_projected_first(
 ) -> None:
     """REQ-043, REQ-044. 61.8 hours at 0.2 a day is 309 days; the calendar limit is 78."""
     body = page(signed_in(sample.reader), f"/aircraft/{fleet['G-FMNO'].id}/programme/")
-    for text in ("<td>5,012.0 Hours</td>", "<td>61.8 Hours</td>", "<td>78 Days</td>"):
+    for text in (
+        "<td>5,012.0 Hours</td>",
+        '<td class="number">61.8 Hours</td>',
+        '<td class="number">78 Days</td>',
+    ):
         assert text in body
     assert "61.8 Hours at 0.2 Hours a Day Is 309 Days, Rounded Down" in body
     calendar_row = body[body.index("<td>4 February 2027</td>") :]
@@ -157,7 +161,7 @@ def test_g_abcd_task_has_no_tolerance_and_one_limit(
     """REQ-049. Not a Minimum Inspection Programme inspection: no tolerance is shown."""
     body = page(signed_in(sample.reader), f"/aircraft/{fleet['G-ABCD'].id}/programme/")
     assert "<td>6,425.0 Hours</td>" in body
-    assert "<td>12.4 Hours</td>" in body
+    assert '<td class="number">12.4 Hours</td>' in body
     assert "Only Limit" in body
     assert "<dt>Tolerance</dt>" not in body
     with working_for(sample.ours.id, sample.lucy.id):
@@ -174,7 +178,7 @@ def test_g_cdef_engine_overhaul_runs_against_the_engine_from_its_overhaul(
     body = page(signed_in(sample.reader), f"/aircraft/{fleet['G-CDEF'].id}/programme/")
     for text in (
         "<td>2,000.0 Hours</td>",
-        "<td>220.0 Hours</td>",
+        '<td class="number">220.0 Hours</td>',
         "<dt>Counted From, Never Yet Done</dt><dd>12 March 2019 at 0.0 Hours</dd>",
         "<dt>First Threshold</dt><dd>2,000.0 Hours</dd>",
         "<dt>Current, Engine Engine 1</dt><dd>1,780.0 Hours, Entered For 18 November 2026</dd>",
@@ -384,7 +388,7 @@ def test_each_time_a_task_is_done_is_kept_and_the_next_runs_from_the_last(
     assert recorded.status_code == 302
     body = page(client, f"/aircraft/{abcd.id}/programme/")
     assert "<td>6,462.6 Hours</td>" in body
-    assert "<td>50.0 Hours</td>" in body
+    assert '<td class="number">50.0 Hours</td>' in body
     assert "<td>2 October 2026</td>" in body
     assert "<td>18 November 2026</td>" in body
     with working_for(sample.ours.id, sample.planner.id):
@@ -500,7 +504,7 @@ def test_a_programme_and_a_task_are_recorded_through_the_pages(
     assert added.status_code == 302
     body = page(client, f"/aircraft/{ejkl.id}/programme/")
     assert "<td>11,300.0 Hours</td>" in body
-    assert "<td>93.2 Hours</td>" in body  # 11,300.0 less 11,206.8
+    assert '<td class="number">93.2 Hours</td>' in body  # 11,300.0 less 11,206.8
     assert "<dt>First Threshold</dt><dd>11,300.0 Hours</dd>" in body
 
     no_interval = post(
