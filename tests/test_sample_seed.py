@@ -7,6 +7,7 @@ assurance/dogfooding.md. Today in the sample world is 18 November 2026.
 
 import re
 import secrets
+from datetime import date
 
 import pytest
 from django.core.management import call_command
@@ -20,6 +21,7 @@ from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.history import chain
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.reviews.models import Certificate
 from tests.conftest import as_owner
 from tests.support import TODAY, signed_in
 
@@ -271,6 +273,28 @@ def test_the_review_dates_are_those_worked_by_hand(reader: Client) -> None:
 
 
 # Directive status and maintenance data
+
+
+def test_lucy_grant_has_her_5_reviews_in_12_months(seeded: dict[str, Aircraft]) -> None:
+    """SampleData.md, recency figures; Issue 71, D-3. Four from before these
+    records, with the references they were issued with, and G-CDEF's issued here."""
+    with as_owner():
+        hers = list(
+            Certificate.objects.filter(
+                issued_by__user__full_name="Lucy Grant", issued_on__gt=date(2025, 11, 18)
+            ).select_related("aircraft")
+        )
+    assert sorted(one.aircraft.registration for one in hers) == [
+        "G-ABCD",
+        "G-BXYZ",
+        "G-CDEF",
+        "G-DGHI",
+        "G-FMNO",
+    ]
+    assert {one.reference for one in hers if not one.from_before_records} == {
+        "UK.CAO.[Number]-ARC-0001"
+    }
+    assert all(one.serial_number is None for one in hers if one.from_before_records)
 
 
 def test_the_directive_status_is_that_worked_by_hand(

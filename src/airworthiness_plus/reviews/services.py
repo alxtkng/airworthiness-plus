@@ -9,6 +9,7 @@ from django.db import transaction
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, CounterKind, Stage
+from airworthiness_plus.interface.formatting import long_date
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due
 from airworthiness_plus.reviews.checklist import CHECKLIST, SURVEY
@@ -180,6 +181,14 @@ def update_involvement(
         raise RefusedError("A Review Cannot Be Dated After Today")
     if not 0 <= months <= 24:
         raise RefusedError("Months in a 2-Year Period Are Between 0 and 24")
+    latest = staff.certificates.filter(from_before_records=True).order_by("issued_on").last()
+    if latest is not None and (
+        last_review_before_records is None or last_review_before_records < latest.issued_on
+    ):
+        raise RefusedError(
+            "A Certificate of Theirs Recorded From Before These Records Is Dated "
+            f"{long_date(latest.issued_on)}"
+        )
     note_lapse(staff, today)
     staff.months_involved = months
     staff.months_recorded_on = today
@@ -256,27 +265,51 @@ def record_certificate(
     reference: str,
     issued_on: date,
     valid_to: date,
-    issued_elsewhere_by: str,
+    issued_elsewhere_by: str = "",
+    issued_by: ReviewStaff | None = None,
     airframe_hours: Decimal | None = None,
 ) -> Certificate:
-    """Record a certificate issued by another organisation or the authority.
+    """Record a certificate that was not issued in these records.
 
-    It keeps the reference it was issued with. No serial of this
-    organisation is used.
+    Either one issued by another organisation or the authority, or one the
+    organisation's own review staff issued before these records. Both keep
+    the reference they were issued with, and no serial is used.
+
+    One of the organisation's own is dated no later than the last review
+    recorded for the person from before these records, which the
+    Administrator states. Recording it therefore cannot change whether the
+    person has recent experience (REQ-113), and cannot stand in for a review
+    carried out in these records (REQ-109).
     """
-    if not reference.strip() or not issued_elsewhere_by.strip():
-        raise RefusedError("A Certificate Issued Elsewhere Has Its Reference and Its Issuer")
+    elsewhere = issued_elsewhere_by.strip()
+    if issued_by is not None and elsewhere:
+        raise RefusedError(
+            "A Certificate Is Issued by Review Staff of This Organisation or Elsewhere, Not Both"
+        )
+    if not reference.strip() or (issued_by is None and not elsewhere):
+        raise RefusedError("A Certificate Recorded Has Its Reference and Its Issuer")
     if issued_on > aircraft_services.today():
         raise RefusedError("A Certificate Cannot Be Issued After Today")
     if valid_to <= issued_on:
         raise RefusedError("A Certificate Expires After It Is Issued")
+    if issued_by is not None:
+        if issued_by.organisation_id != aircraft.organisation_id:
+            raise RefusedError("Review Staff Belong to Another Organisation")
+        last_before = issued_by.last_review_before_records
+        if last_before is None or issued_on > last_before:
+            raise RefusedError(
+                "A Certificate From Before These Records Is Dated No Later Than the Person's "
+                "Last Review Before These Records"
+            )
     return Certificate.objects.create(
         organisation_id=aircraft.organisation_id,
         aircraft=aircraft,
         reference=reference.strip(),
         issued_on=issued_on,
         valid_to=valid_to,
-        issued_elsewhere_by=issued_elsewhere_by.strip(),
+        issued_by=issued_by,
+        issued_elsewhere_by=elsewhere,
+        from_before_records=issued_by is not None,
         airframe_hours=airframe_hours,
     )
 
@@ -409,11 +442,22 @@ class ScheduleLine:
     copies: tuple[CopyLine, ...]
 
 
+def issued_in_these_records(certificate: Certificate) -> bool:
+    """Return whether the organisation issued the certificate in these records."""
+    return certificate.issued_by_id is not None and not certificate.from_before_records
+
+
 def _copies(certificate: Certificate | None, today: date) -> tuple[CopyLine, ...]:
-    if certificate is None or certificate.issued_by is None:
+    """Return the copies owed for a certificate and for each extension of it.
+
+    The copy of a certificate is tracked when it was issued in these
+    records. The copy of an extension is owed whoever issued the
+    certificate, because the extension is this organisation's (ML.A.903(f)).
+    """
+    if certificate is None:
         return ()
     owed = []
-    if certificate.copy_sent_on is None:
+    if issued_in_these_records(certificate) and certificate.copy_sent_on is None:
         deadline = copy_to_authority_deadline(certificate.issued_on)
         owed.append(CopyLine(certificate, None, deadline, deadline_flag(today, deadline)))
     for extension in certificate.extensions.filter(copy_sent_on__isnull=True):

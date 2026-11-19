@@ -57,6 +57,9 @@ FLEET = (
 
 # SampleData.md, Fleet: Review Certificate Valid To. G-CDEF is shown after its
 # review of 11 November 2026; before it the certificate was valid to 2 December 2026.
+# Lucy Grant's reviews from before these records (SampleData.md, recency figures).
+# The sample does not say who issued the earlier certificates of G-EJKL and G-CDEF.
+LUCY_BEFORE = frozenset({"G-DGHI", "G-ABCD", "G-BXYZ", "G-FMNO"})
 CERTIFICATES_BEFORE = (
     ("G-DGHI", date(2027, 5, 19)),
     ("G-EJKL", date(2026, 12, 6)),
@@ -265,12 +268,14 @@ def add_reviews(people: People, fleet: dict[str, Aircraft]) -> Reviews:
         )
     with working_for(people.ours.id, people.lucy.id):
         for registration, valid_to in CERTIFICATES_BEFORE:
+            hers = registration in LUCY_BEFORE
             review_services.record_certificate(
                 fleet[registration],
                 reference=f"[Certificate Reference {registration}]",
                 issued_on=valid_to.replace(year=valid_to.year - 1),
                 valid_to=valid_to,
-                issued_elsewhere_by="[Recorded From the Aircraft Records]",
+                issued_by=lucy if hers else None,
+                issued_elsewhere_by="" if hers else "[Recorded From the Aircraft Records]",
             )
         cdef = review_services.issue_certificate(
             fleet["G-CDEF"],

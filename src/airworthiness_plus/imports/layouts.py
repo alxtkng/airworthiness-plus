@@ -56,9 +56,19 @@ CERTIFICATES = (
     "Date of Issue",
     "Date of Expiry",
     "Issued By",
+    "Review Staff Authorisation Reference",
     "Airframe Flight Hours at the Time of Review",
 )
-CERTIFICATES_OPTIONAL = frozenset({"Airframe Flight Hours at the Time of Review"})
+# A row gives one issuer: Issued By for a certificate issued elsewhere, or the
+# authorisation reference of the organisation's own review staff member for one
+# they issued before these records.
+CERTIFICATES_OPTIONAL = frozenset(
+    {
+        "Issued By",
+        "Review Staff Authorisation Reference",
+        "Airframe Flight Hours at the Time of Review",
+    }
+)
 
 # Hours and cycles: a wrong total overstates the time remaining (hazards H-008, H-011).
 TOTALS = frozenset(

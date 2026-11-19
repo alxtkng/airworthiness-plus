@@ -161,6 +161,101 @@ END
 $$;
 """
 
+# A certificate the organisation's own review staff issued before these records
+# keeps its reference and takes no serial. It is dated no later than the last
+# review recorded for the person from before these records, so that it cannot
+# stand in for a review in these records or change whether the person has
+# recent experience (REQ-109, REQ-110, REQ-113). The issuer written for a
+# certificate issued elsewhere is fixed with the rest of what it says.
+ALLOW_FROM_BEFORE = """
+CREATE OR REPLACE FUNCTION reviews_certificate_before_insert() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    approval text;
+    last_before date;
+BEGIN
+    IF NEW.issued_by_id IS NULL THEN
+        NEW.serial_number := NULL;
+        RETURN NEW;
+    END IF;
+    IF NEW.from_before_records THEN
+        SELECT last_review_before_records INTO last_before
+          FROM reviews_reviewstaff
+         WHERE id = NEW.issued_by_id;
+        IF last_before IS NULL OR NEW.issued_on > last_before THEN
+            RAISE EXCEPTION
+                'No certificate from before these records is after the last review before them'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        NEW.serial_number := NULL;
+        RETURN NEW;
+    END IF;
+    NEW.serial_number := reviews_allocate_serial(NEW.organisation_id);
+    SELECT approval_reference INTO approval
+      FROM organisations_organisation
+     WHERE id = NEW.organisation_id;
+    NEW.reference := approval || '-ARC-' || lpad(NEW.serial_number::text, 4, '0');
+    RETURN NEW;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION reviews_certificate_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.serial_number IS DISTINCT FROM OLD.serial_number
+       OR NEW.reference IS DISTINCT FROM OLD.reference
+       OR NEW.issued_on IS DISTINCT FROM OLD.issued_on
+       OR NEW.valid_to IS DISTINCT FROM OLD.valid_to
+       OR NEW.aircraft_id IS DISTINCT FROM OLD.aircraft_id
+       OR NEW.issued_by_id IS DISTINCT FROM OLD.issued_by_id
+       OR NEW.issued_elsewhere_by IS DISTINCT FROM OLD.issued_elsewhere_by
+       OR NEW.from_before_records IS DISTINCT FROM OLD.from_before_records
+       OR (OLD.voided AND NOT NEW.voided) THEN
+        RAISE EXCEPTION 'What a certificate says is never altered once recorded'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+"""
+
+FROM_BEFORE_NOT_ALLOWED = """
+CREATE OR REPLACE FUNCTION reviews_certificate_before_insert() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    approval text;
+BEGIN
+    IF NEW.issued_by_id IS NULL THEN
+        NEW.serial_number := NULL;
+        RETURN NEW;
+    END IF;
+    NEW.serial_number := reviews_allocate_serial(NEW.organisation_id);
+    SELECT approval_reference INTO approval
+      FROM organisations_organisation
+     WHERE id = NEW.organisation_id;
+    NEW.reference := approval || '-ARC-' || lpad(NEW.serial_number::text, 4, '0');
+    RETURN NEW;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION reviews_certificate_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.serial_number IS DISTINCT FROM OLD.serial_number
+       OR NEW.reference IS DISTINCT FROM OLD.reference
+       OR NEW.issued_on IS DISTINCT FROM OLD.issued_on
+       OR NEW.valid_to IS DISTINCT FROM OLD.valid_to
+       OR NEW.aircraft_id IS DISTINCT FROM OLD.aircraft_id
+       OR NEW.issued_by_id IS DISTINCT FROM OLD.issued_by_id
+       OR (OLD.voided AND NOT NEW.voided) THEN
+        RAISE EXCEPTION 'What a certificate says is never altered once recorded'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+"""
+
 DROP_REVIEW_FIXED = """
 DROP TRIGGER reviewitem_fixed ON reviews_reviewitem;
 DROP TRIGGER review_fixed ON reviews_review;

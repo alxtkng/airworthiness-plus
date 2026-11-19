@@ -503,10 +503,10 @@ def test_a_certificate_issued_elsewhere_shows_who_issued_it(
 ) -> None:
     """REQ-110. It keeps its own reference, and cannot be voided here."""
     with working_for(sample.ours.id, sample.lucy.id):
-        certificate = Certificate.objects.get(aircraft=fleet["G-ABCD"])
+        certificate = Certificate.objects.get(aircraft=fleet["G-EJKL"])
     body = page(signed_in(sample.reader), f"/certificates/{certificate.id}/")
     assert "<dt>Issued By</dt><dd>[Recorded From the Aircraft Records]</dd>" in body
-    assert "<dt>Certificate Reference</dt><dd>[Certificate Reference G-ABCD]</dd>" in body
+    assert "<dt>Certificate Reference</dt><dd>[Certificate Reference G-EJKL]</dd>" in body
     assert "Void" not in body
 
 

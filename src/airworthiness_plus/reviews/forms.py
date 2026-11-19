@@ -7,11 +7,26 @@ from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.reviews.models import ProgrammeDiscrepancy, Result, ReviewStaff
 
 
+def _name_and_authorisation(staff: ReviewStaff) -> str:
+    return f"{staff.user.full_name}, {staff.authorisation_reference}"
+
+
 class CertificateForm(Form):
-    """Record a certificate issued by another organisation or the authority."""
+    """Record a certificate that was not issued in these records.
+
+    One issued by another organisation or the authority, or one the
+    organisation's own review staff issued before these records.
+    """
 
     reference = forms.CharField(label="Certificate Reference", max_length=80)
-    issued_elsewhere_by = forms.CharField(label="Issued By", max_length=200)
+    issued_by = forms.ModelChoiceField(
+        label="Issued by Review Staff of This Organisation, Before These Records",
+        queryset=ReviewStaff.objects.none(),
+        required=False,
+    )
+    issued_elsewhere_by = forms.CharField(
+        label="Or Issued Elsewhere By", max_length=200, required=False
+    )
     issued_on = forms.DateField(label="Date of Issue")
     valid_to = forms.DateField(label="Date of Expiry")
     airframe_hours = forms.DecimalField(
@@ -21,6 +36,13 @@ class CertificateForm(Form):
         min_value=0,
         required=False,
     )
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        super().__init__(*args, **kwargs)
+        # Those who have left are offered too: they issued certificates before they went.
+        field = self.fields["issued_by"]
+        field.queryset = ReviewStaff.objects.select_related("user")  # type: ignore[attr-defined]
+        field.label_from_instance = _name_and_authorisation  # type: ignore[attr-defined]
 
 
 class ExtensionForm(Form):

@@ -192,7 +192,7 @@ def test_serials_run_in_order_and_a_void_serial_is_never_used_again(
         )
         chosen.refresh_from_db()
         assert (chosen.serial_number, chosen.reference) == (4, "UK.CAO.[Number]-ARC-0004")
-        serials = Certificate.objects.filter(issued_by__isnull=False).order_by("serial_number")
+        serials = Certificate.objects.filter(serial_number__isnull=False).order_by("serial_number")
         assert [certificate.serial_number for certificate in serials] == [1, 2, 3, 4]
         # The voided certificate is still there, and G-EJKL is back on its earlier one.
         assert Certificate.objects.get(pk=second.pk).voided
@@ -400,7 +400,9 @@ def test_g_ejkl_certificate_is_extended_within_30_days(
     sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
 ) -> None:
     """REQ-104 to REQ-106, ML.A.901(c) and (d). 18 days before 6 December 2026:
-    extended to 6 December 2027. Each condition is confirmed; a copy is owed."""
+    extended to 6 December 2027. Each condition is confirmed. The certificate
+    was issued elsewhere, and the copy of its extension is still owed to the
+    Civil Aviation Authority: by 28 November 2026 (REQ-111, ML.A.903(f))."""
     client = signed_in(sample.lucy)
     ejkl = fleet["G-EJKL"]
     with working_for(sample.ours.id, sample.lucy.id):
@@ -426,6 +428,10 @@ def test_g_ejkl_certificate_is_extended_within_30_days(
         assert (extension.extended_on, extension.valid_to) == (TODAY, date(2027, 12, 6))
         with pytest.raises(IntegrityError, match="every_condition"), transaction.atomic():
             Extension.objects.filter(pk=extension.pk).update(no_evidence_not_airworthy=False)
+    owed = row_for(page(client, "/reviews/"), "G-EJKL")
+    assert f"To Be Sent by 28 November 2026, {dot('Due Soon')}" in owed
+    sent = post(client, f"/extensions/{extension.id}/copy-sent/", on="2026-11-18")
+    assert sent.status_code == 302
     assert "To Be Sent" not in row_for(page(client, "/reviews/"), "G-EJKL")
 
 
@@ -497,6 +503,125 @@ def test_a_certificate_issued_elsewhere_keeps_its_own_reference(
                     issued_on=date.fromisoformat(values["issued_on"]),
                     valid_to=date.fromisoformat(values["valid_to"]),
                 )
+
+
+def test_a_certificate_from_before_these_records_can_be_the_organisations_own(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-110, REQ-113; Issue 71, D-3. It names the review staff member, keeps
+    the reference it was issued with and uses no serial. It is dated no later
+    than the person's last review before these records, which the Administrator
+    states, so that recording it cannot change whether the person is recent."""
+    client = signed_in(sample.planner)
+    hklm = fleet["G-HKLM"]
+    path = f"/aircraft/{hklm.id}/review/certificates/"
+    fields = {
+        "reference": "[Certificate Reference G-HKLM]",
+        "issued_by": str(reviews.lucy.id),
+        "issued_on": "2026-05-20",
+        "valid_to": "2027-05-20",
+    }
+    with working_for(sample.ours.id, sample.lucy.id):
+        before = services.staff_line(reviews.lucy, TODAY)
+    # Lucy Grant's last review before these records is 2 August 2026.
+    for values, message in (
+        ({**fields, "issued_elsewhere_by": "[Previous Organisation]"}, "Not Both"),
+        ({**fields, "issued_by": ""}, "Has Its Reference and Its Issuer"),
+        ({**fields, "issued_on": "2026-08-03"}, "No Later Than the Person"),
+    ):
+        refused = post(client, path, **values)
+        assert refused.status_code == 200
+        assert message in refused.content.decode(), message
+    assert post(client, path, **fields).status_code == 302
+    with working_for(sample.ours.id, sample.lucy.id):
+        recorded = Certificate.objects.get(aircraft=hklm)
+        assert (recorded.serial_number, recorded.reference) == (
+            None,
+            "[Certificate Reference G-HKLM]",
+        )
+        assert (recorded.issued_by, recorded.from_before_records) == (reviews.lucy, True)
+        # Whether she is recent, and until when, is as it was.
+        after = services.staff_line(reviews.lucy, TODAY)
+        assert (after.last_review, after.lapses) == (before.last_review, before.lapses)
+        # The next certificate issued here takes the next serial: none was used.
+        ejkl = services.issue_certificate(fleet["G-EJKL"], staff=reviews.lucy, issued_on=TODAY)
+        assert (reviews.cdef.serial_number, ejkl.serial_number) == (1, 2)
+        assert not ejkl.from_before_records
+        # What it says cannot be changed afterwards.
+        with pytest.raises(DatabaseError, match="never altered"), transaction.atomic():
+            Certificate.objects.filter(pk=recorded.pk).update(from_before_records=False)
+    body = page(client, f"/aircraft/{hklm.id}/review/")
+    assert "<td>Lucy Grant, [Authorisation Reference 1], Before These Records</td>" in body
+    assert f"/certificates/{recorded.id}/copy-sent/" not in body  # no copy is owed for it now
+    with working_for(sample.ours.id, sample.lucy.id):
+        assert services.schedule_line(hklm, TODAY).copies == ()
+    detail = page(client, f"/certificates/{recorded.id}/")
+    for text in (
+        "<p>Recorded From Before These Records</p>",
+        "<dd>Lucy Grant</dd>",
+        "<dd>[Authorisation Reference 1]</dd>",
+    ):
+        assert text in detail, text
+
+
+def test_the_database_holds_a_certificate_from_before_to_the_same_rule(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-109, REQ-110, hazard H-007. Whatever the application does, a certificate
+    of the organisation's own with no review behind it is one from before the
+    person's last review before these records, and an ordinary one has a serial."""
+    hklm = fleet["G-HKLM"]
+
+    def create(**values: object) -> Certificate:
+        with transaction.atomic():
+            return Certificate.objects.create(
+                organisation_id=hklm.organisation_id,
+                aircraft=hklm,
+                valid_to=date(2027, 10, 1),
+                **values,
+            )
+
+    with working_for(sample.ours.id, sample.lucy.id):
+        with pytest.raises(DatabaseError, match="before these records"):
+            create(
+                reference="[A]",
+                issued_on=date(2026, 10, 1),
+                issued_by=reviews.lucy,
+                from_before_records=True,
+            )
+        with pytest.raises(IntegrityError, match="certificate_from_before"):
+            create(
+                reference="[B]",
+                issued_on=date(2026, 5, 1),
+                issued_elsewhere_by="[Previous Organisation]",
+                from_before_records=True,
+            )
+        # A reference typed for an ordinary certificate is replaced: it has its serial.
+        ordinary = create(reference="[C]", issued_on=date(2026, 10, 1), issued_by=reviews.lucy)
+        ordinary.refresh_from_db()
+        assert (ordinary.serial_number, ordinary.reference) == (2, "UK.CAO.[Number]-ARC-0002")
+        elsewhere = create(
+            reference="[D]", issued_on=date(2026, 5, 1), issued_elsewhere_by="[Previous]"
+        )
+        with pytest.raises(DatabaseError, match="never altered"), transaction.atomic():
+            Certificate.objects.filter(pk=elsewhere.pk).update(issued_elsewhere_by="[Another]")
+
+
+def test_the_last_review_before_these_records_is_not_moved_before_a_certificate(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-113. The date the Administrator states stays on or after every
+    certificate of the person recorded from before these records. Lucy Grant's
+    latest is G-BXYZ's, 2 August 2026."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        for earlier in (date(2026, 8, 1), None):
+            with pytest.raises(services.RefusedError, match="Is Dated 2 August 2026"):
+                services.update_involvement(
+                    reviews.lucy, months=0, last_review_before_records=earlier
+                )
+        services.update_involvement(
+            reviews.lucy, months=0, last_review_before_records=date(2026, 8, 2)
+        )
 
 
 # The Fleet and the programme page

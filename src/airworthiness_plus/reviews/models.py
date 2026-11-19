@@ -68,8 +68,10 @@ class Certificate(Record):
     which allocates it in the transaction that issues the certificate:
     unique, in order, and never used again, because a certificate is never
     deleted and a voided one keeps its serial. One issued elsewhere is
-    recorded with the reference it carries. The reference, dates, aircraft
-    and serial of a certificate never change once recorded.
+    recorded with the reference it carries. So is one the organisation's
+    own review staff issued before these records: it names the person and
+    uses no serial. The reference, dates, aircraft, issuer and serial of a
+    certificate never change once recorded.
     """
 
     organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
@@ -82,6 +84,8 @@ class Certificate(Record):
         ReviewStaff, on_delete=models.PROTECT, null=True, blank=True, related_name="certificates"
     )
     issued_elsewhere_by = models.CharField("Issued By", max_length=200, blank=True)
+    # Issued by the organisation's own review staff before these records.
+    from_before_records = models.BooleanField("Recorded From Before These Records", default=False)
     airframe_hours = models.DecimalField(
         "Airframe Flight Hours at the Review", max_digits=8, decimal_places=1, null=True, blank=True
     )
@@ -115,6 +119,20 @@ class Certificate(Record):
             models.CheckConstraint(
                 condition=Q(voided=False, void_reason="") | (Q(voided=True) & ~Q(void_reason="")),
                 name="certificate_void_has_a_reason",
+            ),
+            # One from before these records is the organisation's own, with the
+            # reference it was issued with and no serial.
+            models.CheckConstraint(
+                condition=Q(from_before_records=False)
+                | (Q(issued_by__isnull=False, serial_number__isnull=True) & ~Q(reference="")),
+                name="certificate_from_before_has_its_reference_and_no_serial",
+            ),
+            # Any other certificate of the organisation's own has its serial.
+            models.CheckConstraint(
+                condition=Q(issued_by__isnull=True)
+                | Q(from_before_records=True)
+                | Q(serial_number__isnull=False),
+                name="certificate_issued_in_these_records_has_its_serial",
             ),
         ]
 
