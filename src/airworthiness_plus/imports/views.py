@@ -53,6 +53,8 @@ def load(request: HttpRequest) -> HttpResponse:
     if not form.is_valid():
         return _imports(request, "Choose What the File Holds, Name Its Source and Give the File")
     upload = form.cleaned_data["file"]
+    if not (upload.name or "").lower().endswith(".csv"):
+        return _imports(request, "The File Is a CSV File, with a Name Ending in .csv")
     if upload.size > services.MAXIMUM_BYTES:
         return _imports(request, "The File Is Larger Than 1 Megabyte")
     user = _user(request)

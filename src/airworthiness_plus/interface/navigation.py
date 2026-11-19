@@ -169,6 +169,7 @@ GROUPS: tuple[Group, ...] = (
                         "set_user_active",
                         "reset_user_password",
                         "reset_user_second_factor",
+                        "end_user_sessions",
                     }
                 ),
             ),
@@ -177,7 +178,9 @@ GROUPS: tuple[Group, ...] = (
 )
 
 # Pages that belong to the person, not to a section.
-OUTSIDE = frozenset({"sign_in", "code", "set_up", "sign_out", "change_password"})
+OUTSIDE = frozenset(
+    {"sign_in", "code", "set_up", "sign_out", "change_password", "end_other_sessions"}
+)
 
 
 def place(address: str) -> tuple[Group, Item] | None:

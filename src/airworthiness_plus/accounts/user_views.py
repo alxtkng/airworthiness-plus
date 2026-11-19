@@ -124,6 +124,27 @@ def reset_second_factor(request: HttpRequest, user_id: uuid.UUID) -> HttpRespons
     return redirect("users")
 
 
+@requires(Action.MANAGE_USERS_AND_ROLES)
+@require_POST
+def end_sessions(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
+    """End every session of a user, for example when a device is lost."""
+    person = get_object_or_404(User, pk=user_id)
+    users.end_sessions(person, by=_user(request), address=address_of(request))
+    if person.pk == _user(request).pk:
+        update_session_auth_hash(request, person)
+    return redirect("users")
+
+
+@signed_in
+@require_POST
+def end_other_sessions(request: HttpRequest) -> HttpResponse:
+    """End every other session of the signed-in user. This one continues."""
+    user = _user(request)
+    users.end_sessions(user, by=user, address=address_of(request))
+    update_session_auth_hash(request, user)
+    return redirect("change_password")
+
+
 @never_cache
 @signed_in
 @require_http_methods(["GET", "POST"])
