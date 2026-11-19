@@ -246,6 +246,10 @@ def confirm_code(
     with its step so that it cannot be used again, here or at sign-in. A wrong
     one counts as a failed sign-in does.
     """
+    # Guesses are limited here as at sign-in: five wrong codes lock the name.
+    if _locked(user.username):
+        _log(AccessKind.SIGN_IN_REFUSED_WHILE_LOCKED, user.username, user=user, address=address)
+        return False
     counter = None
     if user.second_factor_secret:
         counter = totp.matching_counter(

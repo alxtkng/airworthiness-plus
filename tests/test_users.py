@@ -130,7 +130,7 @@ def test_the_administrator_adds_a_user_with_roles_and_a_first_password(
     assert "<td>[New Person]</td>" in body
     assert "<td>Active, Password to Be Changed</td>" in body
     assert "<td>Not Set Up</td>" in body
-    assert FIRST not in body
+    assert given not in body  # shown once
 
 
 @pytest.mark.parametrize(
@@ -551,6 +551,95 @@ def test_the_administrator_gives_a_code_to_change_how_another_signs_in(
     assert not new_user.check_password(FIRST)
 
 
+def stale_administrator(sample: Sample, clock: Clock) -> tuple[Client, User, str]:
+    """Return a second Administrator signed in for real, 6 minutes ago."""
+    name = "second.administrator@your-organisation.example"
+    with working_for(sample.ours.id, sample.administrator.id):
+        second = users.add_user(
+            organisation=sample.ours,
+            username=name,
+            full_name="[Second Administrator]",
+            roles=[Role.ADMINISTRATOR],
+            password=FOURTH,
+        )
+    client = Client()
+    sign_in_with(client, clock, name, FOURTH)
+    post(client, "/account/password/", current=FOURTH, new=THIRD, again=THIRD)
+    clock.advance(minutes=6)
+    return client, second, name
+
+
+def test_every_change_on_the_users_page_needs_a_code_unless_just_signed_in(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """OWASP ASVS 5.0, 7.5.1; threat TH-002. Found by the independent review of
+    19 November 2026: adding an Administrator needed no code, and the new
+    Administrator, freshly signed in, could then reset anyone. Every change on
+    the Users page now asks, and what was sent is kept for when the code is given."""
+    administrator, _, name = stale_administrator(sample, clock)
+    added = "mallory@your-organisation.example"
+    changes: tuple[tuple[str, dict[str, str], str], ...] = (
+        (
+            "/users/add/",
+            {"full_name": "[Mallory]", "username": added, "roles": "Administrator"},
+            "Add a User",
+        ),
+        (
+            f"/users/{new_user.id}/roles/",
+            {f"{new_user.id}-roles": "Administrator"},
+            "Save Roles of [New Person]",
+        ),
+        (f"/users/{new_user.id}/active/", {"active": "no"}, "Make [New Person] Inactive"),
+        (f"/users/{new_user.id}/sessions/", {}, "End Sessions of [New Person]"),
+    )
+    for path, values, what in changes:
+        asked = post(administrator, path, **values)
+        assert asked.status_code == 200, path
+        body = asked.content.decode()
+        assert f"<h1>{what}</h1>" in body, path
+        for field, value in values.items():
+            assert f'<input type="hidden" name="{field}" value="{value}">' in body, field
+    # Nothing was done.
+    with as_owner():
+        assert not User.objects.filter(username=added).exists()
+        person = User.objects.get(pk=new_user.pk)
+        assert (person.is_active, person.roles) == (True, ["Planning and Records"])
+    assert "Sessions Ended" not in [kind for kind, _ in log_of(new_user)]
+    # With the code, and what was sent, each is done.
+    for path, values, _ in changes:
+        clock.advance(seconds=31)
+        done = post(administrator, path, **values, code=code_now(name, clock))
+        assert "Is Not Right" not in done.content.decode(), path
+        assert "Code From Your Authenticator Application" not in done.content.decode(), path
+    with as_owner():
+        assert User.objects.get(username=added).roles == ["Administrator"]
+        person = User.objects.get(pk=new_user.pk)
+        assert (person.is_active, person.roles) == (False, ["Administrator"])
+    assert "Sessions Ended" in [kind for kind, _ in log_of(new_user)]
+
+
+def test_guesses_at_the_code_are_locked_like_guesses_at_sign_in(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """Threat TH-001; found by the independent review of 19 November 2026. Whoever
+    holds a session could try codes without limit. Five wrong codes now lock the
+    name for 15 minutes, here as at sign-in, and the right code is then refused."""
+    administrator, second, name = stale_administrator(sample, clock)
+    path = f"/users/{new_user.id}/second-factor/"
+    for _ in range(5):
+        assert "Is Not Right" in post(administrator, path, code="000000").content.decode()
+    clock.advance(seconds=31)
+    refused = post(administrator, path, code=code_now(name, clock))
+    assert refused.status_code == 200
+    assert "Is Not Right" in refused.content.decode()
+    assert "Sign-In Refused While Locked" in [kind for kind, _ in log_of(second)]
+    assert "Second Factor Reset" not in [kind for kind, _ in log_of(new_user)]
+    # After the 15 minutes the right code works.
+    clock.advance(minutes=16)
+    done = post(administrator, path, code=code_now(name, clock))
+    assert (done.status_code, done["Location"]) == (302, "/users/")
+
+
 # Reading the access log (REQ-009)
 
 
@@ -563,8 +652,12 @@ def test_the_administrator_reads_the_access_log(
     sign_in_with(Client(REMOTE_ADDR="192.0.2.9"), clock, NEW, FIRST)
     clock.advance(seconds=31)
     assert give_password(Client(), NEW, "not " + FIRST).status_code == 200
-    stranger = signed_in(sample.stranger)
-    assert get(stranger, "/aircraft/add/").status_code in (200, 403)
+    # An entry of the other organisation: a failed sign-in under its user's name.
+    theirs = sample.stranger.username
+    assert give_password(Client(REMOTE_ADDR="192.0.2.66"), theirs, "not it").status_code == 200
+    their_log = page(signed_in(sample.stranger), "/users/access-log/")
+    assert "<td>192.0.2.66</td>" in their_log
+    assert f"<td>{sample.stranger.full_name}</td>" in their_log
     administrator = signed_in(sample.administrator)
     path = "/users/access-log/"
 
@@ -573,8 +666,9 @@ def test_the_administrator_reads_the_access_log(
     assert order == sorted(order)
     for text in ("<td>[New Person]</td>", "<td>192.0.2.9</td>", "<td>Wrong Password</td>"):
         assert text in body, text
-    assert sample.stranger.username not in body
+    assert theirs not in body
     assert sample.stranger.full_name not in body
+    assert "192.0.2.66" not in body
     assert "Older Entries" not in body
 
     # Two at a time: the newest two, then a link to the rest.
@@ -588,8 +682,9 @@ def test_the_administrator_reads_the_access_log(
     second = page(administrator, link.group(1))
     assert "Second Factor Set Up" in second
     assert "Sign-In Failed" not in second
-    # Anything else in the address is ignored.
-    assert get(administrator, path + "?before=x").status_code == 200
+    # Anything else in the address is ignored, including digits that are not a number here.
+    for odd in ("x", "\u00b2", "9" * 5000, "-1"):
+        assert get(administrator, path + f"?before={odd}").status_code == 200, odd[:8]
 
 
 # Other organisations (T-SEC-010), roles (T-SEC-011) and forged writes (T-SEC-005)
@@ -620,6 +715,9 @@ def test_another_organisations_users_are_not_shown_or_changed(
     body = page(stranger, "/users/")
     assert "[New Person]" not in body
     assert "Lucy Grant" not in body
+    # Our user has an entry in the log, and the stranger is not shown it.
+    assert give_password(Client(), NEW, "not it").status_code == 200
+    assert "[New Person]" in page(signed_in(sample.administrator), "/users/access-log/")
     assert "[New Person]" not in page(stranger, "/users/access-log/")
     # Every address that names one of our users is not found.
     for method, path, _ in addresses(new_user):

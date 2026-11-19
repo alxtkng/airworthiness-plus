@@ -6,7 +6,8 @@
 <p>You signed in more than 5 minutes ago, so a code is asked for again.</p>
 <form method="post" action="{{ action }}">
 {% csrf_token %}
-<p><label for="code">Code From Your Authenticator Application</label><br><input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required></p>
+{% for name, value in carried %}<input type="hidden" name="{{ name }}" value="{{ value }}">
+{% endfor %}<p><label for="code">Code From Your Authenticator Application</label><br><input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required></p>
 <p><button type="submit">{{ what }}</button></p>
 </form>
 <p><a href="{% url back %}">{{ back_label }}</a></p>

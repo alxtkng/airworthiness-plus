@@ -63,12 +63,12 @@ Each line is an address that changes something: the action it needs, the roles t
 | Add to Problem Log | Administrator, Continuing Airworthiness Manager, Airworthiness Review Staff, Planning and Records | `/problem-log/<uuid:problem_id>/notes/` | Add the action, the solution or a note to an entry | Add; What Was Done or Found |
 | Change Organisation Record | Administrator | `/organisation/approval/` | Record the written approval to keep records in the system | Approval Reference; Approval Dated |
 | Change Organisation Record | Administrator | `/organisation/parallel-run/` | Record the day the parallel run began | Parallel Run Started |
-| Manage Users and Roles | Administrator | `/users/add/` | Add a user. The system makes their first password and shows it once | Full Name; User Name; Roles |
-| Manage Users and Roles | Administrator | `/users/<uuid:user_id>/roles/` | Set the roles a user holds | Roles |
-| Manage Users and Roles | Administrator | `/users/<uuid:user_id>/active/` | Make a user inactive, or active again | Active or Inactive |
+| Manage Users and Roles | Administrator | `/users/add/` | Add a user. The system makes their first password and shows it once | Full Name; User Name; Roles; Code From the Administrator's Authenticator Application |
+| Manage Users and Roles | Administrator | `/users/<uuid:user_id>/roles/` | Set the roles a user holds | Roles; Code From the Administrator's Authenticator Application |
+| Manage Users and Roles | Administrator | `/users/<uuid:user_id>/active/` | Make a user inactive, or active again | Active or Inactive; Code From the Administrator's Authenticator Application |
 | Manage Users and Roles | Administrator | `/users/<uuid:user_id>/password/` | Give a user a new first password, made by the system and shown once | Code From the Administrator's Authenticator Application |
 | Manage Users and Roles | Administrator | `/users/<uuid:user_id>/second-factor/` | Clear a user's second factor so that they set one up again | Code From the Administrator's Authenticator Application |
-| Manage Users and Roles | Administrator | `/users/<uuid:user_id>/sessions/` | End every session of a user, for example when a device is lost | None |
+| Manage Users and Roles | Administrator | `/users/<uuid:user_id>/sessions/` | End every session of a user, for example when a device is lost | Code From the Administrator's Authenticator Application |
 | None | Any Signed-In User, for Themselves | `/account/password/` | Change the signed-in user's own password | Current Password; New Password; New Password Again; Code From Your Authenticator Application |
 | None | Any Signed-In User, for Themselves | `/account/sessions/` | End every other session of the signed-in user. This one continues | Code From Your Authenticator Application |
 | None | Any Signed-In User, for Themselves | `/account/sessions/<uuid:session_id>/end/` | End one other session of the signed-in user | Code From Your Authenticator Application |

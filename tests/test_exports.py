@@ -9,7 +9,7 @@ import io
 import json
 import secrets
 import zipfile
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -23,6 +23,7 @@ from django.test import Client
 
 from airworthiness_plus.acceptance import services as acceptance_services
 from airworthiness_plus.acceptance.models import NoteKind
+from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.accounts.roles import Action, permitted
 from airworthiness_plus.aircraft import services as aircraft_services
@@ -488,7 +489,7 @@ def call(client: Client, method: str, path: str) -> HttpResponse:
 
 
 def test_the_export_of_an_organisation_is_limited_to_6_in_an_hour(
-    sample: Sample, fleet: dict[str, Aircraft]
+    sample: Sample, fleet: dict[str, Aircraft], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """OWASP ASVS 5.0, 15.2.2; threat TH-007. It reads every record and its history,
     so it is the one thing a signed-in user could ask for again and again. The
@@ -505,6 +506,20 @@ def test_the_export_of_an_organisation_is_limited_to_6_in_an_hour(
         assert made.count() == 6
     assert post(client, f"/aircraft/{fleet['G-EJKL'].id}/export/").status_code == 200
     assert post(signed_in(sample.stranger), "/records-export/organisation/").status_code == 200
+    # It is 6 in an hour, not 6 for ever: 59 minutes on it is still refused, 61 it is not.
+    real = sign_in.current_time
+
+    def later(minutes: int) -> Client:
+        """Return the planner signed in afresh, with the clock moved on."""
+        monkeypatch.setattr(sign_in, "current_time", lambda: real() + timedelta(minutes=minutes))
+        fresh = signed_in(sample.planner)
+        session = fresh.session
+        session["signed_in_at"] = session["last_seen"] = sign_in.current_time().isoformat()
+        session.save()
+        return fresh
+
+    assert post(later(59), "/records-export/organisation/").status_code == 429
+    assert post(later(61), "/records-export/organisation/").status_code == 200
 
 
 def test_another_organisations_aircraft_cannot_be_exported(

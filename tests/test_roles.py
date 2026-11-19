@@ -219,7 +219,12 @@ def test_every_form_belongs_to_an_address_that_sets_something() -> None:
                 declared.add(value)
     assert declared == used
     add_user = next(rule for rule in field_rules.rules() if rule.name == "add_user")
-    assert add_user.sets == ("Full Name", "User Name", "Roles")
+    assert add_user.sets == (
+        "Full Name",
+        "User Name",
+        "Roles",
+        "Code From the Administrator's Authenticator Application",
+    )
 
 
 def test_the_document_is_what_the_code_says() -> None:
