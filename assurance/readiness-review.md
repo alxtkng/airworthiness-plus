@@ -24,7 +24,7 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 645 tests pass, on every change, against PostgreSQL in the pipeline. Eight of them run the table script in a real browser.
+- 648 tests pass, on every change, against PostgreSQL in the pipeline. Eight of them run the table script in a real browser.
 
 The eleven that are not:
 
@@ -138,7 +138,7 @@ Each is recorded where it arose; this is the list in one place.
 
 | Question | What the System Does Now | Where |
 |---|---|---|
-| ML.A.302(d)(1): may the tolerance be used at two inspections in a row? | Records each use; does not refuse a second | `independent-verification/tolerance.md` |
+| ML.A.302(d)(1): may the tolerance be used at two inspections in a row? | Does not refuse a second. Says when it was used, and at a second use in a row adds what GM1 ML.A.302(c)(3) says | `independent-verification/tolerance.md` |
 | May a programme based on the design approval holder's instructions carry a tolerance stated in those instructions? | Refuses any tolerance outside the Minimum Inspection Programme | The same |
 | Do the hours and the calendar tolerance each apply to their own limit? | Yes | The same |
 | The last day of validity when a review does not keep the pattern: the anniversary, or the day before? | The anniversary | REQ-103, Issue 38 |
