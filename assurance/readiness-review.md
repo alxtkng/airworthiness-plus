@@ -24,7 +24,7 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 94 of 104.
-- 626 tests pass, on every change, against PostgreSQL in the pipeline. Four of them run the table script in a real browser.
+- 630 tests pass, on every change, against PostgreSQL in the pipeline. Four of them run the table script in a real browser.
 
 The ten that are not:
 
@@ -53,7 +53,7 @@ Carried with it: the readings of the regulation that those records mark for Alex
 
 **Met, as far as our own testing can say.**
 
-- Open defect Issues: 69 (seven ASVS requirements met in part when raised; three since met, four left) and 71 (three differences found by dogfooding; D-3 since fixed, D-4 and D-5 are questions). Neither is high severity.
+- Open defect Issues: 69 (seven ASVS requirements met in part when raised; four since met, three left) and 71 (three differences found by dogfooding; D-3 since fixed, D-4 and D-5 are questions). Neither is high severity.
 - `pip-audit` passes on every change. No vulnerability report has been received.
 - Defects found during the build were fixed as found, among them: a server error on a sign-in with no user name; work from before the records began shown as entered late; a certificate serial that would have repeated after a restore; a review that could be issued by someone other than its reviewer.
 
@@ -77,14 +77,14 @@ It was run in the build environment. It has not been run on the server, where no
 
 | Result | Requirements |
 |---|---|
-| Met | 138 |
+| Met | 139 |
 | Not Applicable | 89 |
 | To Be Verified at Deployment | 16 |
-| Partly Met | 8 |
+| Partly Met | 7 |
 | Not Met | 2 |
 
 - The 16 are checks of the server and the reverse proxy, listed in `operations/deployment.md`.
-- Of the 10 not met or met in part, four need a decision (Issue 69: breached passwords, a list of sessions, fields against roles, and passkeys) and six are to be settled before customer data: a vault for secrets, logs kept apart from the server, encryption of second-factor keys, a period for the access log, a limit on exports, and a named key management standard.
+- Of the 9 not met or met in part, three need a decision (Issue 69: breached passwords, a list of sessions, and passkeys) and six are to be settled before customer data: a vault for secrets, logs kept apart from the server, encryption of second-factor keys, a period for the access log, a limit on exports, and a named key management standard.
 
 The level itself, Level 2, is our choice and is for Alex King to confirm.
 
@@ -121,7 +121,7 @@ In rough order.
 1. **Give access to the server**, so that it can be looked at without changing anything, and the service deployed. He enters every password and key himself.
 2. **Decide the paid services** (Issue 27): storage for backups away from the server, any monitoring, the penetration test (Issue 40), Cyber Essentials Plus.
 3. **Confirm the readings of the regulation** listed under Questions. Until then four hazards cannot be Verified.
-4. **Decide the four ASVS items left** (Issue 69) and confirm Level 2. The other three were met on 19 November 2026 after this review was first written: first passwords made by the system and good for 7 days, a code before a change to how someone signs in, and a name for the hashing method in every history entry.
+4. **Decide the three ASVS items left** (Issue 69) and confirm Level 2. The other four were met on 19 November 2026 after this review was first written: first passwords made by the system and good for 7 days, a code before a change to how someone signs in, a name for the hashing method in every history entry, and what each action may set written down.
 5. **Confirm the operating figures**: recovery point 24 hours, recovery time the next working day, how long backups and logs are kept.
 6. **Say who acts when he is away.** One person receives every alert and leads every incident.
 7. **Have the data protection documents and the contract drafts reviewed** by someone qualified, and fill in the company's details.

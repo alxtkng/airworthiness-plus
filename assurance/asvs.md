@@ -20,8 +20,8 @@ Level 2 means every Level 1 and Level 2 requirement: 70 and 183, 253 in all, of 
 
 | Result | Meaning | Requirements |
 |---|---|---|
-| Met | Shown by a test, or by the code and settings named | 138 |
-| Partly Met | Met in part; what is missing is stated | 8 |
+| Met | Shown by a test, or by the code and settings named | 139 |
+| Partly Met | Met in part; what is missing is stated | 7 |
 | Not Met | Not met today; what is needed is stated | 2 |
 | To Be Verified at Deployment | Depends on the server or the reverse proxy. The service is not yet deployed. Each is listed with its check in `operations/deployment.md` | 16 |
 | Not Applicable | The application has nothing of the kind | 89 |
@@ -36,7 +36,6 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 | 6.2.12 | Partly Met | Checked against the 20,000 most common passwords, which come from breaches. A full set of breached passwords is not checked: it needs either a large file kept up to date or a request to another service | Issue 69; decision by Alex King |
 | 7.1.1 | Partly Met | Decisions.md: 30 minutes without a request, 12 hours whatever happens. The comparison with NIST SP 800-63B is To Be Checked: that document was not read in this session | To be settled before customer data; in the readiness review |
 | 7.5.2 | Partly Met | A user can end every other session. They cannot see a list of them, and are not asked to sign in again first | Issue 69; decision by Alex King |
-| 8.1.2 | Partly Met | The matrix is by action, and each action's form names the fields it may set. Fields are not listed against roles in the record | Issue 69; decision by Alex King |
 | 11.1.1 | Partly Met | `operations/keys-and-secrets.md` gives the rules and when each key is replaced. It has not been set against a named key management standard | To be settled before customer data; in the readiness review |
 | 11.4.1 | Partly Met | SHA-256 for the history chain, checksums and signatures of sessions. One-time codes use HMAC-SHA-1, which the standard lists as legacy and allows for compatibility: it is what RFC 6238 defaults to and what authenticator applications support. Passkeys would remove it | Issue 69; decision by Alex King |
 | 13.3.1 | Not Met | Secrets are environment values on the server, not in a vault. A decision for private beta, with its reasons, in `operations/keys-and-secrets.md`; to be weighed again before customer data | To be settled before customer data; in the readiness review |
@@ -213,7 +212,7 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 | Requirement | Level | Result | Evidence or Reason |
 |---|---|---|---|
 | 8.1.1 | 1 | Met | Decisions.md, Roles and Permissions: 21 actions against 5 roles; every record belongs to one organisation |
-| 8.1.2 | 2 | Partly Met | The matrix is by action, and each action's form names the fields it may set. Fields are not listed against roles in the record |
+| 8.1.2 | 2 | Met | `architecture/fields-by-action.md`: what each role reads, every address that sets something with its action, roles and the values it accepts, the values no action sets, and those fixed by the state of the record. Its table is written from the forms and addresses, and a test fails if it falls behind (`test_roles: the_document_is_what_the_code_says`) |
 | 8.2.1 | 1 | Met | `requires(Action)` on every view; each module's test of the role matrix (T-SEC-011) |
 | 8.2.2 | 1 | Met | Row-level security in the database, keyed to the session's organisation; each module's test as another organisation (T-SEC-010) |
 | 8.2.3 | 2 | Met | A form sets only its own fields; records that are fixed are fixed by database triggers |

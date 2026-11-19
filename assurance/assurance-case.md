@@ -88,7 +88,7 @@ Hazards answered: H-003, H-004 (as causes), and supply-chain threats in the thre
 | C5.3 The composition of the software is known | Pinned dependencies and a software bill of materials generated at each build | Lock file; software bill of materials artefact | Available |
 | C5.4 Secrets are never in the repository | Secrets only in the server environment | Secret scanning results; `.gitignore` | Available |
 | C5.5 Threats are identified and each is linked to a requirement and a test | STRIDE against the data flows | `architecture/threat-model.md` | Available |
-| C5.6 The application meets a chosen and justified verification level | OWASP Application Security Verification Standard 5.0 | `assurance/asvs.md`: Level 2 chosen and assessed; 138 met, 89 not applicable, 16 to be verified at deployment, 10 not met or met in part | Partial |
+| C5.6 The application meets a chosen and justified verification level | OWASP Application Security Verification Standard 5.0 | `assurance/asvs.md`: Level 2 chosen and assessed; 139 met, 89 not applicable, 16 to be verified at deployment, 9 not met or met in part | Partial |
 | C5.7 Vulnerabilities can be reported and are handled | | `SECURITY.md`; `operations/vulnerability-management.md` | Available |
 
 ## C6. CAA Acceptability
