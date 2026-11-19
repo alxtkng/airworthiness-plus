@@ -4,7 +4,10 @@ The people are those of design-system/SampleData.md. Passwords are made
 afresh for each run.
 """
 
+import html
+import re
 import secrets
+from datetime import UTC, datetime, time, timedelta
 
 import pytest
 from django.http import HttpResponse
@@ -15,6 +18,8 @@ from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.accounts.roles import Action, Role, permitted
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.interface.formatting import long_date
+from airworthiness_rules.dates import uk_today
 from tests.conftest import as_owner
 from tests.support import Sample, make_sample, signed_in
 from tests.test_sign_in import Clock, code_now, get, give_password, post
@@ -24,6 +29,7 @@ pytestmark = pytest.mark.django_db
 FIRST = secrets.token_urlsafe(18)
 SECOND = secrets.token_urlsafe(18)
 THIRD = secrets.token_urlsafe(18)
+FOURTH = secrets.token_urlsafe(18)
 NEW = "new.person@your-organisation.example"
 # Two passwords the rules refuse: one too short, one on the list of common passwords.
 WEAK = "short"
@@ -71,6 +77,13 @@ def sign_in_with(client: Client, clock: Clock, username: str, password: str) -> 
     return post(client, first["Location"], code=code_now(username, clock))
 
 
+def shown_password(response: HttpResponse) -> str:
+    """Return the first password a page shows, once, after it is made."""
+    found = re.search(r"Shown Once: <code>([^<]+)</code>", response.content.decode())
+    assert found is not None
+    return html.unescape(found.group(1))
+
+
 def log_of(user: User) -> list[tuple[str, str]]:
     with as_owner():
         return [(entry.kind, entry.detail) for entry in AccessEntry.objects.filter(user_id=user.pk)]
@@ -79,7 +92,9 @@ def log_of(user: User) -> list[tuple[str, str]]:
 # Adding a user
 
 
-def test_the_administrator_adds_a_user_with_roles_and_a_first_password(sample: Sample) -> None:
+def test_the_administrator_adds_a_user_with_roles_and_a_first_password(
+    sample: Sample, clock: Clock
+) -> None:
     """REQ-005, REQ-007. The addition is in the history, and the password is not."""
     administrator = signed_in(sample.administrator)
     response = post(
@@ -88,17 +103,28 @@ def test_the_administrator_adds_a_user_with_roles_and_a_first_password(sample: S
         full_name="[New Person]",
         username=NEW,
         roles="Planning and Records",
-        password=FIRST,
     )
-    assert response.status_code == 302
+    assert response.status_code == 200
+    # The system makes the first password and shows it once, on this page only.
+    given = shown_password(response)
+    assert len(given) >= 12
+    assert "First Password for [New Person], Shown Once" in response.content.decode()
+    given_on = uk_today(clock.now)
+    until = long_date(given_on + timedelta(days=7))
+    assert f"To Be Changed by {until}" in response.content.decode()
     with working_for(sample.ours.id, sample.administrator.id):
         person = User.objects.get(username=NEW)
         assert person.roles == ["Planning and Records"]
         assert person.organisation_id == sample.ours.id
         assert person.password_must_change
+        assert person.check_password(given)
+        assert person.first_password_set_on == given_on
         created = Event.of(person).get()
         assert created.actor_id == sample.administrator.id
-        assert "password" not in (created.after_json or "").replace("password_must_change", "")
+        assert "password" not in (created.after_json or "").replace(
+            "password_must_change", ""
+        ).replace("first_password_set_on", "")
+        assert given not in (created.after_json or "")
     body = page(administrator, "/users/")
     assert "<td>[New Person]</td>" in body
     assert "<td>Active, Password to Be Changed</td>" in body
@@ -109,9 +135,7 @@ def test_the_administrator_adds_a_user_with_roles_and_a_first_password(sample: S
 @pytest.mark.parametrize(
     ("values", "message"),
     [
-        ({"password": WEAK}, "This password is too short"),
-        ({"password": COMMON}, "This password is too common"),
-        ({"username": "not an address"}, "Give a Full Name, a User Name That Is an Email"),
+        ({"username": "not an address"}, "Give a Full Name and a User Name That Is an Email"),
         ({"full_name": ""}, "Give a Full Name"),
         ({"roles": "Owner"}, "Give a Full Name"),
         # Taken in this organisation, and taken in another: the same answer (TH-001).
@@ -128,13 +152,36 @@ def test_a_user_who_cannot_be_added_is_refused_with_the_reason(
         "full_name": "[New Person]",
         "username": NEW,
         "roles": "Read Only",
-        "password": FIRST,
     } | values
     response = post(administrator, "/users/add/", **given)
     assert response.status_code == 200
     assert message in response.content.decode()
+    assert "Shown Once" not in response.content.decode()
     with as_owner():
         assert not User.objects.filter(full_name="[New Person]").exists()
+
+
+def test_a_password_the_rules_refuse_is_refused_wherever_it_is_set(
+    sample: Sample, new_user: User
+) -> None:
+    """Threat TH-001. Too short, or a common password, by the service and at a change."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        for password, message in ((WEAK, "too short"), (COMMON, "too common")):
+            with pytest.raises(users.RefusedError, match=message):
+                users.add_user(
+                    organisation=sample.ours,
+                    username="another@your-organisation.example",
+                    full_name="[Another Person]",
+                    roles=[],
+                    password=password,
+                )
+            with pytest.raises(users.RefusedError, match=message):
+                users.reset_password(new_user, password=password, by=sample.administrator)
+        # A first password the system makes always passes the rules.
+        for _ in range(20):
+            users.reset_password(
+                new_user, password=users.new_first_password(new_user), by=sample.administrator
+            )
 
 
 # The first password
@@ -193,6 +240,76 @@ def test_every_role_can_change_its_own_password(sample: Sample) -> None:
         assert "<h1>Change Password</h1>" in page(signed_in(user), "/account/password/")
     response = get(Client(), "/account/password/")
     assert (response.status_code, response["Location"][:9]) == (302, "/sign-in/")
+
+
+def test_a_first_password_stops_working_after_7_days(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """OWASP ASVS 5.0, 6.4.1. Good on the seventh day after it is given, refused on the eighth."""
+    assert new_user.first_password_set_on is not None
+    seventh = new_user.first_password_set_on + timedelta(days=7)
+    # Noon in Coordinated Universal Time is the same date in the United Kingdom.
+    clock.now = datetime.combine(seventh, time(12), tzinfo=UTC)
+    assert give_password(Client(), NEW, FIRST).status_code == 302
+    clock.now = datetime.combine(seventh + timedelta(days=1), time(12), tzinfo=UTC)
+    refused = give_password(Client(), NEW, FIRST)
+    assert refused.status_code == 200
+    assert "User Name or Password Not Accepted" in refused.content.decode()
+    assert ("Sign-In Failed", "First Password Expired") in log_of(new_user)
+    # A new one from the Administrator works again, for 7 days from that day.
+    with working_for(sample.ours.id, sample.administrator.id):
+        users.reset_password(new_user, password=THIRD, by=sample.administrator)
+    assert give_password(Client(), NEW, THIRD).status_code == 302
+    # A password the user has chosen never expires.
+    client = Client()
+    sign_in_with(client, clock, NEW, THIRD)
+    post(client, "/account/password/", current=THIRD, new=SECOND, again=SECOND)
+    clock.advance(days=400)
+    assert give_password(Client(), NEW, SECOND).status_code == 302
+
+
+def test_a_change_of_password_needs_a_code_unless_just_signed_in(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """OWASP ASVS 5.0, 7.5.1; threat TH-002. A session left open is not enough to
+    change the password: after 5 minutes the authenticator is asked for again."""
+    client = Client()
+    sign_in_with(client, clock, NEW, FIRST)
+    assert 'name="code"' not in page(client, "/account/password/")
+    post(client, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
+    clock.advance(minutes=6)
+    assert 'name="code"' in page(client, "/account/password/")
+    change = {"current": SECOND, "new": THIRD, "again": THIRD}
+    for code in ("", "000000"):
+        refused = post(client, "/account/password/", **change, code=code)
+        assert (
+            "The Code From Your Authenticator Application Is Not Right" in refused.content.decode()
+        )
+    assert ("Sign-In Failed", "Wrong Code at a Change of Password") in log_of(new_user)
+    # A refusal for another reason does not use the code up.
+    code = code_now(NEW, clock)
+    weak = post(client, "/account/password/", current=SECOND, new=WEAK, again=WEAK, code=code)
+    assert "too short" in weak.content.decode()
+    done = post(client, "/account/password/", **change, code=code)
+    assert (done.status_code, done["Location"]) == (302, "/")
+    assert ("Code Accepted", "") in log_of(new_user)
+    # The code that was used cannot be used again, here or to sign in.
+    again = post(client, "/account/password/", current=THIRD, new=FOURTH, again=FOURTH, code=code)
+    assert "Is Not Right" in again.content.decode()
+    other = Client()
+    assert give_password(other, NEW, THIRD).status_code == 302
+    assert post(other, "/sign-in/code/", code=code).status_code == 200
+    # The next code works.
+    clock.advance(seconds=31)
+    later = post(
+        client,
+        "/account/password/",
+        current=THIRD,
+        new=FOURTH,
+        again=FOURTH,
+        code=code_now(NEW, clock),
+    )
+    assert later.status_code == 302
 
 
 # Roles and leaving
@@ -276,19 +393,23 @@ def test_the_administrator_sets_a_new_first_password(
     sign_in_with(client, clock, NEW, FIRST)
     post(client, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
     administrator = signed_in(sample.administrator)
-    weak = post(administrator, f"/users/{new_user.id}/password/", password=WEAK)
-    assert "This password is too short" in weak.content.decode()
-    assert post(administrator, f"/users/{new_user.id}/password/", password=THIRD).status_code == 302
+    # Anything typed by the Administrator is ignored: the system makes the password.
+    made = post(administrator, f"/users/{new_user.id}/password/", password=WEAK)
+    assert made.status_code == 200
+    third = shown_password(made)
+    assert third not in (WEAK, FIRST, SECOND)
+    assert "First Password for [New Person], Shown Once" in made.content.decode()
+    assert third not in page(administrator, "/users/")  # shown once
     response = get(client, "/")
     assert (response.status_code, response["Location"][:9]) == (302, "/sign-in/")
     again = Client()
-    assert sign_in_with(again, clock, NEW, THIRD).status_code == 302
+    assert sign_in_with(again, clock, NEW, third).status_code == 302
     assert get(again, "/")["Location"] == "/account/password/"
     assert ("Password Set by an Administrator", "By [Accountable Manager]") in log_of(new_user)
     with working_for(sample.ours.id, sample.administrator.id):
         last = Event.of(new_user).order_by("-sequence")[0]
         assert "password" in last.changed
-        assert THIRD not in (last.after_json or "")
+        assert third not in (last.after_json or "")
 
 
 def test_the_administrator_resets_a_lost_second_factor(
@@ -306,6 +427,56 @@ def test_the_administrator_resets_a_lost_second_factor(
     first = give_password(Client(), NEW, FIRST)
     assert first["Location"] == "/sign-in/set-up/"
     assert ("Second Factor Reset", "By [Accountable Manager]") in log_of(new_user)
+
+
+def test_the_administrator_gives_a_code_to_change_how_another_signs_in(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """OWASP ASVS 5.0, 7.5.1; threat TH-002. An Administrator's session left open
+    cannot be used to take over another user's sign-in."""
+    name = "second.administrator@your-organisation.example"
+    with working_for(sample.ours.id, sample.administrator.id):
+        second = users.add_user(
+            organisation=sample.ours,
+            username=name,
+            full_name="[Second Administrator]",
+            roles=[Role.ADMINISTRATOR],
+            password=FOURTH,
+        )
+    administrator = Client()
+    sign_in_with(administrator, clock, name, FOURTH)
+    post(administrator, "/account/password/", current=FOURTH, new=THIRD, again=THIRD)
+    clock.advance(minutes=6)
+    for path, what, at, logged in (
+        (
+            "password",
+            "Give [New Person] a New First Password",
+            "a New First Password",
+            "Password Set by an Administrator",
+        ),
+        (
+            "second-factor",
+            "Reset Second Factor of [New Person]",
+            "a Reset of a Second Factor",
+            "Second Factor Reset",
+        ),
+    ):
+        address = f"/users/{new_user.id}/{path}/"
+        asked = post(administrator, address)
+        assert asked.status_code == 200
+        assert f"<h1>{what}</h1>" in asked.content.decode()
+        assert "Shown Once" not in asked.content.decode()
+        wrong = post(administrator, address, code="000000")
+        assert "Is Not Right" in wrong.content.decode()
+        assert ("Sign-In Failed", f"Wrong Code at {at}") in log_of(second)
+        assert logged not in [kind for kind, _ in log_of(new_user)]
+        clock.advance(seconds=31)
+        done = post(administrator, address, code=code_now(name, clock))
+        assert "Is Not Right" not in done.content.decode()
+        assert logged in [kind for kind, _ in log_of(new_user)]
+    with as_owner():
+        new_user.refresh_from_db()
+    assert not new_user.check_password(FIRST)
 
 
 # Other organisations (T-SEC-010), roles (T-SEC-011) and forged writes (T-SEC-005)

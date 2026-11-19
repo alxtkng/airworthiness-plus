@@ -387,6 +387,16 @@ def test_an_altered_export_fails_verification(sample: Sample, fleet: dict[str, A
     )
     assert any("an entry is missing before this one" in one for one in verdict.problems)
 
+    # An entry said to be hashed in a way this check does not know (OWASP ASVS 5.0, 11.2.2).
+    entries = json.loads(archive.read(history_name))
+    assert {entry["hash_algorithm"] for entry in entries} == {"sha256-fields-1"}
+    entries[0]["hash_algorithm"] = "another"
+    verdict = verify(
+        rewritten(export.content, {history_name: json.dumps(entries).encode()}, fix_manifest=True)
+    )
+    assert len(verdict.problems) == 1
+    assert "was hashed in a way this check does not know" in verdict.problems[0]
+
     # A file added, a file removed, and something that is not an export at all.
     verdict = verify(rewritten(export.content, {"extra.json": b"[]"}, fix_manifest=False))
     assert verdict.problems == ("extra.json: is not in the manifest",)

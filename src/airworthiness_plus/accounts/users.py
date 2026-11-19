@@ -5,6 +5,7 @@ keeps their name. An organisation always has an active Administrator, or
 nobody could manage its users.
 """
 
+import secrets
 from collections.abc import Sequence
 
 from django.contrib.auth.hashers import check_password
@@ -20,6 +21,10 @@ from airworthiness_plus.organisations.models import Organisation
 
 class RefusedError(Exception):
     """What was asked cannot be done. The message says why."""
+
+
+class CodeRefusedError(RefusedError):
+    """The code was wrong. The attempt has been entered in the access log and must be kept."""
 
 
 def _validated(password: str, user: User | None = None) -> None:
@@ -39,6 +44,17 @@ def _another_administrator(user: User) -> bool:
     others = User.objects.filter(is_active=True, roles__contains=[Role.ADMINISTRATOR])
     found: bool = others.exclude(pk=user.pk).exists()
     return found
+
+
+def new_first_password(user: User | None = None) -> str:
+    """Make a first password: random, and one the password rules accept."""
+    while True:
+        password = secrets.token_urlsafe(12)
+        try:
+            validate_password(password, user)
+        except ValidationError:
+            continue
+        return password
 
 
 def add_user(
@@ -69,6 +85,7 @@ def add_user(
                 roles=chosen,
                 password=password,
                 password_must_change=True,
+                first_password_set_on=sign_in.today(),
             )
     except IntegrityError as error:
         raise RefusedError("This User Name Cannot Be Used") from error
@@ -102,7 +119,8 @@ def reset_password(user: User, *, password: str, by: User, address: str | None =
     _validated(password, user)
     user.set_password(password)
     user.password_must_change = True
-    user.save(update_fields=["password", "password_must_change"])
+    user.first_password_set_on = sign_in.today()
+    user.save(update_fields=["password", "password_must_change", "first_password_set_on"])
     sign_in.log_account_event(
         AccessKind.PASSWORD_RESET, user, detail=f"By {by.full_name}"[:200], address=address
     )
@@ -132,9 +150,22 @@ def end_sessions(user: User, *, by: User, address: str | None = None) -> None:
 
 
 def change_password(
-    user: User, *, current: str, new: str, again: str, address: str | None = None
+    user: User,
+    *,
+    current: str,
+    new: str,
+    again: str,
+    code: str = "",
+    just_signed_in: bool = False,
+    address: str | None = None,
 ) -> None:
-    """Change the signed-in user's own password. The current one is asked for again."""
+    """Change the signed-in user's own password.
+
+    The current password is asked for again, and a code from the
+    authenticator as well unless the user signed in with one in the last
+    few minutes (OWASP ASVS 5.0, 7.5.1). The code is checked last, so that
+    it is not used up by a change that is refused for another reason.
+    """
     if not check_password(current, user.password):
         raise RefusedError("The Current Password Is Not Right")
     if new != again:
@@ -142,7 +173,10 @@ def change_password(
     if new == current:
         raise RefusedError("The New Password Is the Same as the Current One")
     _validated(new, user)
+    if not just_signed_in and not sign_in.confirm_code(user, code, address):
+        raise CodeRefusedError("The Code From Your Authenticator Application Is Not Right")
     user.set_password(new)
     user.password_must_change = False
-    user.save(update_fields=["password", "password_must_change"])
+    user.first_password_set_on = None
+    user.save(update_fields=["password", "password_must_change", "first_password_set_on"])
     sign_in.log_account_event(AccessKind.PASSWORD_CHANGED, user, address=address)

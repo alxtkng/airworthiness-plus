@@ -22,7 +22,12 @@ from django.db import DatabaseError, IntegrityError, connection, transaction
 
 from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.history import chain
-from airworthiness_plus.history.models import Event, Record, RecordsAreNeverDeletedError
+from airworthiness_plus.history.models import (
+    HASH_ALGORITHM,
+    Event,
+    Record,
+    RecordsAreNeverDeletedError,
+)
 from airworthiness_plus.history.session import _current, _set, working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, protect_record_table
 from airworthiness_plus.organisations.models import Organisation, Privilege
@@ -581,6 +586,23 @@ def test_an_altered_entry_is_detected(two: Two) -> None:
         run("SET LOCAL session_replication_role = origin")
     assert chain.problems(everything()) == [
         chain.ChainProblem(second.id, "Does not follow the entry before it")
+    ]
+
+
+def test_every_entry_names_how_it_was_hashed(two: Two) -> None:
+    """OWASP ASVS 5.0, 11.2.2. The name is kept with each entry, so the way of
+    hashing can change later and the entries written before can still be checked."""
+    chris = add_chris(two)
+    entries = everything()
+    assert {entry.hash_algorithm for entry in entries} == {HASH_ALGORITHM}
+    with working_for(two.ours.id, two.lucy.id):
+        (first,) = Event.of(chris)
+    with as_owner():
+        run("SET LOCAL session_replication_role = replica")
+        run("UPDATE history_event SET hash_algorithm = 'another' WHERE id = %s", first.id)
+        run("SET LOCAL session_replication_role = origin")
+    assert chain.problems(everything()) == [
+        chain.ChainProblem(first.id, "Was hashed in a way this version does not know")
     ]
 
 

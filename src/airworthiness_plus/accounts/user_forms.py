@@ -14,9 +14,6 @@ class AddUserForm(Form):
     roles = forms.MultipleChoiceField(
         label="Roles", choices=Role.choices, widget=forms.CheckboxSelectMultiple, required=False
     )
-    password = forms.CharField(
-        label="First Password", widget=forms.PasswordInput, max_length=200, strip=False
-    )
 
 
 class RolesForm(Form):
@@ -24,14 +21,6 @@ class RolesForm(Form):
 
     roles = forms.MultipleChoiceField(
         label="Roles", choices=Role.choices, widget=forms.CheckboxSelectMultiple, required=False
-    )
-
-
-class ResetPasswordForm(Form):
-    """Give a user a new first password."""
-
-    password = forms.CharField(
-        label="New First Password", widget=forms.PasswordInput, max_length=200, strip=False
     )
 
 
@@ -46,4 +35,7 @@ class ChangePasswordForm(Form):
     )
     again = forms.CharField(
         label="New Password Again", widget=forms.PasswordInput, max_length=200, strip=False
+    )
+    code = forms.CharField(
+        label="Code From Your Authenticator Application", max_length=12, required=False
     )

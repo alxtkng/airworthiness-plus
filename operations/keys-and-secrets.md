@@ -18,7 +18,7 @@ No secret is ever in the repository. The pipeline scans every change for one.
 | TLS private key | HTTPS | The certificate authority's choice | The reverse proxy | Whoever administers the server | With each certificate, automatically |
 | Users' passwords | Sign-in | PBKDF2-HMAC-SHA-256, 1,000,000 iterations, a salt for each | The database, as hashes only | No one | By the user; by an Administrator's reset |
 | Users' second-factor keys | One-time codes | HMAC-SHA-1, 160-bit key (RFC 6238) | The database, not encrypted; kept out of the history and out of every export | The backup role; whoever holds a decrypted backup | By an Administrator's reset |
-| History hashes | Showing the history is unaltered | SHA-256 | The database and every export | Not secret | Never |
+| History hashes | Showing the history is unaltered | SHA-256; each entry names the method, today `sha256-fields-1` | The database and every export | Not secret | Never |
 | GitHub access | The repository and the pipeline | GitHub's | Alex King's account, with two-factor sign-in | Alex King | As GitHub requires |
 
 The pipeline holds no secret: it builds, tests and scans, and deploys nothing.

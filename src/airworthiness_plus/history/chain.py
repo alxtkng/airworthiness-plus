@@ -26,7 +26,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC
 
-from airworthiness_plus.history.models import Event
+from airworthiness_plus.history.models import HASH_ALGORITHM, Event
 
 
 @dataclass(frozen=True)
@@ -83,7 +83,9 @@ def problems(events: Iterable[Event]) -> list[ChainProblem]:
             found.append(ChainProblem(event.pk, "An entry is missing before this one"))
         elif event.previous_hash != expected_previous:
             found.append(ChainProblem(event.pk, "Does not follow the entry before it"))
-        if event.hash != expected_hash(event):
+        if event.hash_algorithm != HASH_ALGORITHM:
+            found.append(ChainProblem(event.pk, "Was hashed in a way this version does not know"))
+        elif event.hash != expected_hash(event):
             found.append(ChainProblem(event.pk, "Has been altered since it was written"))
         previous = event
     return found
