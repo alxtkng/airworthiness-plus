@@ -108,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "OPTIONS": {"min_length": 12},
     },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    # No rule on which characters a password is made of (OWASP ASVS 5.0, 6.2.5).
     {"NAME": "airworthiness_plus.accounts.passwords.ContextWordsValidator"},
 ]
 
@@ -132,6 +132,8 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+# No script needs the forgery token: every form carries it in the page.
+CSRF_COOKIE_HTTPONLY = True
 # A cookie named with this prefix is accepted by a browser only over HTTPS,
 # for this host alone and for every path of it (OWASP ASVS 5.0, 3.3.1, 3.3.3).
 SESSION_COOKIE_NAME = "sessionid" if DEBUG else "__Host-sessionid"

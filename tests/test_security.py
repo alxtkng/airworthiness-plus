@@ -194,6 +194,7 @@ def test_cookies_are_for_this_host_over_https_and_hidden_from_scripts(sample: Sa
         "",
         "Lax",
     )
+    assert token["httponly"] is True
     client = signed_in(sample.reader)
     get(client, "/")
     session = client.cookies["__Host-sessionid"]
@@ -297,6 +298,8 @@ def test_a_password_is_not_built_on_a_word_anyone_would_try(sample: Sample) -> N
     # A long passphrase of ordinary words is welcome, and so is any character.
     validate_password("correct horse battery staple, 64 characters and more " * 2, user)
     validate_password("ñandú çedilla Ω 98 täglich", user)
+    # No rule on which characters are used: 14 digits that are not a common password.
+    validate_password("83920174650291", user)
 
 
 def test_a_users_sessions_can_all_be_ended(sample: Sample) -> None:

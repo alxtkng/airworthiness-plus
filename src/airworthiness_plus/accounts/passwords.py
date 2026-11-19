@@ -1,7 +1,7 @@
 """Words a password may not be built on (OWASP ASVS 5.0, 6.1.2 and 6.2.11).
 
 Django already refuses a password that is like the user's own name or
-user name, one of 20,000 common passwords, and one made of digits alone.
+user name, and one of 20,000 common passwords.
 This adds the words anyone attacking this system would try first: the
 name of the product, the regulator and the approval, and the name and
 approval reference of the user's own organisation.
