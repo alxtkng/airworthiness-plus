@@ -14,7 +14,7 @@ import pytest
 from django.http import HttpResponse
 from django.test import Client
 
-from airworthiness_plus.accounts import sign_in, users
+from airworthiness_plus.accounts import sign_in, user_views, users
 from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.accounts.roles import Action, Role, permitted
 from airworthiness_plus.history.models import Event
@@ -551,6 +551,47 @@ def test_the_administrator_gives_a_code_to_change_how_another_signs_in(
     assert not new_user.check_password(FIRST)
 
 
+# Reading the access log (REQ-009)
+
+
+def test_the_administrator_reads_the_access_log(
+    sample: Sample, new_user: User, clock: Clock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """REQ-009; operations/user-administration.md. The organisation's own
+    entries, newest first, with who, what, when and where from. Older entries
+    are a link away. Another organisation's entries are not shown."""
+    sign_in_with(Client(REMOTE_ADDR="192.0.2.9"), clock, NEW, FIRST)
+    clock.advance(seconds=31)
+    assert give_password(Client(), NEW, "not " + FIRST).status_code == 200
+    stranger = signed_in(sample.stranger)
+    assert get(stranger, "/aircraft/add/").status_code in (200, 403)
+    administrator = signed_in(sample.administrator)
+    path = "/users/access-log/"
+
+    body = page(administrator, path)
+    order = [body.index(text) for text in ("Sign-In Failed", "Signed In", "Second Factor Set Up")]
+    assert order == sorted(order)
+    for text in ("<td>[New Person]</td>", "<td>192.0.2.9</td>", "<td>Wrong Password</td>"):
+        assert text in body, text
+    assert sample.stranger.username not in body
+    assert sample.stranger.full_name not in body
+    assert "Older Entries" not in body
+
+    # Two at a time: the newest two, then a link to the rest.
+    monkeypatch.setattr(user_views, "ACCESS_LOG_PAGE", 2)
+    first = page(administrator, path)
+    assert first.count("<td>[New Person]</td>") == 2
+    assert "Sign-In Failed" in first
+    assert "Second Factor Set Up" not in first
+    link = re.search(r'href="(/users/access-log/\?before=\d+)">Older Entries', first)
+    assert link is not None
+    second = page(administrator, link.group(1))
+    assert "Second Factor Set Up" in second
+    assert "Sign-In Failed" not in second
+    # Anything else in the address is ignored.
+    assert get(administrator, path + "?before=x").status_code == 200
+
+
 # Other organisations (T-SEC-010), roles (T-SEC-011) and forged writes (T-SEC-005)
 
 
@@ -558,6 +599,7 @@ def addresses(user: User):  # type: ignore[no-untyped-def]
     manage = Action.MANAGE_USERS_AND_ROLES
     return [
         ("GET", "/users/", manage),
+        ("GET", "/users/access-log/", manage),
         ("POST", "/users/add/", manage),
         ("POST", f"/users/{user.id}/roles/", manage),
         ("POST", f"/users/{user.id}/active/", manage),
@@ -578,8 +620,11 @@ def test_another_organisations_users_are_not_shown_or_changed(
     body = page(stranger, "/users/")
     assert "[New Person]" not in body
     assert "Lucy Grant" not in body
-    for method, path, _ in addresses(new_user)[2:]:
-        assert call(stranger, method, path).status_code == 404, path
+    assert "[New Person]" not in page(stranger, "/users/access-log/")
+    # Every address that names one of our users is not found.
+    for method, path, _ in addresses(new_user):
+        if str(new_user.id) in path:
+            assert call(stranger, method, path).status_code == 404, path
     with as_owner():
         person = User.objects.get(pk=new_user.pk)
         assert (person.is_active, person.roles) == (True, ["Planning and Records"])
@@ -601,7 +646,8 @@ def test_only_the_administrator_manages_users(sample: Sample, new_user: User, ro
     for method, path, _ in addresses(new_user):
         assert call(client, method, path).status_code == 403, f"{role} {method} {path}"
     with working_for(sample.ours.id, user.id):
-        assert AccessEntry.objects.filter(user=user, kind="Action Refused").count() == 6
+        refused = AccessEntry.objects.filter(user=user, kind="Action Refused")
+        assert refused.count() == len(addresses(new_user)) == 7
 
 
 def test_the_users_pages_need_sign_in_and_refuse_forged_writes(

@@ -162,6 +162,7 @@ GROUPS: tuple[Group, ...] = (
                 "Users",
                 "users",
                 action=Action.MANAGE_USERS_AND_ROLES,
+                tabs=(Tab("Users", "users"), Tab("Access Log", "access_log")),
                 inside=frozenset(
                     {
                         "add_user",

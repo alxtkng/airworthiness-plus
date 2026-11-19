@@ -12,7 +12,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from airworthiness_plus.accounts import sessions, sign_in, users
 from airworthiness_plus.accounts.middleware import SIGNED_IN_AT_KEY
-from airworthiness_plus.accounts.models import User
+from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.accounts.permissions import address_of, requires, signed_in
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.accounts.user_forms import (
@@ -70,6 +70,33 @@ def _users(
 def users_page(request: HttpRequest) -> HttpResponse:
     """Every user of the organisation, with their roles and whether they can sign in."""
     return _users(request)
+
+
+# Ours: how many entries of the access log one page shows.
+ACCESS_LOG_PAGE = 100
+
+
+@never_cache
+@requires(Action.MANAGE_USERS_AND_ROLES)
+def access_log(request: HttpRequest) -> HttpResponse:
+    """The access log of the organisation, newest first (REQ-009).
+
+    Every sign-in, failed sign-in, sign-out, refused action, export and
+    change to how someone signs in. The database shows an organisation its
+    own entries and no others.
+    """
+    entries = AccessEntry.objects.select_related("user").order_by("-id")
+    before = request.GET.get("before", "")
+    if before.isdigit():
+        entries = entries.filter(id__lt=int(before))
+    shown = list(entries[: ACCESS_LOG_PAGE + 1])
+    more = len(shown) > ACCESS_LOG_PAGE
+    shown = shown[:ACCESS_LOG_PAGE]
+    return render(
+        request,
+        "accounts/access_log.html",
+        {"entries": shown, "older": shown[-1].id if more else None},
+    )
 
 
 @requires(Action.MANAGE_USERS_AND_ROLES)

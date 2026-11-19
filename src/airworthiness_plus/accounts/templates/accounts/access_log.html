@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Access Log{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Access Log</h1>
+<table>
+<thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th><th>From</th></tr></thead>
+<tbody>
+{% for entry in entries %}
+<tr>
+<td>{{ entry.at|moment }}</td>
+<td>{% if entry.user %}{{ entry.user.full_name }}{% else %}{{ entry.username }}{% endif %}</td>
+<td>{{ entry.kind }}</td>
+<td>{{ entry.detail }}</td>
+<td>{{ entry.address|default_if_none:"" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% if older %}<p><a href="{% url 'access_log' %}?before={{ older }}">Older Entries</a></p>{% endif %}
+{% endblock %}
