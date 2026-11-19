@@ -37,7 +37,7 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 | 11.1.1 | Partly Met | `operations/keys-and-secrets.md` gives the rules and when each key is replaced. It has not been set against a named key management standard | To be settled before customer data; in the readiness review |
 | 11.4.1 | Partly Met | SHA-256 for the history chain, checksums and signatures of sessions. One-time codes use HMAC-SHA-1, which the standard lists as legacy and allows for compatibility: it is what RFC 6238 defaults to and what authenticator applications support. Passkeys would remove it | Accepted for private beta on 19 November 2026 (`design-system/Decisions.md`); looked at again before public beta |
 | 13.3.1 | Not Met | Secrets are environment values on the server, not in a vault. A decision for private beta, with its reasons, in `operations/keys-and-secrets.md`; to be weighed again before customer data | To be settled before customer data; in the readiness review |
-| 14.2.4 | Partly Met | Met except for two things the classification asks for: second-factor keys are not encrypted in the database, and no period is set for keeping the access log | To be settled before customer data; in the readiness review |
+| 14.2.4 | Partly Met | Met except for two things the classification asks for. Second-factor keys are not encrypted in the database: decided on 19 November 2026 not to in private beta, because with the key on the same server it would protect only a backup, which is already encrypted (`operations/keys-and-secrets.md`). No period is set for keeping the access log | To be settled before customer data; in the readiness review |
 | 16.4.3 | Not Met | The history and the access log leave the server once a day in the backup. The server and proxy logs stay on the one server (`operations/monitoring.md`). To be decided before customer data | To be settled before customer data; in the readiness review |
 
 ## V1 Encoding and Sanitization
@@ -292,7 +292,7 @@ Not Applicable: No OAuth or OpenID Connect: the application is neither a client 
 | 14.2.1 | 1 | Met | Addresses hold record identifiers only; passwords, codes and tokens travel in the body or a cookie |
 | 14.2.2 | 2 | Met | `Cache-Control: no-store` on everything but static files; the application keeps no cache |
 | 14.2.3 | 2 | Met | No page asks anything of another site (`test_interface`) |
-| 14.2.4 | 2 | Partly Met | Met except for two things the classification asks for: second-factor keys are not encrypted in the database, and no period is set for keeping the access log |
+| 14.2.4 | 2 | Partly Met | Met except for two things the classification asks for. Second-factor keys are not encrypted in the database: decided on 19 November 2026 not to in private beta, because with the key on the same server it would protect only a backup, which is already encrypted (`operations/keys-and-secrets.md`). No period is set for keeping the access log |
 | 14.3.1 | 1 | Met | `Clear-Site-Data` at sign-out; the application puts nothing in browser storage |
 | 14.3.2 | 2 | Met | `test_security: every_response_carries_the_security_headers` |
 | 14.3.3 | 2 | Met | Two cookies: the session identifier and the forgery token |
