@@ -61,7 +61,7 @@ def _date(row: Row, column: str) -> date:
 def _hours(row: Row, column: str) -> Decimal:
     text = row[column]
     if not re.fullmatch(r"\d+(\.\d)?", text):
-        raise RowError(f"{column} Is a Number With at Most One Decimal Place and No Comma")
+        raise RowError(f"{column} Is a Number with at Most One Decimal Place and No Comma")
     try:
         return Decimal(text)
     except InvalidOperation as error:
@@ -124,7 +124,7 @@ def _load_directive(organisation: Organisation, by: User, row: Row) -> str:
             effective_date=effective,
         )
     elif (directive.subject, directive.effective_date) != (row["Subject"], effective):
-        raise RowError(f"{number} Is Already Recorded With Another Subject or Effective Date")
+        raise RowError(f"{number} Is Already Recorded with Another Subject or Effective Date")
     if Applicability.objects.filter(directive=directive, aircraft=aircraft).exists():
         raise RowError(f"{number} Already Has a Decision for {aircraft.registration}")
     complied = [row[column] for column in ("Last Compliance Date", "Hours at Compliance")]
@@ -274,7 +274,7 @@ def record_checks(
     today = aircraft_services.today()
     agreed = set(agreed)
     if agreed & set(differing):
-        raise RefusedError("A Value Either Agrees With the Source or Differs From It")
+        raise RefusedError("A Value Either Agrees with the Source or Differs From It")
     count = 0
     for value in record.values.all():
         key = str(value.pk)
@@ -312,10 +312,10 @@ class ReportLine:
 
     @property
     def status(self) -> str:
-        """Return Not Checked, Agrees With Source or Differs From Source."""
+        """Return Not Checked, Agrees with Source or Differs From Source."""
         if self.check is None:
             return "Not Checked"
-        return "Agrees With Source" if self.check.agrees else "Differs From Source"
+        return "Agrees with Source" if self.check.agrees else "Differs From Source"
 
 
 @dataclass(frozen=True)

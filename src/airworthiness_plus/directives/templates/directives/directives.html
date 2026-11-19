@@ -2,11 +2,11 @@
 {% load writing %}
 {% block title %}Airworthiness Directives{% endblock %}
 {% block content %}
-<h1>Airworthiness Directives</h1>
+<h1 class="visually-hidden">Airworthiness Directives</h1>
 <p><a href="{% url 'add_directive' %}">Record an Airworthiness Directive</a></p>
 <table>
 <thead>
-<tr><th>Directive Number</th><th>Revision</th><th>Issuing Authority</th><th>Subject</th><th>Effective Date</th><th>Supersedes</th><th>Status</th></tr>
+<tr><th>Directive Number</th><th data-detail>Revision</th><th data-detail>Issuing Authority</th><th>Subject</th><th>Effective Date</th><th data-detail>Supersedes</th><th>Status</th></tr>
 </thead>
 <tbody>
 {% for directive in directives %}

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load writing %}
 {% block title %}{{ aircraft.registration }}, Airworthiness Review{% endblock %}
+{% block tabs %}{% include "interface/aircraft_tabs.html" with active="Airworthiness Review" %}{% endblock %}
 {% block content %}
 <h1>{{ aircraft.registration }}</h1>
 <p>{{ aircraft.type_rating }}</p>
@@ -8,13 +9,13 @@
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <dl>
 <dt>Review Certificate Valid To</dt><dd>{% if line.valid_to %}{{ line.valid_to|long_date }}{% else %}No Certificate Recorded{% endif %}</dd>
-{% if line.certificate %}<dt>Remaining</dt><dd>{{ line.days|days }}{% if line.flag.value %}, {{ line.flag.value }}{% endif %}</dd>
+{% if line.certificate %}<dt>Remaining</dt><dd>{{ line.days|days }}{% if line.flag.value %}, {{ line.flag.value|status }}{% endif %}</dd>
 <dt>Review</dt><dd>{% if line.in_review_window %}Inside the 90-Day Window, the Review Pattern Is Kept{% else %}Outside the 90-Day Window{% endif %}</dd>
 <dt>Extensions Since the Last Review</dt><dd>{{ line.extensions }} of 2</dd>{% endif %}
 </dl>
 <table>
 <thead>
-<tr><th>Certificate Reference</th><th>Issued By</th><th>Date of Issue</th><th>Date of Expiry</th><th>Status</th><th>Copy to the Civil Aviation Authority</th></tr>
+<tr><th>Certificate Reference</th><th data-detail>Issued By</th><th>Date of Issue</th><th>Date of Expiry</th><th>Status</th><th>Copy to the Civil Aviation Authority</th></tr>
 </thead>
 <tbody>
 {% for certificate, extensions in certificates %}

@@ -227,8 +227,8 @@ def test_directive_status_and_review_certificates_are_loaded(
         ({"Totals Dated": "18/11/2026"}, "Row 3: Totals Dated Is Written 2026-11-18 or"),
         ({"Totals Dated": "2026-02-30"}, "Row 3: Totals Dated Is Written"),
         ({"Totals Dated": "2026-11-19"}, "Row 3: "),  # after today
-        ({"Airframe Hours": "6,412.6"}, "Row 3: Airframe Hours Is a Number With at Most One"),
-        ({"Airframe Hours": "6412.65"}, "Row 3: Airframe Hours Is a Number With at Most One"),
+        ({"Airframe Hours": "6,412.6"}, "Row 3: Airframe Hours Is a Number with at Most One"),
+        ({"Airframe Hours": "6412.65"}, "Row 3: Airframe Hours Is a Number with at Most One"),
         ({"Airframe Hours": "-1.0"}, "Row 3: Airframe Hours Is a Number"),
         ({"Airframe Cycles": "42.5"}, "Row 3: Airframe Cycles Is a Whole Number"),
         ({"Owned By": ""}, "Row 3: Nothing Given for Owned By"),
@@ -316,7 +316,7 @@ def test_the_report_shows_every_value_beside_its_source_and_who_checked_it(
     # 7 of 13 is 53.8%: shown rounded down. 8 checked is 61.5%.
     assert "<dt>Checked Against Source</dt><dd>8 of 13 Checked, 61%</dd>" in body
     assert "<dt>Differ From Source</dt><dd>1</dd>" in body
-    assert body.count("<td>Agrees With Source</td>") == 7
+    assert body.count("<td>Agrees with Source</td>") == 7
     assert "<td>6412.6</td>\n<td>6421.6</td>\n<td>Differs From Source</td>" in body
     assert body.count("<td>18 November 2026, [Planning and Records Name]</td>") == 8
     listing = page(signed_in(sample.reader), "/imports/")
@@ -355,7 +355,7 @@ def test_a_value_cannot_both_agree_and_differ_and_nothing_is_ticked_for_the_pers
         value = LoadedValue.objects.filter(load=fleet_load)[0]
     both = {f"agrees_{value.id}": "on", f"source_{value.id}": "[Something Else]"}
     refused = post(client, f"{address}check/", **both)
-    assert "A Value Either Agrees With the Source or Differs From It" in refused.content.decode()
+    assert "A Value Either Agrees with the Source or Differs From It" in refused.content.decode()
     with working_for(sample.ours.id, sample.planner.id):
         assert ValueCheck.objects.count() == 0
 
@@ -416,7 +416,7 @@ def test_a_file_is_loaded_through_the_page(sample: Sample) -> None:
     refused = post(
         lucy, "/imports/load/", kind="Aircraft and Totals", source="[Logbooks]", file=bad
     )
-    assert "Row 2: Airframe Hours Is a Number With at Most One Decimal" in refused.content.decode()
+    assert "Row 2: Airframe Hours Is a Number with at Most One Decimal" in refused.content.decode()
     nothing = post(lucy, "/imports/load/", kind="Aircraft and Totals", source="[Logbooks]")
     assert "Choose What the File Holds" in nothing.content.decode()
     good = SimpleUploadedFile("fleet.csv", FLEET_FILE)

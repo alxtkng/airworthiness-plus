@@ -5,6 +5,7 @@ import uuid
 from django import forms
 
 from airworthiness_plus.aircraft.models import Counter
+from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.programme.models import TASK_KINDS, Basis, InspectionCategory, Task
 from airworthiness_rules.intervals import TaskKind
 
@@ -14,7 +15,7 @@ PROGRAMME_TASK_KINDS = [
 ]
 
 
-class ProgrammeForm(forms.Form):
+class ProgrammeForm(Form):
     """Record or change the programme of an aircraft."""
 
     basis = forms.ChoiceField(label="Basis", choices=Basis.choices)
@@ -32,7 +33,7 @@ class ProgrammeForm(forms.Form):
     )
 
 
-class TaskForm(forms.Form):
+class TaskForm(Form):
     """Add a task to the programme."""
 
     title = forms.CharField(label="Task", max_length=200)
@@ -58,13 +59,13 @@ class TaskForm(forms.Form):
     starts_cycles = forms.IntegerField(label="Cycles Then", min_value=0, required=False)
 
     def __init__(self, *args: object, aircraft_id: uuid.UUID, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(*args, **kwargs)
         self.fields["counter"].queryset = Counter.objects.filter(  # type: ignore[attr-defined]
             aircraft_id=aircraft_id
         )
 
 
-class WorkForm(forms.Form):
+class WorkForm(Form):
     """Record work done on an aircraft."""
 
     task = forms.ModelChoiceField(
@@ -81,19 +82,19 @@ class WorkForm(forms.Form):
     pilot_owner_told_on = forms.DateField(label="Organisation Told", required=False)
 
     def __init__(self, *args: object, aircraft_id: uuid.UUID, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(*args, **kwargs)
         self.fields["task"].queryset = Task.objects.filter(  # type: ignore[attr-defined]
             programme__aircraft_id=aircraft_id, retired=False
         )
 
 
-class ReleaseForm(forms.Form):
+class ReleaseForm(Form):
     """Record that the certificate of release to service is in the records."""
 
     release_reference = forms.CharField(label="Certificate of Release to Service", max_length=100)
 
 
-class ReviewForm(forms.Form):
+class ReviewForm(Form):
     """Record the annual review of the programme."""
 
     reviewed_on = forms.DateField(label="Reviewed")

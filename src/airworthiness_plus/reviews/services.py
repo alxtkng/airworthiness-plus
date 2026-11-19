@@ -496,7 +496,7 @@ def record_item(item: ReviewItem, *, result: Result, evidence: str, finding: str
     """Record the result of one point, with the evidence sampled and any finding (REQ-107)."""
     _open(item.review)
     if not evidence.strip():
-        raise RefusedError("A Result Comes With the Evidence Sampled")
+        raise RefusedError("A Result Comes with the Evidence Sampled")
     if result == Result.NOT_APPLICABLE and not item.may_not_apply:
         raise RefusedError("This Point Applies to Every Aircraft")
     if result == Result.FINDING and not finding.strip():

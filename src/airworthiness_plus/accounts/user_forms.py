@@ -3,9 +3,10 @@
 from django import forms
 
 from airworthiness_plus.accounts.roles import Role
+from airworthiness_plus.interface.forms import Form
 
 
-class AddUserForm(forms.Form):
+class AddUserForm(Form):
     """Add a user with their roles and a first password."""
 
     full_name = forms.CharField(label="Full Name", max_length=200)
@@ -18,7 +19,7 @@ class AddUserForm(forms.Form):
     )
 
 
-class RolesForm(forms.Form):
+class RolesForm(Form):
     """Set the roles a user holds."""
 
     roles = forms.MultipleChoiceField(
@@ -26,7 +27,7 @@ class RolesForm(forms.Form):
     )
 
 
-class ResetPasswordForm(forms.Form):
+class ResetPasswordForm(Form):
     """Give a user a new first password."""
 
     password = forms.CharField(
@@ -34,7 +35,7 @@ class ResetPasswordForm(forms.Form):
     )
 
 
-class ChangePasswordForm(forms.Form):
+class ChangePasswordForm(Form):
     """Change the signed-in user's own password."""
 
     current = forms.CharField(

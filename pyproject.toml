@@ -33,6 +33,8 @@ packages = ["src/airworthiness_rules", "src/airworthiness_plus"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
 DJANGO_SETTINGS_MODULE = "airworthiness_plus.settings"
+# The static files are gathered when the service is built, not for the tests.
+filterwarnings = ["ignore:No directory at:UserWarning"]
 
 [tool.mypy]
 strict = true

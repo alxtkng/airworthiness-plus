@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load writing %}
 {% block title %}{{ aircraft.registration }}, Maintenance Programme{% endblock %}
+{% block tabs %}{% include "interface/aircraft_tabs.html" with active="Maintenance Programme" %}{% endblock %}
 {% block content %}
 <h1>{{ aircraft.registration }}</h1>
 <p>{{ aircraft.type_rating }}</p>
@@ -13,7 +14,7 @@
 <dt>Programme Reference</dt><dd>{{ programme.reference }}</dd>
 <dt>Planning Utilisation</dt><dd>{% if programme.hours_per_day %}{{ programme.hours_per_day|hours }} Hours a Day{% else %}Not Recorded{% endif %}{% if programme.cycles_per_day %}, {{ programme.cycles_per_day|hours }} Cycles a Day{% endif %}</dd>
 <dt>Last Reviewed</dt><dd>{% if review.last_reviewed %}{{ review.last_reviewed|long_date }}{% else %}Not Recorded{% endif %}</dd>
-<dt>Next Review By</dt><dd>{{ review.due|long_date }}{% if review.flag.value %}, {{ review.flag.value }}{% endif %}</dd>
+<dt>Next Review By</dt><dd>{{ review.due|long_date }}{% if review.flag.value %}, {{ review.flag.value|status }}{% endif %}</dd>
 </dl>
 <p>
 <a href="{% url 'set_up_programme' aircraft.id %}">Change Programme</a>
@@ -46,7 +47,7 @@
 <td>{{ item.due_text }}</td>
 <td>{{ item.remaining_text }}</td>
 <td>{{ item.tolerance_text }}{% if item.certificate_ends_first %}, After the Review Certificate Ends {{ item.certificate_ends_first|long_date }}{% endif %}</td>
-<td>{{ item.flag.value }}</td>
+<td>{{ item.flag.value|status }}</td>
 <td>{% if item.first and line.ranked %}{% if line.limits|length > 1 %}Projected First{% else %}Only Limit{% endif %}{% elif not line.ranked %}Not Ranked{% endif %}</td>
 </tr>
 <tr>

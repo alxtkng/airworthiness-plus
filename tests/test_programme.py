@@ -28,6 +28,7 @@ from tests.support import (
     Sample,
     add_sample_fleet,
     add_sample_programmes,
+    dot,
     make_sample,
     signed_in,
 )
@@ -199,7 +200,8 @@ def test_due_soon_follows_the_organisations_thresholds(
     with working_for(sample.ours.id, sample.lucy.id):
         (line,) = due.due_lines(Aircraft.objects.get(pk=abcd.pk), TODAY)
         assert line.flag is Flag.DUE_SOON
-    assert "<td>Due Soon</td>" in page(signed_in(sample.reader), f"/aircraft/{abcd.id}/programme/")
+    body = page(signed_in(sample.reader), f"/aircraft/{abcd.id}/programme/")
+    assert f"<td>{dot('Due Soon')}</td>" in body
 
 
 def test_flags_as_g_fmno_runs_into_and_past_its_tolerance(
@@ -216,7 +218,7 @@ def test_flags_as_g_fmno_runs_into_and_past_its_tolerance(
     ):
         day.today = today
         client = signed_in(sample.reader)
-        assert f"<td>{flag}</td>" in page(client, path), today
+        assert f"<td>{dot(flag)}</td>" in page(client, path), today
     day.today = date(2027, 2, 20)
     body = page(signed_in(sample.reader), "/")
     assert f"<td>Annual Check, {MINUS}16 Days</td>" in row_for(body, "G-FMNO")
@@ -253,7 +255,7 @@ def test_a_reached_limit_comes_first_whatever_the_planning_figures(
     client = signed_in(sample.reader)
     assert f"<td>50-Hour Check, {MINUS}0.5 Hours</td>" in row_for(page(client, "/"), "G-ABCD")
     body = page(client, f"/aircraft/{abcd.id}/programme/")
-    assert "<td>Overdue</td>" in body
+    assert f"<td>{dot('Overdue')}</td>" in body
 
 
 def test_a_task_that_cannot_be_calculated_is_shown_first_never_as_not_due(

@@ -2,11 +2,11 @@
 {% load writing %}
 {% block title %}Airworthiness Review Staff{% endblock %}
 {% block content %}
-<h1>Airworthiness Review Staff</h1>
+<h1 class="visually-hidden">Airworthiness Review Staff</h1>
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <table>
 <thead>
-<tr><th>Name</th><th>Authorisation Reference</th><th>Accepted</th><th>Last Review</th><th>Months in the 2-Year Period</th><th>Recency Rests On</th><th>Recency Lapses</th><th>Status</th><th>Record</th></tr>
+<tr><th>Name</th><th data-detail>Authorisation Reference</th><th data-detail>Accepted</th><th>Last Review</th><th data-detail>Months in the 2-Year Period</th><th data-detail>Recency Rests On</th><th>Recency Lapses</th><th>Status</th><th>Record</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -17,7 +17,7 @@
 <td>{{ line.last_review|long_date }}</td>
 <td>{{ line.staff.months_involved }}, Recorded {{ line.staff.months_recorded_on|long_date }}</td>
 <td>{{ line.basis }}</td>
-<td>{% if line.lapses %}After {{ line.lapses|long_date }}{% if line.flag.value %}, {{ line.flag.value }}{% endif %}{% endif %}</td>
+<td>{% if line.lapses %}After {{ line.lapses|long_date }}{% if line.flag.value %}, {{ line.flag.value|status }}{% endif %}{% endif %}</td>
 <td>{{ line.state }}{% if line.staff.restored_on %}, Restored {{ line.staff.restored_on|long_date }} Under {{ line.staff.restored_under }}{% endif %}</td>
 <td>
 <form method="post" action="{% url 'update_involvement' line.staff.id %}">{% csrf_token %}{% for field in involvement_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Save</button></form>

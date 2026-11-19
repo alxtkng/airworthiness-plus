@@ -297,3 +297,22 @@ def add_sample_reviews(sample: Sample, fleet: dict[str, Aircraft]) -> SampleRevi
             airframe_hours=Decimal("7720.0"),
         )
     return SampleReviews(lucy, reviewer, cdef)
+
+
+# REQ-193, written out here and not taken from the application: amber for what
+# is due soon or waiting, red for what is overdue or stops the aircraft, green
+# only for Serviceable.
+_DOTS = {
+    "Serviceable": "ok",
+    "Due Soon": "due",
+    "Due": "due",
+    "Within Tolerance": "due",
+    "To Assess": "due",
+    "Overdue": "stop",
+    "Unserviceable": "stop",
+}
+
+
+def dot(word: str) -> str:
+    """Return a status as the page writes it: a coloured dot and the word."""
+    return f'<span class="status status-{_DOTS[word]}">{word}</span>'

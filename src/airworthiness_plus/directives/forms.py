@@ -6,9 +6,10 @@ from django import forms
 
 from airworthiness_plus.aircraft.models import Counter
 from airworthiness_plus.directives.models import Decision, Directive
+from airworthiness_plus.interface.forms import Form
 
 
-class DirectiveForm(forms.Form):
+class DirectiveForm(Form):
     """Record a directive."""
 
     number = forms.CharField(label="Directive Number", max_length=60)
@@ -21,13 +22,13 @@ class DirectiveForm(forms.Form):
     )
 
     def __init__(self, *args: object, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(*args, **kwargs)
         self.fields["supersedes"].queryset = Directive.objects.filter(  # type: ignore[attr-defined]
             superseded_by__isnull=True
         )
 
 
-class DecisionForm(forms.Form):
+class DecisionForm(Form):
     """Decide whether a directive applies to one aircraft. Nothing is chosen in advance."""
 
     decision = forms.ChoiceField(label="Applicability", choices=[("", "Choose"), *Decision.choices])
@@ -54,13 +55,13 @@ class DecisionForm(forms.Form):
     repeat_days = forms.IntegerField(label="Then Every Days", min_value=1, required=False)
 
     def __init__(self, *args: object, aircraft_id: uuid.UUID, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(*args, **kwargs)
         self.fields["counter"].queryset = Counter.objects.filter(  # type: ignore[attr-defined]
             aircraft_id=aircraft_id
         )
 
 
-class ComplianceForm(forms.Form):
+class ComplianceForm(Form):
     """Record compliance with a directive on one aircraft."""
 
     method = forms.CharField(label="Method of Compliance", max_length=120)
@@ -72,7 +73,7 @@ class ComplianceForm(forms.Form):
     )
 
 
-class TerminationForm(forms.Form):
+class TerminationForm(Form):
     """Record a terminating action."""
 
     action = forms.CharField(label="Terminating Action", max_length=200)

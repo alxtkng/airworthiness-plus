@@ -15,8 +15,8 @@
 </dl>
 <form method="post" action="{% url 'check_import' report.load.id %}">
 {% csrf_token %}
-<table>
-<thead><tr><th>Row</th><th>Of</th><th>Value</th><th>Imported</th><th>Source</th><th>Status</th><th>Checked</th><th>Agrees With Source</th><th>Source Says</th></tr></thead>
+<table data-plain>
+<thead><tr><th>Row</th><th>Of</th><th>Value</th><th>Imported</th><th>Source</th><th>Status</th><th>Checked</th><th>Agrees with Source</th><th>Source Says</th></tr></thead>
 <tbody>
 {% for line in report.lines %}
 <tr>
@@ -27,7 +27,7 @@
 <td>{{ line.check.source_value }}</td>
 <td>{{ line.status }}</td>
 <td>{% if line.check %}{{ line.check.checked_on|long_date }}, {{ line.check.checked_by.full_name }}{% if line.checks > 1 %}, Check {{ line.checks|whole }}{% endif %}{% endif %}</td>
-<td><input type="checkbox" name="agrees_{{ line.value.id }}" aria-label="Row {{ line.value.row }}, {{ line.value.field }}, Agrees With Source"></td>
+<td><input type="checkbox" name="agrees_{{ line.value.id }}" aria-label="Row {{ line.value.row }}, {{ line.value.field }}, Agrees with Source"></td>
 <td><input type="text" name="source_{{ line.value.id }}" aria-label="Row {{ line.value.row }}, {{ line.value.field }}, Source Says"></td>
 </tr>
 {% endfor %}
