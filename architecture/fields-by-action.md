@@ -70,7 +70,8 @@ Each line is an address that changes something: the action it needs, the roles t
 | Manage Users and Roles | Administrator | `/users/<uuid:user_id>/second-factor/` | Clear a user's second factor so that they set one up again | Code From the Administrator's Authenticator Application |
 | Manage Users and Roles | Administrator | `/users/<uuid:user_id>/sessions/` | End every session of a user, for example when a device is lost | None |
 | None | Any Signed-In User, for Themselves | `/account/password/` | Change the signed-in user's own password | Current Password; New Password; New Password Again; Code From Your Authenticator Application |
-| None | Any Signed-In User, for Themselves | `/account/sessions/` | End every other session of the signed-in user. This one continues | None |
+| None | Any Signed-In User, for Themselves | `/account/sessions/` | End every other session of the signed-in user. This one continues | Code From Your Authenticator Application |
+| None | Any Signed-In User, for Themselves | `/account/sessions/<uuid:session_id>/end/` | End one other session of the signed-in user | Code From Your Authenticator Application |
 | None | Anyone, to Sign In or Out | `/sign-in/` | First step: user name and password | User Name; Password |
 | None | Anyone, to Sign In or Out | `/sign-in/code/` | Second step: the code from the authenticator application | Code From the Authenticator Application |
 | None | Anyone, to Sign In or Out | `/sign-in/set-up/` | First sign-in: add the account to an authenticator application and confirm a code | Code From the Authenticator Application |

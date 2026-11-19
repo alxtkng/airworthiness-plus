@@ -163,6 +163,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("users/<uuid:user_id>/sessions/", users.end_sessions, name="end_user_sessions"),
     path("account/password/", users.change_password, name="change_password"),
     path("account/sessions/", users.end_other_sessions, name="end_other_sessions"),
+    path("account/sessions/<uuid:session_id>/end/", users.end_session, name="end_session"),
     path("sign-in/", accounts.sign_in_page, name="sign_in"),
     path("sign-in/code/", accounts.code_page, name="code"),
     path("sign-in/set-up/", accounts.set_up_page, name="set_up"),

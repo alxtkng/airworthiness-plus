@@ -5,12 +5,12 @@ from datetime import datetime, timedelta
 from typing import cast
 
 from django.contrib.auth import update_session_auth_hash
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods, require_POST
 
-from airworthiness_plus.accounts import sign_in, users
+from airworthiness_plus.accounts import sessions, sign_in, users
 from airworthiness_plus.accounts.middleware import SIGNED_IN_AT_KEY
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import address_of, requires, signed_in
@@ -116,13 +116,15 @@ def set_active(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     return redirect("users")
 
 
-def _code_page(request: HttpRequest, what: str, at: str) -> HttpResponse | None:
-    """Ask the Administrator for a code before a change to how a user signs in.
+def _code_page(
+    request: HttpRequest, what: str, at: str, back: tuple[str, str] = ("users", "Back to Users")
+) -> HttpResponse | None:
+    """Ask for a code before a change to how someone signs in, or to their sessions.
 
     Nothing is asked within 5 minutes of sign-in. After that the change is
-    made only with a code from the Administrator's own authenticator
-    application (OWASP ASVS 5.0, 7.5.1; threat TH-002). Returns the page that
-    asks, or nothing when the change may go ahead.
+    made only with a code from the authenticator application of whoever is
+    making it (OWASP ASVS 5.0, 7.5.1, 7.5.2; threat TH-002). Returns the page
+    that asks, or nothing when the change may go ahead.
     """
     if _just_signed_in(request):
         return None
@@ -133,7 +135,13 @@ def _code_page(request: HttpRequest, what: str, at: str) -> HttpResponse | None:
     return render(
         request,
         "accounts/confirm_code.html",
-        {"what": what, "action": request.path, "message": message},
+        {
+            "what": what,
+            "action": request.path,
+            "message": message,
+            "back": back[0],
+            "back_label": back[1],
+        },
     )
 
 
@@ -181,13 +189,37 @@ def end_sessions(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     return redirect("users")
 
 
+# Where the page that asks for a code goes back to, for the user's own sessions.
+OWN = ("change_password", "Back to Change Password")
+
+
+@never_cache
 @signed_in
 @require_POST
 def end_other_sessions(request: HttpRequest) -> HttpResponse:
     """End every other session of the signed-in user. This one continues."""
     user = _user(request)
+    asked = _code_page(request, "Sign Out Everywhere Else", "Ending Other Sessions", OWN)
+    if asked is not None:
+        return asked
     users.end_sessions(user, by=user, address=address_of(request))
     update_session_auth_hash(request, user)
+    return redirect("change_password")
+
+
+@never_cache
+@signed_in
+@require_POST
+def end_session(request: HttpRequest, session_id: uuid.UUID) -> HttpResponse:
+    """End one other session of the signed-in user."""
+    user = _user(request)
+    found = sessions.other_session(user, session_id, request.session.session_key)
+    if found is None:
+        raise Http404
+    asked = _code_page(request, "End a Session", "Ending a Session", OWN)
+    if asked is not None:
+        return asked
+    sessions.end_session(user, found, address_of(request))
     return redirect("change_password")
 
 
@@ -225,5 +257,6 @@ def change_password(request: HttpRequest) -> HttpResponse:
             "message": message,
             "must": user.password_must_change,
             "code_needed": not fresh,
+            "sessions": sessions.live_sessions(user, request.session.session_key),
         },
     )
