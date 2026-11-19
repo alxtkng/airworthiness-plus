@@ -85,6 +85,14 @@ jobs:
       - name: Traceability Matrix Is Complete
         run: uv run python tools/check_traceability.py
 
+      - name: Build the Service Image
+        # The image the server runs (operations/deployment.md). It must build from the
+        # lock file alone, hold the static files and no source control folder, and run
+        # as a user that owns nothing (OWASP ASVS 5.0, 13.4.1).
+        run: |
+          docker build --tag airworthiness-plus:check .
+          docker run --rm airworthiness-plus:check sh -c 'test ! -e /app/.git && test -f /app/static/interface/app.css && test -f /app/static/interface/fonts/Geist-Variable.woff2 && test "$(id -u)" = 10001 && gunicorn --version'
+
       - name: Software Bill of Materials
         run: uv export --locked --no-dev --format cyclonedx1.5 -o sbom.cdx.json
 

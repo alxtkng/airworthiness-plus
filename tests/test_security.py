@@ -19,7 +19,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import connection
+from django.db import DatabaseError, connection
 from django.http import HttpResponse
 from django.test import Client, RequestFactory
 from django.urls import URLPattern, get_resolver
@@ -136,6 +136,30 @@ def test_a_sign_in_with_nothing_in_it_is_refused_like_any_other() -> None:
         assert "User Name or Password Not Accepted" in response.content.decode()
     with as_owner():
         assert AccessEntry.objects.count() == 0
+
+
+def test_the_health_page_says_whether_the_database_answers_and_nothing_else(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """REQ-152; OWASP ASVS 5.0, 13.4.5. No sign-in, no record, no version, no setting."""
+    response = Client().get("/health/", secure=True)
+    assert (response.status_code, response.content) == (200, b"OK")
+    assert response["Content-Type"] == "text/plain; charset=utf-8"
+    assert "no-store" in response["Cache-Control"]
+    # Asked for inside the container over plain HTTP, it is not redirected.
+    assert Client().get("/health/").status_code == 200
+    assert Client().get("/sign-in/").status_code == 301
+
+    assert Client().post("/health/", secure=True).status_code == 405
+
+    def broken(*args: object, **kwargs: object) -> None:
+        raise DatabaseError
+
+    # With the database down every other page fails, and this one says so.
+    monkeypatch.setattr("django.db.backends.base.base.BaseDatabaseWrapper.cursor", broken)
+    down = Client().get("/health/", secure=True)
+    assert (down.status_code, down.content) == (503, b"Unavailable")
+    assert down["Content-Security-Policy"]
 
 
 # What every response carries
