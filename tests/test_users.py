@@ -7,6 +7,7 @@ afresh for each run.
 import html
 import re
 import secrets
+import uuid
 from datetime import UTC, datetime, time, timedelta
 
 import pytest
@@ -310,6 +311,77 @@ def test_a_change_of_password_needs_a_code_unless_just_signed_in(
         code=code_now(NEW, clock),
     )
     assert later.status_code == 302
+
+
+# The user's own sessions (OWASP ASVS 5.0, 7.5.2)
+
+
+def ends(body: str) -> list[str]:
+    """Return the identifier of each session the page offers to end."""
+    return re.findall(r'action="/account/sessions/([0-9a-f-]{36})/end/"', body)
+
+
+def test_a_user_sees_their_sessions_and_ends_one(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """OWASP ASVS 5.0, 7.5.2; threat TH-002. Each session is shown with when it
+    began, when it was last used, where from and in what; this one is marked
+    and cannot be ended from the list. Only the user's own are shown or ended."""
+    here = Client(HTTP_USER_AGENT="[Browser Here]", REMOTE_ADDR="192.0.2.1")
+    elsewhere = Client(HTTP_USER_AGENT="[Browser Elsewhere]", REMOTE_ADDR="192.0.2.7")
+    sign_in_with(here, clock, NEW, FIRST)
+    post(here, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
+    sign_in_with(elsewhere, clock, NEW, SECOND)
+    planner = signed_in(sample.planner)
+
+    body = page(here, "/account/password/")
+    assert body.count("<td>This Session</td>") == 1
+    for text in ("[Browser Here]", "[Browser Elsewhere]", "192.0.2.1", "192.0.2.7"):
+        assert text in body, text
+    (other,) = ends(body)
+    # Nobody else is shown it, or can end it; and a session that is not there is not found.
+    assert other not in page(planner, "/account/password/")
+    assert post(planner, f"/account/sessions/{other}/end/").status_code == 404
+    assert post(here, f"/account/sessions/{uuid.uuid4()}/end/").status_code == 404
+    assert get(elsewhere, "/").status_code == 200
+
+    ended = post(here, f"/account/sessions/{other}/end/")
+    assert (ended.status_code, ended["Location"]) == (302, "/account/password/")
+    assert get(elsewhere, "/")["Location"].startswith("/sign-in/")
+    assert get(here, "/").status_code == 200
+    assert ends(page(here, "/account/password/")) == []
+    assert ("Sessions Ended", "One Session, by [New Person]") in log_of(new_user)
+
+
+def test_ending_a_session_needs_a_code_unless_just_signed_in(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """OWASP ASVS 5.0, 7.5.2: having authenticated again with at least one
+    factor. More than 5 minutes after sign-in a code is asked for, to end one
+    session or every other."""
+    here, elsewhere, third = Client(), Client(), Client()
+    sign_in_with(here, clock, NEW, FIRST)
+    post(here, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
+    sign_in_with(elsewhere, clock, NEW, SECOND)
+    sign_in_with(third, clock, NEW, SECOND)
+    clock.advance(minutes=6)
+    one, _ = ends(page(here, "/account/password/"))
+    for path, what in (
+        (f"/account/sessions/{one}/end/", "End a Session"),
+        ("/account/sessions/", "Sign Out Everywhere Else"),
+    ):
+        asked = post(here, path)
+        assert asked.status_code == 200
+        assert f"<h1>{what}</h1>" in asked.content.decode()
+        assert "Is Not Right" in post(here, path, code="000000").content.decode()
+        assert len(ends(page(here, "/account/password/"))) == (2 if "end/" in path else 1)
+        clock.advance(seconds=31)
+        done = post(here, path, code=code_now(NEW, clock))
+        assert (done.status_code, done["Location"]) == (302, "/account/password/")
+    assert ends(page(here, "/account/password/")) == []
+    assert get(here, "/").status_code == 200
+    for gone in (elsewhere, third):
+        assert get(gone, "/")["Location"].startswith("/sign-in/")
 
 
 # Roles and leaving

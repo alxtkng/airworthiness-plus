@@ -9,5 +9,5 @@
 <p><label for="code">Code From Your Authenticator Application</label><br><input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required></p>
 <p><button type="submit">{{ what }}</button></p>
 </form>
-<p><a href="{% url 'users' %}">Back to Users</a></p>
+<p><a href="{% url back %}">{{ back_label }}</a></p>
 {% endblock %}

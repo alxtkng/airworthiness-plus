@@ -16,6 +16,7 @@ from airworthiness_plus.accounts.middleware import (
 )
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import address_of
+from airworthiness_plus.accounts.sessions import ADDRESS_KEY, BROWSER_KEY
 
 BACKEND = "airworthiness_plus.accounts.backends.OrganisationBackend"
 PENDING_KEY = "password_accepted_for"
@@ -47,6 +48,9 @@ def _complete(request: HttpRequest, user: User) -> HttpResponse:
     request.session[ORGANISATION_KEY] = str(user.organisation_id)
     request.session[SIGNED_IN_AT_KEY] = now
     request.session[LAST_SEEN_KEY] = now
+    # Shown to the user in the list of their own sessions (OWASP ASVS 5.0, 7.5.2).
+    request.session[ADDRESS_KEY] = address_of(request) or ""
+    request.session[BROWSER_KEY] = request.headers.get("User-Agent", "")[:200]
     request.session.pop(PENDING_KEY, None)
     request.session.pop(PENDING_AT_KEY, None)
     return redirect("home")

@@ -81,7 +81,8 @@ WRITES: dict[str, Sets] = {
     "reset_user_second_factor": ("Code From the Administrator's Authenticator Application",),
     "end_user_sessions": (),
     "change_password": (accounts.ChangePasswordForm,),
-    "end_other_sessions": (),
+    "end_other_sessions": ("Code From Your Authenticator Application",),
+    "end_session": ("Code From Your Authenticator Application",),
     "sign_in": ("User Name", "Password"),
     "code": ("Code From the Authenticator Application",),
     "set_up": ("Code From the Authenticator Application",),
@@ -120,6 +121,7 @@ SIGNING_IN = "Anyone, to Sign In or Out"
 WITHOUT_AN_ACTION = {
     "change_password": ANY_SIGNED_IN,
     "end_other_sessions": ANY_SIGNED_IN,
+    "end_session": ANY_SIGNED_IN,
     "sign_in": SIGNING_IN,
     "code": SIGNING_IN,
     "set_up": SIGNING_IN,

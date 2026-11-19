@@ -179,7 +179,15 @@ GROUPS: tuple[Group, ...] = (
 
 # Pages that belong to the person, not to a section.
 OUTSIDE = frozenset(
-    {"sign_in", "code", "set_up", "sign_out", "change_password", "end_other_sessions"}
+    {
+        "sign_in",
+        "code",
+        "set_up",
+        "sign_out",
+        "change_password",
+        "end_other_sessions",
+        "end_session",
+    }
 )
 
 
