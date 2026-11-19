@@ -31,7 +31,7 @@ This is the more serious request: with it and a password, someone can sign in as
 2. Reset the second factor on the Users page. Their sessions end. At their next sign-in they set up an authenticator again.
 3. If the device was lost or stolen, not merely replaced, give a new first password as well.
 
-Both acts are entered in the access log with the Administrator's name. For either, an Administrator who signed in more than 5 minutes ago is asked for a code from their own authenticator application first.
+Both acts are entered in the access log with the Administrator's name. For these and for every other change on the Users page, an Administrator who signed in more than 5 minutes ago is asked for a code from their own authenticator application first.
 
 ## A Lost Device, or Anything Suspicious
 
