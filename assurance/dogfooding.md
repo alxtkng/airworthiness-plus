@@ -64,7 +64,8 @@ Source: `SampleData.md`, Fleet and the notes for the review pages. Days are coun
 
 | Review Staff | By Hand | Shown | Agrees |
 |---|---|---|---|
-| Lucy Grant | Last review 11 November 2026; recent until 11 November 2027 | Last Review 11 November 2026; After 11 November 2027; Current | Yes. See D-3 |
+| Lucy Grant | Last review 11 November 2026; recent until 11 November 2027 | Last Review 11 November 2026; After 11 November 2027; Current | Yes |
+| Lucy Grant | 5 reviews in 12 months: G-DGHI, G-ABCD, G-BXYZ, G-FMNO, G-CDEF | The five certificates are held as hers: four from before these records, one issued here | Yes, since D-3 was fixed |
 | The other review staff member | 4 months; last review 2 December 2025; lapses after 2 December 2026, 14 days away | 4; 2 December 2025; After 2 December 2026, Due Soon; Current | Yes |
 
 ## Directive Status, G-ABCD
@@ -94,9 +95,10 @@ Every directive shows as Applicability to Assess against every other aircraft, a
 |---|---|---|---|---|
 | D-1 | The sample writes 220 Hours for G-CDEF; the system writes 220.0 Hours | The sample and the writing rule differ. Hours are written to one decimal place (REQ-192) | REQ-192 | No change to the system. `SampleData.md` already notes it |
 | D-2 | Work recorded for an earlier date, such as compliance with a directive on 20 July 2026, was shown as entered in the records After the 30 Days, because the day its release went into the records could only be today | Defect. A record brought in from a logbook would have been marked late when it was not | REQ-051 | Fixed in this change: the day the release was entered in the records can be given, on the page and in the seed; an import takes the day of the work. `test_sample_seed`, `test_programme` |
-| D-3 | The sample says Lucy Grant has 5 reviews in 12 months. The system holds one of them as hers; the other four certificates are held as Recorded From the Aircraft Records, because a certificate from before these records began cannot be recorded as issued by the organisation's own review staff | Defect in what can be recorded. Recency is still right here, since it rests on the latest review | REQ-110, REQ-113 | Issue raised |
+| D-3 | The sample says Lucy Grant has 5 reviews in 12 months. The system holds one of them as hers; the other four certificates are held as Recorded From the Aircraft Records, because a certificate from before these records began cannot be recorded as issued by the organisation's own review staff | Defect in what can be recorded. Recency is still right here, since it rests on the latest review | REQ-110, REQ-113 | Issue 71. Fixed 19 November 2026: such a certificate names the review staff member, keeps its reference and uses no serial. `test_reviews`, `test_imports`, `test_sample_seed` |
 | D-4 | The sample names maintenance data that the seed does not load, because `SampleData.md` gives no revision or next-check date for it: the manuals for the other types, and Lycoming and Continental service information | Gap in the sample, not in the system | REQ-080 to REQ-083 | Question for Alex King, in the same Issue |
 | D-5 | The sample lists the Fleet with what needs attention first. The system lists it by Aircraft Registration | No requirement states the order | None | Question for Alex King, in the same Issue |
+| D-6 | Found while fixing D-3, not by comparing with the sample. When the organisation extended a certificate that was issued elsewhere, the copy of the extension owed to the Civil Aviation Authority was not shown on the schedule | Defect. A deadline of 10 days would have passed unflagged | REQ-111, ML.A.903(f) | Fixed 19 November 2026: the copy of an extension is tracked whoever issued the certificate. `test_reviews: g_ejkl_certificate_is_extended_within_30_days` |
 
 ## What This Does Not Show
 
