@@ -142,7 +142,7 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 
 Recorded 18 November 2026, to be settled when the verification level is chosen in Step 7 (`assurance/asvs.md`).
 
-- The key shared with the authenticator application is stored as it is, not encrypted, in a column kept out of the history. Encrypting it needs a cryptography dependency and a key in the server environment.
+- The key shared with the authenticator application is stored as it is, not encrypted, in a column kept out of the history. Encrypting it needs a cryptography dependency and a key in the server environment. Decided 19 November 2026 not to do so in private beta, with the reasons in `operations/keys-and-secrets.md`.
 - A new password is checked for length and against Django's list of common passwords, not against a list of breached passwords (threat TH-001).
 - The first time, the second factor is set up by whoever holds the password. An account's first password must therefore reach its user by a route that is not the system itself.
 - The key is shown as text and as a set-up address, with no code to scan.
