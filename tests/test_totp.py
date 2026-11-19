@@ -62,34 +62,26 @@ def test_the_step_is_30_seconds() -> None:
         totp.counter_at(datetime(2026, 11, 18, 12, 0))  # noqa: DTZ001
 
 
-def test_a_code_is_accepted_one_step_either_side_and_no_further() -> None:
-    """REQ-008. Step 1 is the code 287082 (RFC 4226). At 59 seconds it is the
-    current step; at 89 seconds it is one step back; at 119 seconds two."""
-    assert (
-        totp.matching_counter(RFC_SECRET, "287082", datetime.fromtimestamp(59, UTC), after=None)
-        == 1
-    )
-    assert (
-        totp.matching_counter(RFC_SECRET, "287082", datetime.fromtimestamp(89, UTC), after=None)
-        == 1
-    )
-    assert (
-        totp.matching_counter(RFC_SECRET, "287082", datetime.fromtimestamp(29, UTC), after=None)
-        == 1
-    )
-    assert (
-        totp.matching_counter(RFC_SECRET, "287082", datetime.fromtimestamp(119, UTC), after=None)
-        is None
-    )
+def test_a_code_is_accepted_for_its_own_30_seconds_and_no_longer() -> None:
+    """REQ-008, OWASP ASVS 5.0 6.5.5. Step 1, from 30 to 59 seconds, is the code
+    287082 (RFC 4226). A second before or after that step it is refused."""
+    for second, accepted in ((29, False), (30, True), (59, True), (60, False), (89, False)):
+        found = totp.matching_counter(
+            RFC_SECRET, "287082", datetime.fromtimestamp(second, UTC), after=None
+        )
+        assert found == (1 if accepted else None), second
 
 
 def test_a_used_code_is_refused() -> None:
     """REQ-008, threat TH-001. Once step 1 has been accepted, its code is spent,
-    and so is any earlier one; the code for step 2 (359152) is still good."""
+    and so is any earlier one; the code for step 2 (359152) is good in step 2."""
     moment = datetime.fromtimestamp(59, UTC)
     assert totp.matching_counter(RFC_SECRET, "287082", moment, after=1) is None
     assert totp.matching_counter(RFC_SECRET, "755224", moment, after=1) is None
-    assert totp.matching_counter(RFC_SECRET, "359152", moment, after=1) == 2
+    assert totp.matching_counter(RFC_SECRET, "359152", moment, after=1) is None
+    later = datetime.fromtimestamp(60, UTC)
+    assert totp.matching_counter(RFC_SECRET, "359152", later, after=1) == 2
+    assert totp.matching_counter(RFC_SECRET, "359152", later, after=2) is None
 
 
 @pytest.mark.parametrize("submitted", ["", "28708", "2870820", "28708a", "000000", "287 0821"])

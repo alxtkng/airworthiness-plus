@@ -7,8 +7,10 @@ entered in the access log (REQ-009).
 
 from collections.abc import Callable
 from functools import wraps
+from ipaddress import ip_address
 from typing import Any
 
+from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
@@ -27,7 +29,21 @@ class ActionRefusedError(PermissionDenied):
 
 
 def address_of(request: HttpRequest) -> str | None:
-    """Return the network address the request came from, as the server saw it."""
+    """Return the network address the request came from.
+
+    Behind the reverse proxy the connection comes from the proxy, which
+    adds the address it saw to the end of X-Forwarded-For. Only that last
+    entry is taken: anything before it was sent by the client and proves
+    nothing (OWASP ASVS 5.0, 4.1.3, 15.3.4). Without a proxy the header is
+    ignored altogether.
+    """
+    if settings.BEHIND_PROXY:
+        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+        last = forwarded.rsplit(",", 1)[-1].strip()
+        try:
+            return str(ip_address(last))
+        except ValueError:
+            return None
     address = request.META.get("REMOTE_ADDR")
     return str(address) if address else None
 

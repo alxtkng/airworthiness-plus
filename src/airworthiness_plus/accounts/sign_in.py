@@ -106,6 +106,10 @@ def check_password_for(username: str, password: str, address: str | None = None)
     an inactive user and a locked name all give None. The reason is in the
     access log. This does not sign the user in.
     """
+    if not username.strip():
+        # No name was given, so there is no name to look up, lock or log against.
+        make_password(password)
+        return None
     with _checking(username):
         if _refuse_if_locked(username, address):
             return None

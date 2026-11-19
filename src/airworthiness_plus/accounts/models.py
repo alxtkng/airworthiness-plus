@@ -6,6 +6,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
+from django.utils.crypto import salted_hmac
 
 from airworthiness_plus.accounts.roles import Action, Role, permitted
 from airworthiness_plus.history.models import Record, RecordQuerySet, RecordsAreNeverDeletedError
@@ -51,6 +52,8 @@ class User(Record, AbstractBaseUser):
     second_factor_confirmed = models.BooleanField(default=False)
     # A password given by an Administrator is changed by the user before anything else.
     password_must_change = models.BooleanField(default=False)
+    # Raised to end every session of the user at once (OWASP ASVS 5.0, 7.4.5, 7.5.2).
+    session_generation = models.PositiveIntegerField(default=0)
 
     objects: ClassVar[UserManager] = UserManager()
 
@@ -67,6 +70,20 @@ class User(Record, AbstractBaseUser):
 
     def __str__(self) -> str:
         return self.full_name
+
+    def _get_session_auth_hash(self, secret: str | bytes | None = None) -> str:
+        """Return what a session must carry to be this user's.
+
+        It changes when the password changes and when the user's sessions
+        are ended, so every session made before then stops working.
+        """
+        key_salt = "django.contrib.auth.models.AbstractBaseUser.get_session_auth_hash"
+        return salted_hmac(
+            key_salt,
+            f"{self.password}:{self.session_generation}",
+            secret=secret,
+            algorithm="sha256",
+        ).hexdigest()
 
     def may(self, action: Action) -> bool:
         """Return whether this user may take ``action`` (REQ-006).
@@ -94,6 +111,7 @@ class AccessKind(models.TextChoices):
         "Password Set by an Administrator",
     )
     SECOND_FACTOR_RESET = "Second Factor Reset", "Second Factor Reset"
+    SESSIONS_ENDED = "Sessions Ended", "Sessions Ended"
 
 
 class AccessEntry(models.Model):

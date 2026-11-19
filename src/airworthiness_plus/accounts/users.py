@@ -118,6 +118,15 @@ def reset_second_factor(user: User, *, by: User, address: str | None = None) -> 
     )
 
 
+def end_sessions(user: User, *, by: User, address: str | None = None) -> None:
+    """End every session of a user. They sign in again, with both factors."""
+    user.session_generation += 1
+    user.save(update_fields=["session_generation"])
+    sign_in.log_account_event(
+        AccessKind.SESSIONS_ENDED, user, detail=f"By {by.full_name}"[:200], address=address
+    )
+
+
 def change_password(
     user: User, *, current: str, new: str, again: str, address: str | None = None
 ) -> None:

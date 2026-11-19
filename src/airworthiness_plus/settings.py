@@ -43,6 +43,7 @@ LOGIN_URL = "sign_in"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "airworthiness_plus.interface.security.SecurityHeadersMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "airworthiness_plus.accounts.middleware.OrganisationContextMiddleware",
@@ -108,6 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "airworthiness_plus.accounts.passwords.ContextWordsValidator"},
 ]
 
 # The time of every entry is stored in Coordinated Universal Time. Regulatory
@@ -123,8 +125,48 @@ USE_I18N = False
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = not DEBUG
 SECURE_HSTS_SECONDS = 0 if DEBUG else 31_536_000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+# A cookie named with this prefix is accepted by a browser only over HTTPS,
+# for this host alone and for every path of it (OWASP ASVS 5.0, 3.3.1, 3.3.3).
+SESSION_COOKIE_NAME = "sessionid" if DEBUG else "__Host-sessionid"
+CSRF_COOKIE_NAME = "csrftoken" if DEBUG else "__Host-csrftoken"
+# The address of each request is taken from the reverse proxy only when the
+# service is told it runs behind one (OWASP ASVS 5.0, 15.3.4).
+BEHIND_PROXY = flag("AIRWORTHINESS_BEHIND_PROXY")
+
+# A form is small. The largest is the check of an import: two fields for each
+# value of a file of 2,000 rows.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1_000_000
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 50_000
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1_000_000
+
+# Unexpected errors and security events go to standard error, one line each,
+# with the time in Coordinated Universal Time, for the server to collect
+# (OWASP ASVS 5.0, 16.2.1, 16.2.2, 16.3.4). No request body, password or
+# session identifier is ever written to a log.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "line": {
+            "()": "airworthiness_plus.interface.logs.UtcFormatter",
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+        },
+    },
+    "handlers": {
+        "standard_error": {"class": "logging.StreamHandler", "formatter": "line"},
+    },
+    "root": {"handlers": ["standard_error"], "level": "WARNING"},
+    "loggers": {
+        "django": {"handlers": ["standard_error"], "level": "WARNING", "propagate": False},
+    },
+}
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 # A session ends when the browser closes, 30 minutes after its last request,

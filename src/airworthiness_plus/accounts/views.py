@@ -116,4 +116,7 @@ def sign_out(request: HttpRequest) -> HttpResponse:
     if isinstance(user, User):
         sign_in.log_signed_out(user, address_of(request))
     logout(request)
-    return redirect("sign_in")
+    response = redirect("sign_in")
+    # Ask the browser to forget what it holds of the session (OWASP ASVS 5.0, 14.3.1).
+    response["Clear-Site-Data"] = '"cache", "storage"'
+    return response

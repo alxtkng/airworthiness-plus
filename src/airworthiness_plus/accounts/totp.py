@@ -46,24 +46,18 @@ def matching_counter(
 ) -> int | None:
     """Return the counter whose code is ``submitted``, or None if it is not accepted.
 
-    A code is accepted for the current 30-second step and the one either
-    side of it, to allow for a clock that is a little out. A code for a
-    step at or before ``after``, the last one accepted for this user, is
-    refused, so a code that has been used cannot be used again.
+    A code is accepted for its own 30-second step and no longer (OWASP
+    ASVS 5.0, 6.5.5). A code for a step at or before ``after``, the last
+    one accepted for this user, is refused, so a code that has been used
+    cannot be used again.
     """
     code = "".join(submitted.split())
     if len(code) != DIGITS or not code.isdigit():
         return None
     key = base64.b32decode(secret)
     now = counter_at(moment)
-    found: int | None = None
-    for counter in (now - 1, now, now + 1):
-        if counter < 0:
-            continue
-        matches = hmac.compare_digest(hotp(key, counter), code)
-        if matches and (after is None or counter > after) and found is None:
-            found = counter
-    return found
+    matches = hmac.compare_digest(hotp(key, now), code)
+    return now if matches and (after is None or now > after) else None
 
 
 def set_up_address(secret: str, username: str) -> str:
