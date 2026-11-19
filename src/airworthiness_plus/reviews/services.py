@@ -60,7 +60,13 @@ def add_review_staff(
     months_involved: int = 0,
     last_review_before_records: date | None = None,
 ) -> ReviewStaff:
-    """Record a person as airworthiness review staff (CAO.A.045)."""
+    """Record a person as airworthiness review staff (CAO.A.045).
+
+    Their last review before these records is on or before today, the day
+    they are recorded here. Anything later is a review in these records.
+    """
+    today = aircraft_services.today()
+    _check_before_records(last_review_before_records, today)
     return ReviewStaff.objects.create(
         organisation_id=user.organisation_id,
         user=user,
@@ -68,17 +74,35 @@ def add_review_staff(
         accepted_on=accepted_on,
         part_66_qualified=part_66_qualified,
         months_involved=months_involved,
-        months_recorded_on=aircraft_services.today(),
+        months_recorded_on=today,
+        recorded_on=today,
         last_review_before_records=last_review_before_records,
     )
 
 
+def _check_before_records(last_review_before_records: date | None, recorded_on: date) -> None:
+    if last_review_before_records is not None and last_review_before_records > recorded_on:
+        raise RefusedError(
+            "A Review Before These Records Is Not After "
+            f"{long_date(recorded_on)}, When the Person Was Recorded as Review Staff"
+        )
+
+
 def last_review(staff: ReviewStaff) -> date | None:
-    """Return the date of the person's last airworthiness review, here or before these records."""
+    """Return the date of the person's last airworthiness review, here or before these records.
+
+    A review under supervision that restored a lapsed authorisation counts
+    (AMC1 CAO.A.045(d)). It has its own date: it is a review in these
+    records, not one from before them.
+    """
     issued = staff.certificates.filter(voided=False).order_by("issued_on").last()
     dates = [
         value
-        for value in (issued.issued_on if issued else None, staff.last_review_before_records)
+        for value in (
+            issued.issued_on if issued else None,
+            staff.last_review_before_records,
+            staff.restored_on,
+        )
         if value is not None
     ]
     return max(dates) if dates else None
@@ -223,6 +247,10 @@ def update_involvement(
         raise RefusedError("A Review Cannot Be Dated After Today")
     if not 0 <= months <= 24:
         raise RefusedError("Months in a 2-Year Period Are Between 0 and 24")
+    # Held while this is decided, so that a certificate from before these
+    # records cannot be recorded against the date being replaced.
+    staff = ReviewStaff.objects.select_for_update().select_related("user").get(pk=staff.pk)
+    _check_before_records(last_review_before_records, staff.recorded_on)
     latest = staff.certificates.filter(from_before_records=True).order_by("issued_on").last()
     if latest is not None and (
         last_review_before_records is None or last_review_before_records < latest.issued_on
@@ -268,9 +296,7 @@ def record_restoration(
         raise RefusedError("A Restoration Follows the Lapse")
     staff.restored_on = on
     staff.restored_under = under.strip()
-    if staff.last_review_before_records is None or on > staff.last_review_before_records:
-        staff.last_review_before_records = on
-    staff.save(update_fields=["restored_on", "restored_under", "last_review_before_records"])
+    staff.save(update_fields=["restored_on", "restored_under"])
 
 
 # Certificates
@@ -599,7 +625,8 @@ def _validity_working(certificate: Certificate) -> Working:
                 inputs=tuple(inputs),
                 source="ML.A.903(d)",
             )
-        if valid_to_after_review(certificate.issued_on, None) == expiry:
+        outside = before is None or not review_keeps_pattern(certificate.issued_on, before)
+        if outside and valid_to_after_review(certificate.issued_on, None) == expiry:
             if before is not None and previous is not None:
                 inputs.extend(
                     (
@@ -621,7 +648,12 @@ def _validity_working(certificate: Certificate) -> Working:
     return Working(
         title=f"Where Valid to {long_date(expiry)} Comes From",
         figure=long_date(expiry),
-        rule="The Date of Expiry Written on the Certificate, as Recorded. It Is Not Calculated",
+        rule=(
+            "The Date of Expiry Set When the Certificate Was Issued. The Certificates Recorded "
+            "Before It Have Changed Since, So the Rule Is Not Shown Again"
+            if issued_in_these_records(certificate)
+            else "The Date of Expiry Written on the Certificate, as Recorded. It Is Not Calculated"
+        ),
         inputs=tuple(inputs),
         source="The Certificate, CAA Form 15c",
     )
@@ -671,7 +703,11 @@ def working(line: ScheduleLine, today: date) -> tuple[Working, ...]:
             inputs=(
                 ("Extensions Since the Last Review", str(line.extensions)),
                 ("Valid To", long_date(expiry)),
-                ("An Extension Can Be Made From", long_date(extension_window_opens(expiry))),
+                (
+                    ("An Extension Can Be Made From", long_date(extension_window_opens(expiry)))
+                    if line.extensions < MAX_CONSECUTIVE_EXTENSIONS
+                    else ("Next", "No Further Extension: a Review Is Needed")
+                ),
             ),
             source="ML.A.901(c) and (d)",
         ),

@@ -256,6 +256,40 @@ END
 $$;
 """
 
+# The day a person was recorded as review staff is fixed, because their last
+# review before these records is held to it. A certificate from before these
+# records reads that date under a lock, so that it cannot be replaced while
+# the certificate is being recorded (REQ-109, REQ-110).
+RECORDED_ON_FIXED = """
+CREATE FUNCTION reviews_reviewstaff_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.recorded_on IS DISTINCT FROM OLD.recorded_on THEN
+        RAISE EXCEPTION 'The day a person was recorded as review staff is never altered'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER reviewstaff_fixed BEFORE UPDATE ON reviews_reviewstaff
+    FOR EACH ROW EXECUTE FUNCTION reviews_reviewstaff_fixed();
+""" + ALLOW_FROM_BEFORE.replace(
+    """         WHERE id = NEW.issued_by_id;
+        IF last_before IS NULL""",
+    """         WHERE id = NEW.issued_by_id
+           FOR SHARE;
+        IF last_before IS NULL""",
+)
+
+RECORDED_ON_NOT_FIXED = (
+    """
+DROP TRIGGER reviewstaff_fixed ON reviews_reviewstaff;
+DROP FUNCTION reviews_reviewstaff_fixed();
+"""
+    + ALLOW_FROM_BEFORE
+)
+
 DROP_REVIEW_FIXED = """
 DROP TRIGGER reviewitem_fixed ON reviews_reviewitem;
 DROP TRIGGER review_fixed ON reviews_review;

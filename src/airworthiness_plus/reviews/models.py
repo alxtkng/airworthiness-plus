@@ -34,6 +34,9 @@ class ReviewStaff(Record):
         "Months of Continuing Airworthiness Management in the 2-Year Period", default=0
     )
     months_recorded_on = models.DateField("Months Recorded")
+    # The day the person was recorded here as review staff. Their last review
+    # before these records is never after it.
+    recorded_on = models.DateField("Recorded as Review Staff")
     last_review_before_records = models.DateField(
         "Last Review Before These Records", null=True, blank=True
     )
@@ -54,6 +57,11 @@ class ReviewStaff(Record):
                 condition=Q(restored_on__isnull=True, restored_under="")
                 | (Q(restored_on__isnull=False) & ~Q(restored_under="")),
                 name="reviewstaff_restoration_names_its_supervision",
+            ),
+            models.CheckConstraint(
+                condition=Q(last_review_before_records__isnull=True)
+                | Q(last_review_before_records__lte=F("recorded_on")),
+                name="reviewstaff_last_review_before_records_is_before_them",
             ),
         ]
 
