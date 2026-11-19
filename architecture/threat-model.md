@@ -6,6 +6,8 @@ Every threat is linked to the requirement that answers it and to a planned test.
 
 Reviewed: 18 November 2026, before any product code. Reviewed again at each step that adds a data flow, and in full at the readiness review.
 
+Reviewed in full: 19 November 2026, for the readiness review, by the build session. Every planned test from T-SEC-001 to T-SEC-020 now exists and is named under Tests That Now Exist. The threats whose check is a demonstration on the server (TH-041, TH-042, TH-064 and the server's other services) are not yet shown, because the service is not deployed. Two things were added to Known Gaps in Sign-In by this review: an Administrator's power to reset both factors of another user, and the logging of a user name as typed. No new threat was found that is not already listed. A review by someone other than the author is the penetration test (`assurance/penetration-test-scope.md`).
+
 ## What Is Protected
 
 | Asset | Why It Matters |
@@ -156,4 +158,4 @@ Recorded 18 November 2026, to be settled when the verification level is chosen i
 
 - Email (password reset, notifications): no email flow is designed yet. It is modelled when it is added.
 - File attachments (scanned certificates, supporting documents for REQ-112): upload handling and malware scanning are modelled when attachments are designed.
-- The server's other services: the Coolify server runs other projects that are not to be touched. Isolation between them and this application is checked in Step 8.
+- The server's other services: the Coolify server runs other projects that are not to be touched. Isolation between them and this application is checked at first deployment (`operations/deployment.md`); the build session could not reach the server.
