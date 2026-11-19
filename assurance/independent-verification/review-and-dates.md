@@ -48,3 +48,7 @@ These are readings the implementation makes that the quoted text does not state 
 | After 29 February becomes 28 February, later years | Stay on 28 February unless re-derived | REQ-047 | Design decision to record |
 
 Recency of review staff (REQ-113) is not in these modules yet: `SampleData.md` gives the lapse date (2 December 2026) but not the date of the person's last review, so the golden case cannot be worked by hand until that is added.
+
+## Added 19 November 2026: The Days the Windows Open
+
+`review_window_opens` and `extension_window_opens` were added so that a page can show the first day of the 90-day and 30-day windows (REQ-139). They were not recomputed by a separate person. They are held to the rules that were: two property tests show, for every pair of dates, that a review keeps the pattern exactly from the day shown to the day of expiry, and that an extension is accepted exactly from the day shown to the day of expiry (`tests/test_properties_dates.py`). One case is worked by hand: for a certificate ending 6 December 2026 the windows open on 7 September 2026 and 6 November 2026 (`tests/test_golden_review.py`).
