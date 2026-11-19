@@ -487,6 +487,26 @@ def call(client: Client, method: str, path: str) -> HttpResponse:
     return get(client, path) if method == "GET" else post(client, path)
 
 
+def test_the_export_of_an_organisation_is_limited_to_6_in_an_hour(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """OWASP ASVS 5.0, 15.2.2; threat TH-007. It reads every record and its history,
+    so it is the one thing a signed-in user could ask for again and again. The
+    export of one aircraft, and the other organisation, are not held back by it."""
+    client = signed_in(sample.planner)
+    for _ in range(6):
+        assert post(client, "/records-export/organisation/").status_code == 200
+    refused = post(client, "/records-export/organisation/")
+    assert refused.status_code == 429
+    assert "No More Than 6 Exports of the Organisation in an Hour" in refused.content.decode()
+    assert refused["Content-Type"].startswith("text/html")
+    with working_for(sample.ours.id, sample.planner.id):
+        made = AccessEntry.objects.filter(kind="Records Exported")
+        assert made.count() == 6
+    assert post(client, f"/aircraft/{fleet['G-EJKL'].id}/export/").status_code == 200
+    assert post(signed_in(sample.stranger), "/records-export/organisation/").status_code == 200
+
+
 def test_another_organisations_aircraft_cannot_be_exported(
     sample: Sample, fleet: dict[str, Aircraft]
 ) -> None:

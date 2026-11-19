@@ -3,6 +3,7 @@
 {% block title %}Records Export{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Records Export</h1>
+{% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <h2>Export the Record of an Aircraft</h2>
 <table>
 <thead><tr><th>Aircraft Registration</th><th>Type Rating</th><th>Export</th></tr></thead>
