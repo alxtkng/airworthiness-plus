@@ -20,10 +20,10 @@ Level 2 means every Level 1 and Level 2 requirement: 70 and 183, 253 in all, of 
 
 | Result | Meaning | Requirements |
 |---|---|---|
-| Met | Shown by a test, or by the code and settings named | 139 |
-| Partly Met | Met in part; what is missing is stated | 7 |
+| Met | Shown by a test, or by the code and settings named | 140 |
+| Partly Met | Met in part; what is missing is stated | 5 |
 | Not Met | Not met today; what is needed is stated | 2 |
-| To Be Verified at Deployment | Depends on the server or the reverse proxy. The service is not yet deployed. Each is listed with its check in `operations/deployment.md` | 16 |
+| To Be Verified at Deployment | Depends on the server or the reverse proxy. The service is not yet deployed. Each is listed with its check in `operations/deployment.md` | 17 |
 | Not Applicable | The application has nothing of the kind | 89 |
 | Total | | 253 |
 
@@ -34,13 +34,11 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 | Requirement | Result | What Is Missing | Where It Goes |
 |---|---|---|---|
 | 6.2.12 | Partly Met | Checked against the 20,000 most common passwords, which come from breaches. A full set of breached passwords is not checked: it needs either a large file kept up to date or a request to another service | Issue 69; decision by Alex King |
-| 7.1.1 | Partly Met | Decisions.md: 30 minutes without a request, 12 hours whatever happens. The comparison with NIST SP 800-63B is To Be Checked: that document was not read in this session | To be settled before customer data; in the readiness review |
 | 7.5.2 | Partly Met | A user can end every other session. They cannot see a list of them, and are not asked to sign in again first | Issue 69; decision by Alex King |
 | 11.1.1 | Partly Met | `operations/keys-and-secrets.md` gives the rules and when each key is replaced. It has not been set against a named key management standard | To be settled before customer data; in the readiness review |
 | 11.4.1 | Partly Met | SHA-256 for the history chain, checksums and signatures of sessions. One-time codes use HMAC-SHA-1, which the standard lists as legacy and allows for compatibility: it is what RFC 6238 defaults to and what authenticator applications support. Passkeys would remove it | Issue 69; decision by Alex King |
 | 13.3.1 | Not Met | Secrets are environment values on the server, not in a vault. A decision for private beta, with its reasons, in `operations/keys-and-secrets.md`; to be weighed again before customer data | To be settled before customer data; in the readiness review |
 | 14.2.4 | Partly Met | Met except for two things the classification asks for: second-factor keys are not encrypted in the database, and no period is set for keeping the access log | To be settled before customer data; in the readiness review |
-| 15.2.2 | Partly Met | Imports and forms are limited in size and sign-in is locked. An export of an organisation is not limited, and the rate limit at the proxy is not yet set | To be settled before customer data; in the readiness review |
 | 16.4.3 | Not Met | The history and the access log leave the server once a day in the backup. The server and proxy logs stay on the one server (`operations/monitoring.md`). To be decided before customer data | To be settled before customer data; in the readiness review |
 
 ## V1 Encoding and Sanitization
@@ -188,7 +186,7 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 
 | Requirement | Level | Result | Evidence or Reason |
 |---|---|---|---|
-| 7.1.1 | 2 | Partly Met | Decisions.md: 30 minutes without a request, 12 hours whatever happens. The comparison with NIST SP 800-63B is To Be Checked: that document was not read in this session |
+| 7.1.1 | 2 | Met | Decisions.md: 30 minutes without a request, 12 hours whatever happens. NIST SP 800-63B was read on 19 November 2026 for a sign-in with two factors: revision 3 asks for 30 minutes and 12 hours, revision 4 for no more than 1 hour and 24 hours. Ours meet both; there is no deviation to justify |
 | 7.1.2 | 2 | Met | Decisions.md, Security settings: not limited; a user can end the others |
 | 7.1.3 | 2 | Not Applicable | No federation |
 | 7.2.1 | 1 | Met | Sessions are held in the database and checked on every request |
@@ -308,7 +306,7 @@ Not Applicable: No OAuth or OpenID Connect: the application is neither a client 
 | 15.1.2 | 2 | Met | `uv.lock` with hashes; a CycloneDX bill of materials from every pipeline run; the font files recorded with their checksums |
 | 15.1.3 | 2 | Met | `operations/system-description.md`, What Takes Time or Resources |
 | 15.2.1 | 1 | Met | `pip-audit` fails the pipeline on a known vulnerability; the time frames are in `operations/vulnerability-management.md` |
-| 15.2.2 | 2 | Partly Met | Imports and forms are limited in size and sign-in is locked. An export of an organisation is not limited, and the rate limit at the proxy is not yet set |
+| 15.2.2 | 2 | To Be Verified at Deployment | `operations/system-description.md`, What Takes Time or Resources: imports and forms are limited in size, sign-in is locked, and the export of an organisation is limited to 6 in an hour (`test_exports: the_export_of_an_organisation_is_limited_to_6_in_an_hour`). The limit on the rate of requests is set at the reverse proxy (`operations/deployment.md`) |
 | 15.2.3 | 2 | Met | No administration interface, no debug pages, no sample code |
 | 15.3.1 | 1 | Met | A page shows the fields chosen for it; the export leaves out the password and the second-factor key (`test_exports`) |
 | 15.3.2 | 2 | Not Applicable | The application calls no other address |

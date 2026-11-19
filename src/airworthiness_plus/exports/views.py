@@ -1,6 +1,7 @@
 """The Records Export page and the two exports (REQ-134, REQ-135)."""
 
 import uuid
+from datetime import timedelta
 from typing import cast
 
 from django.http import HttpRequest, HttpResponse
@@ -31,10 +32,12 @@ def _send(request: HttpRequest, export: Export) -> HttpResponse:
     return response
 
 
-@never_cache
-@requires(Action.EXPORT_RECORDS)
-def exports_page(request: HttpRequest) -> HttpResponse:
-    """What can be exported, and every export made, with the SHA-256 of its manifest."""
+# Ours: the export of an organisation reads every record and its history, so
+# it is limited for each organisation (OWASP ASVS 5.0, 15.2.2).
+ORGANISATION_EXPORTS_AN_HOUR = 6
+
+
+def _page(request: HttpRequest, message: str = "", status: int = 200) -> HttpResponse:
     made = AccessEntry.objects.filter(kind=AccessKind.RECORDS_EXPORTED).select_related("user")
     return render(
         request,
@@ -43,8 +46,17 @@ def exports_page(request: HttpRequest) -> HttpResponse:
             "aircraft": Aircraft.objects.order_by("registration"),
             "organisation": _user(request).organisation,
             "made": made.order_by("-id"),
+            "message": message,
         },
+        status=status,
     )
+
+
+@never_cache
+@requires(Action.EXPORT_RECORDS)
+def exports_page(request: HttpRequest) -> HttpResponse:
+    """What can be exported, and every export made, with the SHA-256 of its manifest."""
+    return _page(request)
 
 
 @requires(Action.EXPORT_RECORDS)
@@ -60,4 +72,16 @@ def export_aircraft(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpRespons
 def export_organisation(request: HttpRequest) -> HttpResponse:
     """Export the complete record of the organisation."""
     user = _user(request)
-    return _send(request, build(user.organisation, by=user))
+    organisation = user.organisation
+    recent = AccessEntry.objects.filter(
+        kind=AccessKind.RECORDS_EXPORTED,
+        detail__startswith=f"{organisation.name}, SHA-256 ",
+        at__gte=sign_in.current_time() - timedelta(hours=1),
+    ).count()
+    if recent >= ORGANISATION_EXPORTS_AN_HOUR:
+        return _page(
+            request,
+            f"No More Than {ORGANISATION_EXPORTS_AN_HOUR} Exports of the Organisation in an Hour",
+            status=429,
+        )
+    return _send(request, build(organisation, by=user))

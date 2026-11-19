@@ -63,7 +63,7 @@ Its own database, and nothing else. No user can make it connect anywhere. It sen
 |---|---|---|
 | Sign-in | A password is checked by a deliberately slow calculation | A name is locked after 5 failures; rate limits at the reverse proxy |
 | Import | Every row makes records | A file is at most 1 megabyte and 2,000 rows |
-| Export of an organisation | Reads every record and its history | Run by a signed-in user with the right to export, and logged. Not otherwise limited yet |
+| Export of an organisation | Reads every record and its history | Run by a signed-in user with the right to export, and logged. No more than 6 in an hour for each organisation |
 
 ## Backup
 

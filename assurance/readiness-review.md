@@ -24,7 +24,7 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 638 tests pass, on every change, against PostgreSQL in the pipeline. Five of them run the table script in a real browser.
+- 639 tests pass, on every change, against PostgreSQL in the pipeline. Five of them run the table script in a real browser.
 
 The eleven that are not:
 
@@ -78,14 +78,14 @@ It was run in the build environment. It has not been run on the server, where no
 
 | Result | Requirements |
 |---|---|
-| Met | 139 |
+| Met | 140 |
 | Not Applicable | 89 |
-| To Be Verified at Deployment | 16 |
-| Partly Met | 7 |
+| To Be Verified at Deployment | 17 |
+| Partly Met | 5 |
 | Not Met | 2 |
 
-- The 16 are checks of the server and the reverse proxy, listed in `operations/deployment.md`.
-- Of the 9 not met or met in part, three need a decision (Issue 69: breached passwords, a list of sessions, and passkeys) and six are to be settled before customer data: a vault for secrets, logs kept apart from the server, encryption of second-factor keys, a period for the access log, a limit on exports, and a named key management standard.
+- The 17 are checks of the server and the reverse proxy, listed in `operations/deployment.md`.
+- Of the 7 not met or met in part, three need a decision (Issue 69: breached passwords, a list of sessions, and passkeys) and four are to be settled before customer data: a vault for secrets, logs kept apart from the server, encryption of second-factor keys with a period for the access log, and a named key management standard. Two more were settled on 19 November 2026: the session limits were set against NIST SP 800-63B, and the export of an organisation is limited to 6 in an hour.
 
 The level itself, Level 2, is our choice and is for Alex King to confirm.
 
