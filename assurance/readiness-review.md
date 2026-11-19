@@ -23,10 +23,10 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 **In Part.**
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
-- Tested or inspected as its requirement asks: 92 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 630 tests pass, on every change, against PostgreSQL in the pipeline. Four of them run the table script in a real browser.
+- Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
+- 638 tests pass, on every change, against PostgreSQL in the pipeline. Five of them run the table script in a real browser.
 
-The twelve that are not:
+The eleven that are not:
 
 | Requirement | State | What It Needs |
 |---|---|---|
@@ -35,7 +35,6 @@ The twelve that are not:
 | REQ-112 | The review and its evidence are kept with the certificate. Files cannot be attached | Design of attachments |
 | REQ-132 | The transport, cookie and header settings, the history and the least-privilege role are tested. ASVS Level 2 is not met in full, and there has been no penetration test | Section 6; Issue 40 |
 | REQ-133 | Nothing is ever removed. The retention periods are not reported, and nothing can be removed when they end | A decision (see Questions) |
-| REQ-139 | A due figure of a maintenance programme opens to show its rule, its inputs and its source. Figures for directives, review dates and recency do not | To be built |
 | REQ-150 to REQ-153 | Procedure, scripts and a restore test exist. Nothing runs on the server, and REQ-151 is not met: there is no storage away from the server | Deployment; Issue 27 |
 | REQ-175 | The description of the system is written, with its training section and the flow of a record since 19 November 2026. What CAP 562 C-90 asks of it is taken from notes and unchecked. Written instructions for each role do not exist yet | CAP 562; instructions before public beta |
 | REQ-196 | The pages use the tokens, the navigation and the table of the design system, and tests hold them to it. Sorting and filtering of tables, numbers aligned right, the summary strip and icons beside sidebar items are not built | To be built; the order of the Fleet is a question (Issue 71, D-5) |

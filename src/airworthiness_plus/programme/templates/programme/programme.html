@@ -73,7 +73,7 @@
 <h2>Work Done</h2>
 <table>
 <thead>
-<tr><th>Completed</th><th>Work</th><th>Hours</th><th>Certificate of Release to Service</th><th>Pilot-Owner</th></tr>
+<tr><th>Completed</th><th>Work</th><th>Hours</th><th>Certificate of Release to Service</th><th>Pilot-Owner</th><th data-detail>How the 30 Days Were Calculated</th></tr>
 </thead>
 <tbody>
 {% for line in work %}
@@ -89,6 +89,7 @@
 <button type="submit">Record Release</button>
 </form>{% endif %}</td>
 <td>{% if line.work.by_pilot_owner %}Pilot-Owner Maintenance{% if line.work.pilot_owner_told_on %}, Organisation Told {{ line.work.pilot_owner_told_on|long_date }}{% if line.told_late %}, After the 30 Days{% endif %}{% endif %}{% endif %}</td>
+<td>{% for item in line.workings %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}</td>
 </tr>
 {% endfor %}
 </tbody>

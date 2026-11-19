@@ -8,8 +8,12 @@ from hypothesis import strategies as st
 from airworthiness_rules.dates import add_days, add_years, days_between
 from airworthiness_rules.records import release_record_deadline
 from airworthiness_rules.review import (
+    ExtensionNotPermittedError,
     copy_to_authority_deadline,
+    extension_window_opens,
     review_keeps_pattern,
+    review_window_opens,
+    valid_to_after_extension,
     valid_to_after_review,
 )
 
@@ -67,3 +71,27 @@ def test_a_new_certificate_never_expires_before_the_review(reviewed: date, valid
 def test_deadlines_are_exact_day_counts(start: date) -> None:
     assert days_between(start, copy_to_authority_deadline(start)) == 10
     assert days_between(start, release_record_deadline(start)) == 30
+
+
+@given(DATES, DATES)
+def test_the_review_window_shown_is_the_window_the_rule_uses(
+    reviewed: date, valid_to: date
+) -> None:
+    """REQ-139. The day shown as the start of the window is where the rule begins."""
+    inside = review_window_opens(valid_to) <= reviewed <= valid_to
+    assert review_keeps_pattern(reviewed, valid_to) == inside
+
+
+@given(DATES, DATES)
+def test_the_extension_window_shown_is_the_window_the_rule_uses(
+    extended: date, valid_to: date
+) -> None:
+    """REQ-139. An extension is accepted exactly from the day shown to the day of expiry."""
+    inside = extension_window_opens(valid_to) <= extended <= valid_to
+    try:
+        valid_to_after_extension(extended, valid_to, 0)
+    except ExtensionNotPermittedError:
+        accepted = False
+    else:
+        accepted = True
+    assert accepted == inside

@@ -13,6 +13,7 @@
 <dt>Review</dt><dd>{% if line.in_review_window %}Inside the 90-Day Window, the Review Pattern Is Kept{% else %}Outside the 90-Day Window{% endif %}</dd>
 <dt>Extensions Since the Last Review</dt><dd>{{ line.extensions }} of 2</dd>{% endif %}
 </dl>
+{% for item in working %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}
 <table>
 <thead>
 <tr><th>Certificate Reference</th><th data-detail>Issued By</th><th>Date of Issue</th><th>Date of Expiry</th><th>Status</th><th>Copy to the Civil Aviation Authority</th></tr>

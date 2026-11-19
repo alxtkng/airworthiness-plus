@@ -9,7 +9,9 @@ from django.db import transaction
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, CounterKind, Stage
+from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.formatting import long_date
+from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due
 from airworthiness_plus.reviews.checklist import CHECKLIST, SURVEY
@@ -26,13 +28,17 @@ from airworthiness_rules.dates import days_between
 from airworthiness_rules.intervals import Limit, Unit
 from airworthiness_rules.programme import Flag, deadline_flag, limit_flag
 from airworthiness_rules.review import (
+    COPY_TO_AUTHORITY_DAYS,
     EXTENSION_ANTICIPATION_DAYS,
+    MAX_CONSECUTIVE_EXTENSIONS,
     ExtensionNotPermittedError,
     copy_to_authority_deadline,
     days_to_expiry,
+    extension_window_opens,
     recency_lapses,
     review_keeps_pattern,
     review_staff_recent,
+    review_window_opens,
     valid_to_after_extension,
     valid_to_after_review,
 )
@@ -109,6 +115,42 @@ class StaffLine:
     @property
     def current(self) -> bool:
         return self.state == "Current"
+
+    @property
+    def working(self) -> Working:
+        """Return how the person's recency was worked out (REQ-139)."""
+        staff = self.staff
+        inputs = [
+            (
+                "Last Review",
+                long_date(self.last_review) if self.last_review else "None Recorded",
+            ),
+            (
+                "Months of Continuing Airworthiness Management in the 2-Year Period",
+                f"{staff.months_involved}, Recorded {long_date(staff.months_recorded_on)}",
+            ),
+            ("Recency Rests On", self.basis),
+        ]
+        if self.lapses is not None:
+            inputs.append(("Last Day the Last Review Counts", long_date(self.lapses)))
+        if staff.lapsed_on is not None:
+            inputs.append(("Lapse Recorded", long_date(staff.lapsed_on)))
+        if staff.restored_on is not None:
+            inputs.append(
+                ("Restored", f"{long_date(staff.restored_on)} Under {staff.restored_under}")
+            )
+        return Working(
+            title="How Recency Was Worked Out",
+            figure=self.state,
+            rule=(
+                "Recent with 6 Months of Continuing Airworthiness Management in the 2-Year "
+                "Period, or with 1 Airworthiness Review in the Last 12 Months. A Review Counts "
+                "to the Same Day of the Month 12 Months Later, and That Day Is Taken to Count. "
+                "Once Lost, Recency Returns Only by a Review Under Supervision"
+            ),
+            inputs=tuple(inputs),
+            source="AMC1 CAO.A.045(c) and (d)",
+        )
 
 
 def _recent_by_rule(staff: ReviewStaff, today: date) -> bool:
@@ -487,6 +529,170 @@ def schedule_line(aircraft: Aircraft, today: date) -> ScheduleLine:
         extensions=extended,
         copies=copies,
     )
+
+
+# How each figure of the schedule was worked out (REQ-139)
+
+ANNIVERSARY = "The Last Day Is Taken as the Anniversary, Which Is To Be Confirmed"
+
+
+def _validity_working(certificate: Certificate) -> Working:
+    """Return how the last day of validity of a certificate was reached.
+
+    A rule is given only where it gives the date recorded. Anything else is
+    shown as what the certificate says, never as a calculation.
+    """
+    expiry = valid_to(certificate)
+    title = f"How Valid to {long_date(expiry)} Was Calculated"
+    inputs = [
+        ("Certificate Reference", certificate.reference),
+        ("Date of Issue", long_date(certificate.issued_on)),
+    ]
+    extensions = list(certificate.extensions.order_by("extended_on"))
+    if extensions:
+        inputs.append(("Date of Expiry Before Any Extension", long_date(certificate.valid_to)))
+        inputs.extend(
+            (
+                f"Extension {number}",
+                f"Made {long_date(one.extended_on)}, Valid to {long_date(one.valid_to)}",
+            )
+            for number, one in enumerate(extensions, start=1)
+        )
+        return Working(
+            title=title,
+            figure=long_date(expiry),
+            rule=f"Each Extension Adds 1 Year to the Date of Expiry Before It. {ANNIVERSARY}",
+            inputs=tuple(inputs),
+            source="ML.A.901(c) and (d)",
+        )
+    if issued_in_these_records(certificate):
+        previous = (
+            Certificate.objects.filter(
+                aircraft_id=certificate.aircraft_id,
+                voided=False,
+                issued_on__lt=certificate.issued_on,
+            )
+            .order_by("issued_on")
+            .last()
+        )
+        before = valid_to(previous) if previous is not None else None
+        if (
+            previous is not None
+            and before is not None
+            and review_keeps_pattern(certificate.issued_on, before)
+            and valid_to_after_review(certificate.issued_on, before) == expiry
+        ):
+            inputs.extend(
+                (
+                    ("Certificate Before It", previous.reference),
+                    ("Its Date of Expiry", long_date(before)),
+                    ("90-Day Window Opened", long_date(review_window_opens(before))),
+                )
+            )
+            return Working(
+                title=title,
+                figure=long_date(expiry),
+                rule=(
+                    "A Review in the 90 Days Before the Date of Expiry Keeps the Pattern: "
+                    f"Valid for 1 Year From the Date of Expiry Before It. {ANNIVERSARY}"
+                ),
+                inputs=tuple(inputs),
+                source="ML.A.903(d)",
+            )
+        if valid_to_after_review(certificate.issued_on, None) == expiry:
+            if before is not None and previous is not None:
+                inputs.extend(
+                    (
+                        ("Certificate Before It", previous.reference),
+                        ("Its Date of Expiry", long_date(before)),
+                    )
+                )
+            return Working(
+                title=title,
+                figure=long_date(expiry),
+                rule=(
+                    "Valid for 1 Year From the Review, Which Was Not in the 90 Days Before "
+                    f"a Date of Expiry. {ANNIVERSARY}"
+                ),
+                inputs=tuple(inputs),
+                source="ML.A.901(a)",
+            )
+    inputs.append(("Date of Expiry", long_date(certificate.valid_to)))
+    return Working(
+        title=f"Where Valid to {long_date(expiry)} Comes From",
+        figure=long_date(expiry),
+        rule="The Date of Expiry Written on the Certificate, as Recorded. It Is Not Calculated",
+        inputs=tuple(inputs),
+        source="The Certificate, CAA Form 15c",
+    )
+
+
+def working(line: ScheduleLine, today: date) -> tuple[Working, ...]:
+    """Return how each figure shown for an aircraft's review was worked out (REQ-139)."""
+    certificate = line.certificate
+    if certificate is None or line.valid_to is None or line.days is None:
+        return ()
+    expiry = line.valid_to
+    remaining = formatting.amount(Unit.CALENDAR, line.days)
+    limit = due.thresholds_of(line.aircraft.organisation).days
+    found = [
+        _validity_working(certificate),
+        Working(
+            title=f"How {remaining} Remaining Was Calculated",
+            figure=remaining,
+            rule=(
+                "An Exact Count of Days From Today to the Last Day of Validity. "
+                f"Due Soon at {limit} Days or Fewer, Which This Organisation Has Set"
+            ),
+            inputs=(("Today", long_date(today)), ("Valid To", long_date(expiry))),
+            source="ML.A.901(a); the Count and the Due Soon Limit Are the System's Own",
+        ),
+        Working(
+            title="How the 90-Day Window Was Calculated",
+            figure="Inside" if line.in_review_window else "Outside",
+            rule=(
+                "A Review From 90 Days Before the Date of Expiry, up to That Date, Keeps the "
+                "Pattern: the New Certificate Runs 1 Year From the Old Date of Expiry"
+            ),
+            inputs=(
+                ("Valid To", long_date(expiry)),
+                ("Window Opens", long_date(review_window_opens(expiry))),
+                ("Today", long_date(today)),
+            ),
+            source="ML.A.903(d)",
+        ),
+        Working(
+            title=f"How {line.extensions} of {MAX_CONSECUTIVE_EXTENSIONS} Extensions Was Counted",
+            figure=f"{line.extensions} of {MAX_CONSECUTIVE_EXTENSIONS}",
+            rule=(
+                "At Most 2 Extensions in a Row Since the Last Review, 1 Year Each, Made From "
+                "30 Days Before the Date of Expiry up to That Date"
+            ),
+            inputs=(
+                ("Extensions Since the Last Review", str(line.extensions)),
+                ("Valid To", long_date(expiry)),
+                ("An Extension Can Be Made From", long_date(extension_window_opens(expiry))),
+            ),
+            source="ML.A.901(c) and (d)",
+        ),
+    ]
+    for copy in line.copies:
+        of_extension = copy.extension is not None
+        started = copy.extension.extended_on if copy.extension else copy.certificate.issued_on
+        found.append(
+            Working(
+                title=f"How the Copy by {long_date(copy.deadline)} Was Calculated",
+                figure=long_date(copy.deadline),
+                rule="A Copy Goes to the Civil Aviation Authority Within 10 Days of the Date "
+                "of Issue or Extension",
+                inputs=(
+                    ("Date of Extension" if of_extension else "Date of Issue", long_date(started)),
+                    ("Days Allowed", str(COPY_TO_AUTHORITY_DAYS)),
+                ),
+                source="ML.A.903(f)",
+            )
+        )
+    return tuple(found)
 
 
 def schedule(organisation: Organisation, today: date) -> list[ScheduleLine]:

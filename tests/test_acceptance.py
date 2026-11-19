@@ -180,6 +180,11 @@ def test_the_parallel_run_shows_when_six_months_have_passed(sample: Sample, day:
     body = page(signed_in(sample.reader), "/organisation/")
     assert "<dt>Parallel Run Started</dt><dd>18 May 2026</dd>" in body
     assert "<dt>6 Months</dt><dd>Pass on 18 November 2026</dd>" in body
+    # REQ-139: the day is shown with the rule and the day it is counted from.
+    assert "<summary>How 6 Months on 18 November 2026 Was Calculated</summary>" in body
+    working = body.split("How 6 Months on 18 November 2026 Was Calculated", 1)[1]
+    assert "<dt>Parallel Run Started</dt><dd>18 May 2026</dd>" in working
+    assert "the Same Day of the Month 6 Months After the Start" in working
     day.today = date(2026, 11, 18)
     body = page(signed_in(sample.reader), "/organisation/")
     assert "<dt>6 Months</dt><dd>Passed on 18 November 2026</dd>" in body

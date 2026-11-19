@@ -60,12 +60,14 @@ def _aircraft_page(
     request: HttpRequest, aircraft: Aircraft, form: CertificateForm, message: str = ""
 ) -> HttpResponse:
     today = aircraft_services.today()
+    line = services.schedule_line(aircraft, today)
     return render(
         request,
         "reviews/aircraft.html",
         {
             "aircraft": aircraft,
-            "line": services.schedule_line(aircraft, today),
+            "line": line,
+            "working": services.working(line, today),
             "certificates": [
                 (certificate, list(certificate.extensions.select_related("extended_by")))
                 for certificate in services.certificates(aircraft)

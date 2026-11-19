@@ -497,6 +497,24 @@ tr.detail dd {
   overflow-wrap: anywhere;
 }
 
+/* How a figure was worked out, inside a detail: full width, set out as it is on a page. */
+
+tr.detail dl > .wide {
+  grid-column: 1 / -1;
+}
+
+tr.detail details dl {
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2) var(--space-6);
+  margin: var(--space-3) 0 0;
+}
+
+tr.detail details dt {
+  font-size: inherit;
+  line-height: inherit;
+  margin-bottom: 0;
+}
+
 details {
   margin: var(--space-2) 0;
 }

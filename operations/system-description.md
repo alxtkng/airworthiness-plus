@@ -19,7 +19,7 @@ A web application for the continuing airworthiness records of aircraft managed b
 | Airworthiness Review | The review against each point of ML.A.903, the certificate (CAA Form 15c), extensions, the copy to the Civil Aviation Authority, and the recency of review staff |
 | Records | Import from paper or spreadsheet with a verification report; export of an aircraft's or the organisation's whole record; the Problem Log |
 
-Each due figure of a maintenance programme can be opened to show the rule, the inputs and the source reference it came from. The same for directives, review dates and recency is not yet built (REQ-139).
+Every calculated figure can be opened to show the rule, the inputs and the source reference it came from: what is next due under a programme or a directive, the dates of a review certificate, the copy to the Civil Aviation Authority, the recency of review staff and the 30 days for a release to be in the records. A date that was recorded and not calculated says so. A list such as the Fleet shows the figure and links to the page that opens it.
 
 ## How Records Are Kept
 
@@ -98,7 +98,7 @@ What a person needs to know before they use the system without supervision:
 |---|---|
 | Everyone | Signing in with a password and a code. A first password is changed at first sign-in and works for 7 days. An account is one person's and is never shared: every entry carries the name of who made it |
 | Everyone | Nothing is deleted. A wrong entry is put right by a further entry, and the history keeps both |
-| Everyone | How to read a figure: what Due Soon, Overdue and Within Tolerance mean, the organisation's own Due Soon limits, and how to open a due figure of a programme to see its rule, its inputs and its source |
+| Everyone | How to read a figure: what Due Soon, Overdue and Within Tolerance mean, the organisation's own Due Soon limits, and how to open a figure to see its rule, its inputs and its source |
 | Everyone | Anything that looks wrong goes in the Problem Log, with what was seen. The system is an aid: the person remains responsible for the decision |
 | Planning and Records | Hours and cycles are entered as totals on a date, for the airframe, each engine and each propeller. An unusual increase is confirmed, and a wrong entry is corrected by an entry that names it |
 | Planning and Records | Recording work with its certificate of release to service, and the day the release was entered in the records. Recording compliance with a directive. Recording maintenance data, a new revision and an amendment check |

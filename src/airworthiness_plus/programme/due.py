@@ -12,6 +12,7 @@ from datetime import date
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.interface import formatting
+from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme.models import InspectionCategory, Programme, Task, WorkDone
 from airworthiness_rules.dates import days_between
@@ -35,6 +36,7 @@ from airworthiness_rules.programme import (
     Thresholds,
     deadline_flag,
     limit_flag,
+    pilot_owner_notification_deadline,
     pilot_owner_told_late,
     programme_review_due,
     task_flag,
@@ -74,6 +76,10 @@ class ExplainedLimit:
     @property
     def due_text(self) -> str:
         return formatting.point(self.limit.unit, self.limit.due)
+
+    @property
+    def title(self) -> str:
+        return f"How {self.due_text} Was Calculated"
 
     @property
     def remaining_text(self) -> str:
@@ -222,7 +228,9 @@ def _explain(
             inputs.append(
                 ("Projection", "No Planning Utilisation Recorded, So Limits Are Not Ranked")
             )
-    source = f"{task.source}; ML.A.302"
+    # The action of a directive is due under the directive, not under the programme.
+    of_directive = task.kind == TaskKind.AIRWORTHINESS_DIRECTIVE.value
+    source = task.source if of_directive else f"{task.source}; ML.A.302"
     if limit.tolerance_limit is not None:
         source += "; Tolerance, ML.A.302(d)(1)"
     return tuple(inputs), source
@@ -371,6 +379,47 @@ class WorkLine:
     release_flag: Flag
     release_late: bool
     told_late: bool
+
+    @property
+    def workings(self) -> tuple[Working, ...]:
+        """Return how each deadline that follows from the work was reached (REQ-139)."""
+        work = self.work
+        release = [("Completed", formatting.long_date(work.dated)), ("Days Allowed", "30")]
+        if work.release_recorded_on is not None:
+            release.append(
+                ("Release Entered in the Records", formatting.long_date(work.release_recorded_on))
+            )
+        found = [
+            Working(
+                title=f"How the Release by {formatting.long_date(self.release_deadline)} "
+                "Was Calculated",
+                figure=formatting.long_date(self.release_deadline),
+                rule=(
+                    "The Certificate of Release to Service Is Entered in the Records No Later "
+                    "Than 30 Days After the Work Is Completed"
+                ),
+                inputs=tuple(release),
+                source="ML.A.305(a)",
+            )
+        ]
+        if work.by_pilot_owner:
+            told_by = pilot_owner_notification_deadline(work.dated)
+            told = [("Completed", formatting.long_date(work.dated)), ("Days Allowed", "30")]
+            if work.pilot_owner_told_on is not None:
+                told.append(("Organisation Told", formatting.long_date(work.pilot_owner_told_on)))
+            found.append(
+                Working(
+                    title=f"How Told by {formatting.long_date(told_by)} Was Calculated",
+                    figure=formatting.long_date(told_by),
+                    rule=(
+                        "The Pilot-Owner Tells the Organisation No Later Than 30 Days After "
+                        "Completing the Task"
+                    ),
+                    inputs=tuple(told),
+                    source="Appendices I and II to Part-ML",
+                )
+            )
+        return tuple(found)
 
 
 def work_lines(aircraft: Aircraft, today: date) -> list[WorkLine]:

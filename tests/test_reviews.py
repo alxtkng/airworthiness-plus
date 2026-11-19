@@ -5,7 +5,7 @@ Today in the sample world is 18 November 2026.
 """
 
 import threading
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import psycopg
@@ -19,8 +19,10 @@ from airworthiness_plus.accounts.roles import Action, permitted
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.interface.formatting import long_date
 from airworthiness_plus.reviews import services
 from airworthiness_plus.reviews.models import Certificate, Extension, ReviewStaff
+from airworthiness_rules.dates import add_years
 from airworthiness_rules.programme import Flag
 from tests.conftest import as_owner
 from tests.support import (
@@ -622,6 +624,151 @@ def test_the_last_review_before_these_records_is_not_moved_before_a_certificate(
         services.update_involvement(
             reviews.lucy, months=0, last_review_before_records=date(2026, 8, 2)
         )
+
+
+# How each figure was worked out (REQ-139, hazard H-014)
+
+
+def opened(body: str, title: str) -> str:
+    """Return the working shown under ``title``."""
+    assert f"<summary>{title}</summary>" in body, title
+    return body.split(f"<summary>{title}</summary>", 1)[1].split("</details>", 1)[0]
+
+
+def test_every_figure_of_a_review_certificate_shows_how_it_was_reached(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-139. G-EJKL, valid to 6 December 2026, on 18 November 2026.
+
+    By hand. 12 days left in November and 6 in December: 18 days. 90 days
+    before 6 December: 6 + 30 + 31 + 23 reaches 7 September 2026. 30 days
+    before: 6 + 24 reaches 6 November 2026. Its date of expiry was recorded
+    from the aircraft records, so it is shown as recorded, not as calculated.
+    """
+    client = signed_in(sample.lucy)
+    ejkl = fleet["G-EJKL"]
+    body = page(client, f"/aircraft/{ejkl.id}/review/")
+    recorded = opened(body, "Where Valid to 6 December 2026 Comes From")
+    assert "as Recorded. It Is Not Calculated" in recorded
+    assert "<dt>Source</dt><dd>The Certificate, CAA Form 15c</dd>" in recorded
+    days = opened(body, "How 18 Days Remaining Was Calculated")
+    for text in (
+        "<dt>Today</dt><dd>18 November 2026</dd>",
+        "<dt>Valid To</dt><dd>6 December 2026</dd>",
+        "Due Soon at 30 Days or Fewer",
+    ):
+        assert text in days, text
+    window = opened(body, "How the 90-Day Window Was Calculated")
+    assert "<dt>Window Opens</dt><dd>7 September 2026</dd>" in window
+    assert "<dt>Source</dt><dd>ML.A.903(d)</dd>" in window
+    extensions = opened(body, "How 0 of 2 Extensions Was Counted")
+    assert "<dt>An Extension Can Be Made From</dt><dd>6 November 2026</dd>" in extensions
+    assert "<dt>Source</dt><dd>ML.A.901(c) and (d)</dd>" in extensions
+
+    # Extended today: a year on from 6 December 2026, and a copy owed in 10 days.
+    with working_for(sample.ours.id, sample.lucy.id):
+        certificate = services.current_certificate(ejkl)
+    assert certificate is not None
+    assert post(client, f"/certificates/{certificate.id}/extend/", **CONDITIONS).status_code == 302
+    body = page(client, f"/aircraft/{ejkl.id}/review/")
+    extended = opened(body, "How Valid to 6 December 2027 Was Calculated")
+    for text in (
+        "Each Extension Adds 1 Year to the Date of Expiry Before It",
+        "<dt>Date of Expiry Before Any Extension</dt><dd>6 December 2026</dd>",
+        "<dt>Extension 1</dt><dd>Made 18 November 2026, Valid to 6 December 2027</dd>",
+    ):
+        assert text in extended, text
+    opened(body, "How 1 of 2 Extensions Was Counted")
+    copy = opened(body, "How the Copy by 28 November 2026 Was Calculated")
+    assert "<dt>Date of Extension</dt><dd>18 November 2026</dd>" in copy
+    assert "<dt>Source</dt><dd>ML.A.903(f)</dd>" in copy
+
+
+def test_a_certificate_issued_here_shows_the_rule_that_gave_its_expiry(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-139, REQ-101, REQ-102. G-CDEF, reviewed 11 November 2026 with the
+    certificate before it ending 2 December 2026.
+
+    By hand. 90 days before 2 December: 2 + 30 + 31 + 27 reaches 3 September
+    2026, so 11 November is inside the window and the new certificate runs a
+    year from 2 December 2026. The copy: 11 + 10 is 21 November 2026.
+
+    G-HKLM has no certificate before: a year from the review, 18 November 2027.
+    """
+    client = signed_in(sample.reader)
+    body = page(client, f"/aircraft/{fleet['G-CDEF'].id}/review/")
+    kept = opened(body, "How Valid to 2 December 2027 Was Calculated")
+    for text in (
+        "A Review in the 90 Days Before the Date of Expiry Keeps the Pattern",
+        "Which Is To Be Confirmed",
+        "<dt>Date of Issue</dt><dd>11 November 2026</dd>",
+        "<dt>Certificate Before It</dt><dd>[Certificate Reference G-CDEF]</dd>",
+        "<dt>Its Date of Expiry</dt><dd>2 December 2026</dd>",
+        "<dt>90-Day Window Opened</dt><dd>3 September 2026</dd>",
+        "<dt>Source</dt><dd>ML.A.903(d)</dd>",
+    ):
+        assert text in kept, text
+    opened(body, "How 379 Days Remaining Was Calculated")
+    copy = opened(body, "How the Copy by 21 November 2026 Was Calculated")
+    assert "<dt>Date of Issue</dt><dd>11 November 2026</dd>" in copy
+    assert "<dt>Days Allowed</dt><dd>10</dd>" in copy
+
+    with working_for(sample.ours.id, sample.lucy.id):
+        services.issue_certificate(fleet["G-HKLM"], staff=reviews.lucy, issued_on=TODAY)
+        line = services.schedule_line(fleet["G-HKLM"], TODAY)
+        first = services.working(line, TODAY)[0]
+    assert first.title == "How Valid to 18 November 2027 Was Calculated"
+    assert first.rule.startswith("Valid for 1 Year From the Review")
+    assert first.source == "ML.A.901(a)"
+
+
+def test_the_working_never_gives_a_rule_that_does_not_give_the_date(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-139, hazard H-014. For every aircraft of the sample: a date that is
+    explained by a rule is the date that rule gives from the inputs shown."""
+    with working_for(sample.ours.id, sample.reader.id):
+        for line in services.schedule(sample.ours, TODAY):
+            if line.certificate is None:
+                continue
+            validity, remaining, window, *_ = services.working(line, TODAY)
+            assert line.valid_to is not None
+            assert validity.figure == long_date(line.valid_to)
+            assert remaining.figure == f"{line.days} Days"
+            given = dict(validity.inputs)
+            if "Its Date of Expiry" in given and "Keeps the Pattern" in validity.rule:
+                before = services.valid_to(
+                    Certificate.objects.get(reference=given["Certificate Before It"])
+                )
+                assert add_years(before, 1) == line.valid_to
+            elif validity.rule.startswith("Valid for 1 Year From the Review"):
+                assert add_years(line.certificate.issued_on, 1) == line.valid_to
+            elif "Extension" not in validity.rule:
+                assert "It Is Not Calculated" in validity.rule
+            opens = dict(window.inputs)["Window Opens"]
+            assert opens == long_date(line.valid_to - timedelta(days=90))
+
+
+def test_recency_shows_what_it_rests_on_and_the_rule(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-139, REQ-113, AMC1 CAO.A.045(c). The other review staff member: 4
+    months, last review 2 December 2025, which counts to 2 December 2026."""
+    body = page(signed_in(sample.reader), "/review-staff/")
+    assert body.count("<summary>How Recency Was Worked Out</summary>") == 2
+    theirs = body.split("[Review Name]", 1)[1]
+    working = opened(theirs, "How Recency Was Worked Out")
+    for text in (
+        "6 Months of Continuing Airworthiness Management in the 2-Year Period",
+        "1 Airworthiness Review in the Last 12 Months",
+        "<dt>Last Review</dt><dd>2 December 2025</dd>",
+        "<dd>4, Recorded 18 November 2026</dd>",
+        "<dt>Recency Rests On</dt><dd>A Review in the Last 12 Months</dd>",
+        "<dt>Last Day the Last Review Counts</dt><dd>2 December 2026</dd>",
+        "<dt>Source</dt><dd>AMC1 CAO.A.045(c) and (d)</dd>",
+    ):
+        assert text in working, text
 
 
 # The Fleet and the programme page

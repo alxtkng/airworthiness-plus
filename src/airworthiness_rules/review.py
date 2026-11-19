@@ -45,6 +45,16 @@ def review_keeps_pattern(reviewed: date, valid_to: date) -> bool:
     return 0 <= days_between(reviewed, valid_to) <= REVIEW_ANTICIPATION_DAYS
 
 
+def review_window_opens(valid_to: date) -> date:
+    """Return the first day on which a review keeps the pattern (ML.A.903(d), REQ-139)."""
+    return add_days(valid_to, -REVIEW_ANTICIPATION_DAYS)
+
+
+def extension_window_opens(valid_to: date) -> date:
+    """Return the first day on which the certificate can be extended (ML.A.901(d), REQ-139)."""
+    return add_days(valid_to, -EXTENSION_ANTICIPATION_DAYS)
+
+
 def valid_to_after_review(reviewed: date, previous_valid_to: date | None) -> date:
     """Return the last day of validity of a certificate issued after a review.
 
