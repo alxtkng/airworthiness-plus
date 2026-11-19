@@ -129,6 +129,7 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 | T-SEC-016 | test_data_layer: change_with_no_signed_in_user_is_refused, every_change_writes_who_when_what_before_and_after |
 | T-SEC-017 | test_reviews: two_certificates_cannot_be_allocated_a_serial_at_the_same_moment, serials_run_in_order_and_a_void_serial_is_never_used_again |
 | T-SEC-018 | test_application: administration_interface_is_absent |
+| T-SEC-007 (in part) | test_interface: the_fonts_stylesheet_and_script_are_the_applications_own: no page carries a script of its own or asks anything of another site. The Content Security Policy header comes in Step 7 |
 | T-SEC-019 | test_exports: an_altered_export_fails_verification, the_export_agrees_with_itself_and_with_the_chain_in_the_database, the_command_checks_an_export_without_the_database |
 | T-SEC-020 | test_exports: a_value_that_looks_like_a_formula_is_not_run_by_a_spreadsheet |
 
