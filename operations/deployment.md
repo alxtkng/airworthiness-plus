@@ -52,7 +52,7 @@ The application depends on the proxy for these. Each is checked on the server.
 | `X-Forwarded-Proto` and `X-Forwarded-For` set by the proxy, replacing anything the client sent | The application trusts them (ASVS 4.1.3). A client must not be able to claim HTTPS or an address |
 | The `Host` header passed through unchanged | The application refuses any host but its own |
 | A limit on the size of a request, 2 megabytes | Threat TH-007. The application allows 1 megabyte for a form or a file |
-| A limit on the rate of requests for each address | ASVS 2.4.1. The application locks sign-in after 5 failures but does not limit rate |
+| A limit on the rate of requests for each address | ASVS 2.4.1, 15.2.2. The application locks sign-in after 5 failures and limits the export of an organisation to 6 in an hour, but does not limit the rate of requests |
 | The service reachable only through the proxy | Port 8000 is not published to the internet |
 | A host name of its own for this service | ASVS 3.5.4. Cookies are for that host alone |
 
@@ -62,6 +62,7 @@ These are the rows of `assurance/asvs.md` marked To Be Verified at Deployment, w
 
 | ASVS | Check |
 |---|---|
+| 2.4.1, 15.2.2 | Many requests from one address in a short time are slowed or refused by the proxy |
 | 3.5.4 | The service has its own host name |
 | 4.1.3, 15.3.4 | A request sent with a forged `X-Forwarded-For` is logged with the real address |
 | 4.2.1 | The proxy and Gunicorn are current versions; a malformed request is refused by the proxy |
