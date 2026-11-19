@@ -95,6 +95,8 @@ Added on 18 November 2026 for the review pages, to be confirmed by Alex King: Lu
 
 The tests of the review itself, added on 18 November 2026, take G-EJKL to be reviewed on 18 November 2026 by the other review staff member, who is taken not to be qualified under Part-66 and to be assisted at the survey. By hand: 18 days before 6 December 2026, so the new certificate is valid to 6 December 2027; copy to the Civil Aviation Authority by 28 November 2026; reference UK.CAO.[Number]-ARC-0002 at 11,206.8 airframe hours. This is a test case and not part of the sample; the manufacturer, designation, serial number and organisation address are placeholders.
 
+Added on 19 November 2026 for the seed, to be confirmed by Alex King: the release for the directive inspection of G-ABCD on 20 July 2026 is taken to have gone into the records that day. The right main tyre of G-ABCD is taken to have been replaced by the pilot-owner on 22 October 2026 at 6,390.0 airframe hours, with its release not yet in the records.
+
 Recency figures: experience in the last 2 years is Chris Moore 214 days, Sam Patel 176 days, L2 [Name] 61 days (last maintenance 14 August 2025). Lucy Grant has 5 reviews in 12 months (G-DGHI, G-ABCD, G-BXYZ, G-FMNO, G-CDEF). The lapsing review [Name] has 4 months of continuing airworthiness work; the G-EJKL review by 6 December 2026 keeps them current. Chris Moore's last work is WP-2026-046; Sam Patel's is WP-2026-043.
 
 | Ellie Ward | Mechanic, Trainee | Working toward Part-66 B1.2 | Joined 6 January 2025; on the job training for Cessna/Reims-Cessna 172/F172 Series (Lycoming) on G-BXYZ, 31 of 40 tasks; mentor Sam Patel, assessor Chris Moore |

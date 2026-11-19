@@ -194,6 +194,7 @@ def record_work(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
                 hours=data["hours"],
                 cycles=data["cycles"],
                 release_reference=data["release_reference"],
+                release_recorded_on=data["release_recorded_on"],
                 by_pilot_owner=data["by_pilot_owner"],
                 pilot_owner_told_on=data["pilot_owner_told_on"],
             )

@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "airworthiness_plus.exports",
     "airworthiness_plus.acceptance",
     "airworthiness_plus.imports",
+    "airworthiness_plus.sample",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
