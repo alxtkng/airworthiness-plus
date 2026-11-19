@@ -112,7 +112,11 @@ def reset_second_factor(user: User, *, by: User, address: str | None = None) -> 
     """Clear a user's second factor, so that they set one up again at their next sign-in."""
     user.second_factor_secret = ""
     user.second_factor_confirmed = False
-    user.save(update_fields=["second_factor_secret", "second_factor_confirmed"])
+    # Every session made with the old second factor ends (OWASP ASVS 5.0, 7.4.3).
+    user.session_generation += 1
+    user.save(
+        update_fields=["second_factor_secret", "second_factor_confirmed", "session_generation"]
+    )
     sign_in.log_account_event(
         AccessKind.SECOND_FACTOR_RESET, user, detail=f"By {by.full_name}"[:200], address=address
     )

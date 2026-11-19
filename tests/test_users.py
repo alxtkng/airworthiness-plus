@@ -295,10 +295,13 @@ def test_the_administrator_resets_a_lost_second_factor(
     sample: Sample, new_user: User, clock: Clock
 ) -> None:
     """REQ-008. The user sets a second factor up again at their next sign-in."""
-    sign_in_with(Client(), clock, NEW, FIRST)
+    signed_before = Client()
+    sign_in_with(signed_before, clock, NEW, FIRST)
     administrator = signed_in(sample.administrator)
     assert "<td>Set Up</td>" in page(administrator, "/users/")
     assert post(administrator, f"/users/{new_user.id}/second-factor/").status_code == 302
+    # The session made with the old second factor has ended.
+    assert get(signed_before, "/")["Location"].startswith("/sign-in/")
     clock.advance(seconds=31)
     first = give_password(Client(), NEW, FIRST)
     assert first["Location"] == "/sign-in/set-up/"
