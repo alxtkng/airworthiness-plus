@@ -52,6 +52,9 @@ class User(Record, AbstractBaseUser):
     second_factor_confirmed = models.BooleanField(default=False)
     # A password given by an Administrator is changed by the user before anything else.
     password_must_change = models.BooleanField(default=False)
+    # The day a first password was given. It stops working after 7 days if it
+    # has not been changed (OWASP ASVS 5.0, 6.4.1).
+    first_password_set_on = models.DateField(null=True, blank=True)
     # Raised to end every session of the user at once (OWASP ASVS 5.0, 7.4.5, 7.5.2).
     session_generation = models.PositiveIntegerField(default=0)
 
@@ -112,6 +115,7 @@ class AccessKind(models.TextChoices):
     )
     SECOND_FACTOR_RESET = "Second Factor Reset", "Second Factor Reset"
     SESSIONS_ENDED = "Sessions Ended", "Sessions Ended"
+    CODE_ACCEPTED = "Code Accepted", "Code Accepted"
 
 
 class AccessEntry(models.Model):

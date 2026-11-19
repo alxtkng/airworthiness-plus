@@ -2,7 +2,8 @@
 {% block title %}Users{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Users</h1>
-{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+{% load writing %}{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+{% if given %}<p role="status">First Password for {{ given.0.full_name }}, Shown Once: <code>{{ given.1 }}</code>. To Be Changed by {{ given_until|long_date }}</p>{% endif %}
 <table>
 <thead><tr><th>Full Name</th><th>User Name</th><th>Status</th><th>Second Factor</th><th>Roles</th><th>Change</th></tr></thead>
 <tbody>
@@ -15,7 +16,7 @@
 <td><form method="post" action="{% url 'set_user_roles' person.id %}">{% csrf_token %}{{ roles_form.roles }}<button type="submit">Save Roles of {{ person.full_name }}</button></form></td>
 <td>
 <form method="post" action="{% url 'set_user_active' person.id %}">{% csrf_token %}<input type="hidden" name="active" value="{% if person.is_active %}no{% else %}yes{% endif %}"><button type="submit">Make {{ person.full_name }} {% if person.is_active %}Inactive{% else %}Active{% endif %}</button></form>
-<form method="post" action="{% url 'reset_user_password' person.id %}">{% csrf_token %}{% for field in reset_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Set Password of {{ person.full_name }}</button></form>
+<form method="post" action="{% url 'reset_user_password' person.id %}">{% csrf_token %}<button type="submit">Give {{ person.full_name }} a New First Password</button></form>
 <form method="post" action="{% url 'end_user_sessions' person.id %}">{% csrf_token %}<button type="submit">End Sessions of {{ person.full_name }}</button></form>
 <form method="post" action="{% url 'reset_user_second_factor' person.id %}">{% csrf_token %}<button type="submit">Reset Second Factor of {{ person.full_name }}</button></form>
 </td>
@@ -24,7 +25,7 @@
 </tbody>
 </table>
 <h2>Add a User</h2>
-<p>The first password is given to the person by a route other than this system. They change it when they first sign in.</p>
+<p>The system makes the first password and shows it once. Give it to the person by a route other than this system. They change it when they first sign in, within 7 days.</p>
 <form method="post" action="{% url 'add_user' %}">
 {% csrf_token %}
 {% for field in add_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>

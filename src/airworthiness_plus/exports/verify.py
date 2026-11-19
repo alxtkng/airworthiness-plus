@@ -21,6 +21,9 @@ from dataclasses import dataclass
 from typing import Any
 
 MANIFEST = "manifest.json"
+# The one way a history entry has been hashed so far. An entry that names
+# another is reported, not guessed at.
+ALGORITHM = "sha256-fields-1"
 HASHED_FIELDS = (
     "previous_hash",
     "organisation_id",
@@ -77,7 +80,9 @@ def _history_problems(name: str, entries: list[dict[str, Any]]) -> list[str]:
             problems.append(f"{label}: an entry is missing before this one")
         elif entry["previous_hash"] != expected_previous:
             problems.append(f"{label}: does not follow the entry before it")
-        if entry["hash"] != entry_hash(entry):
+        if entry.get("hash_algorithm", ALGORITHM) != ALGORITHM:
+            problems.append(f"{label}: was hashed in a way this check does not know")
+        elif entry["hash"] != entry_hash(entry):
             problems.append(f"{label}: has been altered since it was written")
         previous = entry
     return problems

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ what }}{% endblock %}
+{% block content %}
+<h1>{{ what }}</h1>
+{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+<p>You signed in more than 5 minutes ago, so a code is asked for again.</p>
+<form method="post" action="{{ action }}">
+{% csrf_token %}
+<p><label for="code">Code From Your Authenticator Application</label><br><input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required></p>
+<p><button type="submit">{{ what }}</button></p>
+</form>
+<p><a href="{% url 'users' %}">Back to Users</a></p>
+{% endblock %}

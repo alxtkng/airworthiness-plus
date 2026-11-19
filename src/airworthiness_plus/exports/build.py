@@ -65,6 +65,7 @@ history/<type>.json
         before, after   the record before and after, as text, exactly as stored
         previous_hash   the hash of the entry before it for the same record
         hash            the hash of this entry
+        hash_algorithm  how the hash was made; sha256-fields-1 is the method below
 
 people.json (in the export of an aircraft)
     The name of each person the records refer to by an identifier.
@@ -141,6 +142,7 @@ def _entry(event: Event) -> dict[str, Any]:
         "after": event.after_json,
         "previous_hash": event.previous_hash,
         "hash": event.hash,
+        "hash_algorithm": event.hash_algorithm,
     }
 
 

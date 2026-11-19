@@ -6,6 +6,10 @@ from typing import Any, NoReturn
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
+# SHA-256 over twelve fields, each written as its length, a colon, the value
+# and a comma. Described in ``airworthiness_plus.history.chain``.
+HASH_ALGORITHM = "sha256-fields-1"
+
 
 class RecordsAreNeverDeletedError(Exception):
     """Nothing is deleted. A wrong or outdated entry is superseded (REQ-131)."""
@@ -65,6 +69,10 @@ class Event(models.Model):
     after_json = models.TextField(null=True)
     previous_hash = models.CharField(max_length=64, blank=True)
     hash = models.CharField(max_length=64)
+    # How ``hash`` was made, so that the method can be changed one day without
+    # leaving earlier entries unreadable (OWASP ASVS 5.0, 11.2.2). The default
+    # is set by the database, which writes every entry.
+    hash_algorithm = models.CharField(max_length=40, db_default=HASH_ALGORITHM)
 
     objects = RecordQuerySet.as_manager()
 

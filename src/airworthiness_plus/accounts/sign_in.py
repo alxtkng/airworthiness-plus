@@ -14,7 +14,7 @@ and the access log entries for that name, and nothing else
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import connection, transaction
@@ -25,6 +25,7 @@ from airworthiness_plus.accounts import totp
 from airworthiness_plus.accounts.models import AccessEntry, AccessKind, User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import SIGNING_IN_SETTING
+from airworthiness_rules.dates import uk_today
 
 # Ours, not the regulation's (Decisions.md, Roles and Permissions).
 LOCK_AFTER_FAILURES = 5
@@ -138,6 +139,15 @@ def check_password_for(username: str, password: str, address: str | None = None)
                 address=address,
             )
             return None
+        if first_password_expired(user):
+            _log(
+                AccessKind.SIGN_IN_FAILED,
+                username,
+                user=user,
+                detail="First Password Expired",
+                address=address,
+            )
+            return None
         return user
 
 
@@ -205,6 +215,53 @@ def log_signed_out(user: User, address: str | None = None) -> None:
 def log_records_exported(user: User, detail: str, address: str | None = None) -> None:
     """Enter an export of records in the access log (threat TH-080)."""
     _log(AccessKind.RECORDS_EXPORTED, user.username, user=user, detail=detail, address=address)
+
+
+# Ours: how long a first password given by an Administrator stays usable.
+FIRST_PASSWORD_DAYS = 7
+
+
+def today() -> date:
+    """Return today's date in the United Kingdom, by the clock the tests can move."""
+    return uk_today(current_time())
+
+
+def first_password_expired(user: User) -> bool:
+    """Return whether a first password was given too long ago to be used."""
+    given = user.first_password_set_on
+    return (
+        user.password_must_change
+        and given is not None
+        and today() > given + timedelta(days=FIRST_PASSWORD_DAYS)
+    )
+
+
+def confirm_code(
+    user: User, code: str, address: str | None = None, *, at: str = "a Change of Password"
+) -> bool:
+    """Check a code from a user who is already signed in, and use it up.
+
+    Asked for before a change to how a user signs in (OWASP ASVS 5.0,
+    7.5.1); ``at`` names the change in the access log. A right code is logged
+    with its step so that it cannot be used again, here or at sign-in. A wrong
+    one counts as a failed sign-in does.
+    """
+    counter = None
+    if user.second_factor_secret:
+        counter = totp.matching_counter(
+            user.second_factor_secret, code, current_time(), after=_last_counter(user.id)
+        )
+    if counter is None:
+        _log(
+            AccessKind.SIGN_IN_FAILED,
+            user.username,
+            user=user,
+            detail=f"Wrong Code at {at}",
+            address=address,
+        )
+        return False
+    _log(AccessKind.CODE_ACCEPTED, user.username, user=user, counter=counter, address=address)
+    return True
 
 
 def log_account_event(
