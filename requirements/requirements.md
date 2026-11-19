@@ -167,7 +167,7 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | REQ-191 | The registration column is always Aircraft Registration, and the type shown is the type rating | Decisions.md, Writing | Must | Inspection |
 | REQ-192 | Dates are written 18 November 2026. Hours are written 6,412.6 | Writing.md | Must | Test |
 | REQ-193 | Amber means due soon and red means overdue only. Green appears only in a Status column. Colour is never the only signal: a word sits beside it | Decisions.md, Interface; design-system/README.md | Must | Inspection |
-| REQ-194 | Tables are one line per row, expand on click, and never wrap cell text | Decisions.md, Interface; Components.md | Must | Inspection |
+| REQ-194 | Tables are one line per row, expand on click, and never wrap cell text | Decisions.md, Interface; Components.md | Must | Inspection; Test in a Browser |
 | REQ-195 | Forms are named as Civil Aviation Authority forms: CAA Form 15c, CAA Form 3-CAO, CAA Form 1 | Decisions.md, Product | Must | Automated check that no interface string contains "EASA Form" |
 | REQ-196 | The interface uses the tokens and components in `design-system/` | design-system/README.md | Must | Inspection |
 

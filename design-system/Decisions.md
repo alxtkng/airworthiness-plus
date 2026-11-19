@@ -68,6 +68,7 @@ The running record for Airworthiness+. Read it before any change, and check ever
   - a table is one line for each row. A button opens a detail row with every column's full value; a column that holds a form, or one marked as secondary, is shown only in the detail. Without the script every table shows everything. The verification report of an import is left as it is, so that values can be ticked down the page
   - a form label has no colon after it. A page carries no script and no style of its own
   - not yet built from Components.md: sorting and filtering of tables, numbers aligned right, the summary strip and icons beside sidebar items
+  - the table script is run in a real browser by the tests, decided 19 November 2026 (REQ-194). Each page is made by the application and handed to the browser with its own headers, so the Content Security Policy applies; no server is started. The driver is Playwright, a development dependency that is not in the service image, and the browser is the Chrome already on the pipeline's machine
 - Backup and restore, decided 19 November 2026 (REQ-150 to REQ-154). Ours, with the numbers for Alex King to confirm:
   - one backup every 24 hours and before every migration, encrypted on the server to a key the server does not hold, checked by a checksum, and copied to storage elsewhere that can be added to and not deleted from
   - the backup is made by a database role that reads every record and writes nothing. The same role runs the check of the records
