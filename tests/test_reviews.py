@@ -111,7 +111,7 @@ def test_the_schedule_shows_each_certificate_and_the_days_remaining(
     ejkl = row_for(body, "G-EJKL")
     for text in (
         "<td>6 December 2026</td>",
-        "<td>18 Days</td>",
+        '<td class="number">18 Days</td>',
         f"<td>{dot('Due Soon')}</td>",
         "<td>Inside the 90-Day Window</td>",
     ):
@@ -120,7 +120,7 @@ def test_the_schedule_shows_each_certificate_and_the_days_remaining(
     assert order == sorted(order)
     abcd = row_for(body, "G-ABCD")
     assert "<td>14 March 2027</td>" in abcd
-    assert "<td>116 Days</td>" in abcd  # 12 + 31 + 31 + 28 + 14
+    assert '<td class="number">116 Days</td>' in abcd  # 12 + 31 + 31 + 28 + 14
     assert "Inside the 90-Day Window" not in abcd
     assert "G-HKLM" not in body
     with working_for(sample.ours.id, sample.reader.id):
@@ -146,7 +146,9 @@ def test_g_cdef_early_review_keeps_the_pattern_and_the_copy_is_owed(
     body = page(signed_in(sample.reader), "/reviews/")
     cdef = row_for(body, "G-CDEF")
     assert "<td>2 December 2027</td>" in cdef
-    assert "<td>379 Days</td>" in cdef  # 12 in November, 365 to 30 November 2027, 2 in December
+    assert (
+        '<td class="number">379 Days</td>' in cdef
+    )  # 12 in November, 365 to 30 November 2027, 2 in December
     assert f"<td>To Be Sent by 21 November 2026, {dot('Due Soon')}</td>" in cdef
     detail = page(signed_in(sample.reader), f"/aircraft/{fleet['G-CDEF'].id}/review/")
     assert ">UK.CAO.[Number]-ARC-0001</a></td>" in detail

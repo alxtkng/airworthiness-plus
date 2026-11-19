@@ -31,6 +31,7 @@ from playwright.sync_api import (
 
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.sample import build
 from tests.support import (
     TODAY,
     Sample,
@@ -322,5 +323,150 @@ def test_how_a_figure_was_worked_out_opens_inside_a_row(
         wide.locator("summary").click()
         assert source.is_visible()
         assert wide.get_by_text("Recency Rests On", exact=True).is_visible()
+
+    in_browser(pages, check)
+
+
+def column(page: Page, heading: str) -> list[str]:
+    """Return the text of one column of the first table, row by row as shown."""
+    return page.evaluate(  # type: ignore[no-any-return]
+        """heading => {
+            const table = document.querySelector('main table.compact');
+            const heads = [...table.tHead.rows[0].cells].map(cell => cell.textContent.trim());
+            const index = heads.indexOf(heading);
+            return [...table.tBodies[0].rows]
+                .filter(row => !row.classList.contains('detail'))
+                .map(row => row.cells[index].textContent.trim());
+        }""",
+        heading,
+    )
+
+
+def test_a_table_sorts_by_a_column_as_dates_numbers_and_status(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-196; Components.md, Sorting. One click sorts ascending, a second
+    descending, and only the sorted column says so. Dates sort as dates and
+    numbers as numbers, not as text: 11,206.8 comes after 9,874.3, and 6
+    December 2026 before 14 March 2027. A Status column sorts red first. A row
+    that is open keeps its detail beneath it."""
+    pages = {"/": made(signed_in(sample.reader), "/")}
+    by_expiry = ["G-EJKL", "G-ABCD", "G-FMNO", "G-DGHI", "G-BXYZ", "G-CDEF"]
+    by_hours = ["G-BXYZ", "G-FMNO", "G-ABCD", "G-CDEF", "G-DGHI", "G-EJKL"]
+
+    def check(page: Page) -> None:
+        page.goto(f"{ORIGIN}/")
+        table = page.locator("main table.compact").first
+        served = column(page, "Aircraft Registration")
+        assert table.locator("thead th[aria-sort]").count() == 0
+
+        expiry = table.get_by_role("button", name="Review Certificate Valid To")
+        expiry.click()
+        assert column(page, "Aircraft Registration") == by_expiry
+        sorted_heads = table.locator("thead th[aria-sort]")
+        assert sorted_heads.count() == 1
+        assert sorted_heads.get_attribute("aria-sort") == "ascending"
+        expiry.click()
+        assert column(page, "Aircraft Registration") == by_expiry[::-1]
+        assert sorted_heads.get_attribute("aria-sort") == "descending"
+
+        table.get_by_role("button", name="Airframe Hours").click()
+        assert column(page, "Aircraft Registration") == by_hours
+        assert table.locator("thead th[aria-sort]").count() == 1
+        assert sorted_heads.text_content().strip() == "Airframe Hours"  # type: ignore[union-attr]
+
+        # Red first: the Unserviceable aircraft, then the rest in the order they were in.
+        table.get_by_role("button", name="Status").click()
+        assert column(page, "Aircraft Registration")[0] == "G-DGHI"
+
+        # An open row takes its detail with it.
+        first = data_rows(page).first
+        first.get_by_role("button", name="Show Details").click()
+        table.get_by_role("button", name="Aircraft Registration").click()
+        assert column(page, "Aircraft Registration") == sorted(served)
+        opened = page.locator("main table.compact tbody tr.open")
+        assert opened.locator("td").nth(1).text_content().strip() == "G-DGHI"  # type: ignore[union-attr]
+        assert opened.evaluate("row => row.nextElementSibling.className") == "detail"
+        assert page.locator("tr.detail").is_visible()
+        # Sorting by keyboard, and every row is still one line.
+        expiry.focus()
+        page.keyboard.press("Enter")
+        assert column(page, "Aircraft Registration") == by_expiry
+        assert len(set(heights(page))) == 1
+
+    in_browser(pages, check)
+
+
+def test_numbers_align_right_and_empty_cells_sort_last(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-196; Components.md, Data Table: numbers align right. A cell with
+    nothing in it comes last whichever way the column is sorted."""
+    build.add_directives(sample, fleet)
+    path = f"/aircraft/{fleet['G-ABCD'].id}/directives/"
+    pages = {"/": made(signed_in(sample.reader), "/"), path: made(signed_in(sample.reader), path)}
+
+    def check(page: Page) -> None:
+        page.goto(f"{ORIGIN}/")
+        aligned = page.evaluate(
+            """() => {
+                const table = document.querySelector('main table.compact');
+                const heads = [...table.tHead.rows[0].cells];
+                const index = heads.findIndex(c => c.textContent.trim() === 'Airframe Hours');
+                const body = [...table.tBodies[0].rows].map(row => row.cells[index]);
+                const cells = [heads[index], ...body];
+                const other = getComputedStyle(table.tBodies[0].rows[0].cells[1]).textAlign;
+                return [cells.map(cell => getComputedStyle(cell).textAlign), other];
+            }"""
+        )
+        assert set(aligned[0]) == {"right"}
+        assert aligned[1] in ("left", "start")
+
+        page.goto(f"{ORIGIN}{path}")
+        due = page.locator("main table.compact").first.get_by_role("button", name="Next Due")
+        due.click()
+        ascending = column(page, "Next Due")
+        due.click()
+        descending = column(page, "Next Due")
+        assert [bool(text) for text in ascending] == [True, True, False, False]
+        assert [bool(text) for text in descending] == [True, True, False, False]
+        assert ascending[:2] == descending[1::-1]
+
+    in_browser(pages, check)
+
+
+SORTING_PAGE = """<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><title>Sorting</title>
+<link rel="stylesheet" href="/static/interface/app.css">
+<script src="/static/interface/app.js" defer></script></head>
+<body><main><table>
+<thead><tr><th>Name</th><th class="number">Hours</th><th>Dated</th><th>Remaining</th></tr></thead>
+<tbody>
+<tr><td>A</td><td class="number">874.3</td><td>1 March 2026</td><td>9 Days</td></tr>
+<tr><td>B</td><td class="number">1,206.8</td><td>28 February 2026</td><td>10 Days</td></tr>
+<tr><td>C</td><td class="number">12.0</td><td>2 January 2027</td><td>-3 Days</td></tr>
+<tr><td>D</td><td class="number">99.9</td><td>10 March 2026</td><td>100 Days</td></tr>
+</tbody></table></main></body></html>"""
+
+
+def test_the_sort_reads_numbers_and_dates_not_their_text() -> None:
+    """REQ-196. A table made for the purpose, with values that sorting as text
+    gets wrong: 1,206.8 is more than 874.3, 28 February comes before 1 March,
+    and 3 days overdue comes before 9 days remaining."""
+    pages = {"/sorting/": HttpResponse(SORTING_PAGE)}
+
+    def check(page: Page) -> None:
+        page.goto(f"{ORIGIN}/sorting/")
+        table = page.locator("main table.compact")
+        for heading, ascending in (
+            ("Hours", ["C", "D", "A", "B"]),  # 12.0, 99.9, 874.3, 1,206.8
+            ("Dated", ["B", "A", "D", "C"]),  # 28 February, 1 March, 10 March, 2 January 2027
+            ("Remaining", ["C", "A", "B", "D"]),  # -3, 9, 10, 100
+        ):
+            button = table.get_by_role("button", name=heading)
+            button.click()
+            assert column(page, "Name") == ascending, heading
+            button.click()
+            assert column(page, "Name") == ascending[::-1], heading
 
     in_browser(pages, check)

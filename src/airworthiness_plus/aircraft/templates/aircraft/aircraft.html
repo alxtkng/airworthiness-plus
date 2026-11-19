@@ -44,13 +44,13 @@
 <dt>Entered For</dt><dd>{{ current.on|long_date }}</dd>
 </dl>
 <table>
-<thead><tr><th>Date</th><th>Total Hours</th><th>Total Cycles</th><th>Entry</th></tr></thead>
+<thead><tr><th>Date</th><th class="number">Total Hours</th><th class="number">Total Cycles</th><th>Entry</th></tr></thead>
 <tbody>
 {% for entry in entries %}
 <tr>
 <td>{{ entry.dated|long_date }}</td>
-<td>{{ entry.hours|hours }}</td>
-<td>{{ entry.cycles|whole }}</td>
+<td class="number">{{ entry.hours|hours }}</td>
+<td class="number">{{ entry.cycles|whole }}</td>
 <td>{% if entry.superseded_by %}Superseded{% else %}Current{% endif %}{% if entry.supersedes_id %}, Correction{% endif %}{% if entry.confirmed_unusual %}, Unusual Increase Confirmed{% endif %}</td>
 </tr>
 {% endfor %}

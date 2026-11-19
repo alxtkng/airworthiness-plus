@@ -86,9 +86,9 @@ def test_the_fleet_page_shows_the_sample_fleet(sample: Sample, fleet: dict[str, 
         assert registration in page
         assert f"<td>{type_rating}</td>" in page
         assert f"<td>{owner}</td>" in page
-        assert f"<td>{formatting.hours(D(hours))}</td>" in page
+        assert f'<td class="number">{formatting.hours(D(hours))}</td>' in page
     assert "<th>Aircraft Registration</th>" in page
-    assert "<td>9,874.3</td>" in page
+    assert '<td class="number">9,874.3</td>' in page
     assert page.count("<td>18 November 2026</td>") == 6
     assert f"<td>{dot('Unserviceable')}, Stabilator Trim Cable</td>" in page
     assert page.count(f"<td>{dot('Serviceable')}</td>") == 5
@@ -297,7 +297,7 @@ def test_an_unusual_increase_needs_confirmation_on_the_page(
     saved = post(client, path, **form, confirmed="on")
     assert saved.status_code == 302
     page = get(client, f"/aircraft/{abcd.id}/").content.decode()
-    assert "<td>6,435.0</td>" in page
+    assert '<td class="number">6,435.0</td>' in page
     assert "Unusual Increase Confirmed" in page
 
 
@@ -353,7 +353,7 @@ def test_a_correction_supersedes_the_wrong_entry_which_stays(
     page = get(client, f"/aircraft/{abcd.id}/").content.decode()
     assert "<td>Superseded</td>" in page
     assert "<td>Current, Correction</td>" in page
-    assert "<td>6,412.6</td>" in page
+    assert '<td class="number">6,412.6</td>' in page
     with working_for(sample.ours.id, sample.planner.id):
         assert services.current_reading(counter) == Reading(TODAY, D("6410.9"), 0)
         assert counter.entries.count() == 2
