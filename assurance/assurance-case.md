@@ -72,8 +72,8 @@ Hazards answered: H-009.
 | C4.1 Backups are taken at least daily and held away from the server | 145.A.45(e): backup updated within 24 hours, adopted as a design requirement | `operations/backup-and-restore.md`, `operations/backup.sh`. Not yet running on the server; where backups are kept is not decided (Issue 27) | Partial |
 | C4.2 A restore has been carried out and its result recorded | A backup that has never been restored is not evidence of recovery | `operations/restore-tests/2026-11-19.md`: passed, in the build environment. To be repeated on the server | Partial |
 | C4.3 The recovery point objective and recovery time objective are stated with reasoning | The user must know how much data could be lost and for how long the service could be down | `operations/backup-and-restore.md`: 24 hours and the next working day, proposed for Alex King to confirm | Available |
-| C4.4 Failures are noticed | A failed backup or outage raises an alert | `operations/monitoring.md`; alert test record | Planned |
-| C4.5 Incidents are handled by a written procedure | | `operations/incident-response.md` | Planned |
+| C4.4 Failures are noticed | A failed backup or outage raises an alert | `operations/monitoring.md`, `operations/check_backup_age.sh`, `/health/`. Written and tried by hand; no alert is set up, because nothing is deployed | Partial |
+| C4.5 Incidents are handled by a written procedure | | `operations/incident-response.md`. Not yet walked through; one person, with no one named to act when he is away | Partial |
 
 ## C5. Secure Development
 
@@ -102,7 +102,7 @@ Hazards answered: H-008, H-003, H-007.
 | C6.1 Each CAP 562 C-90 condition is a requirement with a test or a documented procedure | C-90 is the published basis for accepting computer records and programmes: amendment history that cannot be deleted, write access by role, up to 100% check of directive and review data on migration, backup, serial control, 6-month parallel run with a bound problem log, written approval to keep records other than in logbooks | `requirements/requirements.md` C-90 section; `requirements/traceability.csv` | Planned |
 | C6.2 The system supports the parallel run and problem log | The 6-month parallel run happens in public beta; private beta must deliver the means: a problem log whose entries cannot be removed | Problem log and parallel run: `tests/test_acceptance.py`, `tests/test_golden_acceptance.py` (REQ-172, REQ-173) | Available |
 | C6.3 The system records the customer's written CAA approval | Reference and date for each organisation | `tests/test_acceptance.py` (REQ-174) | Available |
-| C6.4 The system can be described in an exposition | AMC1 CAO.A.025 Part B (records, B.9 in `design-system/Procedures.md`): functions, authorised persons, security, backup, training | Draft exposition text for the records system | Planned |
+| C6.4 The system can be described in an exposition | AMC1 CAO.A.025 Part B (records, B.9 in `design-system/Procedures.md`): functions, authorised persons, security, backup, training | `operations/system-description.md`. What the leaflet asks of it is To Be Checked; the training section is not written | Partial |
 | C6.5 Contracted software conditions are met | AMC1 CAO.A.100(f) point (d)(2): own data only, data entered only by the organisation's personnel, data retrievable at any time | C3.1, C3.2, C2.6 | Partial |
 | C6.6 Forms and terms are the CAA's | CAA Form 15c, CAA Form 3-CAO, SRG1782 type ratings verbatim (`design-system/Decisions.md`) | Interface review against Decisions.md and Writing.md. The certificate page carries every entry of CAA Form 15c, Issue 2, inspected against Appendix IV to Part-ML on 18 November 2026: `tests/test_review_checklist.py`. Labels are checked for Title Case and for the Civil Aviation Authority's form names: `tests/test_interface.py` | Partial |
 
