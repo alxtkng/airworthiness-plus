@@ -4,6 +4,7 @@ import uuid
 from datetime import timedelta
 from typing import cast
 
+from django.db import connection
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
@@ -73,6 +74,14 @@ def export_organisation(request: HttpRequest) -> HttpResponse:
     """Export the complete record of the organisation."""
     user = _user(request)
     organisation = user.organisation
+    # One at a time for each organisation, so that requests sent together are
+    # counted one after another and cannot all pass the limit. The lock is held
+    # until this request's entry in the access log is committed.
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+            [f"export of organisation {organisation.pk}"],
+        )
     recent = AccessEntry.objects.filter(
         kind=AccessKind.RECORDS_EXPORTED,
         detail__startswith=f"{organisation.name}, SHA-256 ",

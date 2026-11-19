@@ -87,7 +87,8 @@ def access_log(request: HttpRequest) -> HttpResponse:
     """
     entries = AccessEntry.objects.select_related("user").order_by("-id")
     before = request.GET.get("before", "")
-    if before.isdigit():
+    # ASCII digits only, and no more than an identifier can hold.
+    if before.isascii() and before.isdigit() and len(before) <= 18:
         entries = entries.filter(id__lt=int(before))
     shown = list(entries[: ACCESS_LOG_PAGE + 1])
     more = len(shown) > ACCESS_LOG_PAGE
@@ -99,6 +100,7 @@ def access_log(request: HttpRequest) -> HttpResponse:
     )
 
 
+@never_cache
 @requires(Action.MANAGE_USERS_AND_ROLES)
 @require_POST
 def add_user(request: HttpRequest) -> HttpResponse:
@@ -106,6 +108,9 @@ def add_user(request: HttpRequest) -> HttpResponse:
     form = AddUserForm(request.POST)
     if not form.is_valid():
         return _users(request, "Give a Full Name and a User Name That Is an Email Address")
+    asked = _code_page(request, "Add a User", "Adding a User")
+    if asked is not None:
+        return asked
     password = users.new_first_password()
     try:
         person = users.add_user(
@@ -116,6 +121,7 @@ def add_user(request: HttpRequest) -> HttpResponse:
     return _users(request, given=(person, password))
 
 
+@never_cache
 @requires(Action.MANAGE_USERS_AND_ROLES)
 @require_POST
 def set_roles(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
@@ -124,6 +130,9 @@ def set_roles(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     form = RolesForm(request.POST, prefix=str(person.pk))
     if not form.is_valid():
         return _users(request, "A Role Is One of the Five Roles")
+    asked = _code_page(request, f"Save Roles of {person.full_name}", "a Change of Roles")
+    if asked is not None:
+        return asked
     try:
         users.set_roles(person, form.cleaned_data["roles"])
     except users.RefusedError as error:
@@ -131,13 +140,22 @@ def set_roles(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     return redirect("users")
 
 
+@never_cache
 @requires(Action.MANAGE_USERS_AND_ROLES)
 @require_POST
 def set_active(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     """Make a user inactive, or active again."""
     person = get_object_or_404(User, pk=user_id)
+    active = request.POST.get("active") == "yes"
+    asked = _code_page(
+        request,
+        f"Make {person.full_name} {'Active' if active else 'Inactive'}",
+        "Making a User Active or Inactive",
+    )
+    if asked is not None:
+        return asked
     try:
-        users.set_active(person, active=request.POST.get("active") == "yes", by=_user(request))
+        users.set_active(person, active=active, by=_user(request))
     except users.RefusedError as error:
         return _users(request, str(error))
     return redirect("users")
@@ -146,12 +164,15 @@ def set_active(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
 def _code_page(
     request: HttpRequest, what: str, at: str, back: tuple[str, str] = ("users", "Back to Users")
 ) -> HttpResponse | None:
-    """Ask for a code before a change to how someone signs in, or to their sessions.
+    """Ask for a code before a change to users, to how someone signs in, or to sessions.
 
     Nothing is asked within 5 minutes of sign-in. After that the change is
     made only with a code from the authenticator application of whoever is
-    making it (OWASP ASVS 5.0, 7.5.1, 7.5.2; threat TH-002). Returns the page
-    that asks, or nothing when the change may go ahead.
+    making it (OWASP ASVS 5.0, 7.5.1, 7.5.2; threat TH-002). Every change on
+    the Users page asks: adding an Administrator, or giving the role, would
+    otherwise be a way round the code before a reset. Returns the page that
+    asks, or nothing when the change may go ahead. The page carries what was
+    sent, so that it is sent again with the code.
     """
     if _just_signed_in(request):
         return None
@@ -166,6 +187,12 @@ def _code_page(
             "what": what,
             "action": request.path,
             "message": message,
+            "carried": [
+                (name, value)
+                for name in request.POST
+                if name not in ("csrfmiddlewaretoken", "code")
+                for value in request.POST.getlist(name)
+            ],
             "back": back[0],
             "back_label": back[1],
         },
@@ -205,11 +232,15 @@ def reset_second_factor(request: HttpRequest, user_id: uuid.UUID) -> HttpRespons
     return redirect("users")
 
 
+@never_cache
 @requires(Action.MANAGE_USERS_AND_ROLES)
 @require_POST
 def end_sessions(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     """End every session of a user, for example when a device is lost."""
     person = get_object_or_404(User, pk=user_id)
+    asked = _code_page(request, f"End Sessions of {person.full_name}", "Ending a User's Sessions")
+    if asked is not None:
+        return asked
     users.end_sessions(person, by=_user(request), address=address_of(request))
     if person.pk == _user(request).pk:
         update_session_auth_hash(request, person)
