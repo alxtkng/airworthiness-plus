@@ -168,7 +168,7 @@ Each is recorded where it arose; this is the list in one place.
 | The certificate reference, UK.CAO.[Number]-ARC-0001 | Ours |
 | An import's hours and cycles must be checked by a second person. A one-person organisation cannot complete that | Enforced |
 | Which records a real migration needs beyond aircraft, directive status and certificates | Three kinds of file |
-| A certificate the organisation's own review staff issued before these records is recorded as theirs only if dated no later than the person's last review before these records, which the Administrator states. Is that the right limit? | Ours; built 19 November 2026 (Issue 71, D-3) |
+| A certificate the organisation's own review staff issued before these records is recorded as theirs only if dated no later than the person's last review before these records, which the Administrator states and which is never after the day the person was recorded as review staff. Is that the right limit? | Ours; built 19 November 2026 (Issue 71, D-3) |
 | A first password works for 7 days. A change to how someone signs in needs a sign-in within the last 5 minutes or a code | Ours; built 19 November 2026 (Issue 69) |
 | A one-time code is good for 30 seconds only. Workable in practice? | Enforced, to meet ASVS 6.5.5 |
 | Authenticator codes now, passkeys before public beta | Decided as ours, 19 November 2026 |

@@ -170,6 +170,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 - Certificates from before these records, decided 19 November 2026 (REQ-110, REQ-113; dogfooding D-3). Ours:
   - a certificate the organisation's own review staff issued before these records is recorded against that person, with the reference it was issued with and no serial of the system. It is entered on the aircraft's Airworthiness Review page or loaded by an import, by whoever may add or change aircraft
   - it is dated no later than the person's last review before these records, which the Administrator states on the review staff record. Recording one therefore cannot change whether the person has recent experience, and cannot stand in for a review carried out in these records. The database holds to the same rule
+  - corrected 19 November 2026 after the independent review of that day's code: the last review before these records is never after the day the person was recorded as review staff, and that day is fixed. A restoration of a lapsed authorisation was being written into the same date, which moved the limit into these records; it now has its own date and still counts as the person's last review. Without this, a certificate dated inside these records could be recorded as the organisation's own with no review and no serial
   - the Administrator cannot move that date to before a certificate of the person already recorded
   - no copy to the Civil Aviation Authority is tracked for it: that copy was owed under the records it came from
   - the copy of an extension is tracked whoever issued the certificate, because the extension is the organisation's own (ML.A.903(f)). Before 19 November 2026 it was tracked only for certificates issued in the system; dogfooding D-6
@@ -266,7 +267,7 @@ On 19 November 2026 Alex King asked us to decide the readings of the regulation 
 - The 6 months in 2 years is a figure the organisation records, with its date.
 - A certificate is extended by the Continuing Airworthiness Manager or by Airworthiness Review Staff.
 - The programme is reviewed within 12 months of its last review.
-- A certificate the organisation's own review staff issued before these records is dated no later than the person's last review before these records.
+- A certificate the organisation's own review staff issued before these records is dated no later than the person's last review before these records, which is never after the day the person was recorded as review staff.
 
 ## National Regime
 
