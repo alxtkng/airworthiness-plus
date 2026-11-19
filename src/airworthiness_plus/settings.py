@@ -45,6 +45,7 @@ LOGIN_URL = "sign_in"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "airworthiness_plus.interface.security.SecurityHeadersMiddleware",
+    "airworthiness_plus.interface.health.HealthMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "airworthiness_plus.accounts.middleware.OrganisationContextMiddleware",
@@ -100,7 +101,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # gathered into STATIC_ROOT by ``manage.py collectstatic`` when the service is
 # built, and served from there by WhiteNoise.
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR.parent.parent / "static-collected"
+STATIC_ROOT = optional("AIRWORTHINESS_STATIC_ROOT") or BASE_DIR.parent.parent / "static-collected"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -125,6 +126,8 @@ USE_I18N = False
 # runs behind the reverse proxy, which ends HTTPS and sets this header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = not DEBUG
+# The health page is asked for inside the container, where there is no HTTPS.
+SECURE_REDIRECT_EXEMPT = [r"^health/$"]
 SECURE_HSTS_SECONDS = 0 if DEBUG else 31_536_000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True
