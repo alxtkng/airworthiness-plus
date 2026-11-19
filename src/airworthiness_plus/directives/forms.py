@@ -71,6 +71,9 @@ class ComplianceForm(Form):
     release_reference = forms.CharField(
         label="Certificate of Release to Service", max_length=100, required=False
     )
+    release_recorded_on = forms.DateField(
+        label="Release Entered in the Records, If Before Today", required=False
+    )
 
 
 class TerminationForm(Form):

@@ -136,11 +136,15 @@ def record_compliance(
     hours: Decimal,
     cycles: int,
     release_reference: str = "",
+    release_recorded_on: date | None = None,
 ) -> Compliance:
     """Record compliance with a directive on an aircraft (REQ-064).
 
     The record of work holds the method, date, hours, cycles and release
-    to service reference. Each compliance is a new record.
+    to service reference. Each compliance is a new record. For work done
+    before these records began, ``release_recorded_on`` is the day the
+    release went into the aircraft's records; without it the release is
+    taken to be recorded today (REQ-051).
     """
     if applicability.decision != Decision.APPLICABLE:
         raise RefusedError("Compliance Is Recorded Against a Directive That Applies")
@@ -153,6 +157,7 @@ def record_compliance(
             hours=hours,
             cycles=cycles,
             release_reference=release_reference,
+            release_recorded_on=release_recorded_on,
         )
     except programme_services.RefusedError as error:
         raise RefusedError(str(error)) from error

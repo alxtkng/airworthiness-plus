@@ -24,6 +24,7 @@ from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme.models import Task, WorkDone
+from airworthiness_plus.sample import build
 from airworthiness_rules.intervals import Interval, Reading, State
 from airworthiness_rules.programme import Flag
 from tests.conftest import as_owner
@@ -62,67 +63,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 def directives(sample: Sample, fleet: dict[str, Aircraft]) -> dict[int, Directive]:
     """Four directives, and for G-ABCD: one repeating, one not applicable, one
     not yet decided, one to be done once."""
-    abcd = fleet["G-ABCD"]
-    with working_for(sample.ours.id, sample.lucy.id):
-        recorded = {
-            number: services.record_directive(
-                organisation=sample.ours,
-                number=f"[Directive Number {number}]",
-                authority="Civil Aviation Authority",
-                subject=subject,
-                effective_date=effective,
-            )
-            for number, subject, effective in (
-                (1, "[Fuel Selector Valve Inspection]", date(2026, 6, 1)),
-                (2, "[Propeller Hub Inspection]", date(2026, 3, 3)),
-                (3, "[Seat Rail Inspection]", date(2026, 11, 2)),
-                (4, "[Placard Installation]", date(2026, 10, 1)),
-            )
-        }
-        counter = abcd.counters.get(kind=CounterKind.AIRFRAME)
-        # 1: first within 50 hours of 6,300.0 on 1 June 2026, then every 100 hours.
-        repeating = services.decide(
-            directive=recorded[1],
-            aircraft=abcd,
-            decision=Decision.APPLICABLE,
-            basis="Fuel Selector Valve Part Number Fitted, Logbook Checked",
-            decided_by=sample.lucy,
-            action=services.Action(
-                counter=counter,
-                starts=Reading(date(2026, 6, 1), D("6300.0"), 0),
-                first=Interval(hours=D("50")),
-                repeat=Interval(hours=D("100")),
-            ),
-        )
-        services.record_compliance(
-            repeating,
-            method="Inspected in Accordance with Paragraph 2",
-            dated=date(2026, 7, 20),
-            hours=D("6350.0"),
-            cycles=0,
-            release_reference="[Release Reference 4]",
-        )
-        services.decide(
-            directive=recorded[2],
-            aircraft=abcd,
-            decision=Decision.NOT_APPLICABLE,
-            basis="Propeller Model Not Fitted, Logbook Checked",
-            decided_by=sample.lucy,
-        )
-        # 4: once, within 3 months of 1 October 2026.
-        services.decide(
-            directive=recorded[4],
-            aircraft=abcd,
-            decision=Decision.APPLICABLE,
-            basis="All Serial Numbers",
-            decided_by=sample.lucy,
-            action=services.Action(
-                counter=counter,
-                starts=Reading(date(2026, 10, 1), D("6370.0"), 0),
-                first=Interval(months=3),
-            ),
-        )
-    return recorded
+    return build.add_directives(sample, fleet)
 
 
 def get(client: Client, path: str) -> HttpResponse:

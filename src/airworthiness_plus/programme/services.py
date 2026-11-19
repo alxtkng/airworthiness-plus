@@ -154,6 +154,11 @@ def record_work(
             raise RefusedError("Before the Last Time This Task Was Done")
     if release_reference and release_recorded_on is None:
         release_recorded_on = today
+    if release_recorded_on is not None and not dated <= release_recorded_on <= today:
+        raise RefusedError(
+            "A Release Is Entered in the Records On or After the Day of the Work, "
+            "and Not After Today"
+        )
     return WorkDone.objects.create(
         organisation_id=aircraft.organisation_id,
         aircraft=aircraft,

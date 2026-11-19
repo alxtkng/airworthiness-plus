@@ -146,6 +146,9 @@ def _load_directive(organisation: Organisation, by: User, row: Row) -> str:
                 hours=_hours(row, "Hours at Compliance"),
                 cycles=_whole(row, "Cycles at Compliance"),
                 release_reference=row["Release Reference"],
+                # The file reproduces a record that already existed, so the release
+                # was in the aircraft's records when the work was done (REQ-051).
+                release_recorded_on=_date(row, "Last Compliance Date"),
             )
     except directive_services.RefusedError as error:
         raise RowError(str(error)) from error

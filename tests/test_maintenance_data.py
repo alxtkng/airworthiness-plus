@@ -26,15 +26,14 @@ from airworthiness_plus.maintenance_data.models import (
     Kind,
     Revision,
 )
+from airworthiness_plus.sample import build
 from airworthiness_rules.programme import Flag
 from tests.conftest import as_owner
 from tests.support import TODAY, Sample, add_sample_fleet, make_sample, signed_in
 
 pytestmark = pytest.mark.django_db
 
-GROB = "Grob G115/120 Series (Lycoming)"
-PA38 = "Piper PA-38 Series (Lycoming)"
-C172 = "Cessna/Reims-Cessna 172/F172 Series (Lycoming)"
+GROB, PA38, C172 = build.GROB, build.PA38, build.C172
 
 
 class Day:
@@ -65,69 +64,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 @pytest.fixture
 def data(sample: Sample, fleet: dict[str, Aircraft]) -> dict[str, DataSet]:
     """SampleData.md, Documentation, Maintenance data."""
-    with working_for(sample.ours.id, sample.planner.id):
-        sets = {
-            # Grob G 115 manual: amendment to check by 20 November 2026 (G-FMNO).
-            "grob": services.record_data(
-                title="Grob G 115 Maintenance Manual",
-                author="[Type Certificate Holder]",
-                kind=Kind.INSTRUCTIONS,
-                applies_to=[GROB],
-                amendment_service="[Amendment Service]",
-                revision_date=date(2026, 3, 1),
-                organisation=sample.ours,
-                revision="[Revision]",
-            ),
-            # Piper PA-38 Series manual not held, needed for G-HKLM.
-            "pa38": services.record_data(
-                organisation=sample.ours,
-                title="Piper PA-38 Series Maintenance Manual",
-                author="[Type Certificate Holder]",
-                kind=Kind.INSTRUCTIONS,
-                applies_to=[PA38],
-                held=False,
-            ),
-            # CAP 747, checked 16 November 2026.
-            "cap747": services.record_data(
-                title="CAP 747 Mandatory Requirements for Airworthiness",
-                author="Civil Aviation Authority",
-                kind=Kind.AUTHORITY,
-                mandatory=True,
-                amendment_service="[Amendment Service]",
-                revision_date=date(2026, 9, 1),
-                organisation=sample.ours,
-                revision="[Revision]",
-            ),
-            # G-BXYZ owner-provided supplementary type certificate instructions,
-            # confirmed current in writing 2 June 2026.
-            "bxyz": services.record_data(
-                title="[Supplementary Type Certificate Instructions]",
-                author="[Supplementary Type Certificate Holder]",
-                kind=Kind.INSTRUCTIONS,
-                applies_to=[C172],
-                revision_date=date(2025, 5, 1),
-                provided_by="Syndicate of 6",
-                evidence=Evidence.WRITTEN_CONFIRMATION,
-                evidence_dated=date(2026, 6, 2),
-                organisation=sample.ours,
-                revision="[Revision]",
-            ),
-        }
-        services.record_check(
-            sets["grob"],
-            checked_by=sample.planner,
-            checked_on=date(2026, 11, 2),
-            result="No Amendment",
-            next_due=date(2026, 11, 20),
-        )
-        services.record_check(
-            sets["cap747"],
-            checked_by=sample.planner,
-            checked_on=date(2026, 11, 16),
-            result="No Amendment",
-            next_due=date(2026, 11, 30),
-        )
-    return sets
+    return build.add_maintenance_data(sample)
 
 
 def get(client: Client, path: str) -> HttpResponse:
