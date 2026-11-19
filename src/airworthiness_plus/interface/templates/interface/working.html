@@ -1,0 +1,8 @@
+<details>
+<summary>{{ title }}</summary>
+<dl>
+<dt>Rule</dt><dd>{{ rule }}</dd>
+{% for label, value in inputs %}<dt>{{ label }}</dt><dd>{{ value }}</dd>
+{% endfor %}<dt>Source</dt><dd>{{ source }}</dd>
+</dl>
+</details>

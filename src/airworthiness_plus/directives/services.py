@@ -191,6 +191,8 @@ class StatusLine:
     next_due: str
     flag: Flag
     directive_superseded: bool
+    # How each limit of what is next due was worked out (REQ-139).
+    limits: tuple[due.ExplainedLimit, ...] = ()
 
     @property
     def state(self) -> str:
@@ -221,6 +223,7 @@ def status(aircraft: Aircraft, today: date) -> list[StatusLine]:
     for directive in Directive.objects.all():
         applicability = decisions.get(directive.id)
         last, count, next_due, flag = None, 0, "", Flag.NONE
+        limits: tuple[due.ExplainedLimit, ...] = ()
         if applicability is not None:
             works = WorkDone.objects.filter(
                 pk__in=applicability.compliance.values("work_id")
@@ -237,9 +240,12 @@ def status(aircraft: Aircraft, today: date) -> list[StatusLine]:
                 if line.needs_attention:
                     next_due = f"Cannot Be Calculated, {line.problem}"
                 else:
+                    limits = line.limits
                     next_due = " or ".join(
-                        f"{limit.due_text}, {limit.remaining_text}" for limit in line.limits
+                        f"{limit.due_text}, {limit.remaining_text}" for limit in limits
                     )
         superseded = Directive.objects.filter(supersedes=directive).exists()
-        lines.append(StatusLine(directive, applicability, last, count, next_due, flag, superseded))
+        lines.append(
+            StatusLine(directive, applicability, last, count, next_due, flag, superseded, limits)
+        )
     return lines

@@ -8,6 +8,8 @@ from django.db import transaction
 from airworthiness_plus.acceptance.models import NoteKind, Problem, ProblemNote
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.interface.formatting import long_date
+from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_rules.acceptance import parallel_run_passed, parallel_run_passes_on
 
@@ -99,6 +101,20 @@ class ParallelRun:
     started_on: date
     passes_on: date
     passed: bool
+
+    @property
+    def working(self) -> Working:
+        """Return how the day the 6 months pass was reached (REQ-139)."""
+        return Working(
+            title=f"How 6 Months on {long_date(self.passes_on)} Was Calculated",
+            figure=long_date(self.passes_on),
+            rule=(
+                "6 Months of Running Beside the Existing Records: the Same Day of the Month "
+                "6 Months After the Start, or the Last Day of That Month If It Is Shorter"
+            ),
+            inputs=(("Parallel Run Started", long_date(self.started_on)), ("Months", "6")),
+            source="CAP 562 Leaflet C-90; the Count of Months Is the System's Own Rule",
+        )
 
 
 def parallel_run(organisation: Organisation) -> ParallelRun | None:

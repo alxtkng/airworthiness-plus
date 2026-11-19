@@ -8,7 +8,7 @@
 <h2>Airworthiness Directive Status</h2>
 <table>
 <thead>
-<tr><th>Directive Number</th><th>Subject</th><th>Applicability</th><th data-detail>Basis</th><th data-detail>Decided</th><th data-detail>Compliance</th><th>Next Due</th><th>Status</th><th>Record</th></tr>
+<tr><th>Directive Number</th><th>Subject</th><th>Applicability</th><th data-detail>Basis</th><th data-detail>Decided</th><th data-detail>Compliance</th><th>Next Due</th><th>Status</th><th data-detail>How Next Due Was Calculated</th><th>Record</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -21,6 +21,7 @@
 <td>{% if line.last_compliance %}{{ line.last_compliance.description }}, {{ line.last_compliance.dated|long_date }} at {{ line.last_compliance.hours|hours }} Hours{% if line.last_compliance.release_reference %}, {{ line.last_compliance.release_reference }}{% endif %}{% if line.compliance_count > 1 %}, {{ line.compliance_count }} Records{% endif %}{% endif %}</td>
 <td>{{ line.next_due }}{% if line.applicability.terminated_on %}, {{ line.applicability.terminating_action }}, {{ line.applicability.terminated_on|long_date }}{% endif %}</td>
 <td>{% if line.to_assess %}{{ "To Assess"|status }}{% else %}{{ line.flag.value|status }}{% endif %}</td>
+<td>{% for item in line.limits %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}</td>
 <td>
 {% if not line.directive_superseded %}<a href="{% url 'decide_directive' aircraft.id line.directive.id %}">{% if line.applicability %}Change Decision{% else %}Decide Applicability{% endif %}</a>{% endif %}
 {% if line.applicability.decision == "Applicable" %}

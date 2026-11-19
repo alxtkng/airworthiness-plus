@@ -14,7 +14,9 @@ from airworthiness_rules.review import (
     ExtensionNotPermittedError,
     copy_to_authority_deadline,
     days_to_expiry,
+    extension_window_opens,
     review_keeps_pattern,
+    review_window_opens,
     valid_to_after_extension,
     valid_to_after_review,
 )
@@ -70,6 +72,25 @@ def test_extension_keeps_the_pattern_within_30_days() -> None:
     """REQ-106, ML.A.901(d). 6 November to 6 December 2026 is 30 days."""
     assert valid_to_after_extension(date(2026, 11, 6), date(2026, 12, 6), 0) == date(2027, 12, 6)
     assert valid_to_after_extension(date(2026, 12, 6), date(2026, 12, 6), 1) == date(2027, 12, 6)
+
+
+def test_g_ejkl_windows_open_on_7_september_and_6_november() -> None:
+    """REQ-102, REQ-106, REQ-139. The certificate ends 6 December 2026.
+
+    By hand, 90 days back: 6 days of December reach 30 November, 30 more
+    reach 31 October, 31 more reach 30 September, and the remaining 23 reach
+    7 September 2026 (6 + 30 + 31 + 23 = 90). 30 days back: 6 days of
+    December reach 30 November, and 24 more reach 6 November 2026.
+    """
+    valid_to = date(2026, 12, 6)
+    assert review_window_opens(valid_to) == date(2026, 9, 7)
+    assert extension_window_opens(valid_to) == date(2026, 11, 6)
+    # The first day of each window is in it, and the day before is not.
+    assert review_keeps_pattern(date(2026, 9, 7), valid_to)
+    assert not review_keeps_pattern(date(2026, 9, 6), valid_to)
+    assert valid_to_after_extension(date(2026, 11, 6), valid_to, 0) == date(2027, 12, 6)
+    with pytest.raises(ExtensionNotPermittedError):
+        valid_to_after_extension(date(2026, 11, 5), valid_to, 0)
 
 
 def test_extension_refused_31_days_early_after_expiry_and_a_third_time() -> None:

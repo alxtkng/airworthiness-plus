@@ -125,8 +125,21 @@ def test_g_abcd_directive_status(
         Flag.NONE,
     )
 
+    # REQ-139: what is next due shows its rule, its inputs and the directive as its source.
+    (limit,) = one.limits
+    assert (limit.title, limit.source) == (
+        "How 6,450.0 Hours Was Calculated",
+        "Civil Aviation Authority Airworthiness Directive [Directive Number 1]; ML.A.303",
+    )
+    assert two.limits == three.limits == ()
+    assert four.limits[0].title == "How 1 January 2027 Was Calculated"
+
     body = page(signed_in(sample.reader), f"/aircraft/{fleet['G-ABCD'].id}/directives/")
     for text in (
+        "<summary>How 6,450.0 Hours Was Calculated</summary>",
+        "<summary>How 1 January 2027 Was Calculated</summary>",
+        "<dt>Source</dt><dd>Civil Aviation Authority Airworthiness Directive "
+        "[Directive Number 1]; ML.A.303</dd>",
         "<td>6,450.0 Hours, 37.4 Hours</td>",
         "<td>Not Applicable</td>",
         "<td>Propeller Model Not Fitted, Logbook Checked</td>",

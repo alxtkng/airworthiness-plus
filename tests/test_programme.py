@@ -423,7 +423,18 @@ def test_g_abcd_release_to_service_deadline_is_shown_and_flagged(
         by_pilot_owner="on",
     )
     assert recorded.status_code == 302
-    assert "To Be Recorded by 21 November 2026, Due Soon" in page(client, path)
+    body = page(client, path)
+    assert "To Be Recorded by 21 November 2026, Due Soon" in body
+    # REQ-139. By hand: 9 days left in October and 21 in November is 30 days.
+    for title, source in (
+        ("How the Release by 21 November 2026 Was Calculated", "ML.A.305(a)"),
+        ("How Told by 21 November 2026 Was Calculated", "Appendices I and II to Part-ML"),
+    ):
+        assert f"<summary>{title}</summary>" in body, title
+        working = body.split(f"<summary>{title}</summary>", 1)[1].split("</details>", 1)[0]
+        assert "<dt>Completed</dt><dd>22 October 2026</dd>" in working
+        assert "<dt>Days Allowed</dt><dd>30</dd>" in working
+        assert f"<dt>Source</dt><dd>{source}</dd>" in working
 
     day.today = date(2026, 11, 21)
     assert "To Be Recorded by 21 November 2026, Due\n" in page(signed_in(sample.planner), path)

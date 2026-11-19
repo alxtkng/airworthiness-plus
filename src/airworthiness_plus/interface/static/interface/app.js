@@ -54,6 +54,10 @@
       if (!value.textContent.trim() && !value.querySelector(CONTROLS)) {
         return;
       }
+      // How a figure was worked out is a list of its own: give it the full width.
+      if (value.querySelector("details")) {
+        group.className = "wide";
+      }
       group.appendChild(term);
       group.appendChild(value);
       list.appendChild(group);

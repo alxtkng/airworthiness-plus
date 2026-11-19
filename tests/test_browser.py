@@ -289,3 +289,38 @@ def test_a_plain_table_and_a_page_without_the_script_show_everything(
 
     in_browser(pages, plain)
     in_browser(pages, without, script=False)
+
+
+def test_how_a_figure_was_worked_out_opens_inside_a_row(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-139, REQ-194. The working of a figure is kept out of the row, takes the
+    full width of the detail, and opens to show its rule, its inputs and its source."""
+    path = "/review-staff/"
+    pages = {path: made(signed_in(sample.reader), path)}
+
+    def check(page: Page) -> None:
+        page.goto(f"{ORIGIN}{path}")
+        row = data_rows(page).first
+        summary = page.get_by_text("How Recency Was Worked Out", exact=True)
+        assert not summary.first.is_visible()
+        row.get_by_role("button", name="Show Details").click()
+        detail = page.locator("tr.detail")
+        wide = detail.locator("dl > div.wide")
+        assert wide.count() == 1
+        assert wide.locator("dt").first.text_content() == "How It Was Worked Out"
+        # Full width: as wide as the list it sits in, where the other values share a line.
+        widths = detail.evaluate(
+            """row => [row.querySelector('dl > div.wide').getBoundingClientRect().width,
+                       row.querySelector('dl').getBoundingClientRect().width,
+                       row.querySelector('dl > div:not(.wide)').getBoundingClientRect().width]"""
+        )
+        assert widths[0] == widths[1]
+        assert widths[2] < widths[1] / 2
+        source = wide.get_by_text("AMC1 CAO.A.045(c) and (d)", exact=True)
+        assert not source.is_visible()
+        wide.locator("summary").click()
+        assert source.is_visible()
+        assert wide.get_by_text("Recency Rests On", exact=True).is_visible()
+
+    in_browser(pages, check)

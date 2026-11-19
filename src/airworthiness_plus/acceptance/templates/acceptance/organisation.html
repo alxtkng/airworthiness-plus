@@ -25,6 +25,7 @@
 <dt>Parallel Run Started</dt><dd>{% if run %}{{ run.started_on|long_date }}{% else %}Not Started{% endif %}</dd>
 {% if run %}<dt>6 Months</dt><dd>{% if run.passed %}Passed on {{ run.passes_on|long_date }}{% else %}Pass on {{ run.passes_on|long_date }}{% endif %}</dd>{% endif %}
 </dl>
+{% if run %}{% with item=run.working %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endwith %}{% endif %}
 <form method="post" action="{% url 'record_parallel_run' %}">
 {% csrf_token %}
 {% for field in run_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
