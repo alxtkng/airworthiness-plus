@@ -203,6 +203,7 @@ def test_every_table_is_under_the_record_rules() -> None:
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
     extra_triggers = {
+        "organisations_organisation": {"serial_floor_guard"},
         "aircraft_utilisationentry": {"utilisation_fits"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
