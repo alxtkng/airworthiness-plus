@@ -151,6 +151,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("organisation/approval/", acceptance.record_approval, name="record_records_approval"),
     path("organisation/parallel-run/", acceptance.record_parallel_run, name="record_parallel_run"),
     path("users/", users.users_page, name="users"),
+    path("users/access-log/", users.access_log, name="access_log"),
     path("users/add/", users.add_user, name="add_user"),
     path("users/<uuid:user_id>/roles/", users.set_roles, name="set_user_roles"),
     path("users/<uuid:user_id>/active/", users.set_active, name="set_user_active"),

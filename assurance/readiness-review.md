@@ -24,7 +24,7 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 648 tests pass, on every change, against PostgreSQL in the pipeline. Eight of them run the table script in a real browser.
+- 649 tests pass, on every change, against PostgreSQL in the pipeline. Eight of them run the table script in a real browser.
 
 The eleven that are not:
 

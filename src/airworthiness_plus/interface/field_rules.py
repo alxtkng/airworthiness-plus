@@ -112,6 +112,7 @@ READS = frozenset(
         "problem_log",
         "organisation",
         "users",
+        "access_log",
     }
 )
 
