@@ -1,0 +1,37 @@
+# Keys and Secrets
+
+Step 8 of private beta. Date: 19 November 2026. OWASP ASVS 5.0, 11.1.1, 11.1.2, 13.3.1, 13.3.2; threat TH-063.
+
+No secret is ever in the repository. The pipeline scans every change for one.
+
+## Inventory
+
+| Secret or Key | What It Is For | Algorithm | Where It Lives | Who Can Read It | Replaced |
+|---|---|---|---|---|---|
+| The application's signing key | Ties each session to its user, so that a session cannot be forged | HMAC-SHA-256 | The server's environment values | Whoever administers the server | Yearly, and at once if exposed. Every session ends when it changes |
+| Service login's database password | The running service | SCRAM-SHA-256, by PostgreSQL | The server's environment values | As above | Yearly, and at once if exposed |
+| Owner's database password | Migrations; setting up an organisation; stating a serial | SCRAM-SHA-256 | Held by Alex King; given to a command when it is run, not stored with the service | Alex King | Yearly |
+| Backup role's database password | The backup; the check of the records | SCRAM-SHA-256 | The server, readable by the backup job only | Whoever administers the server | Yearly |
+| Backup encryption recipient | Encrypting each backup | X25519, by `age` | The server. It is not secret | Anyone | With its identity |
+| Backup encryption identity | Decrypting a backup | X25519, by `age` | **Not on the server.** Held by Alex King in two places apart | Alex King | If exposed. Old backups stay readable only by the old identity, which is kept until they expire |
+| Backup storage credential | Adding backups to the storage | The storage's own | The server | Whoever administers the server | Yearly. It can add and cannot delete |
+| TLS private key | HTTPS | The certificate authority's choice | The reverse proxy | Whoever administers the server | With each certificate, automatically |
+| Users' passwords | Sign-in | PBKDF2-HMAC-SHA-256, 1,000,000 iterations, a salt for each | The database, as hashes only | No one | By the user; by an Administrator's reset |
+| Users' second-factor keys | One-time codes | HMAC-SHA-1, 160-bit key (RFC 6238) | The database, not encrypted; kept out of the history and out of every export | The backup role; whoever holds a decrypted backup | By an Administrator's reset |
+| History hashes | Showing the history is unaltered | SHA-256 | The database and every export | Not secret | Never |
+| GitHub access | The repository and the pipeline | GitHub's | Alex King's account, with two-factor sign-in | Alex King | As GitHub requires |
+
+The pipeline holds no secret: it builds, tests and scans, and deploys nothing.
+
+## Rules
+
+1. A secret is made on the machine that will use it, from the operating system's random source, at least 32 bytes.
+2. A secret is never sent by email or chat, never typed into a pull request or an Issue, and never given to an assistant. Alex King enters them himself.
+3. Each secret has one use. The service's database login cannot run migrations; the backup role cannot write; the storage credential cannot delete.
+4. An exposed secret is replaced at once and an incident is opened (`incident-response.md`).
+5. When someone who could read a secret no longer should, it is replaced.
+
+## What Is Not Met
+
+- **A vault** (ASVS 13.3.1). Secrets are environment values on the server, protected by who can administer the server. A vault is one more system for one person to run, and is not proposed for private beta. To be weighed again before customer data.
+- **Second-factor keys are not encrypted in the database.** Someone with a decrypted backup could make a user's codes, though not sign in without the password as well. Encrypting them needs a cryptography dependency and a key in the server's environment. Recorded in the threat model; to be decided with the move to passkeys (Issue 69).

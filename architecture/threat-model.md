@@ -146,7 +146,8 @@ Recorded 18 November 2026, to be settled when the verification level is chosen i
 - The key is shown as text and as a set-up address, with no code to scan.
 - Closed 18 November 2026: the Users page lets an Administrator add a user, set roles, make a user inactive, set a new first password and reset a second factor; a user changes their own password. A first password is changed before any other page answers (`tests/test_users.py`).
 - An Administrator who resets a second factor and sets a password could then sign in as that user. Both acts are in the access log with the Administrator's name; nothing prevents them. To be weighed in Step 7.
-- The access log holds the network address of each attempt, which is personal data. It goes in the record of processing in Step 8.
+- The access log holds the network address of each attempt, which is personal data. It is in `operations/data-protection/record-of-processing.md`, where how long it is kept is an open question.
+- A failed sign-in with a user name that belongs to nobody is logged with the name as typed. A person who types a password into the user name box by mistake leaves it in the log. Whether to keep the typed name is an open question in the same document.
 - Closed 19 November 2026: behind the reverse proxy the address logged is the one the proxy saw, when `AIRWORTHINESS_BEHIND_PROXY` is set (`tests/test_security.py`). The proxy must overwrite, not pass on, the forwarded headers; that is checked at deployment.
 - Found by the sweep over every address on 19 November 2026 and fixed: a sign-in sent with no user name caused a server error instead of a refusal.
 - Django's development server reads the migrations table, which the application's database role cannot. The service runs under a WSGI server, to be chosen and added as a dependency before the first deployment.
