@@ -42,7 +42,7 @@ Hazards answered: H-003, H-007, H-008, H-012.
 | C2.1 Every record has an append-only history: who, what, when, before and after | CAP 562 C-90 expects the full input history to be kept; a terminating action must not erase earlier repetitive inspection entries | `architecture/decisions/ADR-0002-data-layer.md`; `tests/test_data_layer.py`: update and delete of history refused for the application and for the owner | Partial |
 | C2.2 Nothing is deleted, only superseded | Same as C2.1 | `tests/test_data_layer.py`: the catalogue test on privileges and triggers for every table | Partial |
 | C2.3 Records are protected against unauthorised alteration | 145.A.45(e), adopted as a design requirement for Part-CAO | Access control tests; threat model, tampering threats; hash chain tests in `tests/test_data_layer.py` | Partial |
-| C2.4 Certificate serials are allocated by the server, unique and never reused | CAP 562 C-90 expects control of serial numbers for certificates the system generates | Concurrency tests on serial allocation: `tests/test_reviews.py` | Partial |
+| C2.4 Certificate serials are allocated by the server, unique and never reused | CAP 562 C-90 expects control of serial numbers for certificates the system generates | Concurrency tests on serial allocation: `tests/test_reviews.py`. After a restore: `tests/test_restore.py`, `operations/restore-tests/2026-11-19.md` | Available |
 | C2.5 Records are kept for the required periods | ML.A.305 and CAO.A.090; staff records CAO.A.045(e) | Retention requirements and tests | Planned |
 | C2.6 A complete aircraft record can be exported at any time in an open format | The owner's records must be transferable; the export also proves nothing is held only in a proprietary form | Export tests comparing export against database content for every type of record, and failing the build for a type not exported: `tests/test_exports.py` | Available |
 | C2.7 Migrated data is verified against its source | CAP 562 C-90: up to 100% checking of airworthiness directive and maintenance review data | The verification report: `tests/test_imports.py` (REQ-170, REQ-171). A report for each load of real records (Step 9) | Partial |
@@ -69,9 +69,9 @@ Hazards answered: H-009.
 
 | Sub-claim | Argument | Evidence | Status |
 |---|---|---|---|
-| C4.1 Backups are taken at least daily and held away from the server | 145.A.45(e): backup updated within 24 hours, adopted as a design requirement | `operations/backup-and-restore.md`; backup job logs | Planned |
-| C4.2 A restore has been carried out and its result recorded | A backup that has never been restored is not evidence of recovery | `operations/restore-tests/` dated record of each test | Planned |
-| C4.3 The recovery point objective and recovery time objective are stated with reasoning | The user must know how much data could be lost and for how long the service could be down | `operations/backup-and-restore.md` | Planned |
+| C4.1 Backups are taken at least daily and held away from the server | 145.A.45(e): backup updated within 24 hours, adopted as a design requirement | `operations/backup-and-restore.md`, `operations/backup.sh`. Not yet running on the server; where backups are kept is not decided (Issue 27) | Partial |
+| C4.2 A restore has been carried out and its result recorded | A backup that has never been restored is not evidence of recovery | `operations/restore-tests/2026-11-19.md`: passed, in the build environment. To be repeated on the server | Partial |
+| C4.3 The recovery point objective and recovery time objective are stated with reasoning | The user must know how much data could be lost and for how long the service could be down | `operations/backup-and-restore.md`: 24 hours and the next working day, proposed for Alex King to confirm | Available |
 | C4.4 Failures are noticed | A failed backup or outage raises an alert | `operations/monitoring.md`; alert test record | Planned |
 | C4.5 Incidents are handled by a written procedure | | `operations/incident-response.md` | Planned |
 

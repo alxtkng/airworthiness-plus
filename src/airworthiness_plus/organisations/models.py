@@ -49,6 +49,11 @@ class Organisation(Record):
     records_approval_reference = models.CharField(max_length=100, blank=True)
     records_approval_dated = models.DateField(null=True, blank=True)
     parallel_run_started_on = models.DateField(null=True, blank=True)
+    # The highest certificate serial known to have been issued. It matters only
+    # after a restore from backup, when certificates issued since the backup are
+    # no longer in the records: the next serial still follows it (REQ-154). Set
+    # by the owner of the records, never by the application, and never lowered.
+    certificate_serial_floor = models.PositiveIntegerField(default=0)
 
     class Meta:
         constraints = [

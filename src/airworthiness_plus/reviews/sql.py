@@ -102,6 +102,65 @@ CREATE TRIGGER reviewitem_fixed BEFORE INSERT OR UPDATE ON reviews_reviewitem
     FOR EACH ROW EXECUTE FUNCTION reviews_reviewitem_fixed();
 """
 
+# After a restore from backup the records may no longer hold every certificate
+# that was issued. The next serial then follows the highest serial the owner of
+# the records has stated for the organisation, as well as the highest recorded
+# (REQ-154, hazard H-007).
+ALLOCATE_ABOVE_FLOOR = """
+CREATE OR REPLACE FUNCTION reviews_allocate_serial(organisation uuid) RETURNS integer
+LANGUAGE plpgsql AS $$
+DECLARE
+    recorded integer;
+    stated integer;
+BEGIN
+    PERFORM pg_advisory_xact_lock(hashtextextended('review certificate ' || organisation::text, 0));
+    SELECT COALESCE(max(serial_number), 0) INTO recorded
+      FROM reviews_certificate
+     WHERE organisation_id = organisation;
+    SELECT COALESCE(max(certificate_serial_floor), 0) INTO stated
+      FROM organisations_organisation
+     WHERE id = organisation;
+    RETURN GREATEST(recorded, stated) + 1;
+END
+$$;
+
+CREATE FUNCTION organisations_serial_floor_guard() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.certificate_serial_floor < OLD.certificate_serial_floor THEN
+        RAISE EXCEPTION 'The highest certificate serial is never lowered'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    IF NEW.certificate_serial_floor <> OLD.certificate_serial_floor
+       AND current_user = 'airworthiness_application' THEN
+        RAISE EXCEPTION 'Only the owner of the records states the highest certificate serial'
+            USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER serial_floor_guard BEFORE UPDATE ON organisations_organisation
+    FOR EACH ROW EXECUTE FUNCTION organisations_serial_floor_guard();
+"""
+
+ALLOCATE_AS_BEFORE = """
+DROP TRIGGER serial_floor_guard ON organisations_organisation;
+DROP FUNCTION organisations_serial_floor_guard();
+CREATE OR REPLACE FUNCTION reviews_allocate_serial(organisation uuid) RETURNS integer
+LANGUAGE plpgsql AS $$
+DECLARE
+    next_number integer;
+BEGIN
+    PERFORM pg_advisory_xact_lock(hashtextextended('review certificate ' || organisation::text, 0));
+    SELECT COALESCE(max(serial_number), 0) + 1 INTO next_number
+      FROM reviews_certificate
+     WHERE organisation_id = organisation;
+    RETURN next_number;
+END
+$$;
+"""
+
 DROP_REVIEW_FIXED = """
 DROP TRIGGER reviewitem_fixed ON reviews_reviewitem;
 DROP TRIGGER review_fixed ON reviews_review;

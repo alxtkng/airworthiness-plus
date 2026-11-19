@@ -132,6 +132,7 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 | T-SEC-006 | test_security: hostile_text_is_stored_and_shown_as_text |
 | T-SEC-007 | test_security: every_response_carries_the_security_headers; test_interface: the_fonts_stylesheet_and_script_are_the_applications_own |
 | T-SEC-009 | test_security: a_request_that_is_too_large_is_refused; test_imports: a_file_that_is_not_as_described_is_refused. Limits at the proxy come with deployment |
+| TH-040, demonstration | `operations/restore-tests/2026-11-19.md`, step 2a: a backup cannot be read without its key |
 | T-SEC-019 | test_exports: an_altered_export_fails_verification, the_export_agrees_with_itself_and_with_the_chain_in_the_database, the_command_checks_an_export_without_the_database |
 | T-SEC-020 | test_exports: a_value_that_looks_like_a_formula_is_not_run_by_a_spreadsheet |
 
