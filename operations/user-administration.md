@@ -41,7 +41,7 @@ End the user's sessions on the Users page. Then reset the password or the second
 
 - An organisation always has at least one active Administrator; the system refuses to remove the last.
 - **By Hand.** An organisation should have two, so that one can restore the other. With one, a lost authenticator means asking the service's operator, who will set a new one up only after the same proof of identity, by the owner of the tables on the server.
-- An Administrator can reset another user's password and second factor, and so could sign in as them. Every such reset is in the access log, which the organisation should read. The system does not prevent it; it does ask for the Administrator's own code first, so that a session left open is not enough.
+- An Administrator can reset another user's password and second factor, and so could sign in as them. Every such reset is in the access log, which the Administrator reads on the Access Log page and the organisation should read. The system does not prevent it; it does ask for the Administrator's own code first, so that a session left open is not enough.
 
 ## Review
 

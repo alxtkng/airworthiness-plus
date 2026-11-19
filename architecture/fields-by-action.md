@@ -9,7 +9,7 @@ The role matrix in `design-system/Decisions.md` says which roles may take each a
 - A user reads the records of their own organisation and of no other. The database enforces it for every table (`architecture/decisions/0002-data-layer.md`), and every page is tested with a user of another organisation.
 - Every role may View Records, and with it reads every field of every aircraft, programme, directive, maintenance data, review, certificate, import and problem record of the organisation, and their history.
 - The Users page, with user names, roles and whether each person can sign in, is read by the Administrator only. A person's name is shown wherever a record says who did something.
-- The access log is read through the export of the organisation, by a role that may Export Records. The Records Export page lists the exports made.
+- The access log is read by the Administrator on the Access Log page, and through the export of the organisation by a role that may Export Records. The Records Export page lists the exports made.
 - No one reads a password, a second-factor key or a session identifier through the application. They are in no page, no history entry and no export (`tests/test_exports.py`). A first password and a second-factor key are each shown once, to the person who needs them, when they are made.
 
 ## Setting

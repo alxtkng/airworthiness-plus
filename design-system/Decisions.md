@@ -170,6 +170,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
   - the Administrator cannot move that date to before a certificate of the person already recorded
   - no copy to the Civil Aviation Authority is tracked for it: that copy was owed under the records it came from
   - the copy of an extension is tracked whoever issued the certificate, because the extension is the organisation's own (ML.A.903(f)). Before 19 November 2026 it was tracked only for certificates issued in the system; dogfooding D-6
+- The Access Log page, built 19 November 2026 (REQ-009): the Administrator reads the organisation's own entries, newest first, 100 to a page, with who, what, the detail, when and the address. It sits beside Users. A failed sign-in under a name that belongs to nobody has no organisation and is shown to no organisation
 - Access log, decided 18 November 2026 (REQ-009): every sign-in, failed sign-in, sign-out, second factor set-up and refused action, with the user name, the time from the database clock and the network address. It is added to and never changed. An organisation sees its own entries. A change of role is in the history of the user record instead.
 
 | Action | Administrator | Continuing Airworthiness Manager | Airworthiness Review Staff | Planning and Records | Read Only |
