@@ -116,9 +116,9 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 |---|---|
 | T-SEC-001 | test_sign_in: password_alone_signs_nobody_in |
 | T-SEC-002 | test_sign_in: five_failures_lock_the_name_for_15_minutes, wrong_codes_count_towards_the_lock |
-| T-SEC-003 | test_application: cookies_are_secure_and_hidden_from_scripts; test_sign_in: session_cookie_is_secure_and_changes_at_sign_in |
+| T-SEC-003 | test_application: cookies_are_secure_and_hidden_from_scripts; test_sign_in: session_cookie_is_secure_and_changes_at_sign_in; test_security: cookies_are_for_this_host_over_https_and_hidden_from_scripts |
 | T-SEC-004 | test_sign_in: session_cookie_is_secure_and_changes_at_sign_in, sign_out_ends_the_session_on_the_server |
-| T-SEC-005 | test_sign_in: forged_request_is_refused. To be repeated for every write endpoint as each is added |
+| T-SEC-005 | test_sign_in: forged_request_is_refused; test_security: every_write_refuses_a_forged_request, which goes over every address; and each module's own test of its pages |
 | T-SEC-008 | test_application: plain_http_is_redirected_to_https |
 | T-SEC-010 | test_aircraft: another_organisations_aircraft_is_not_found_on_any_page, record_cannot_refer_to_another_organisations_record. To be repeated for every endpoint as each is added |
 | T-SEC-011 | test_aircraft: every_aircraft_page_follows_the_role_matrix. To be repeated for every endpoint as each is added |
@@ -129,7 +129,9 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 | T-SEC-016 | test_data_layer: change_with_no_signed_in_user_is_refused, every_change_writes_who_when_what_before_and_after |
 | T-SEC-017 | test_reviews: two_certificates_cannot_be_allocated_a_serial_at_the_same_moment, serials_run_in_order_and_a_void_serial_is_never_used_again |
 | T-SEC-018 | test_application: administration_interface_is_absent |
-| T-SEC-007 (in part) | test_interface: the_fonts_stylesheet_and_script_are_the_applications_own: no page carries a script of its own or asks anything of another site. The Content Security Policy header comes in Step 7 |
+| T-SEC-006 | test_security: hostile_text_is_stored_and_shown_as_text |
+| T-SEC-007 | test_security: every_response_carries_the_security_headers; test_interface: the_fonts_stylesheet_and_script_are_the_applications_own |
+| T-SEC-009 | test_security: a_request_that_is_too_large_is_refused; test_imports: a_file_that_is_not_as_described_is_refused. Limits at the proxy come with deployment |
 | T-SEC-019 | test_exports: an_altered_export_fails_verification, the_export_agrees_with_itself_and_with_the_chain_in_the_database, the_command_checks_an_export_without_the_database |
 | T-SEC-020 | test_exports: a_value_that_looks_like_a_formula_is_not_run_by_a_spreadsheet |
 
@@ -144,7 +146,8 @@ Recorded 18 November 2026, to be settled when the verification level is chosen i
 - Closed 18 November 2026: the Users page lets an Administrator add a user, set roles, make a user inactive, set a new first password and reset a second factor; a user changes their own password. A first password is changed before any other page answers (`tests/test_users.py`).
 - An Administrator who resets a second factor and sets a password could then sign in as that user. Both acts are in the access log with the Administrator's name; nothing prevents them. To be weighed in Step 7.
 - The access log holds the network address of each attempt, which is personal data. It goes in the record of processing in Step 8.
-- Behind the reverse proxy the address seen is the proxy's until the proxy's forwarded address is trusted, which is a deployment setting (Step 8).
+- Closed 19 November 2026: behind the reverse proxy the address logged is the one the proxy saw, when `AIRWORTHINESS_BEHIND_PROXY` is set (`tests/test_security.py`). The proxy must overwrite, not pass on, the forwarded headers; that is checked at deployment.
+- Found by the sweep over every address on 19 November 2026 and fixed: a sign-in sent with no user name caused a server error instead of a refusal.
 - Django's development server reads the migrations table, which the application's database role cannot. The service runs under a WSGI server, to be chosen and added as a dependency before the first deployment.
 
 ## Not Yet Covered

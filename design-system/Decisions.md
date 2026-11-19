@@ -122,7 +122,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 - Only the Continuing Airworthiness Manager changes the maintenance programme and decides whether a directive applies (hazard H-002). The programme review may also be recorded by Airworthiness Review Staff, who may carry it out with the airworthiness review (ML.A.302(c)(9)).
 - Second factor at sign-in, decided 18 November 2026: codes from an authenticator application, the time-based one-time password of RFC 6238. It needs no new dependency. A code can be phished where a passkey cannot, so passkeys are considered again when the verification level is set in Step 7 (REQ-008).
 - Sign-in, decided 18 November 2026 (REQ-008, REQ-009; threats TH-001, TH-002). These numbers are ours, to be set against the verification level in Step 7:
-  - a password of at least 12 characters, then a code; the code must follow the password within 5 minutes; a code is accepted for its own 30 seconds and the 30 seconds either side, and only once
+  - a password of at least 12 characters, then a code; the code must follow the password within 5 minutes; a code is accepted for its own 30 seconds, changed on 19 November 2026 from the 30 seconds either side as well to meet OWASP ASVS 5.0 6.5.5, and only once
   - the first time, the user adds the account to an authenticator application from a key shown once, and confirms a code
   - 5 failed attempts for a user name within 15 minutes, counted since the last sign-in, lock that name until 15 minutes after the fifth; wrong codes count as wrong passwords do
   - a session ends when the browser closes, 30 minutes after its last request, 12 hours after sign-in whatever happens, when the user signs out, when the user is made inactive, and when the password changes
@@ -133,6 +133,13 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
   - a user may hold no role, and can then do nothing. An organisation always has an active Administrator: the last one cannot lose the role or be made inactive, and nobody makes themselves inactive
   - a user who leaves is made inactive, never deleted. Their sessions end at once
   - a lost password is replaced by the Administrator with a new first password; a lost authenticator is reset by the Administrator, and the user sets a second factor up again at the next sign-in. Both are entered in the access log with who did it. A user changes their own password by giving the current one; their other sessions end
+- Security settings, decided 19 November 2026 against OWASP ASVS 5.0 Level 2 (`assurance/asvs.md`). Ours:
+  - every response carries a Content Security Policy that allows the application's own stylesheet, script, fonts and images and nothing else, with no inline script or style; no response is kept by the browser except the static files; the application answers GET, HEAD and POST only
+  - the session and forgery cookies are named with the `__Host-` prefix, so a browser accepts them only over HTTPS and for this host alone. Strict Transport Security covers subdomains of the service's own host name; it says nothing about the domain above it
+  - a password is refused if it contains the name of the product, the regulator, the approval or the user's organisation, as well as what Django already refuses. Any character is allowed, and at least 64 characters
+  - a user can end every other session of theirs, and the Administrator can end every session of a user. Both are entered in the access log
+  - the address logged for a request is the one the reverse proxy saw, and only when the service is told it runs behind one
+  - unexpected errors go to standard error, one line each with the time in Coordinated Universal Time. No request body, password or session identifier is logged
 - Access log, decided 18 November 2026 (REQ-009): every sign-in, failed sign-in, sign-out, second factor set-up and refused action, with the user name, the time from the database clock and the network address. It is added to and never changed. An organisation sees its own entries. A change of role is in the history of the user record instead.
 
 | Action | Administrator | Continuing Airworthiness Manager | Airworthiness Review Staff | Planning and Records | Read Only |
