@@ -140,20 +140,35 @@ Added 18 November 2026, in `tests/test_data_layer.py` and `tests/test_applicatio
 
 ## Known Gaps in Sign-In
 
-Recorded 18 November 2026, to be settled when the verification level is chosen in Step 7 (`assurance/asvs.md`).
+Recorded 18 November 2026, to be settled when the verification level was chosen in Step 7. It was: OWASP ASVS 5.0 Level 2, assessed in `assurance/asvs.md` on 19 November 2026.
 
 - The key shared with the authenticator application is stored as it is, not encrypted, in a column kept out of the history. Encrypting it needs a cryptography dependency and a key in the server environment. Decided 19 November 2026 not to do so in private beta, with the reasons in `operations/keys-and-secrets.md`.
 - A new password is checked for length and against Django's list of common passwords, not against a list of breached passwords (threat TH-001).
 - The first time, the second factor is set up by whoever holds the password. An account's first password must therefore reach its user by a route that is not the system itself.
 - The key is shown as text and as a set-up address, with no code to scan.
 - Closed 18 November 2026: the Users page lets an Administrator add a user, set roles, make a user inactive, set a new first password and reset a second factor; a user changes their own password. A first password is changed before any other page answers (`tests/test_users.py`).
-- An Administrator who resets a second factor and sets a password could then sign in as that user. Both acts are in the access log with the Administrator's name; nothing prevents them. To be weighed in Step 7.
+- An Administrator who resets a second factor and sets a password could then sign in as that user. Both acts are in the access log with the Administrator's name; nothing prevents them. Weighed on 19 November 2026: see the next line.
 - Changed 19 November 2026 (OWASP ASVS 5.0 6.4.1, 7.5.1): a first password is made by the system, shown once and good for 7 days; a change of password, a new first password and a reset of a second factor need a sign-in within the last 5 minutes or a code (`tests/test_users.py`). A session left open on an Administrator's machine can no longer be used to take over another user's sign-in. An Administrator acting on purpose still can.
 - The access log holds the network address of each attempt, which is personal data. It is in `operations/data-protection/record-of-processing.md`, where how long it is kept is an open question.
 - A failed sign-in with a user name that belongs to nobody is logged with the name as typed. A person who types a password into the user name box by mistake leaves it in the log. Whether to keep the typed name is an open question in the same document.
 - Closed 19 November 2026: behind the reverse proxy the address logged is the one the proxy saw, when `AIRWORTHINESS_BEHIND_PROXY` is set (`tests/test_security.py`). The proxy must overwrite, not pass on, the forwarded headers; that is checked at deployment.
 - Found by the sweep over every address on 19 November 2026 and fixed: a sign-in sent with no user name caused a server error instead of a refusal.
 - Django's development server reads the migrations table, which the application's database role cannot. The service runs under a WSGI server, to be chosen and added as a dependency before the first deployment.
+
+## Added on 19 November 2026
+
+What the build of 19 November 2026 added to the surface, and what answers it. Each belongs to a threat already listed; none is a new kind of threat.
+
+| Added | Threat | What Answers It |
+|---|---|---|
+| A user's list of their own sessions, and ending one by an identifier in the address | TH-002, TH-020 | Only the user's own live sessions are listed or found; the identifier is a one-way hash of the session key; ending one needs a fresh sign-in or a code (`tests/test_users.py`) |
+| Changes on the Users page made from a session left open | TH-002, TH-008 | Every change asks for a code once the sign-in is more than 5 minutes old, and five wrong codes lock the name. The first build asked only for the two resets, which the independent review of 19 November 2026 showed could be got round by adding an Administrator (`tests/test_users.py`) |
+| The browser and address a session gave at sign-in, shown back on a page | TH-004 | Shown as text, escaped, as the independent review of 19 November 2026 confirmed; no script runs from a page under the Content Security Policy (`tests/test_security.py`) |
+| The Access Log page | TH-008, TH-020 | The Administrator only; the database shows an organisation its own entries (`tests/test_users.py`) |
+| A certificate recorded as the organisation's own from before these records | TH-009 | Dated no later than the person's last review before these records, which is never after the day the person was recorded as review staff, in the service and in the database; uses no serial; cannot be altered afterwards (`tests/test_reviews.py`) |
+| A first password shown once to the Administrator | TH-001 | Made by the system, stored only as a hash, good for 7 days, changed before any page answers (`tests/test_users.py`) |
+| The export of an organisation asked for again and again | TH-007 | 6 in an hour for each organisation, taken one at a time (`tests/test_exports.py`) |
+| Sorting and searching a table in the browser | TH-004 | The script reads and moves what the page already holds; it builds nothing from text as markup (`tests/test_browser.py`) |
 
 ## Not Yet Covered
 

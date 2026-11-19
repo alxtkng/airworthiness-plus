@@ -38,7 +38,7 @@ No special category data is asked for. Nothing is used for marketing, profiling 
 
 | Level | Encrypted in Transit | Encrypted at Rest | Integrity | Who May Read | In Logs | In Exports |
 |---|---|---|---|---|---|---|
-| Secret | Yes | Password: hashed. Second-factor key: not yet encrypted (`../keys-and-secrets.md`) | By the database | No one; the service checks against it | Never | Never |
+| Secret | Yes | Password: hashed. Second-factor key: not encrypted in private beta, by a decision of 19 November 2026 (`../keys-and-secrets.md`) | By the database | No one; the service checks against it | Never | Never |
 | Personal | Yes | In the database, on the server's disk; in backups, encrypted | History and hash chain | The organisation's own users, by role | Names and addresses in the access log only | Yes, to the organisation itself |
 | Safety records | Yes | As Personal | History and hash chain; fixed once certified | The organisation's own users | No | Yes |
 

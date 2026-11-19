@@ -29,7 +29,7 @@ One person receives every alert. Who is told when that person is away is a quest
 | Log | What Is In It | Where It Is Kept | Who Can Read It | Kept For |
 |---|---|---|---|---|
 | History | Every change to every record: who, when, what, before and after, with a chained hash | The database | Users of the organisation, through the records; the backup role | As long as the record (REQ-133). Never changed or removed |
-| Access log | Sign-ins, failed sign-ins, locks, sign-outs, changes of password and second factor, ended sessions, refused actions, exports. User name, time, network address | The database | The organisation, in its export; the backup role | Not yet decided. See `data-protection/record-of-processing.md`: it holds personal data, and at present nothing removes it |
+| Access log | Sign-ins, failed sign-ins, locks, sign-outs, changes of password and second factor, ended sessions, refused actions, exports. User name, time, network address | The database | The organisation's Administrator, on the Access Log page; the organisation, in its export; the backup role | Not yet decided. See `data-protection/record-of-processing.md`: it holds personal data, and at present nothing removes it |
 | Server log | One line for each request (time, address, method, path, status, size, browser) and one for each warning or error | The server's log collection for the container | Whoever administers the server | Proposed: 90 days |
 | Reverse proxy log | Requests as the proxy saw them | The proxy | Whoever administers the server | Proposed: 90 days |
 | Pipeline log | Each build and its checks | GitHub | Anyone who can read the repository | GitHub's own period |
