@@ -37,7 +37,12 @@
 {% if line.needs_attention %}
 <tr>
 <td>{{ line.task.title }}</td>
-<td colspan="6">Cannot Be Calculated, {{ line.problem }}</td>
+<td></td>
+<td>Cannot Be Calculated, {{ line.problem }}</td>
+<td class="number"></td>
+<td></td>
+<td data-attention></td>
+<td></td>
 </tr>
 {% endif %}
 {% for item in line.limits %}
