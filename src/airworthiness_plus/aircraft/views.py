@@ -116,6 +116,10 @@ def _next_due(
         candidates.append((min(remaining, -1) if remaining <= 0 else remaining, review))
         expiry = Limit(Unit.CALENDAR, review_valid_to, remaining)
         severity = max(severity, SEVERITY[limit_flag(expiry, thresholds)])
+    else:
+        # No certificate recorded: nobody knows where the aircraft stands, so it
+        # comes with what cannot be calculated, as it comes first on the review schedule.
+        severity = CANNOT_BE_CALCULATED
     if not candidates:
         text = "Not Ranked, No Planning Utilisation" if unranked else ""
         return text, (1, -severity, NOT_KNOWN, registration)

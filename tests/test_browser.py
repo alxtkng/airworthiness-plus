@@ -438,39 +438,66 @@ def test_numbers_align_right_and_empty_cells_sort_last(
     in_browser(pages, check)
 
 
-SORTING_PAGE = """<!doctype html>
+MINUS = "\u2212"  # the minus sign the application writes, not a hyphen
+
+
+def mark(kind: str, word: str) -> str:
+    return f'<span class="status status-{kind}">{word}</span>'
+
+
+SORTING_PAGE = f"""<!doctype html>
 <html lang="en-GB"><head><meta charset="utf-8"><title>Sorting</title>
 <link rel="stylesheet" href="/static/interface/app.css">
 <script src="/static/interface/app.js" defer></script></head>
 <body><main><table>
-<thead><tr><th>Name</th><th class="number">Hours</th><th>Dated</th><th>Remaining</th></tr></thead>
+<thead><tr><th>Name</th><th class="number">Hours</th><th>Dated</th><th>Remaining</th>
+<th>Status</th></tr></thead>
 <tbody>
-<tr><td>A</td><td class="number">874.3</td><td>1 March 2026</td><td>9 Days</td></tr>
-<tr><td>B</td><td class="number">1,206.8</td><td>28 February 2026</td><td>10 Days</td></tr>
-<tr><td>C</td><td class="number">12.0</td><td>2 January 2027</td><td>-3 Days</td></tr>
-<tr><td>D</td><td class="number">99.9</td><td>10 March 2026</td><td>100 Days</td></tr>
+<tr><td>A</td><td class="number">874.3</td><td>1 March 2026</td><td>9 Days</td>
+<td>{mark("due", "Due Soon")}</td></tr>
+<tr><td>B</td><td class="number">1,206.8</td><td>28 February 2026</td><td>10 Days</td>
+<td>{mark("stop", "Overdue")}</td></tr>
+<tr><td>C</td><td class="number">12.0</td><td>2 January 2027</td><td>{MINUS}3 Days</td>
+<td>{mark("due", "Within Tolerance")}</td></tr>
+<tr><td>D</td><td class="number">99.9</td><td>10 March 2026</td><td>100 Days</td>
+<td>{mark("due", "Due")}</td></tr>
+<tr><td>E</td><td class="number"></td><td>No Certificate Recorded</td><td>{MINUS}40 Days</td>
+<td data-attention></td></tr>
+<tr><td>F</td><td class="number">5.0</td><td>3 March 2026</td><td>50 Days</td>
+<td>{mark("ok", "Serviceable")}</td></tr>
 </tbody></table></main></body></html>"""
 
 
 def test_the_sort_reads_numbers_and_dates_not_their_text() -> None:
     """REQ-196. A table made for the purpose, with values that sorting as text
-    gets wrong: 1,206.8 is more than 874.3, 28 February comes before 1 March,
-    and 3 days overdue comes before 9 days remaining."""
+    gets wrong, written as the application writes them: 1,206.8 is more than
+    874.3; 28 February comes before 1 March; 40 days overdue, with the minus
+    sign the application uses, comes before 3 days overdue and both before 9
+    days remaining. A cell that is not a date in a column of dates comes after
+    the dates either way, and an empty cell last. A Status column runs from a
+    row nobody can place, through Overdue, Within Tolerance, Due and Due Soon,
+    to what needs nothing. Found wanting by the independent review of 19
+    November 2026."""
     pages = {"/sorting/": HttpResponse(SORTING_PAGE)}
+    orders = (
+        # 5.0, 12.0, 99.9, 874.3, 1,206.8, then the empty cell
+        ("Hours", ["F", "C", "D", "A", "B", "E"], ["B", "A", "D", "C", "F", "E"]),
+        # 28 February, 1 March, 3 March, 10 March, 2 January 2027, then what is not a date
+        ("Dated", ["B", "A", "F", "D", "C", "E"], ["C", "D", "F", "A", "B", "E"]),
+        # -40, -3, 9, 10, 50, 100
+        ("Remaining", ["E", "C", "A", "B", "F", "D"], ["D", "F", "B", "A", "C", "E"]),
+        ("Status", ["E", "B", "C", "D", "A", "F"], ["F", "A", "D", "C", "B", "E"]),
+    )
 
     def check(page: Page) -> None:
         page.goto(f"{ORIGIN}/sorting/")
         table = page.locator("main table.compact")
-        for heading, ascending in (
-            ("Hours", ["C", "D", "A", "B"]),  # 12.0, 99.9, 874.3, 1,206.8
-            ("Dated", ["B", "A", "D", "C"]),  # 28 February, 1 March, 10 March, 2 January 2027
-            ("Remaining", ["C", "A", "B", "D"]),  # -3, 9, 10, 100
-        ):
+        for heading, ascending, descending in orders:
             button = table.get_by_role("button", name=heading)
             button.click()
             assert column(page, "Name") == ascending, heading
             button.click()
-            assert column(page, "Name") == ascending[::-1], heading
+            assert column(page, "Name") == descending, heading
 
     in_browser(pages, check)
 
@@ -480,7 +507,9 @@ def searching_page() -> str:
     words = ["Alpha", "Bravo", "Charlie", "Delta"]
     long_rows = "".join(
         f"<tr><td>Item {n:02d}</td><td>{words[n % 4]}</td><td>Kept {'Apart' if n == 7 else 'Here'}"
-        f"</td></tr>"
+        f"</td><td><form><label>Result <select name='result'><option>Alpha</option>"
+        f"<option>Finding</option></select></label><button type='submit'>Record Alpha</button>"
+        f"</form></td></tr>"
         for n in range(1, 13)
     )
     short_rows = "".join(f"<tr><td>Short {n}</td><td>Alpha</td></tr>" for n in range(1, 5))
@@ -489,7 +518,8 @@ def searching_page() -> str:
 <link rel="stylesheet" href="/static/interface/app.css">
 <script src="/static/interface/app.js" defer></script></head>
 <body><main>
-<table id="long"><thead><tr><th>Name</th><th>Word</th><th data-detail>Where</th></tr></thead>
+<table id="long"><thead><tr><th>Name</th><th>Word</th><th data-detail>Where</th>
+<th>Record</th></tr></thead>
 <tbody>{long_rows}</tbody></table>
 <table id="short"><thead><tr><th>Name</th><th>Word</th></tr></thead>
 <tbody>{short_rows}</tbody></table>
@@ -530,6 +560,12 @@ def test_a_long_table_is_searched_and_says_how_many_rows_it_shows() -> None:
         search.fill("nothing like this")
         assert shown_names(page) == []
         assert count.text_content() == "0 of 12 Shown"
+        # What a form offers is not what the row holds: every row has the option
+        # Finding and the button Record Alpha, and neither is searched.
+        search.fill("finding")
+        assert shown_names(page) == []
+        search.fill("record")
+        assert shown_names(page) == []
 
         # An open row is hidden with its detail, and comes back open.
         search.fill("")
@@ -544,6 +580,9 @@ def test_a_long_table_is_searched_and_says_how_many_rows_it_shows() -> None:
         page.locator("#long").get_by_role("button", name="Name").click()
         page.locator("#long").get_by_role("button", name="Name").click()
         assert shown_names(page) == ["Item 10", "Item 06", "Item 02"]
+        # The same once a form has been moved into an open detail.
+        search.fill("finding")
+        assert shown_names(page) == []
         search.fill("")
         assert len(shown_names(page)) == 12
         assert detail.is_visible()

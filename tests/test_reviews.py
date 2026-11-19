@@ -687,6 +687,26 @@ def test_a_restoration_does_not_move_the_limit_on_a_certificate_from_before(
             ReviewStaff.objects.filter(pk=staff.pk).update(recorded_on=date(2027, 6, 1))
 
 
+def test_an_aircraft_with_no_certificate_comes_near_the_top_of_the_fleet(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """Dogfooding D-5; found by the independent review of 19 November 2026. With
+    its only certificate voided, G-EJKL had nothing ranked and fell to the
+    bottom of the Fleet. Nobody knows where it stands, so it comes straight
+    after the Unserviceable aircraft, as it comes first on the review schedule."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        certificate = services.current_certificate(fleet["G-EJKL"])
+        assert certificate is not None
+        services.void_certificate(certificate, "Recorded in Error")
+    body = page(signed_in(sample.reader), "/")
+    order = sorted(
+        ("G-DGHI", "G-EJKL", "G-ABCD", "G-FMNO", "G-BXYZ", "G-CDEF"),
+        key=lambda registration: body.index(f">{registration}</a>"),
+    )
+    assert order[:2] == ["G-DGHI", "G-EJKL"]
+    assert body.index(">G-EJKL</a>") < body.index(">G-ABCD</a>")
+
+
 # How each figure was worked out (REQ-139, hazard H-014)
 
 

@@ -338,6 +338,9 @@ def test_a_task_that_cannot_be_calculated_is_shown_first_never_as_not_due(
     client = signed_in(sample.reader)
     body = page(client, f"/aircraft/{abcd.id}/programme/")
     assert "Cannot Be Calculated, No Starting Point Recorded" in body
+    # A row of its own, marked so that sorting by Status puts it first.
+    assert "<td>Cannot Be Calculated, No Starting Point Recorded</td>" in body
+    assert "<td data-attention></td>" in body
     assert "Fire Extinguisher Weight Check, No Starting Point Recorded" in row_for(
         page(client, "/"), "G-ABCD"
     )

@@ -81,8 +81,11 @@
     "July", "August", "September", "October", "November", "December"
   ];
   var DATE = new RegExp("^(\\d{1,2}) (" + MONTHS.join("|") + ") (\\d{4})");
-  var NUMBER = /^-?\d[\d,]*(\.\d+)?/;
+  /* The application writes a negative number with a minus sign, not a hyphen. */
+  var NUMBER = /^[-\u2212]?\d[\d,]*(\.\d+)?/;
   var SEVERITY = ["status-stop", "status-due", "status-ok"];
+  /* Within one colour, the worse word first, as the Fleet orders them. */
+  var WORDS = ["overdue", "unserviceable", "within tolerance", "due", "due soon", "to assess"];
 
   function textOf(cell) {
     return cell.textContent.replace(/\s+/g, " ").trim();
@@ -98,7 +101,7 @@
 
   function numberOf(text) {
     var found = NUMBER.exec(text);
-    return found ? Number(found[0].replace(/,/g, "")) : null;
+    return found ? Number(found[0].replace(/,/g, "").replace("\u2212", "-")) : null;
   }
 
   function severityOf(cell) {
@@ -115,7 +118,16 @@
     return found;
   }
 
-  /* How a column sorts: by the kind of thing every cell with something in it holds. */
+  function wordOf(text) {
+    var found = WORDS.indexOf(text.toLowerCase());
+    return found === -1 ? WORDS.length : found;
+  }
+
+  /* How a column sorts. A key is where the cell stands among kinds of cell, its
+     value, and its text; an empty cell has no key and comes last. A column of
+     dates or numbers is read as such when most of its cells are; a cell that is
+     not one comes after those that are. A Status column runs from a row marked
+     as needing attention, through red, amber and green, to no mark. */
   function keysOf(cells) {
     var texts = cells.map(textOf);
     var filled = texts.filter(function (text) {
@@ -123,37 +135,43 @@
     });
     if (
       cells.some(function (cell) {
-        return cell.querySelector(".status");
+        return cell.querySelector(".status") || cell.hasAttribute("data-attention");
       })
     ) {
       return cells.map(function (cell, index) {
-        return texts[index] ? [severityOf(cell), texts[index].toLowerCase()] : null;
+        if (cell.hasAttribute("data-attention")) {
+          return [-1, 0, texts[index].toLowerCase()];
+        }
+        if (!texts[index]) {
+          return null;
+        }
+        return [severityOf(cell), wordOf(texts[index]), texts[index].toLowerCase()];
       });
     }
-    var read = null;
-    if (filled.length && filled.every(dateOf)) {
-      read = dateOf;
-    } else if (
-      filled.length &&
-      filled.every(function (text) {
-        return numberOf(text) !== null;
-      })
-    ) {
-      read = numberOf;
+    function mostly(read) {
+      var read_ = filled.filter(function (text) {
+        return read(text) !== null;
+      });
+      return filled.length > 0 && read_.length * 2 > filled.length;
     }
+    var read = mostly(dateOf) ? dateOf : mostly(numberOf) ? numberOf : null;
     return texts.map(function (text) {
       if (!text) {
         return null;
       }
-      return [read ? read(text) : 0, text.toLowerCase()];
+      var value = read ? read(text) : null;
+      // The last part says the cell is not of the column's kind and stays after those that are.
+      return value === null
+        ? [0, 0, text.toLowerCase(), read !== null]
+        : [0, value, text.toLowerCase(), false];
     });
   }
 
   function compare(a, b) {
-    if (a[0] !== b[0]) {
-      return a[0] < b[0] ? -1 : 1;
+    if (a[1] !== b[1]) {
+      return a[1] < b[1] ? -1 : 1;
     }
-    return a[1].localeCompare(b[1], "en-GB", { numeric: true });
+    return a[2].localeCompare(b[2], "en-GB", { numeric: true });
   }
 
   /* Each row of a body with the rows that follow it and belong to it. */
@@ -207,9 +225,15 @@
           if (rows.indexOf(group[0]) === -1) {
             return;
           }
+          // What the row holds, not what its forms offer: a list of choices or
+          // the label on a button would match in every row.
           var text = group
             .map(function (row) {
-              return row.textContent;
+              var copy = row.cloneNode(true);
+              Array.prototype.forEach.call(copy.querySelectorAll(CONTROLS + ", label"), function (control) {
+                control.parentNode.removeChild(control);
+              });
+              return copy.textContent;
             })
             .join(" ")
             .toLowerCase();
@@ -245,7 +269,11 @@
         if (keys[a] === null || keys[b] === null) {
           return keys[a] === keys[b] ? a - b : keys[a] === null ? 1 : -1;
         }
-        var result = compare(keys[a], keys[b]);
+        // A cell that is not of the column's kind stays after those that are.
+        if (Boolean(keys[a][3]) !== Boolean(keys[b][3])) {
+          return keys[a][3] ? 1 : -1;
+        }
+        var result = keys[a][0] !== keys[b][0] ? keys[a][0] - keys[b][0] : compare(keys[a], keys[b]);
         return (descending ? -result : result) || a - b;
       });
       order.forEach(function (position) {
