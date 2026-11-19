@@ -6,15 +6,21 @@ answers that matter most to airworthiness are also written out by hand
 below.
 """
 
+import importlib
+import inspect
+import pkgutil
 from pathlib import Path
 
 import pytest
 from django.db import IntegrityError, transaction
 
+import airworthiness_plus
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import MATRIX, Action, Role, permitted
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.interface import field_rules
+from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.organisations.models import Privilege
 from airworthiness_plus.organisations.provisioning import provision_organisation
 from tests.conftest import as_owner
@@ -171,3 +177,53 @@ def test_a_role_that_is_not_in_the_matrix_cannot_be_stored(lucy: User) -> None:
         transaction.atomic(),
     ):
         User.objects.filter(pk=lucy.pk).update(roles=["Superuser"])
+
+
+# What each action may set (OWASP ASVS 5.0, 8.1.2)
+
+
+def test_every_address_is_written_down_as_one_that_reads_or_one_that_sets() -> None:
+    """REQ-006. A new address cannot be added without saying what it may set."""
+    names = {str(pattern.name) for pattern in field_rules.patterns()}
+    assert set(field_rules.WRITES) & field_rules.READS == set()
+    assert set(field_rules.WRITES) | field_rules.READS == names
+
+
+def test_every_address_that_sets_something_needs_an_action_or_is_named_as_open() -> None:
+    """REQ-006. The action is read from the address itself, not written twice."""
+    rules = {rule.name: rule for rule in field_rules.rules()}
+    assert set(rules) == set(field_rules.WRITES)
+    without = {name for name, rule in rules.items() if rule.action is None}
+    assert without == set(field_rules.WITHOUT_AN_ACTION)
+    for pattern in field_rules.patterns():
+        if pattern.name in field_rules.READS:
+            assert isinstance(pattern.callback.action, Action), pattern.name  # type: ignore[attr-defined]
+    assert rules["issue_certificate"].action == Action.ISSUE_AIRWORTHINESS_REVIEW_CERTIFICATE
+    assert rules["issue_certificate"].who == "Airworthiness Review Staff"
+
+
+def test_every_form_belongs_to_an_address_that_sets_something() -> None:
+    """REQ-006. A new form, and a new field on a form, reach the document by themselves."""
+    used = {one for sets in field_rules.WRITES.values() for one in sets if not isinstance(one, str)}
+    declared = set()
+    for module in pkgutil.walk_packages(airworthiness_plus.__path__, "airworthiness_plus."):
+        if ".migrations" in module.name or ".management" in module.name:
+            continue
+        for value in vars(importlib.import_module(module.name)).values():
+            if (
+                inspect.isclass(value)
+                and issubclass(value, Form)
+                and value is not Form
+                and value.__module__ == module.name
+            ):
+                declared.add(value)
+    assert declared == used
+    add_user = next(rule for rule in field_rules.rules() if rule.name == "add_user")
+    assert add_user.sets == ("Full Name", "User Name", "Roles")
+
+
+def test_the_document_is_what_the_code_says() -> None:
+    """OWASP ASVS 5.0, 8.1.2. The table is made by ``python manage.py field_rules``."""
+    written = Path(__file__).parent.parent / "architecture" / "fields-by-action.md"
+    assert field_rules.written_table(written.read_text()) == field_rules.table()
+    assert field_rules.with_table(written.read_text()) == written.read_text()

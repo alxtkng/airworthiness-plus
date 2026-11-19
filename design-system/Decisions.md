@@ -123,6 +123,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 
 - A user may hold more than one role, as Lucy Grant is both Airworthiness Review Staff and in continuing airworthiness. An action is permitted if any role held permits it.
 - A user with no role, and an inactive user, may do nothing.
+- What each action may read and set, value by value, is in `architecture/fields-by-action.md`, written 19 November 2026 to meet OWASP ASVS 5.0 8.1.2. Its table is made from the forms and addresses by `python manage.py field_rules`, and a test fails if an address or a form is left out of it
 - The Administrator manages users and the organisation record and does not change airworthiness records. An Administrator can give themselves another role; the change is in the history.
 - Read Only can view and nothing else.
 - Only Airworthiness Review Staff carry out a review and issue a certificate (ML.A.903, CAO.A.045). Issue also needs a current authorisation, which is REQ-109 and separate from the role.
