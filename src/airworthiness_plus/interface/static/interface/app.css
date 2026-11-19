@@ -445,6 +445,23 @@ td {
   padding-right: 0;
 }
 
+/* Search above a long table, and the count of rows shown beneath it */
+
+.table-search {
+  margin: var(--space-3) 0 0;
+}
+
+.js table.compact tr.filtered {
+  display: none;
+}
+
+.table-count {
+  margin: 0 0 var(--space-3);
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--gray-900);
+}
+
 /* Numbers align right */
 
 th.number,

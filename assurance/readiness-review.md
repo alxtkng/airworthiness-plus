@@ -24,7 +24,7 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 649 tests pass, on every change, against PostgreSQL in the pipeline. Eight of them run the table script in a real browser.
+- 651 tests pass, on every change, against PostgreSQL in the pipeline. Ten of them run the table script in a real browser.
 
 The eleven that are not:
 
@@ -37,7 +37,7 @@ The eleven that are not:
 | REQ-133 | Nothing is ever removed. The retention periods are not reported, and nothing can be removed when they end | A decision (see Questions) |
 | REQ-150 to REQ-153 | Procedure, scripts and a restore test exist. Nothing runs on the server, and REQ-151 is not met: there is no storage away from the server | Deployment; Issue 27 |
 | REQ-175 | The description of the system is written, with its training section and the flow of a record since 19 November 2026. What CAP 562 C-90 asks of it is taken from notes and unchecked. Written instructions for each role do not exist yet | CAP 562; instructions before public beta |
-| REQ-196 | The pages use the tokens, the navigation and the table of the design system, and tests hold them to it. Sorting by a column and numbers aligned right were built on 19 November 2026. Filtering of tables, the summary strip and icons beside sidebar items are not built | Choices the design system does not make: the facets, what a summary counts, and the icons. |
+| REQ-196 | The pages use the tokens, the navigation and the table of the design system, and tests hold them to it. Sorting by a column, numbers aligned right and search within a long table were built on 19 November 2026. Filtering a table by facets, the summary strip and icons beside sidebar items are not built | Choices the design system does not make: the facets, what a summary counts, and the icons. |
 
 Three requirements still rest on a claim with no confirmed source: REQ-058, REQ-103 and REQ-110, the last two because CAP 562 is not in the Regulatory Library and could not be read.
 

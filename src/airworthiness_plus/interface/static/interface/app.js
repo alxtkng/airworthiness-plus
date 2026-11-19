@@ -8,7 +8,11 @@
    A column heading is a button that sorts by that column: once ascending, again
    descending. Dates sort as dates, numbers as numbers, a Status column by how
    serious it is with red first, and anything else as text. An empty cell comes
-   last either way. A row keeps the rows beneath it that belong to it. */
+   last either way. A row keeps the rows beneath it that belong to it.
+
+   A table of more than 10 rows has a search above it and, beneath it, how many
+   of its rows are shown. A row is shown when it holds every word typed, in any
+   column, whatever the case. */
 (function () {
   "use strict";
 
@@ -152,17 +156,83 @@
     return a[1].localeCompare(b[1], "en-GB", { numeric: true });
   }
 
+  /* Each row of a body with the rows that follow it and belong to it. */
+  function groupsOf(body, rows) {
+    var groups = [];
+    Array.prototype.forEach.call(body.rows, function (row) {
+      if (rows.indexOf(row) !== -1 || !groups.length) {
+        groups.push([row]);
+      } else {
+        groups[groups.length - 1].push(row);
+      }
+    });
+    return groups;
+  }
+
+  var SEARCH_ABOVE = 10;
+  var searches = 0;
+
+  /* A search above a long table, and a count of the rows shown beneath it. */
+  function searchable(table, rows) {
+    if (rows.length <= SEARCH_ABOVE) {
+      return;
+    }
+    searches += 1;
+    var box = document.createElement("p");
+    box.className = "table-search";
+    var label = document.createElement("label");
+    label.className = "visually-hidden";
+    label.htmlFor = "table-search-" + searches;
+    label.textContent = "Search This Table";
+    var input = document.createElement("input");
+    input.type = "search";
+    input.id = label.htmlFor;
+    input.placeholder = "Search";
+    input.autocomplete = "off";
+    box.appendChild(label);
+    box.appendChild(input);
+    table.parentNode.insertBefore(box, table);
+    var count = document.createElement("p");
+    count.className = "table-count";
+    count.setAttribute("role", "status");
+    table.parentNode.insertBefore(count, table.nextSibling);
+
+    function apply() {
+      var words = input.value.toLowerCase().split(/\s+/).filter(function (word) {
+        return word;
+      });
+      var shown = 0;
+      Array.prototype.forEach.call(table.tBodies, function (body) {
+        groupsOf(body, rows).forEach(function (group) {
+          if (rows.indexOf(group[0]) === -1) {
+            return;
+          }
+          var text = group
+            .map(function (row) {
+              return row.textContent;
+            })
+            .join(" ")
+            .toLowerCase();
+          var holds = words.every(function (word) {
+            return text.indexOf(word) !== -1;
+          });
+          group.forEach(function (row) {
+            row.classList.toggle("filtered", !holds);
+          });
+          shown += holds ? 1 : 0;
+        });
+      });
+      count.textContent = shown + " of " + rows.length + " Shown";
+    }
+
+    input.addEventListener("input", apply);
+    apply();
+  }
+
   /* Sort the rows of each body by one column, each row with the rows that follow it. */
   function sortBy(table, rows, index, descending) {
     Array.prototype.forEach.call(table.tBodies, function (body) {
-      var groups = [];
-      Array.prototype.forEach.call(body.rows, function (row) {
-        if (rows.indexOf(row) !== -1 || !groups.length) {
-          groups.push([row]);
-        } else {
-          groups[groups.length - 1].push(row);
-        }
-      });
+      var groups = groupsOf(body, rows);
       var keys = keysOf(
         groups.map(function (group) {
           return group[0].cells[index] || group[0].cells[0];
@@ -292,6 +362,7 @@
       });
     });
     sortable(table, rows, head, held);
+    searchable(table, rows);
     table.classList.add("compact");
   }
 
