@@ -54,7 +54,7 @@ Carried with it: the readings of the regulation that those records mark for Alex
 
 **Met, as far as our own testing can say.**
 
-- Open defect Issues: 69 (seven ASVS requirements met in part when raised; five since met, two accepted for private beta) and 71 (three differences found by dogfooding; D-3 fixed, D-5 decided, D-4 a question). Neither is high severity.
+- Open defect Issues: none. Issue 69 (seven ASVS requirements met in part) is settled: five met, two accepted for private beta. Issue 71 (differences found by dogfooding) is settled: D-3 and D-6 fixed, D-4 and D-5 decided.
 - `pip-audit` passes on every change. No vulnerability report has been received.
 - Defects found during the build were fixed as found, among them: a server error on a sign-in with no user name; work from before the records began shown as entered late; a certificate serial that would have repeated after a restore; a review that could be issued by someone other than its reviewer.
 
@@ -120,8 +120,8 @@ organisation and access, with roles, two-factor sign-in, users and an access log
 In rough order.
 
 1. **Give access to the server**, so that it can be looked at without changing anything, and the service deployed. He enters every password and key himself.
-2. **Decide the paid services** (Issue 27): storage for backups away from the server, any monitoring, the penetration test (Issue 40), Cyber Essentials Plus.
-3. **Confirm the readings of the regulation** listed under Questions. Until then four hazards cannot be Verified.
+2. **Buy the storage for backups** (Issue 27). The order of the paid services was decided on 19 November 2026 after he asked us to decide: backup storage now, the penetration test after deployment and before any customer's records (Issue 40), Cyber Essentials Plus when a customer asks. A recommendation for the storage is in `operations/backup-storage-options.md`; the purchase, and two facts it rests on, are his.
+3. **Confirm the readings of the regulation** listed under Questions. On 19 November 2026 he asked us to decide them; each is kept as built and recorded as ours in `design-system/Decisions.md`. That is a decision to proceed, not his confirmation of the reading, so the four hazards stay Mitigated and are not marked Verified.
 4. **Confirm Level 2**, and the two ASVS items accepted for private beta on his instruction to decide (breached passwords, passkeys). The other five items of Issue 69 were met on 19 November 2026.
 5. **Confirm the operating figures**: recovery point 24 hours, recovery time the next working day, how long backups and logs are kept.
 6. **Say who acts when he is away.** One person receives every alert and leads every incident.
@@ -155,7 +155,6 @@ Each is recorded where it arose; this is the list in one place.
 |---|---|
 | Are G-BXYZ and G-FMNO on the Minimum Inspection Programme, and G-ABCD and G-CDEF on the design approval holder's instructions? | `SampleData.md` |
 | Lucy Grant's review of G-BXYZ taken as 2 August 2026, and the other reviewer's last review as 2 December 2025 | The same |
-| Revisions and next-check dates for the maintenance data the sample names without them | Issue 71, D-4 |
 | 220 Hours in the sample, 220.0 Hours on the page | `dogfooding.md`, D-1 |
 
 ### The Product

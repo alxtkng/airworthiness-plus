@@ -9,6 +9,7 @@ Nothing here names the server, its address or any credential. Those are held by 
 | `deployment.md` | Building and running the service; settings; the reverse proxy; what is checked on the server | REQ-132 |
 | `backup-and-restore.md` | What is backed up, how, for how long; the recovery point and recovery time objectives; how to restore | REQ-150 to REQ-154 |
 | `restore-tests/` | The record of each restore test | REQ-153 |
+| `backup-storage-options.md` | Where to keep backups away from the server: what it must do, what was found, and a recommendation for Alex King | REQ-151; Issue 27 |
 | `backup.sh`, `restore.sh`, `check_backup_age.sh` | The scripts the procedure uses | REQ-150, REQ-152, REQ-153 |
 | `monitoring.md` | What is watched, what raises an alert, and every log: what is in it, where, for how long | REQ-152 |
 | `incident-response.md` | What to do when something goes wrong, who is told, and what is recorded | REQ-132, REQ-172 |

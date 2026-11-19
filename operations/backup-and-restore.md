@@ -68,7 +68,7 @@ Passwords and keys are entered by Alex King.
 
 | Item | Waiting On |
 |---|---|
-| Where backups are kept off the server, and its cost | Alex King, Issue 27 |
+| Where backups are kept off the server, and its cost | Alex King, Issue 27. A recommendation is in `backup-storage-options.md` |
 | The backup role and the daily job | First deployment |
 | The alert when a backup is late | Choice of where the check runs |
 | A delete attempt with the server's storage credentials, shown refused (TH-041) | The storage |
