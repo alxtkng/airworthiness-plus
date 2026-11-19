@@ -628,6 +628,65 @@ def test_the_last_review_before_these_records_is_not_moved_before_a_certificate(
         )
 
 
+def test_a_restoration_does_not_move_the_limit_on_a_certificate_from_before(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews, day: Day
+) -> None:
+    """REQ-109, REQ-110; found by the independent review of 19 November 2026.
+    A restoration was written into the person's last review before these
+    records, so a certificate dated inside these records, with no review and
+    no serial, could then be recorded as theirs. The restoration now has its
+    own date, and the last review before these records is never after the
+    day the person was recorded as review staff."""
+    day.today = date(2027, 1, 20)
+    staff = reviews.reviewer
+    planner = signed_in(sample.planner)
+    hklm = fleet["G-HKLM"]
+    fields = {
+        "reference": "[Made Up Reference]",
+        "issued_by": str(staff.id),
+        "issued_on": "2027-01-15",
+        "valid_to": "2028-01-15",
+    }
+    path = f"/aircraft/{hklm.id}/review/certificates/"
+    assert "No Later Than the Person" in post(planner, path, **fields).content.decode()
+
+    with working_for(sample.ours.id, sample.administrator.id):
+        services.record_restoration(staff, on=date(2027, 1, 15), supervisor=reviews.lucy)
+        staff.refresh_from_db()
+        # The restoration counts as the person's last review, and they are current again.
+        assert services.last_review(staff) == date(2027, 1, 15)
+        assert services.may_issue(staff, day.today)
+        # It is not their last review before these records, which stays where it was.
+        assert staff.last_review_before_records == date(2025, 12, 2)
+        assert staff.recorded_on == TODAY
+
+    refused = post(planner, path, **fields)
+    assert refused.status_code == 200
+    assert "No Later Than the Person" in refused.content.decode()
+    with working_for(sample.ours.id, sample.administrator.id):
+        assert not Certificate.objects.filter(aircraft=hklm).exists()
+        # Nor can the Administrator state a last review before these records
+        # that is after the day the person was recorded as review staff.
+        with pytest.raises(services.RefusedError, match="Recorded as Review Staff"):
+            services.update_involvement(
+                staff, months=4, last_review_before_records=date(2027, 1, 15)
+            )
+        with pytest.raises(services.RefusedError, match="Recorded as Review Staff"):
+            services.add_review_staff(
+                user=sample.planner,
+                authorisation_reference="[Authorisation Reference 3]",
+                accepted_on=date(2027, 1, 1),
+                last_review_before_records=date(2027, 1, 21),
+            )
+        # The database holds to it whatever the application does.
+        with pytest.raises(IntegrityError, match="before_records"), transaction.atomic():
+            ReviewStaff.objects.filter(pk=staff.pk).update(
+                last_review_before_records=date(2027, 1, 15)
+            )
+        with pytest.raises(DatabaseError, match="never altered"), transaction.atomic():
+            ReviewStaff.objects.filter(pk=staff.pk).update(recorded_on=date(2027, 6, 1))
+
+
 # How each figure was worked out (REQ-139, hazard H-014)
 
 
@@ -750,6 +809,57 @@ def test_the_working_never_gives_a_rule_that_does_not_give_the_date(
                 assert "It Is Not Calculated" in validity.rule
             opens = dict(window.inputs)["Window Opens"]
             assert opens == long_date(line.valid_to - timedelta(days=90))
+
+
+def test_a_working_says_so_when_the_records_changed_after_the_certificate(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
+) -> None:
+    """REQ-139, hazard H-014; found by the independent review of 19 November
+    2026. G-HKLM has no certificate. One is issued on 18 November 2026: a year
+    from the review, 18 November 2027. The certificate it followed is then
+    recorded, ending 2 December 2026, 14 days after the review. The working
+    must not say the review was outside the 90 days beside inputs that show
+    it was inside them."""
+    hklm = fleet["G-HKLM"]
+    with working_for(sample.ours.id, sample.lucy.id):
+        services.issue_certificate(hklm, staff=reviews.lucy, issued_on=TODAY)
+        services.record_certificate(
+            hklm,
+            reference="[Earlier]",
+            issued_elsewhere_by="[Previous Organisation]",
+            issued_on=date(2025, 12, 2),
+            valid_to=date(2026, 12, 2),
+        )
+        validity = services.working(services.schedule_line(hklm, TODAY), TODAY)[0]
+    assert validity.figure == "18 November 2027"
+    assert "Was Not in the 90 Days" not in validity.rule
+    assert "Set When the Certificate Was Issued" in validity.rule
+    assert validity.title == "Where Valid to 18 November 2027 Comes From"
+
+
+def test_no_day_is_given_for_an_extension_that_cannot_be_made(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews, day: Day
+) -> None:
+    """REQ-104, REQ-139; found by the independent review of 19 November 2026.
+    After two extensions a third is refused, so the working gives no day for one."""
+    ejkl = fleet["G-EJKL"]
+    with working_for(sample.ours.id, sample.lucy.id):
+        certificate = services.current_certificate(ejkl)
+        assert certificate is not None
+        for today in (TODAY, date(2027, 11, 20)):
+            day.today = today
+            services.extend_certificate(
+                certificate,
+                extended_by=sample.lucy,
+                managed_for_12_months=True,
+                maintained_by_approved_organisations=True,
+                no_evidence_not_airworthy=True,
+            )
+        found = services.working(services.schedule_line(ejkl, day.today), day.today)
+    counted = next(one for one in found if one.title == "How 2 of 2 Extensions Was Counted")
+    labels = [label for label, _ in counted.inputs]
+    assert "An Extension Can Be Made From" not in labels
+    assert ("Next", "No Further Extension: a Review Is Needed") in counted.inputs
 
 
 def test_recency_shows_what_it_rests_on_and_the_rule(
