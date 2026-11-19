@@ -31,6 +31,9 @@ from playwright.sync_api import (
 
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.history.session import working_for
+from airworthiness_plus.reviews import services as review_services
+from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_plus.sample import build
 from tests.support import (
     TODAY,
@@ -468,5 +471,106 @@ def test_the_sort_reads_numbers_and_dates_not_their_text() -> None:
             assert column(page, "Name") == ascending, heading
             button.click()
             assert column(page, "Name") == ascending[::-1], heading
+
+    in_browser(pages, check)
+
+
+def searching_page() -> str:
+    """Return a page with a table of 12 rows and a table of 4."""
+    words = ["Alpha", "Bravo", "Charlie", "Delta"]
+    long_rows = "".join(
+        f"<tr><td>Item {n:02d}</td><td>{words[n % 4]}</td><td>Kept {'Apart' if n == 7 else 'Here'}"
+        f"</td></tr>"
+        for n in range(1, 13)
+    )
+    short_rows = "".join(f"<tr><td>Short {n}</td><td>Alpha</td></tr>" for n in range(1, 5))
+    return f"""<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><title>Searching</title>
+<link rel="stylesheet" href="/static/interface/app.css">
+<script src="/static/interface/app.js" defer></script></head>
+<body><main>
+<table id="long"><thead><tr><th>Name</th><th>Word</th><th data-detail>Where</th></tr></thead>
+<tbody>{long_rows}</tbody></table>
+<table id="short"><thead><tr><th>Name</th><th>Word</th></tr></thead>
+<tbody>{short_rows}</tbody></table>
+</main></body></html>"""
+
+
+def shown_names(page: Page) -> list[str]:
+    return page.evaluate(  # type: ignore[no-any-return]
+        """() => [...document.querySelectorAll('#long tbody tr:not(.detail)')]
+            .filter(row => row.getBoundingClientRect().height > 0)
+            .map(row => row.cells[1].textContent.trim())"""
+    )
+
+
+def test_a_long_table_is_searched_and_says_how_many_rows_it_shows() -> None:
+    """REQ-196; Components.md, Filtering. A table of more than 10 rows has a
+    search above it and a count beneath it. Every word typed must be in the
+    row, whatever its case, in any column, including one kept in the detail.
+    A row that is hidden takes its detail with it and gets it back."""
+    pages = {"/searching/": HttpResponse(searching_page())}
+
+    def check(page: Page) -> None:
+        page.goto(f"{ORIGIN}/searching/")
+        search = page.get_by_label("Search This Table")
+        assert search.count() == 1  # the table of 4 rows has none
+        count = page.locator("#long + p[role=status]")
+        assert count.text_content() == "12 of 12 Shown"
+
+        # Items 4, 8 and 12 hold Alpha: 4 % 4, 8 % 4 and 12 % 4 are 0.
+        search.fill("alpha")
+        assert shown_names(page) == ["Item 04", "Item 08", "Item 12"]
+        assert count.text_content() == "3 of 12 Shown"
+        search.fill("ALPHA  08")
+        assert shown_names(page) == ["Item 08"]
+        # A word that is only in the column kept in the detail.
+        search.fill("apart")
+        assert shown_names(page) == ["Item 07"]
+        search.fill("nothing like this")
+        assert shown_names(page) == []
+        assert count.text_content() == "0 of 12 Shown"
+
+        # An open row is hidden with its detail, and comes back open.
+        search.fill("")
+        first = page.locator("#long tbody tr:not(.detail)").first
+        first.get_by_role("button", name="Show Details").click()
+        detail = page.locator("#long tr.detail")
+        assert detail.is_visible()
+        search.fill("charlie")
+        assert not first.is_visible()
+        assert not detail.is_visible()
+        # Sorting does not bring hidden rows back.
+        page.locator("#long").get_by_role("button", name="Name").click()
+        page.locator("#long").get_by_role("button", name="Name").click()
+        assert shown_names(page) == ["Item 10", "Item 06", "Item 02"]
+        search.fill("")
+        assert len(shown_names(page)) == 12
+        assert detail.is_visible()
+        assert count.text_content() == "12 of 12 Shown"
+        # The short table was left alone.
+        assert page.locator("#short tbody tr").count() == 4
+
+    in_browser(pages, check)
+
+
+def test_the_search_works_on_a_real_page_under_its_content_security_policy(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-196. The 16 points of an airworthiness review: more than 10 rows, so
+    the table is searched, on a page served with the application's own headers."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        staff = ReviewStaff.objects.get(user=sample.lucy)
+        review = review_services.start_review(fleet["G-ABCD"], staff=staff)
+    path = f"/reviews/{review.id}/"
+    pages = {path: made(signed_in(sample.lucy), path)}
+    assert "Content-Security-Policy" in pages[path].headers
+
+    def check(page: Page) -> None:
+        page.goto(f"{ORIGIN}{path}")
+        count = page.locator("main p[role=status]").first
+        assert count.text_content() == "16 of 16 Shown"
+        page.get_by_label("Search This Table").first.fill("ML.A.903(c)")
+        assert count.text_content() == "5 of 16 Shown"  # the survey, points (c)(1) to (5)
 
     in_browser(pages, check)
