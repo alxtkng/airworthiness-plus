@@ -23,10 +23,10 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 **In Part.**
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
-- Tested or inspected as its requirement asks: 93 of 104.
-- 614 tests pass, on every change, against PostgreSQL in the pipeline.
+- Tested or inspected as its requirement asks: 94 of 104.
+- 626 tests pass, on every change, against PostgreSQL in the pipeline. Four of them run the table script in a real browser.
 
-The eleven that are not:
+The ten that are not:
 
 | Requirement | State | What It Needs |
 |---|---|---|
@@ -37,7 +37,6 @@ The eleven that are not:
 | REQ-150 to REQ-153 | Procedure, scripts and a restore test exist. Nothing runs on the server, and REQ-151 is not met: there is no storage away from the server | Deployment; Issue 27 |
 | REQ-175 | The description of the system is written. Its training section is not, and what CAP 562 C-90 asks of it is unchecked | CAP 562 |
 | REQ-176 | The procedure is written | Nothing; inspected here |
-| REQ-194 | Tables are one line and open on click. The script that does it was tried in a browser and is not run by the tests | A browser test in the pipeline |
 
 Three requirements still rest on a claim with no confirmed source: REQ-058, REQ-103 and REQ-110, the last two because CAP 562 is not in the Regulatory Library and could not be read.
 
