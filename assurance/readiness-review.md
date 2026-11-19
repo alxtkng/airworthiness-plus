@@ -35,7 +35,7 @@ The ten that are not:
 | REQ-112 | The review and its evidence are kept with the certificate. Files cannot be attached | Design of attachments |
 | REQ-133 | Nothing is ever removed. The retention periods are not reported, and nothing can be removed when they end | A decision (see Questions) |
 | REQ-150 to REQ-153 | Procedure, scripts and a restore test exist. Nothing runs on the server, and REQ-151 is not met: there is no storage away from the server | Deployment; Issue 27 |
-| REQ-175 | The description of the system is written. Its training section is not, and what CAP 562 C-90 asks of it is unchecked | CAP 562 |
+| REQ-175 | The description of the system is written, with its training section and the flow of a record since 19 November 2026. What CAP 562 C-90 asks of it is taken from notes and unchecked. Written instructions for each role do not exist yet | CAP 562; instructions before public beta |
 | REQ-176 | The procedure is written | Nothing; inspected here |
 
 Three requirements still rest on a claim with no confirmed source: REQ-058, REQ-103 and REQ-110, the last two because CAP 562 is not in the Regulatory Library and could not be read.
