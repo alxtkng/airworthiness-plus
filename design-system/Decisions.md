@@ -10,6 +10,7 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Vision: open source with an open data standard for the sector, in the way 360Giving connected grant data.
 - Regulation baseline: UK Regulation (EU) No 1321/2014, Civil Aviation Authority edition of September 2026, and UK Regulation (EU) No 748/2012. The European Union Aviation Safety Agency text is a map only; numbers come from the UK text.
 - Forms are Civil Aviation Authority forms: CAA Form 1, CAA Form 15c, CAA Form 3-CAO. Never "EASA Form".
+- Paid services, decided 19 November 2026 after Alex King asked us to decide (Issues 27 and 40). The order: storage for backups away from the server now, because it alone blocks REQ-151 and two hazards; the penetration test after deployment and before any customer's records are held; Cyber Essentials Plus when a customer asks for it. The storage recommended is in `operations/backup-storage-options.md`. Nothing has been bought. Buying is his, and so is every credential
 - Aircraft types come from SRG1782 (Version 16, 11 August 2026), copied verbatim and never re-cased.
 
 ## Navigation
@@ -246,6 +247,22 @@ Confirmed against the UK text in the Civil Aviation Authority Regulatory Library
 | Contracted software for records | Not subcontracting, but described in the exposition and approved by the Civil Aviation Authority, provided that each organisation has access to its own data only, data is entered only by the organisation's personnel, and the data can be retrieved at any time | AMC1 CAO.A.100(f) point (d)(2). The Part-CAMO equivalent, recorded during discovery as AMC CAMO.A.220, is To Be Checked |
 | Part-CAO privileges | Maintenance; continuing airworthiness management; airworthiness review, with maintenance or continuing airworthiness management; permit to fly, with airworthiness review. One or more | CAO.A.095(a) to (e) |
 | Part-CAO records | Maintenance records and associated maintenance data 3 years from release; continuing airworthiness records, review certificates and permits to fly 2 years from permanent withdrawal; protected from damage, alteration and theft; backup hardware in a different location; transferred with the aircraft or when the organisation closes | CAO.A.090(a) to (g) |
+
+### Readings Kept as Built
+
+On 19 November 2026 Alex King asked us to decide the readings of the regulation listed in `assurance/readiness-review.md`. Each is kept as built. This is a decision to proceed, not his confirmation of the reading: each stays To Be Checked in `assurance/independent-verification/` until he confirms it or a source settles it, and no hazard is marked Verified on the strength of it.
+
+- The tolerance at two inspections in a row is not refused; it is said (Interface, above).
+- A tolerance stated in the design approval holder's instructions is refused: ML.A.302(d)(1) gives a tolerance to the Minimum Inspection Programme only.
+- The hours tolerance and the calendar tolerance each apply to their own limit.
+- The last day of validity of a certificate that does not keep the pattern is the anniversary (REQ-103, Issue 38).
+- The 90 days and the 30 days include their first day and the day of expiry.
+- A calendar limit with 0 days remaining is Due, not Overdue.
+- The day 12 months after a review still counts for recency.
+- The 6 months in 2 years is a figure the organisation records, with its date.
+- A certificate is extended by the Continuing Airworthiness Manager or by Airworthiness Review Staff.
+- The programme is reviewed within 12 months of its last review.
+- A certificate the organisation's own review staff issued before these records is dated no later than the person's last review before these records.
 
 ## National Regime
 
