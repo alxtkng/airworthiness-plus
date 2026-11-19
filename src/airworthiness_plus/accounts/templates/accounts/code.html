@@ -7,6 +7,6 @@
 {% csrf_token %}
 <p><label for="code">Code From Your Authenticator Application</label><br>
 <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" autofocus required maxlength="12"></p>
-<p><button type="submit">Sign In</button></p>
+<p><button type="submit" class="primary">Sign In</button></p>
 </form>
 {% endblock %}

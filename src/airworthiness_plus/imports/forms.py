@@ -3,9 +3,10 @@
 from django import forms
 
 from airworthiness_plus.imports.models import LoadKind
+from airworthiness_plus.interface.forms import Form
 
 
-class LoadForm(forms.Form):
+class LoadForm(Form):
     """Choose what the file holds, say where it came from, and give the file."""
 
     kind = forms.ChoiceField(

@@ -173,7 +173,7 @@ class ProgrammeDiscrepancy(models.TextChoices):
     review, not that it must be, so the review can say that it was not.
     """
 
-    NOT_REVIEWED = "Not Reviewed With This Review", "Not Reviewed With This Review"
+    NOT_REVIEWED = "Not Reviewed with This Review", "Not Reviewed with This Review"
     NONE_FOUND = "None Found", "None Found"
     ADDRESSED = "Found and Addressed", "Found and Addressed"
     NOT_ADDRESSED = "Found, Not Yet Addressed", "Found, Not Yet Addressed"

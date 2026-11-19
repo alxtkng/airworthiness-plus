@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load writing %}
 {% block title %}{{ aircraft.registration }}, Airworthiness Review{% endblock %}
+{% block tabs %}{% include "interface/aircraft_tabs.html" with active="Airworthiness Review" %}{% endblock %}
 {% block content %}
 <h1>{{ aircraft.registration }}</h1>
 <p>{{ aircraft.type_rating }}</p>

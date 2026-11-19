@@ -32,6 +32,7 @@ from tests.support import (
     Sample,
     add_sample_fleet,
     add_sample_programmes,
+    dot,
     make_sample,
     signed_in,
 )
@@ -95,7 +96,7 @@ def directives(sample: Sample, fleet: dict[str, Aircraft]) -> dict[int, Directiv
         )
         services.record_compliance(
             repeating,
-            method="Inspected in Accordance With Paragraph 2",
+            method="Inspected in Accordance with Paragraph 2",
             dated=date(2026, 7, 20),
             hours=D("6350.0"),
             cycles=0,
@@ -189,9 +190,9 @@ def test_g_abcd_directive_status(
         "<td>Not Applicable</td>",
         "<td>Propeller Model Not Fitted, Logbook Checked</td>",
         "<td>Applicability to Assess</td>",
-        "<td>To Assess</td>",
+        f"<td>{dot('To Assess')}</td>",
         "<td>Lucy Grant, 18 November 2026</td>",
-        "Inspected in Accordance With Paragraph 2, 20 July 2026 at 6,350.0 Hours, "
+        "Inspected in Accordance with Paragraph 2, 20 July 2026 at 6,350.0 Hours, "
         "[Release Reference 4]",
         "<td>1 January 2027, 44 Days</td>",
     ):
@@ -414,12 +415,12 @@ def test_a_terminating_action_ends_the_repetition_and_keeps_the_records(
     ended = post(
         client,
         f"/directive-decisions/{made.id}/terminate/",
-        action="Fuel Selector Valve Replaced With Improved Part",
+        action="Fuel Selector Valve Replaced with Improved Part",
         on="2026-11-18",
     )
     assert ended.status_code == 302
     body = page(client, f"/aircraft/{abcd.id}/directives/")
-    assert "Terminated, Fuel Selector Valve Replaced With Improved Part, 18 November 2026" in body
+    assert "Terminated, Fuel Selector Valve Replaced with Improved Part, 18 November 2026" in body
     assert "2 Records" in body
     with working_for(sample.ours.id, sample.lucy.id):
         made.refresh_from_db()
@@ -509,7 +510,7 @@ def test_an_action_is_recorded_through_the_page(
     assert made.status_code == 302
     body = page(client, f"/aircraft/{bxyz.id}/directives/")
     assert "<td>3,325.0 Hours, 7.0 Hours</td>" in body
-    assert "<td>Due Soon</td>" in body
+    assert f"<td>{dot('Due Soon')}</td>" in body
 
 
 # The list of directives

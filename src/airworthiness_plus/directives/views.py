@@ -158,7 +158,7 @@ def comply(request: HttpRequest, applicability_id: uuid.UUID) -> HttpResponse:
         {
             "aircraft": applicability.aircraft,
             "form": form,
-            "title": f"Compliance With {applicability.directive}",
+            "title": f"Compliance with {applicability.directive}",
             "button": "Record Compliance",
         },
     )

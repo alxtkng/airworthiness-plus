@@ -3,10 +3,11 @@
 from django import forms
 
 from airworthiness_plus.accounts.models import User
+from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.reviews.models import ProgrammeDiscrepancy, Result, ReviewStaff
 
 
-class CertificateForm(forms.Form):
+class CertificateForm(Form):
     """Record a certificate issued by another organisation or the authority."""
 
     reference = forms.CharField(label="Certificate Reference", max_length=80)
@@ -22,7 +23,7 @@ class CertificateForm(forms.Form):
     )
 
 
-class ExtensionForm(forms.Form):
+class ExtensionForm(Form):
     """Confirm each condition of ML.A.901(c) before extending a certificate."""
 
     managed_for_12_months = forms.BooleanField(
@@ -38,13 +39,13 @@ class ExtensionForm(forms.Form):
     )
 
 
-class CopySentForm(forms.Form):
+class CopySentForm(Form):
     """Record the day the copy went to the Civil Aviation Authority."""
 
     on = forms.DateField(label="Copy Sent")
 
 
-class ReviewStaffForm(forms.Form):
+class ReviewStaffForm(Form):
     """Record a person as airworthiness review staff."""
 
     user = forms.ModelChoiceField(label="Person", queryset=User.objects.none())
@@ -62,13 +63,13 @@ class ReviewStaffForm(forms.Form):
     )
 
     def __init__(self, *args: object, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(*args, **kwargs)
         self.fields["user"].queryset = User.objects.filter(  # type: ignore[attr-defined]
             is_active=True, review_staff__isnull=True
         )
 
 
-class InvolvementForm(forms.Form):
+class InvolvementForm(Form):
     """Change the recorded months of involvement or the last review before these records."""
 
     months = forms.IntegerField(
@@ -81,7 +82,7 @@ class InvolvementForm(forms.Form):
     )
 
 
-class RestorationForm(forms.Form):
+class RestorationForm(Form):
     """Record a review under supervision that restores a lapsed authorisation."""
 
     on = forms.DateField(label="Review Under Supervision")
@@ -93,13 +94,13 @@ class RestorationForm(forms.Form):
     )
 
     def __init__(self, *args: object, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(*args, **kwargs)
         self.fields["supervisor"].queryset = ReviewStaff.objects.filter(  # type: ignore[attr-defined]
             left_on__isnull=True
         )
 
 
-class ItemForm(forms.Form):
+class ItemForm(Form):
     """Record the result of one point of a review. No result is chosen in advance."""
 
     result = forms.ChoiceField(label="Result", choices=[("", "Choose"), *Result.choices])
@@ -107,13 +108,13 @@ class ItemForm(forms.Form):
     finding = forms.CharField(label="Finding", max_length=300, required=False)
 
 
-class ClosureForm(forms.Form):
+class ClosureForm(Form):
     """Record how a finding was closed."""
 
     closure = forms.CharField(label="How It Was Closed", max_length=300)
 
 
-class DetailsForm(forms.Form):
+class DetailsForm(Form):
     """Record who assisted at the survey, the airframe hours and the state of the programme."""
 
     assisted_by = forms.CharField(label="Assisted at the Survey By", max_length=200, required=False)
@@ -131,7 +132,7 @@ class DetailsForm(forms.Form):
     )
 
 
-class VoidForm(forms.Form):
+class VoidForm(Form):
     """Void a certificate."""
 
     reason = forms.CharField(label="Reason", max_length=200)

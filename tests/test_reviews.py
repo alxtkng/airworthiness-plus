@@ -30,6 +30,7 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
+    dot,
     make_sample,
     signed_in,
 )
@@ -109,7 +110,7 @@ def test_the_schedule_shows_each_certificate_and_the_days_remaining(
     for text in (
         "<td>6 December 2026</td>",
         "<td>18 Days</td>",
-        "<td>Due Soon</td>",
+        f"<td>{dot('Due Soon')}</td>",
         "<td>Inside the 90-Day Window</td>",
     ):
         assert text in ejkl, text
@@ -144,7 +145,7 @@ def test_g_cdef_early_review_keeps_the_pattern_and_the_copy_is_owed(
     cdef = row_for(body, "G-CDEF")
     assert "<td>2 December 2027</td>" in cdef
     assert "<td>379 Days</td>" in cdef  # 12 in November, 365 to 30 November 2027, 2 in December
-    assert "<td>To Be Sent by 21 November 2026, Due Soon</td>" in cdef
+    assert f"<td>To Be Sent by 21 November 2026, {dot('Due Soon')}</td>" in cdef
     detail = page(signed_in(sample.reader), f"/aircraft/{fleet['G-CDEF'].id}/review/")
     assert ">UK.CAO.[Number]-ARC-0001</a></td>" in detail
     assert "<td>Lucy Grant, [Authorisation Reference 1]</td>" in detail
@@ -157,7 +158,8 @@ def test_the_copy_sent_is_recorded_and_no_longer_owed(
     """REQ-111, ML.A.903(f). Overdue from 22 November; cleared when recorded."""
     day.today = date(2026, 11, 22)
     client = signed_in(sample.planner)
-    assert "To Be Sent by 21 November 2026, Overdue" in row_for(page(client, "/reviews/"), "G-CDEF")
+    owed = row_for(page(client, "/reviews/"), "G-CDEF")
+    assert f"To Be Sent by 21 November 2026, {dot('Overdue')}" in owed
     too_early = post(client, f"/certificates/{reviews.cdef.id}/copy-sent/", on="2026-11-10")
     assert "On or After the Day of Issue" in too_early.content.decode()
     sent = post(client, f"/certificates/{reviews.cdef.id}/copy-sent/", on="2026-11-20")
@@ -322,7 +324,7 @@ def test_the_staff_page_shows_recency_and_what_it_rests_on(
         "<td>Lucy Grant</td>",
         "<td>11 November 2026</td>",
         "<td>After 11 November 2027</td>",
-        "<td>After 2 December 2026, Due Soon</td>",
+        f"<td>After 2 December 2026, {dot('Due Soon')}</td>",
         "<td>A Review in the Last 12 Months</td>",
         "<td>4, Recorded 18 November 2026</td>",
         "<td>Current</td>",

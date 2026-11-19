@@ -1,36 +1,59 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Airworthiness+{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'interface/app.css' %}">
+<script src="{% static 'interface/app.js' %}" defer></script>
 </head>
 <body>
 {% if request.user.is_authenticated %}
-<header>
-<p>{{ request.user.organisation.name }}</p>
+<a class="skip" href="#content">Skip to Content</a>
+<div class="app">
+<aside class="sidebar">
+<p class="organisation">{{ request.user.organisation.name }}</p>
 <nav aria-label="Sections">
-<a href="{% url 'home' %}">Fleet</a>
-<a href="{% url 'transfers' %}">Transfers</a>
-<a href="{% url 'directives' %}">Airworthiness Directives</a>
-<a href="{% url 'maintenance_data' %}">Maintenance Data</a>
-<a href="{% url 'review_schedule' %}">Airworthiness Review</a>
-<a href="{% url 'imports' %}">Import</a>
-<a href="{% url 'records_export' %}">Records Export</a>
-<a href="{% url 'problem_log' %}">Problem Log</a>
-<a href="{% url 'organisation' %}">Organisation</a>
-<a href="{% url 'users' %}">Users</a>
+{% for group, items in sidebar %}
+<h2>{{ group }}</h2>
+<ul>
+{% for item, current in items %}<li><a href="{% url item.address %}"{% if current %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+{% endfor %}</ul>
+{% endfor %}
 </nav>
-<p>{{ request.user.full_name }}, {{ request.user.roles|join:", " }}</p>
+<div class="account">
+<p>{{ request.user.full_name }}</p>
+<p class="roles">{{ request.user.roles|join:", " }}</p>
 <p><a href="{% url 'change_password' %}">Change Password</a></p>
 <form method="post" action="{% url 'sign_out' %}">
 {% csrf_token %}
 <button type="submit">Sign Out</button>
 </form>
+</div>
+</aside>
+<div class="page">
+{% if place %}
+<header class="topbar{% if section_tabs %} with-tabs{% endif %}">
+<nav class="breadcrumb" aria-label="Location">
+<ol>
+<li>{{ place.0.label }}</li>
+<li><a href="{% url place.1.address %}" aria-current="location">{{ place.1.label }}</a></li>
+</ol>
+</nav>
 </header>
 {% endif %}
-<main>
+{% block tabs %}{% if section_tabs %}
+<nav class="tabs" aria-label="Views">
+{% for tab, current in section_tabs %}<a href="{% url tab.address %}"{% if current %} aria-current="page"{% endif %}>{{ tab.label }}</a>
+{% endfor %}</nav>
+{% endif %}{% endblock %}
+{% endif %}
+<main id="content"{% if not request.user.is_authenticated %} class="alone"{% endif %}>
 {% block content %}{% endblock %}
 </main>
+{% if request.user.is_authenticated %}
+</div>
+</div>
+{% endif %}
 </body>
 </html>

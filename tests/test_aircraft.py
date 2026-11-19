@@ -29,7 +29,7 @@ from airworthiness_plus.interface import formatting
 from airworthiness_rules.intervals import Reading
 from airworthiness_rules.utilisation import EntryRefusedError
 from tests.conftest import as_owner
-from tests.support import FLEET, TODAY, Sample, add_sample_fleet, make_sample, signed_in
+from tests.support import FLEET, TODAY, Sample, add_sample_fleet, dot, make_sample, signed_in
 
 pytestmark = pytest.mark.django_db
 D = Decimal
@@ -90,8 +90,8 @@ def test_the_fleet_page_shows_the_sample_fleet(sample: Sample, fleet: dict[str, 
     assert "<th>Aircraft Registration</th>" in page
     assert "<td>9,874.3</td>" in page
     assert page.count("<td>18 November 2026</td>") == 6
-    assert "<td>Unserviceable, Stabilator Trim Cable</td>" in page
-    assert page.count("<td>Serviceable</td>") == 5
+    assert f"<td>{dot('Unserviceable')}, Stabilator Trim Cable</td>" in page
+    assert page.count(f"<td>{dot('Serviceable')}</td>") == 5
     assert "G-HKLM" not in page
 
 
@@ -192,7 +192,7 @@ def test_unserviceable_carries_a_reason_and_a_date(
     client = signed_in(sample.lucy)
     dghi = fleet["G-DGHI"]
     page = get(client, f"/aircraft/{dghi.id}/").content.decode()
-    assert "Unserviceable, Stabilator Trim Cable, Since 14 November 2026" in page
+    assert f"{dot('Unserviceable')}, Stabilator Trim Cable, Since 14 November 2026" in page
 
     with working_for(sample.ours.id, sample.lucy.id):
         for values in (
@@ -204,7 +204,7 @@ def test_unserviceable_carries_a_reason_and_a_date(
                 Aircraft.objects.filter(pk=dghi.pk).update(**values)
 
     assert post(client, f"/aircraft/{dghi.id}/serviceable/").status_code == 302
-    assert "<dd>Serviceable</dd>" in get(client, f"/aircraft/{dghi.id}/").content.decode()
+    assert f"<dd>{dot('Serviceable')}</dd>" in get(client, f"/aircraft/{dghi.id}/").content.decode()
     with working_for(sample.ours.id, sample.lucy.id):
         last = Event.of(dghi).last()
     assert last is not None
@@ -219,7 +219,7 @@ def test_unserviceable_carries_a_reason_and_a_date(
         since="2026-11-18",
     )
     assert (
-        "Unserviceable, Left Landing Light, Since 18 November 2026"
+        f"{dot('Unserviceable')}, Left Landing Light, Since 18 November 2026"
         in get(client, f"/aircraft/{abcd.id}/").content.decode()
     )
 

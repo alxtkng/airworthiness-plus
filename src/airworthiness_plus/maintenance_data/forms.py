@@ -2,10 +2,11 @@
 
 from django import forms
 
+from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.maintenance_data.models import Evidence, Kind
 
 
-class DataSetForm(forms.Form):
+class DataSetForm(Form):
     """Record a set of maintenance data."""
 
     title = forms.CharField(label="Title", max_length=200)
@@ -42,14 +43,14 @@ class DataSetForm(forms.Form):
         ]
 
 
-class RevisionForm(forms.Form):
+class RevisionForm(Form):
     """Record a new revision."""
 
     revision = forms.CharField(label="Revision", max_length=60)
     revision_date = forms.DateField(label="Revision Date")
 
 
-class CheckForm(forms.Form):
+class CheckForm(Form):
     """Record a check of the amendment status."""
 
     checked_on = forms.DateField(label="Checked")
@@ -57,14 +58,14 @@ class CheckForm(forms.Form):
     next_due = forms.DateField(label="Next Amendment Check By")
 
 
-class CustomerStatusForm(forms.Form):
+class CustomerStatusForm(Form):
     """Record how the customer showed the amendment status of their data."""
 
     evidence = forms.ChoiceField(label="Amendment Status Shown By", choices=Evidence.choices)
     dated = forms.DateField(label="Shown On")
 
 
-class EndHoldingForm(forms.Form):
+class EndHoldingForm(Form):
     """Mark data as No Longer Held."""
 
     on = forms.DateField(label="No Longer Held From")

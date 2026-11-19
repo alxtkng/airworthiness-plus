@@ -8,6 +8,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from django import template
+from django.utils.html import format_html
 
 from airworthiness_plus.interface import formatting
 from airworthiness_rules.intervals import Unit
@@ -19,6 +20,16 @@ register = template.Library()
 def long_date(value: object) -> str:
     """Write a date as 18 November 2026, or nothing if there is none."""
     return formatting.long_date(value) if isinstance(value, date) else ""
+
+
+@register.filter
+def status(value: object) -> str:
+    """Write a status as its word, with a dot beside it where one is called for (REQ-193)."""
+    word = str(value) if value is not None else ""
+    mark = formatting.STATUS_MARKS.get(word)
+    if mark is None:
+        return word
+    return format_html('<span class="status status-{}">{}</span>', mark, word)
 
 
 @register.filter

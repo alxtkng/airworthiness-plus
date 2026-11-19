@@ -51,7 +51,7 @@ Option A.
 | Language | Python, a version in security support, pinned | Standard library decimal and date types; the existing scripts |
 | Framework | Django 5.2 LTS, moving to 6.2 LTS after its release in April 2027 | 5.2 has security support to April 2028 (djangoproject.com/download) |
 | Database | PostgreSQL, a version in support, pinned. Amended 18 November 2026: the pipeline runs PostgreSQL 18.7, pinned by image digest; version 16 is the oldest the tests accept | Row-level security, sequences, constraints and triggers enforce the record rules in the data layer |
-| Pages | Django templates, CSS built from `design-system/tokens.json`, Geist font files served from the application, htmx for expand on click | No build chain for the interface; no third-party requests from the browser |
+| Pages | Django templates, CSS built from `design-system/tokens.json`, Geist font files served from the application, htmx for expand on click | No build chain for the interface; no third-party requests from the browser. Amended 19 November 2026: the detail of a table row is rendered with the row and opened by one small script of ours, so htmx is not added, which is one dependency fewer and no extra addresses to protect. WhiteNoise serves the stylesheet, the script and the font files from the application. The Geist font files are in the repository under the SIL Open Font License |
 | Calculations | A separate pure Python package, `airworthiness_rules`, with no Django or database imports: dates, intervals, next due, review validity, recency | Can be tested, property-tested and independently recomputed on its own |
 | Tests | pytest, Hypothesis | Golden cases and property-based tests |
 | Settings | Read from the environment only, through `airworthiness_plus.environment`; a missing required value stops the application. Amended 18 November 2026 | No secret and no deployment value in the repository (threat TH-063) |
@@ -87,7 +87,7 @@ Option A.
 
 | Item | Cost |
 |---|---|
-| Python, Django, PostgreSQL, htmx, the test and scanning tools | Free, open source |
+| Python, Django, PostgreSQL, WhiteNoise, the Geist fonts, the test and scanning tools | Free, open source |
 | GitHub Actions | Within the free allowance for a private repository at this scale; to be confirmed from the first month's usage |
 | Coolify server | Existing |
 | Off-server backup storage | Paid, small. Provider and cost are Alex's decision (Issue #27) |

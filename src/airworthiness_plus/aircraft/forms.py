@@ -5,9 +5,10 @@ import uuid
 from django import forms
 
 from airworthiness_plus.aircraft.models import Counter, CounterKind, Regime, UtilisationEntry
+from airworthiness_plus.interface.forms import Form
 
 
-class AddAircraftForm(forms.Form):
+class AddAircraftForm(Form):
     """Add an aircraft to the Fleet, or as a Transfer In."""
 
     registration = forms.CharField(label="Aircraft Registration", max_length=10)
@@ -15,7 +16,9 @@ class AddAircraftForm(forms.Form):
     serial_number = forms.CharField(label="Serial Number", max_length=60, required=False)
     manufacturer = forms.CharField(label="Aircraft Manufacturer", max_length=100, required=False)
     designation = forms.CharField(
-        label="Manufacturer's Designation", max_length=100, required=False
+        label="Manufacturer\N{RIGHT SINGLE QUOTATION MARK}s Designation",
+        max_length=100,
+        required=False,
     )
     owner = forms.CharField(label="Owned By", max_length=200)
     regime = forms.ChoiceField(label="Regime", choices=Regime.choices)
@@ -25,7 +28,7 @@ class AddAircraftForm(forms.Form):
     )
     cycles = forms.IntegerField(label="Airframe Cycles", min_value=0, required=False)
     records_expected = forms.IntegerField(
-        label="Records Expected, for a Transfer In", min_value=1, required=False
+        label="Records Expected for a Transfer In", min_value=1, required=False
     )
 
     def clean(self) -> dict[str, object]:
@@ -37,7 +40,7 @@ class AddAircraftForm(forms.Form):
         return cleaned
 
 
-class DetailsForm(forms.Form):
+class DetailsForm(Form):
     """The entries CAA Form 15c carries for the aircraft besides its registration."""
 
     serial_number = forms.CharField(label="Aircraft Serial Number", max_length=60, required=False)
@@ -49,7 +52,7 @@ class DetailsForm(forms.Form):
     )
 
 
-class UtilisationForm(forms.Form):
+class UtilisationForm(Form):
     """Enter total hours and cycles for one counter on a date."""
 
     counter = forms.ModelChoiceField(label="Counter", queryset=Counter.objects.none())
@@ -64,7 +67,7 @@ class UtilisationForm(forms.Form):
     confirmed = forms.BooleanField(label="Confirm This Unusual Increase", required=False)
 
     def __init__(self, *args: object, aircraft_id: uuid.UUID, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(*args, **kwargs)
         counters = Counter.objects.filter(aircraft_id=aircraft_id)
         self.fields["counter"].queryset = counters  # type: ignore[attr-defined]
         self.fields["supersedes"].queryset = UtilisationEntry.objects.filter(  # type: ignore[attr-defined]
@@ -72,14 +75,14 @@ class UtilisationForm(forms.Form):
         )
 
 
-class UnserviceableForm(forms.Form):
+class UnserviceableForm(Form):
     """Record an aircraft as Unserviceable."""
 
     reason = forms.CharField(label="Reason", max_length=200)
     since = forms.DateField(label="Unserviceable Since")
 
 
-class CounterForm(forms.Form):
+class CounterForm(Form):
     """Add an engine or a propeller as a counter."""
 
     kind = forms.ChoiceField(
@@ -90,7 +93,7 @@ class CounterForm(forms.Form):
     serial_number = forms.CharField(label="Serial Number", max_length=60, required=False)
 
 
-class RecordsReceivedForm(forms.Form):
+class RecordsReceivedForm(Form):
     """Update the count of records received for a Transfer In."""
 
     received = forms.IntegerField(label="Records Received", min_value=0)

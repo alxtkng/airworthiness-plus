@@ -58,7 +58,7 @@ class Migration(migrations.Migration):
                     models.CharField(
                         blank=True,
                         choices=[
-                            ("Not Reviewed With This Review", "Not Reviewed With This Review"),
+                            ("Not Reviewed with This Review", "Not Reviewed with This Review"),
                             ("None Found", "None Found"),
                             ("Found and Addressed", "Found and Addressed"),
                             ("Found, Not Yet Addressed", "Found, Not Yet Addressed"),

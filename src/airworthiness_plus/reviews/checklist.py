@@ -48,14 +48,14 @@ CHECKLIST = (
     Point(
         "ML.A.903(a)(6)",
         RECORDS,
-        "All Modifications and Repairs Registered and in Compliance With Part 21",
+        "All Modifications and Repairs Registered and in Compliance with Part 21",
     ),
     Point(
         "ML.A.903(a)(7)",
         RECORDS,
         "Service-Life-Limited Components Identified, Registered and Within Their Approved Life",
     ),
-    Point("ML.A.903(a)(8)", RECORDS, "All Maintenance Certified in Accordance With Part-ML"),
+    Point("ML.A.903(a)(8)", RECORDS, "All Maintenance Certified in Accordance with Part-ML"),
     Point(
         "ML.A.903(a)(9)",
         RECORDS,
@@ -63,7 +63,7 @@ CHECKLIST = (
         may_not_apply=True,
     ),
     Point(
-        "ML.A.903(a)(10)", RECORDS, "Aircraft Complies With the Latest Revision of Its Type Design"
+        "ML.A.903(a)(10)", RECORDS, "Aircraft Complies with the Latest Revision of Its Type Design"
     ),
     Point(
         "ML.A.903(a)(11)",
@@ -72,9 +72,9 @@ CHECKLIST = (
         may_not_apply=True,
     ),
     Point("ML.A.903(c)(1)", SURVEY, "All Required Markings and Placards Properly Installed"),
-    Point("ML.A.903(c)(2)", SURVEY, "Aircraft Complies With Its Approved Flight Manual"),
+    Point("ML.A.903(c)(2)", SURVEY, "Aircraft Complies with Its Approved Flight Manual"),
     Point(
-        "ML.A.903(c)(3)", SURVEY, "Aircraft Configuration Complies With the Approved Documentation"
+        "ML.A.903(c)(3)", SURVEY, "Aircraft Configuration Complies with the Approved Documentation"
     ),
     Point("ML.A.903(c)(4)", SURVEY, "No Evident Defect That Has Not Been Addressed Under ML.A.403"),
     Point(

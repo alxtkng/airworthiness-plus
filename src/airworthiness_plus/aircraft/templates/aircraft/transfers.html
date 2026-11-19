@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Transfers{% endblock %}
 {% block content %}
-<h1>Transfers</h1>
+<h1 class="visually-hidden">Transfers</h1>
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Type Rating</th><th>Owned By</th><th>Records</th><th>Update</th></tr>
+<tr><th>Aircraft Registration</th><th data-detail>Type Rating</th><th>Owned By</th><th>Records</th><th>Update</th></tr>
 </thead>
 <tbody>
 {% for item in aircraft %}

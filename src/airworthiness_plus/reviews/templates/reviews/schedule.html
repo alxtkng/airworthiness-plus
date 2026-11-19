@@ -2,11 +2,11 @@
 {% load writing %}
 {% block title %}Airworthiness Review{% endblock %}
 {% block content %}
-<h1>Airworthiness Review</h1>
+<h1 class="visually-hidden">Airworthiness Review</h1>
 <p><a href="{% url 'review_staff' %}">Airworthiness Review Staff</a></p>
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Type Rating</th><th>Review Certificate Valid To</th><th>Remaining</th><th>Status</th><th>Review</th><th>Copy to the Civil Aviation Authority</th></tr>
+<tr><th>Aircraft Registration</th><th data-detail>Type Rating</th><th>Review Certificate Valid To</th><th>Remaining</th><th>Status</th><th>Review</th><th>Copy to the Civil Aviation Authority</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -15,9 +15,9 @@
 <td>{{ line.aircraft.type_rating }}</td>
 <td>{% if line.valid_to %}{{ line.valid_to|long_date }}{% else %}No Certificate Recorded{% endif %}</td>
 <td>{% if line.certificate %}{{ line.days|days }}{% endif %}</td>
-<td>{{ line.flag.value }}</td>
+<td>{{ line.flag.value|status }}</td>
 <td>{% if line.in_review_window %}Inside the 90-Day Window{% endif %}</td>
-<td>{% for copy in line.copies %}To Be Sent by {{ copy.deadline|long_date }}, {{ copy.flag.value }}{% if not forloop.last %}; {% endif %}{% endfor %}</td>
+<td>{% for copy in line.copies %}To Be Sent by {{ copy.deadline|long_date }}, {{ copy.flag.value|status }}{% if not forloop.last %}; {% endif %}{% endfor %}</td>
 </tr>
 {% endfor %}
 </tbody>

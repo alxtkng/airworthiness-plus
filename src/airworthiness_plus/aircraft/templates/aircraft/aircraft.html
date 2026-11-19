@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load writing %}
 {% block title %}{{ aircraft.registration }}{% endblock %}
+{% block tabs %}{% include "interface/aircraft_tabs.html" with active="Record" %}{% endblock %}
 {% block content %}
 <h1>{{ aircraft.registration }}</h1>
 <p>{{ aircraft.type_rating }}</p>
@@ -12,16 +13,12 @@
 <dt>Manufacturer&#8217;s Designation</dt><dd>{{ aircraft.designation }}</dd>
 <dt>Owned By</dt><dd>{{ aircraft.owner }}</dd>
 <dt>Regime</dt><dd>{{ aircraft.regime }}</dd>
-<dt>Status</dt><dd>{{ aircraft.status }}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
+<dt>Status</dt><dd>{{ aircraft.status|status }}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
 {% if aircraft.stage == "Transfer In" %}<dt>Transfer In</dt><dd>Records {{ aircraft.records_received }} of {{ aircraft.records_expected }} Received</dd>{% endif %}
 </dl>
 {% if aircraft.regime == "Non-Part 21" %}<p>Calculations Not Yet Supported for Non-Part 21 Aircraft</p>{% endif %}
 {% if aircraft.stage == "Transfer In" %}<p>No Due Items Until Records Are Complete</p>{% endif %}
 <p>
-<a href="{% url 'programme' aircraft.id %}">Maintenance Programme</a>
-<a href="{% url 'directive_status' aircraft.id %}">Airworthiness Directives</a>
-<a href="{% url 'aircraft_data' aircraft.id %}">Maintenance Data</a>
-<a href="{% url 'aircraft_review' aircraft.id %}">Airworthiness Review</a>
 <a href="{% url 'enter_utilisation' aircraft.id %}">Enter Hours and Cycles</a>
 <a href="{% url 'add_counter' aircraft.id %}">Add an Engine or Propeller</a>
 {% if aircraft.status == "Serviceable" %}<a href="{% url 'make_unserviceable' aircraft.id %}">Record as Unserviceable</a>{% endif %}

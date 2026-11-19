@@ -27,6 +27,21 @@ def long_date(value: date) -> str:
     return f"{value.day} {MONTHS[value.month - 1]} {value.year}"
 
 
+# A status is a round dot beside a word that says the same thing (REQ-193).
+# Amber is for what is due soon or waiting, red for what is overdue or
+# stops the aircraft, green only for Serviceable in a Status column. A word
+# that is not here is written with no dot.
+STATUS_MARKS = {
+    "Serviceable": "ok",
+    "Due Soon": "due",
+    "Due": "due",
+    "Within Tolerance": "due",
+    "To Assess": "due",
+    "Overdue": "stop",
+    "Unserviceable": "stop",
+}
+
+
 def moment(value: datetime) -> str:
     """Write a time as 18 November 2026, 14:05, in United Kingdom time."""
     local = value.astimezone(UK)

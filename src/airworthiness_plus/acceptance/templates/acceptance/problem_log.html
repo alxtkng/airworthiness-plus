@@ -2,8 +2,7 @@
 {% load writing %}
 {% block title %}Problem Log{% endblock %}
 {% block content %}
-<h1>Problem Log</h1>
-<p>An entry is never changed or removed. The action, the solution and any later note are added to it.</p>
+<h1 class="visually-hidden">Problem Log</h1>
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <table>
 <thead><tr><th>Raised</th><th>Problem</th><th>Status</th><th>Action, Solution and Notes</th><th>Add</th></tr></thead>
