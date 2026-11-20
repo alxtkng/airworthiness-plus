@@ -27,6 +27,26 @@ from airworthiness_plus.sample import build
 ADMINISTRATOR = "accountable.manager@your-organisation.example"
 
 
+def seed(password: str) -> Organisation:
+    """Build the sample organisation, with ``password`` for its Administrator."""
+    try:
+        with transaction.atomic():
+            organisation, administrator = provision_organisation(
+                name=build.NAME,
+                approval_reference=build.APPROVAL_REFERENCE,
+                address=build.ADDRESS,
+                privileges=list(Privilege),
+                scope_of_work=build.SCOPE,
+                first_user_username=ADMINISTRATOR,
+                first_user_full_name="[Accountable Manager]",
+                first_user_password=password,
+            )
+            build.build(organisation, administrator)
+    except ValidationError as error:
+        raise CommandError("; ".join(error.messages)) from error
+    return organisation
+
+
 class Command(BaseCommand):
     """Create the sample organisation and its records."""
 
@@ -39,21 +59,7 @@ class Command(BaseCommand):
         password = getpass.getpass("Administrator Password: ")
         if password != getpass.getpass("Administrator Password Again: "):
             raise CommandError("The two passwords differ")
-        try:
-            with transaction.atomic():
-                organisation, administrator = provision_organisation(
-                    name=build.NAME,
-                    approval_reference=build.APPROVAL_REFERENCE,
-                    address=build.ADDRESS,
-                    privileges=list(Privilege),
-                    scope_of_work=build.SCOPE,
-                    first_user_username=ADMINISTRATOR,
-                    first_user_full_name="[Accountable Manager]",
-                    first_user_password=password,
-                )
-                build.build(organisation, administrator)
-        except ValidationError as error:
-            raise CommandError("; ".join(error.messages)) from error
+        organisation = seed(password)
         self.stdout.write(f"Organisation {organisation.id}")
         self.stdout.write(f"Administrator {ADMINISTRATOR}")
         self.stdout.write("7 Aircraft, 4 Directives, 4 Sets of Maintenance Data, 7 Certificates")
