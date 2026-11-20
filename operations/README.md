@@ -25,7 +25,7 @@ Nothing here names the server, its address or any credential. Those are held by 
 
 | Item | Document |
 |---|---|
-| Give access to the server, so that it can be looked at and the service deployed | `deployment.md` |
+| Rent a server, when there is a budget. There is no existing server (found 20 November 2026) and none is planned for now; the test site is the only hosting | `deployment.md`, `test-site.md` |
 | Choose and pay for backup storage and any monitoring service (Issue 27) | `backup-and-restore.md`, `monitoring.md` |
 | Confirm the recovery objectives and how long backups and logs are kept | `backup-and-restore.md` |
 | Hold the backup decryption key and the owner's database password | `keys-and-secrets.md` |

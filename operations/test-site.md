@@ -16,7 +16,7 @@ It is not the server. `deployment.md` describes the server and is unchanged.
 
 | Part | What It Is | Notes |
 |---|---|---|
-| The service | The image built from `Dockerfile`, unchanged | Free plan, Frankfurt. Sleeps after 15 minutes without a request; the next request waits about a minute |
+| The service | The image built from `Dockerfile`, unchanged | Free plan, Frankfurt, Germany. Sleeps after 15 minutes without a request; the next request waits about a minute |
 | The database | PostgreSQL 18, free plan | Closed to every address outside Render's own network. Deleted 30 days after it is made |
 | The proxy | Render's | Ends HTTPS and sends plain HTTP to port 8000 of the service |
 | The set-up | `render.yaml` at the root of the repository | The whole of it. Checked against Render's published schema on 20 November 2026 |
@@ -74,6 +74,8 @@ Five failed sign-ins lock a user name for 15 minutes. The address is public, so 
 ## When the Database Is Deleted
 
 Render deletes a free database 30 days after it is made, after warning by email. The sample is lost; nothing else was ever there.
+
+The database made on 20 November 2026 ends on 20 December 2026, as Alex King read it from Render. It is remade from the sample before then by the steps below (Issue 100). Each remake starts another 30 days, so the next date is entered here and in a new Issue each time.
 
 1. In Render, delete the database `airworthiness-plus-test-database` if it is still listed.
 2. Open the Blueprint and sync it. Render makes a new, empty database.

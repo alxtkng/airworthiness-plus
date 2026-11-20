@@ -25,7 +25,7 @@ Alex King is the founder of Airworthiness Limited and the only person on the pro
 - Ask only when the decision is his to make: cost, anything irreversible, anything with no source. When he replies "your suggestion" or "you decide", make the decision, record it in `design-system/Decisions.md` as ours and not the regulation's, and tell him.
 - If he corrects you, fix the work and say what changed. Do not open with agreement and then swing to a different answer.
 - Delete nothing without explicit confirmation. Never enter passwords, passkeys or one-time codes; ask him to do it.
-- Leave alone: the airworthiness.co domain and its email records, his server (use it, never wipe it) and every other project on that server.
+- Leave alone: the airworthiness.co domain and its email records. Corrected 20 November 2026: this line also named his server and other projects on it. There is no such server.
 - He answers briefly ("Yes", "Next?", "Go for it"). Read those as "carry on with the next step you proposed", and say at the top of your reply what you took it to mean.
 
 ## 3. Read First
@@ -60,7 +60,7 @@ Then skim `design-system/Procedures.md`, `Writing.md`, `Components.md` and `toke
 Decisions Alex has made, all recorded in `Decisions.md`:
 
 - **Licence:** AGPL-3.0-only for the application, copyright Airworthiness Limited. Outside contributions wait for a contributor agreement. The licence for the open data standard is not decided; the recommendation on record is CC BY 4.0 for documentation and Apache-2.0 for schema and tooling (Issue #25).
-- **Stack:** Python, Django 5.2 LTS, PostgreSQL, pages rendered on the server with htmx, one Docker image on his Coolify server. Calculations live in a separate pure Python package with no Django or database imports.
+- **Stack:** Python, Django 5.2 LTS, PostgreSQL, pages rendered on the server with htmx, one Docker image. Corrected 20 November 2026: this said the image runs on his Coolify server; there is none. It runs on the free test site on Render, with sample data only, until a server is rented (ADR-0003). Calculations live in a separate pure Python package with no Django or database imports.
 - **Security contact:** contact@airworthiness.co. GitHub private vulnerability reporting is switched on.
 - **Repository:** public since 18 November 2026. `main` is protected: pull request required, the check "Tests, Types, Lint, Dependencies, Secrets" must pass, no force push, no deletion, and administrators are not exempt. No approving review is required.
 - **Due Soon defaults:** 30 days, 10.0 hours or 10 cycles, adjustable for each organisation; a regulatory deadline of 30 days or fewer is Due Soon from the day it starts.

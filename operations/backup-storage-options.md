@@ -2,6 +2,8 @@
 
 Date: 19 November 2026. REQ-151; CAO.A.090(e); threats TH-040, TH-041; Issue 27. A recommendation for Alex King. Nothing has been bought, and buying it is his.
 
+**Not for now, 20 November 2026.** Alex King has no budget, and there is no server to back up: the Coolify server this was written beside does not exist. The only hosting is the free test site, which holds the sample and needs no backup. This is kept for when a server is rented.
+
 ## What the Storage Must Do
 
 From `backup-and-restore.md`:
