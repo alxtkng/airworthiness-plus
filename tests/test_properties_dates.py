@@ -5,7 +5,13 @@ from datetime import date, timedelta
 from hypothesis import given
 from hypothesis import strategies as st
 
-from airworthiness_rules.dates import add_days, add_years, days_between
+from airworthiness_rules.dates import (
+    BeyondCalendarError,
+    add_days,
+    add_months,
+    add_years,
+    days_between,
+)
 from airworthiness_rules.records import release_record_deadline
 from airworthiness_rules.review import (
     ExtensionNotPermittedError,
@@ -95,3 +101,23 @@ def test_the_extension_window_shown_is_the_window_the_rule_uses(
     else:
         accepted = True
     assert accepted == inside
+
+
+@given(st.dates(), st.integers(min_value=-(10**7), max_value=10**7))
+def test_a_calendar_step_gives_a_date_or_says_it_is_past_the_calendar(
+    start: date, step: int
+) -> None:
+    """Any number of days, months or years from any date gives a date, or
+    BeyondCalendarError, and nothing else. A month step keeps the day, or
+    lands on the last day of a shorter month."""
+    for add in (add_days, add_months, add_years):
+        try:
+            result = add(start, step)
+        except BeyondCalendarError:
+            continue
+        assert date.min <= result <= date.max
+    try:
+        moved = add_months(start, step)
+    except BeyondCalendarError:
+        return
+    assert moved.day == start.day or (moved + timedelta(days=1)).day == 1 or moved == date.max

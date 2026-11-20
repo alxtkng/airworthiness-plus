@@ -287,6 +287,8 @@ def record_checks(
     """
     today = aircraft_services.today()
     agreed = set(agreed)
+    if any("\x00" in value for value in differing.values()):
+        raise RefusedError("A Value Holds a Character That Cannot Be Recorded")
     if agreed & set(differing):
         raise RefusedError("A Value Either Agrees with the Source or Differs From It")
     count = 0
