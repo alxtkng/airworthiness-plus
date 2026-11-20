@@ -2,6 +2,8 @@
 
 Status: **Accepted by Alex King, 18 November 2026** (Issue #26).
 
+**Corrected 20 November 2026.** This record said hosting was an existing Coolify server. Alex King searched for it on 20 November 2026 and there is none. The stack is unchanged. Each place that named the server is corrected below and marked. Until a server is rented, the service runs only as the test site on Render's free plan with the sample organisation (ADR-0003). There is no budget, so no paid server, Coolify Cloud or backup storage is planned for now.
+
 Date: 18 November 2026
 
 ## Context
@@ -11,7 +13,7 @@ Airworthiness+ private beta builds one slice: the Part-CAO core loop for Part-ML
 - One founder maintains it, and he is new to software delivery. Fewer moving parts and fewer dependencies matter more than fashion.
 - The records are safety records. The design rules are fixed (`prompts/private-beta.md`, Step 4): append-only history, nothing deleted, organisation scoping in the data layer, explicit date handling, server-allocated certificate serials, complete export in an open format.
 - Calculations must be verifiable by a second party who has not seen the implementation, and by property-based tests (REQ-042 to REQ-048, REQ-100 to REQ-113).
-- Hosting is the existing Coolify server at [address withheld], domain airworthiness.co. No DNS or email record changes.
+- Hosting. Corrected 20 November 2026: this said hosting is an existing Coolify server. There is none, and none is rented yet. The domain is airworthiness.co. No DNS or email record changes.
 - Every dependency is a supply-chain risk to be scanned, pinned and listed in a software bill of materials (NCSC Software Security Code of Practice 1.2; NIST SP 800-218).
 - The interface is dense tables that expand on click, not a rich client application (`design-system/README.md`).
 - The existing scripts in `scripts/` are Python.
@@ -35,7 +37,7 @@ A React application with server routes.
 ### Option C. A hosted backend (Supabase) with a thin front end
 
 - For: quick start; sign-in and row-level security provided.
-- Against: the records would live on a third party's platform outside the Coolify server, which adds a processor to the data protection record and a dependency to the availability claim. Business rules end up split between database policies and client code, which is hard to test as one system. Leaving later is a migration, which is hazard H-008.
+- Against: the records would live on a third party's platform and not on a server of our own, which adds a processor to the data protection record and a dependency to the availability claim. Business rules end up split between database policies and client code, which is hard to test as one system. Leaving later is a migration, which is hazard H-008.
 
 ### Option D. Go or Rust, PostgreSQL
 
@@ -58,8 +60,8 @@ Option A.
 | Checks | mypy in strict mode, ruff, pip-audit, detect-secrets, CycloneDX software bill of materials exported by uv | Step 5 pipeline. Amended 18 November 2026: detect-secrets replaces gitleaks so that every tool is installed from the lock file with verified hashes |
 | Dependencies | uv, with a lock file that pins versions and hashes | Pinned dependencies (Step 5) |
 | Continuous integration | GitHub Actions | Runs on every pull request; free for this scale |
-| Deployment | One Docker image, deployed by Coolify from `main` to the existing server | Uses the server as it is; nothing else on it is touched |
-| Backup | PostgreSQL base backups with continuous archiving, encrypted, to storage off the server | REQ-150, REQ-151. The storage is a paid service: Alex's decision, Issue #27 |
+| Deployment | One Docker image. Corrected 20 November 2026: this said it is deployed by Coolify from `main` to the existing server. There is no server. The image runs on the free test site (ADR-0003); where it is deployed for real records is decided when a server is rented | One image, as before |
+| Backup | PostgreSQL base backups with continuous archiving, encrypted, to storage off the server | REQ-150, REQ-151. The storage is a paid service: Alex's decision, Issue #27. Corrected 20 November 2026: there is no budget and no server, so none is planned for now. The test site's database has no backup and holds the sample only |
 | Export | JSON with a published schema, plus CSV for tables | Open format (REQ-134); seeds the open data standard |
 
 ### How the Fixed Design Rules Are Met
@@ -89,9 +91,9 @@ Option A.
 |---|---|
 | Python, Django, PostgreSQL, WhiteNoise, the Geist fonts, the test and scanning tools | Free, open source |
 | GitHub Actions | Within the free allowance for a private repository at this scale; to be confirmed from the first month's usage |
-| Coolify server | Existing |
-| Off-server backup storage | Paid, small. Provider and cost are Alex's decision (Issue #27) |
+| A server | Corrected 20 November 2026: this said Existing. There is none, and none is budgeted. The test site costs nothing (ADR-0003) |
+| Off-server backup storage | Paid, small. Provider and cost are Alex's decision (Issue #27). Corrected 20 November 2026: not planned for now; there is no budget |
 
 ## Open Before First Deployment
 
-1. The current state of the Coolify server (free memory and disk, other services running) has not been inspected. It is checked, without changing anything, before the first deployment.
+1. Corrected 20 November 2026: this said the current state of the Coolify server had not been inspected. There is no server to inspect. A server is chosen, and looked at, before any real record is held.

@@ -34,13 +34,13 @@ Reviewed in full: 19 November 2026, for the readiness review, by the build sessi
 ## Data Flows and Trust Boundaries
 
 ```
-Browser ──1──> Reverse proxy (Coolify, HTTPS) ──2──> Django application ──3──> PostgreSQL
+Browser ──1──> Reverse proxy (HTTPS) ──2──> Django application ──3──> PostgreSQL
                                                           │                        │
                                                           6 export file            4 backup (encrypted)
                                                           ▼                        ▼
                                                        Browser              Off-server storage
 
-GitHub repository ──5──> GitHub Actions (checks, build) ──5──> Coolify deployment ──> server
+GitHub repository ──5──> GitHub Actions (checks, build) ──5──> Deployment ──> host
 ```
 
 Trust boundaries: the internet to the proxy (1); the application to the database (3); the server to off-server storage (4); GitHub to the server (5). The browser is never trusted.
@@ -91,7 +91,7 @@ Severity uses the hazard log scale: High, Medium, Low.
 | TH-061 | Tampering | Compromised build action or pipeline step | High | Actions pinned to a commit, not a moving tag; pipeline has read-only repository permission and no deployment secrets on pull requests | Assurance case C5.2 | Inspection of workflow file |
 | TH-062 | Tampering | Unreviewed change reaches `main` | High | `main` protected; merge by pull request with passing checks | Assurance case C5.2 | Inspection of branch protection settings |
 | TH-063 | Information Disclosure | Secret committed to the repository | High | Secrets only in the server environment; secret scan on every pull request; `.gitignore` | Assurance case C5.4 | Pipeline: secret scan fails on a planted test secret |
-| TH-064 | Spoofing | GitHub account or Coolify account taken over | High | Two-factor authentication on both, set by Alex King; deployment credential limited to this application | NCSC principle 2.1 | Inspection, recorded in `operations/` (Step 8) |
+| TH-064 | Spoofing | GitHub account or hosting account taken over | High | Two-factor authentication on both, set by Alex King; deployment credential limited to this application | NCSC principle 2.1 | Inspection, recorded in `operations/` (Step 8) |
 
 ### Flow 6. Export
 
@@ -188,4 +188,4 @@ Accepted for the test site and not for the server: the owner's database password
 
 - Email (password reset, notifications): no email flow is designed yet. It is modelled when it is added.
 - File attachments (scanned certificates, supporting documents for REQ-112): upload handling and malware scanning are modelled when attachments are designed.
-- The server's other services: the Coolify server runs other projects that are not to be touched. Isolation between them and this application is checked at first deployment (`operations/deployment.md`); the build session could not reach the server.
+- Corrected 20 November 2026: this said the Coolify server runs other projects. There is no existing server. The diagram above no longer names Coolify, and the hosting account is, for now, the Render account of the test site. If a rented server is shared with anything else, isolation between that and this application is checked at first deployment (`operations/deployment.md`); the build session could not reach the server.

@@ -7,7 +7,7 @@ Date: 20 November 2026
 ## Context
 
 - Alex King asked on 20 November 2026 for a test site only, at no cost, before anything goes live.
-- The server of ADR-0001 was not reached that day: its address and access were not to hand. `operations/deployment.md` and ADR-0001 still stand for the live service.
+- The server of ADR-0001 was not reached that day: its address and access were not to hand. `operations/deployment.md` and ADR-0001 still stand for the live service. Corrected later the same day: Alex King's search found that there is no such server. The test site is therefore the only hosting until a server is rented, and there is no budget for one now.
 - The service is one image and a PostgreSQL database with two roles (ADR-0001, ADR-0002). A test site is worth having only if it runs that image and keeps those two roles.
 - The repository is public. Nothing secret may be in it, and no secret is given to an assistant (`operations/keys-and-secrets.md`, rule 2).
 - One founder runs it, and he is new to software delivery. Each step done by hand is a step that can go wrong.

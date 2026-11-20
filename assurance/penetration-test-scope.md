@@ -29,7 +29,7 @@ The threat numbers are those of `architecture/threat-model.md`.
 
 ## What Is Not Tested
 
-- Every other project on the same server, and the server's own management. They are not ours to offer for testing, and nothing of theirs is to be touched.
+- Every other project on the same server, and the server's own management. They are not ours to offer for testing, and nothing of theirs is to be touched. Corrected 20 November 2026: there is no existing server. This applies if a rented server is shared.
 - The airworthiness.co domain and its email.
 - Attempts to make the service unavailable by volume.
 - Social engineering of anyone, and physical access.

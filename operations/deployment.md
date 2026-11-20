@@ -4,7 +4,9 @@ Step 8 of private beta. Date: 19 November 2026.
 
 ## Status
 
-The service has not yet been deployed. The server's address and access are held by Alex King and were not available to the build session, and nothing on the server may be changed without him. What is below was built and rehearsed away from the server; the section What Is Checked on the Server lists what remains.
+The service has not been deployed on a server of our own, because there is none. What is below describes how it is deployed when a server is rented. It was built and rehearsed in the build environment; the section What Is Checked on the Server lists what remains.
+
+Corrected 20 November 2026: this document was written for an existing Coolify server, whose address and access were said to be held by Alex King. He searched for it on 20 November 2026 and there is none. There is no budget for a server now. Until one is rented the service runs only as the test site, with the sample organisation (`test-site.md`).
 
 20 November 2026: the server was not reached. Its address and access were not to hand, and nothing answered over HTTPS at `airworthiness.co` or `www.airworthiness.co` when asked from the build session. Step 1 below is still to be done. Alex King asked for a test site first, at no cost: `test-site.md` (ADR-0003). It holds the sample organisation only, and nothing in this document is met or changed by it.
 

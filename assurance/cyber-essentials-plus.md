@@ -28,7 +28,7 @@ The scheme certifies an organisation, Airworthiness Limited, not the product. It
 ## Gaps We Can See From Here
 
 1. **The scope is not written down.** A list of every device, cloud service and account the company uses for this work is the first thing an assessor asks for. It does not exist in the repository, and should not hold anything private if it is added.
-2. **The server is shared.** Other projects run on it. Whether the certification can cover the server while they are on it, or whether this service needs to be apart from them, is a question for the certification body.
+2. **The server is shared.** Corrected 20 November 2026: there is no existing server, so this does not arise until one is rented. As first written: Other projects run on it. Whether the certification can cover the server while they are on it, or whether this service needs to be apart from them, is a question for the certification body.
 3. **Server updates.** No one is recorded as responsible for operating system updates on the server, and no time is set. Step 8 proposes one.
 4. **Backups are a cloud service.** Wherever backups are kept off the server comes into scope and needs multi-factor sign-in.
 5. **One person.** Separation of administrator and everyday accounts, and cover when that person is away, need a written answer for a company of one.

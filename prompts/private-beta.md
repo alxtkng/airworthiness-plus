@@ -23,7 +23,7 @@ Read this whole brief before doing anything. Then read the repository record (Pa
 - Every factual regulatory claim carries its reference (for example ML.A.305, AMC1 CAO.A.025, CAP 562 C-90). If you cannot source a claim, say so and mark it to be checked. Never invent a rule, number or reference.
 - Be terse. One or two sentences on outcome when a task finishes. No marketese, no filler.
 - Delete nothing without explicit confirmation. Never enter passwords, one-time codes or two-factor codes; ask Alex to do it.
-- Leave these untouched: the airworthiness.co domain and its email records, the Coolify server at [address withheld] (use it, never wipe it), and every other project on that server.
+- Leave these untouched: the airworthiness.co domain and its email records. Corrected 20 November 2026: this line also named an existing Coolify server and other projects on it. Alex King searched for it on 20 November 2026 and there is none.
 
 ## Part 2. The product
 
@@ -153,7 +153,7 @@ Do each step on its own branch, open a pull request, and merge only when its che
 ### Step 4. Architecture and threat model (`architecture/`)
 
 - Propose the technology stack in `architecture/decisions/ADR-0001-stack.md` (Architecture Decision Record format: context, options, decision, consequences). Keep it boring, well-supported and easy for one founder to maintain.
-- Hosting target is Alex's Coolify server at [address withheld], with the domain airworthiness.co. Do not change DNS or email records.
+- Hosting. Corrected 20 November 2026: this line named an existing Coolify server as the target. There is none. Until a server is rented, hosting is the free test site on Render, with sample data only (`architecture/decisions/ADR-0003-test-site.md`, `operations/test-site.md`). There is no budget, so no paid server, Coolify Cloud or backup storage is planned for now. The domain is airworthiness.co. Do not change DNS or email records.
 - **Get Alex's approval on the stack before writing product code.**
 - Design rules that are not negotiable:
   - an append-only event or audit history for every record (who, what, when, before and after)

@@ -4,7 +4,9 @@ Date: 19 November 2026. Written by the build session for Alex King. Public beta 
 
 ## Verdict
 
-**Not ready for sign-off.** The private beta slice is built and tested. Three of the nine exit items are met, five are met in part, and one is not met. What remains is mostly outside the reach of a build session: the service is not deployed, no backup runs, the external test has not happened, and a number of decisions and confirmations are Alex King's to give.
+**Not ready for sign-off.** Added 20 November 2026: there is no existing server and no budget for one, so the items that need a server (deployment, backups running, the 17 server checks, the penetration test) cannot be met for now. Alex King has said this is expected, and the work carries on with sample data on the free test site.
+
+As written on 19 November 2026: The private beta slice is built and tested. Three of the nine exit items are met, five are met in part, and one is not met. What remains is mostly outside the reach of a build session: the service is not deployed, no backup runs, the external test has not happened, and a number of decisions and confirmations are Alex King's to give.
 
 | | Exit Item | State |
 |---|---|---|
@@ -120,8 +122,8 @@ organisation and access, with roles, two-factor sign-in, users and an access log
 
 In rough order.
 
-1. **Give access to the server**, so that it can be looked at without changing anything, and the service deployed. He enters every password and key himself.
-2. **Buy the storage for backups** (Issue 27). The order of the paid services was decided on 19 November 2026 after he asked us to decide: backup storage now, the penetration test after deployment and before any customer's records (Issue 40), Cyber Essentials Plus when a customer asks. A recommendation for the storage is in `operations/backup-storage-options.md`; the purchase, and two facts it rests on, are his.
+1. **Rent a server, when there is a budget.** Corrected 20 November 2026: this asked for access to the server. There is no existing server; his search that day found none, and there is no budget for one now. Until there is a paid server this review stays Not Ready for Sign-Off, and that is expected. The only hosting is the free test site on Render, with the sample (`operations/test-site.md`).
+2. **Paid services: none for now.** Corrected 20 November 2026: there is no budget, so backup storage, the penetration test (Issue 40) and Cyber Essentials Plus all wait. `operations/backup-storage-options.md` is kept for when a server is rented. Before 20 December 2026, remake the test site's free database (Issue 100).
 3. **Confirm the readings of the regulation** listed under Questions. On 19 November 2026 he asked us to decide them; each is kept as built and recorded as ours in `design-system/Decisions.md`. That is a decision to proceed, not his confirmation of the reading, so the four hazards stay Mitigated and are not marked Verified.
 4. **Confirm Level 2**, and the two ASVS items accepted for private beta on his instruction to decide (breached passwords, passkeys). The other five items of Issue 69 were met on 19 November 2026.
 5. **Confirm the operating figures**: recovery point 24 hours, recovery time the next working day, how long backups and logs are kept.
@@ -181,7 +183,7 @@ Each is recorded where it arose; this is the list in one place.
 | Question |
 |---|
 | Nothing is ever deleted. How long is the access log kept, and how is anything removed when its period ends or an organisation leaves, given that the application cannot delete? |
-| Where are the server and the backup storage, by country? |
+| Where are the server and the backup storage, by country? There is no server and no backup storage. The test site is on Render in Frankfurt, Germany, and holds the sample only; its access log does record the network address of anyone who signs in or tries to |
 | Is the company registered with the Information Commissioner's Office? |
 | What does CAP 562 Leaflet C-90 say, in its current issue, about the description of the system, the parallel run and the problem log? It could not be read in the build session |
 
