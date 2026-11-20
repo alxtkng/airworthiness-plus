@@ -95,6 +95,11 @@ def people() -> People:
             first_user_full_name="[Other Name]",
             first_user_password=PASSWORD,
         )
+        # These tests are of signing in. A first password, which must be
+        # changed, is tested in tests/test_users.py and tests/test_test_site.py.
+        User.objects.filter(pk__in=[lucy.pk, stranger.pk]).update(
+            password_must_change=False, first_password_set_on=None
+        )
     return People(ours, lucy, other, stranger)
 
 
@@ -675,10 +680,11 @@ def test_the_authenticator_key_is_never_written_to_the_history(
         entries = list(Event.of(people.lucy))
     assert [entry.changed for entry in entries] == [
         [],
+        ["first_password_set_on", "password_must_change"],  # the fixture, not a sign-in
         ["second_factor_secret"],
         ["second_factor_confirmed"],
     ]
-    assert all(entry.actor_name in ("Lucy Grant",) for entry in entries[1:])
+    assert all(entry.actor_name in ("Lucy Grant",) for entry in entries[2:])
     for entry in entries:
         for text in (entry.before_json, entry.after_json):
             assert text is None or (secret not in text and "second_factor_secret" not in text)

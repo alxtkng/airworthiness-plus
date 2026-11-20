@@ -43,7 +43,7 @@ None is in the repository, none is typed by anyone, and none is given to an assi
 | `AIRWORTHINESS_SECRET_KEY` | The application's signing key | Render: 256 random bits, 44 characters. The server's rule of 50 characters stands for the server | Whoever can sign in to the Render account |
 | `AIRWORTHINESS_DATABASE_PASSWORD` | The service's role | Render | As above |
 | `AIRWORTHINESS_TEST_SITE_OWNER_PASSWORD` | The owner of the tables | Render, with the database | As above. Never in the running service |
-| `AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD` | The sample Administrator's first password | Render | As above. Never in the running service. It is the password at the first sign-in only: changing it in Render afterwards changes nothing |
+| `AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD` | The sample Administrator's first password | Render | As above. Never in the running service. It is the password at the first sign-in only, and must be used within 7 days of the database being made. The Administrator chooses a new one at that sign-in. Changing it in Render afterwards changes nothing |
 
 ## Making It
 
@@ -61,7 +61,12 @@ Done once by Alex King. Nothing is installed on his computer.
 1. In Render, open the service `airworthiness-plus-test`, then Environment. Show the value of `AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD`.
 2. Sign in as `accountable.manager@your-organisation.example` with that value.
 3. Set up an authenticator application when asked. Every user has two factors, here as on the server.
-4. The other sample users have no password. The Administrator gives each a first password on the Users page (`user-administration.md`).
+4. Choose a new password when asked. The value in Render no longer works after this.
+5. The other sample users have no password. The Administrator gives each a first password on the Users page (`user-administration.md`).
+
+Do this within 7 days of the database being made. After 7 days the first password is refused, as every first password is, and the database has to be made again (see When the Database Is Deleted).
+
+The database live on 20 November 2026 was made before this rule reached the sample. On it the system does not ask for a new password at step 4. Choose one on the Change Password page after signing in.
 
 Five failed sign-ins lock a user name for 15 minutes. The address is public, so anyone can cause that. It passes on its own.
 
@@ -80,7 +85,7 @@ The database made on 20 November 2026 ends on 20 December 2026, as Alex King rea
 1. In Render, delete the database `airworthiness-plus-test-database` if it is still listed.
 2. Open the Blueprint and sync it. Render makes a new, empty database.
 3. Deploy the service again. The start makes the tables, the role and the sample afresh.
-4. Sign in as under Signing In. Authenticators are set up again.
+4. Sign in as under Signing In, within 7 days. Authenticators are set up again.
 
 ## Removing It
 

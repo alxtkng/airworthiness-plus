@@ -22,6 +22,7 @@ from django.core.management.base import CommandError
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 
+from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.sample import test_site
@@ -282,6 +283,10 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
             administrator = User.objects.get(username=ADMINISTRATOR)
             assert administrator.check_password(FIRST_PASSWORD)
             assert not administrator.check_password(PASSWORD)
+            # A first password, as every other is: changed at the first
+            # sign-in and good for 7 days (review of 20 November 2026, finding 8).
+            assert administrator.password_must_change
+            assert administrator.first_password_set_on == sign_in.today()
 
 
 @pytest.mark.django_db
@@ -292,8 +297,16 @@ def test_a_role_with_powers_or_other_memberships_is_not_taken_over(given: None) 
             cursor.execute(f"CREATE ROLE {ROLE} LOGIN CREATEDB IN ROLE {APPLICATION_ROLE}")
         with pytest.raises(CommandError, match="without powers of its own"):
             prepare()
+        # A member of the application's role and of another as well: the
+        # check is "alone", not "is a member" (review of 20 November 2026).
         with connection.cursor() as cursor:
             cursor.execute(f"ALTER ROLE {ROLE} NOCREATEDB")
+            cursor.execute("CREATE ROLE review_other_role NOLOGIN")
+            cursor.execute(f"GRANT review_other_role TO {ROLE}")
+        with pytest.raises(CommandError, match=f"not a member of {APPLICATION_ROLE} alone"):
+            prepare()
+        with connection.cursor() as cursor:
+            cursor.execute(f"REVOKE review_other_role FROM {ROLE}")
             cursor.execute(f"REVOKE {APPLICATION_ROLE} FROM {ROLE}")
         with pytest.raises(CommandError, match=f"not a member of {APPLICATION_ROLE} alone"):
             prepare()
