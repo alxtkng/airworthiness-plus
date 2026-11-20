@@ -1,0 +1,68 @@
+# The test site: the service and a database on Render's free plan, holding the
+# sample organisation and nothing else (operations/test-site.md, ADR-0003).
+#
+# This file is the whole of the test site's set-up. Render reads it from `main`,
+# makes what it describes, and generates every secret itself: none is in this
+# repository and none is typed by anyone. It is not how the server is set up
+# (operations/deployment.md) and no real record is ever entered here.
+
+databases:
+  - name: airworthiness-plus-test-database
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "18"
+    databaseName: airworthiness
+    user: airworthiness_owner
+    # No address outside Render's own network may connect.
+    ipAllowList: []
+
+services:
+  - type: web
+    name: airworthiness-plus-test
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    # A change reaches the test site only after the pipeline has passed on `main`.
+    autoDeployTrigger: checksPass
+    healthCheckPath: /health/
+    # The owner's work, then the service exactly as the Dockerfile starts it.
+    # tests/test_test_site.py fails if the two commands drift apart.
+    dockerCommand: python -m airworthiness_plus.sample.test_site gunicorn airworthiness_plus.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 60 --limit-request-line 4094 --limit-request-fields 50 --access-logfile - --error-logfile -
+    envVars:
+      # Where Render sends requests: the port the image listens on.
+      - key: PORT
+        value: "8000"
+      - key: AIRWORTHINESS_SECRET_KEY
+        generateValue: true
+      - key: AIRWORTHINESS_DATABASE_NAME
+        fromDatabase:
+          name: airworthiness-plus-test-database
+          property: database
+      - key: AIRWORTHINESS_DATABASE_HOST
+        fromDatabase:
+          name: airworthiness-plus-test-database
+          property: host
+      - key: AIRWORTHINESS_DATABASE_PORT
+        fromDatabase:
+          name: airworthiness-plus-test-database
+          property: port
+      # The role the running service signs in to the database as. It is made
+      # when the test site first starts, with the password generated here.
+      - key: AIRWORTHINESS_DATABASE_USER
+        value: airworthiness_service
+      - key: AIRWORTHINESS_DATABASE_PASSWORD
+        generateValue: true
+      # The owner of the tables, for the work done before the service starts.
+      # These three are taken out of the environment of the running service.
+      - key: AIRWORTHINESS_TEST_SITE_OWNER_USER
+        fromDatabase:
+          name: airworthiness-plus-test-database
+          property: user
+      - key: AIRWORTHINESS_TEST_SITE_OWNER_PASSWORD
+        fromDatabase:
+          name: airworthiness-plus-test-database
+          property: password
+      # The sample Administrator's first password, read from Render's dashboard.
+      - key: AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD
+        generateValue: true
