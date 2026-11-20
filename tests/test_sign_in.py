@@ -9,21 +9,25 @@ hand: codes change every 30 seconds and sessions end after set times.
 """
 
 import base64
+import itertools
 import re
 import secrets
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from django.conf import settings
+from django.contrib.sessions.models import Session
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import DatabaseError, connection, transaction
 from django.http import HttpResponse
 from django.test import Client
 from django.utils import timezone
+from hypothesis import given
+from hypothesis import strategies as st
 
-from airworthiness_plus.accounts import sign_in, totp
+from airworthiness_plus.accounts import sign_in, totp, users
 from airworthiness_plus.accounts.models import AccessEntry, AccessKind, User
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.history.models import Event, RecordsAreNeverDeletedError
@@ -254,6 +258,43 @@ def test_a_wrong_code_and_a_used_code_are_refused(people: People, clock: Clock) 
     ]
 
 
+@pytest.mark.parametrize(
+    ("username", "logged"),
+    [
+        (LUCY + "\x00", LUCY + "\N{REPLACEMENT CHARACTER}"),
+        ("n" * 300, "n" * 254),
+    ],
+    ids=["a NUL character", "longer than 254 characters"],
+)
+def test_a_name_no_user_can_have_is_refused_like_any_unknown_name(
+    people: People, clock: Clock, username: str, logged: str
+) -> None:
+    """Threat TH-001; review of 20 November 2026, finding 7. A server error
+    before; now refused as an unknown name, and logged as one."""
+    response = give_password(Client(), username=username)
+    assert response.status_code == 200
+    assert "User Name or Password Not Accepted" in response.content.decode()
+    assert log()[-1] == (logged, "Sign-In Failed", "Unknown User Name")
+
+
+def test_a_code_in_digits_other_than_0_to_9_is_refused(people: People, clock: Clock) -> None:
+    """Threat TH-001; review of 20 November 2026, finding 7. Arabic-Indic
+    digits gave a server error at the code step; now they are a wrong code."""
+    client = Client()
+    sign_in_fully(client, clock)
+    post(client, "/sign-out/")
+    clock.advance(seconds=31)
+    give_password(client)
+    other_digits = "\u0661\u0662\u0663\u0664\u0665\u0666"
+    refused = post(client, "/sign-in/code/", code=other_digits)
+    assert refused.status_code == 200
+    assert log()[-1] == (LUCY, "Sign-In Failed", "Wrong Code")
+    with working_for(people.ours.id, people.lucy.id):
+        lucy = User.objects.get(pk=people.lucy.pk)
+        assert not sign_in.confirm_code(lucy, other_digits)
+    assert totp.matching_counter(secret_of(LUCY), other_digits, clock.now, after=None) is None
+
+
 def test_five_failures_lock_the_name_for_15_minutes(people: People, clock: Clock) -> None:
     """Threat TH-001, planned test T-SEC-002. The right password is refused
     while the name is locked, and the refusal is logged."""
@@ -272,6 +313,55 @@ def test_five_failures_lock_the_name_for_15_minutes(people: People, clock: Clock
     assert give_password(client).status_code == 200
     clock.advance(minutes=1, seconds=1)
     assert give_password(client).status_code == 302
+
+
+# The lock as a rule. The access log takes its time from the database clock,
+# which the tests cannot move, so failures spread over time are written here.
+
+T0 = datetime(2026, 11, 20, 9, 0, tzinfo=UTC)
+
+
+def at(minutes: float) -> datetime:
+    return T0 + timedelta(minutes=minutes)
+
+
+def test_the_lock_lasts_15_minutes_from_the_fifth_failure() -> None:
+    """Threat TH-001; review of 20 November 2026, finding 6. Four failures at
+    9:00, a fifth at 9:14: locked until 9:29, the fifth plus 15 minutes, not
+    until 9:15, when the first leaves the window."""
+    failures = [at(0)] * 4 + [at(14)]
+    assert sign_in.locks(failures, at(15.5))
+    assert sign_in.locks(failures, at(29))
+    assert not sign_in.locks(failures, at(29) + timedelta(seconds=1))
+
+
+def test_five_failures_spread_over_more_than_15_minutes_do_not_lock() -> None:
+    """Threat TH-001. 9:00, 9:04, 9:08, 9:12, 9:16: 16 minutes from first to
+    fifth. Five exactly 15 minutes apart do lock. Four never do."""
+    assert not sign_in.locks([at(4 * n) for n in range(5)], at(16))
+    assert sign_in.locks([at(3.75 * n) for n in range(5)], at(15))
+    assert not sign_in.locks([at(0)] * 4, at(0))
+    assert not sign_in.locks([], at(0))
+
+
+@given(
+    st.lists(st.integers(min_value=0, max_value=3600), max_size=9).map(sorted),
+    st.integers(min_value=0, max_value=3600),
+)
+def test_the_lock_agrees_with_every_five_failures_counted_by_hand(
+    seconds: list[int], now: int
+) -> None:
+    """Threat TH-001. Recounted another way: some five of the failures lie
+    within 15 minutes of each other, the latest of them within 15 minutes
+    of now and not after it."""
+    failures = [T0 + timedelta(seconds=second) for second in seconds]
+    moment = T0 + timedelta(seconds=max([now, *seconds]))
+    window = timedelta(minutes=15)
+    by_hand = any(
+        max(five) - min(five) <= window and max(five) >= moment - window
+        for five in itertools.combinations(failures, 5)
+    )
+    assert sign_in.locks(failures, moment) == by_hand
 
 
 def test_wrong_codes_count_towards_the_lock(people: People, clock: Clock) -> None:
@@ -390,6 +480,65 @@ def test_a_user_made_inactive_is_signed_out_and_cannot_sign_in(
     assert get(client, "/").status_code == 302
     assert give_password(Client()).status_code == 200
     assert log()[-1] == (LUCY, "Sign-In Failed", "Inactive User")
+
+
+def sessions_of(user: User) -> int:
+    """Return how many stored sessions name ``user``."""
+    with as_owner():
+        return sum(
+            1
+            for session in Session.objects.all()
+            if session.get_decoded().get("_auth_user_id") == str(user.pk)
+        )
+
+
+def test_a_user_made_inactive_has_their_sessions_ended_not_suspended(
+    people: People, clock: Clock
+) -> None:
+    """REQ-010; review of 20 November 2026, finding 2. The session is gone
+    at the next request, and the browser keeping it busy does not keep it.
+    Made active again, the same browser is not signed in."""
+    client = Client()
+    sign_in_fully(client, clock)
+    with working_for(people.ours.id, people.lucy.id):
+        other = users.add_user(
+            organisation=people.ours,
+            username="name@your-organisation.example",
+            full_name="[Second Administrator]",
+            roles=[Role.ADMINISTRATOR],
+            password=secrets.token_urlsafe(18),
+        )
+    with working_for(people.ours.id, other.id):
+        users.set_active(User.objects.get(pk=people.lucy.pk), active=False, by=other)
+    assert get(client, "/").status_code == 302
+    assert sessions_of(people.lucy) == 0
+    clock.advance(minutes=25)
+    assert get(client, "/").status_code == 302
+
+    with working_for(people.ours.id, other.id):
+        users.set_active(User.objects.get(pk=people.lucy.pk), active=True, by=other)
+    assert get(client, "/").status_code == 302
+
+
+def test_made_active_again_before_any_request_the_old_session_is_still_ended(
+    people: People, clock: Clock
+) -> None:
+    """REQ-010; review of 20 November 2026, finding 2. Being made inactive
+    ends the sessions at once, whether or not the browser asks in between."""
+    client = Client()
+    sign_in_fully(client, clock)
+    with working_for(people.ours.id, people.lucy.id):
+        other = users.add_user(
+            organisation=people.ours,
+            username="name@your-organisation.example",
+            full_name="[Second Administrator]",
+            roles=[Role.ADMINISTRATOR],
+            password=secrets.token_urlsafe(18),
+        )
+    with working_for(people.ours.id, other.id):
+        users.set_active(User.objects.get(pk=people.lucy.pk), active=False, by=other)
+        users.set_active(User.objects.get(pk=people.lucy.pk), active=True, by=other)
+    assert get(client, "/").status_code == 302
 
 
 def test_changing_the_password_ends_other_sessions(people: People, clock: Clock) -> None:
