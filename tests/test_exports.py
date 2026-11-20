@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import secrets
+import warnings
 import zipfile
 from datetime import date, timedelta
 from decimal import Decimal
@@ -398,10 +399,51 @@ def test_an_altered_export_fails_verification(sample: Sample, fleet: dict[str, A
     assert len(verdict.problems) == 1
     assert "was hashed in a way this check does not know" in verdict.problems[0]
 
-    # A file added, a file removed, and something that is not an export at all.
+    # A file added, and something that is not an export at all. A file
+    # removed is in test_a_file_removed_from_an_export_fails_verification.
     verdict = verify(rewritten(export.content, {"extra.json": b"[]"}, fix_manifest=False))
     assert verdict.problems == ("extra.json: is not in the manifest",)
     assert verify(b"not a zip").problems != ()
+
+
+@pytest.mark.parametrize("name", ["records/reviews_certificate.json", "manifest.json"])
+def test_an_export_holding_two_files_of_one_name_fails_verification(
+    sample: Sample, fleet: dict[str, Aircraft], name: str
+) -> None:
+    """Threat TH-081; review of 20 November 2026, finding 3. A forged copy
+    placed before the genuine file is what a reader taking the first of a
+    name would open. The file is refused, whichever copy is checked."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy, aircraft=fleet["G-EJKL"])
+    archive = zipfile.ZipFile(io.BytesIO(export.content))
+    genuine = archive.read(name)
+    forged = genuine.replace(b"2026-12-06", b"2028-12-06").replace(b'"files"', b'"files" ')
+    assert forged != genuine
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as new, warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)  # zipfile warns of the duplicate name
+        new.writestr(name, forged)
+        for member in archive.namelist():
+            new.writestr(member, archive.read(member))
+    verdict = verify(out.getvalue())
+    assert f"{name}: is in the export more than once" in verdict.problems
+
+
+def test_a_file_removed_from_an_export_fails_verification(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """Threat TH-081; review of 20 November 2026, a test that claimed this
+    and did not do it."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        export = build(sample.ours, by=sample.lucy, aircraft=fleet["G-EJKL"])
+    archive = zipfile.ZipFile(io.BytesIO(export.content))
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as new:
+        for member in archive.namelist():
+            if member != "people.json":
+                new.writestr(member, archive.read(member))
+    verdict = verify(out.getvalue())
+    assert verdict.problems == ("people.json: is in the manifest and not in the export",)
 
 
 def test_the_command_checks_an_export_without_the_database(
