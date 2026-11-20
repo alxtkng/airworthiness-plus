@@ -157,7 +157,10 @@ def add_task(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
 def retire_task(request: HttpRequest, task_id: uuid.UUID) -> HttpResponse:
     """Take a task out of the programme. It stays in the record."""
     task = get_object_or_404(Task, pk=task_id)
-    services.retire_task(task)
+    try:
+        services.retire_task(task)
+    except services.RefusedError as error:
+        return HttpResponse(str(error), status=409, content_type="text/plain; charset=utf-8")
     return redirect("programme", aircraft_id=task.programme.aircraft_id)
 
 

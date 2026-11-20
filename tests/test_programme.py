@@ -19,7 +19,13 @@ from airworthiness_plus.aircraft.models import Aircraft, CounterKind
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due, services
-from airworthiness_plus.programme.models import Basis, Programme, Task, WorkDone
+from airworthiness_plus.programme.models import (
+    Basis,
+    InspectionCategory,
+    Programme,
+    Task,
+    WorkDone,
+)
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 from airworthiness_rules.programme import Flag
 from tests.conftest import as_owner
@@ -423,6 +429,92 @@ def test_a_minimum_inspection_programme_inspection_keeps_to_the_regulation(
                 basis=Basis.MINIMUM_INSPECTION_PROGRAMME,
                 reference="[Programme Reference]",
             )
+
+
+def test_a_programme_does_not_change_under_its_minimum_inspection_programme_inspections(
+    sample: Sample, fleet: dict[str, Aircraft], day: Day
+) -> None:
+    """REQ-040, REQ-048, ML.A.302(d)(1); review of 20 November 2026, finding 4.
+
+    What is refused when an inspection is added is refused when the
+    programme is changed under it. A sailplane's annual inspection has no
+    100-hour interval, so the programme cannot become an aeroplane's; and an
+    inspection of the Minimum Inspection Programme cannot stay live in a
+    programme on the design approval holder's instructions, where it would
+    keep a tolerance the regulation does not give."""
+    ejkl = fleet["G-EJKL"]
+    sailplane = {
+        "basis": Basis.MINIMUM_INSPECTION_PROGRAMME,
+        "inspection_category": InspectionCategory.SAILPLANE,
+        "reference": "[Programme Reference]",
+    }
+    with working_for(sample.ours.id, sample.lucy.id):
+        programme = services.set_up_programme(ejkl, **sailplane)  # type: ignore[arg-type]
+        inspection = services.add_task(
+            programme,
+            title="Annual Inspection",
+            kind=TaskKind.MINIMUM_INSPECTION_PROGRAMME,
+            counter=ejkl.counters.get(kind=CounterKind.AIRFRAME),
+            source="ML.A.302(d)",
+            interval=Interval(months=12),
+            starts=Reading(date(2025, 11, 3), D("0"), 0),
+        )
+        with pytest.raises(services.RefusedError, match="at Least Every 100 Hours"):
+            services.set_up_programme(
+                ejkl,
+                basis=Basis.MINIMUM_INSPECTION_PROGRAMME,
+                inspection_category=InspectionCategory.AEROPLANE,
+                reference="[Programme Reference]",
+            )
+        with pytest.raises(services.RefusedError, match="Retire Its Inspections"):
+            services.set_up_programme(
+                ejkl, basis=Basis.INSTRUCTIONS, reference="[Programme Reference]"
+            )
+        programme.refresh_from_db()
+        assert programme.basis == Basis.MINIMUM_INSPECTION_PROGRAMME
+        assert programme.inspection_category == InspectionCategory.SAILPLANE
+        # What does not touch the inspections still changes.
+        services.set_up_programme(ejkl, **{**sailplane, "reference": "[Programme Reference 2]"})  # type: ignore[arg-type]
+
+    client = signed_in(sample.lucy)
+    refused = post(
+        client,
+        f"/aircraft/{ejkl.id}/programme/set-up/",
+        basis=Basis.INSTRUCTIONS,
+        reference="[Programme Reference]",
+    )
+    assert refused.status_code == 200
+    assert "Retire Its Inspections" in refused.content.decode()
+
+    # Once the inspection is retired the basis can change.
+    with working_for(sample.ours.id, sample.lucy.id):
+        services.retire_task(inspection)
+        services.set_up_programme(ejkl, basis=Basis.INSTRUCTIONS, reference="[Programme Reference]")
+
+
+def test_a_tolerance_is_given_only_in_a_minimum_inspection_programme(
+    sample: Sample, fleet: dict[str, Aircraft], tasks: dict[str, Task], day: Day
+) -> None:
+    """REQ-048, ML.A.302(d)(1); review of 20 November 2026, finding 4.
+
+    The second line of defence. G-FMNO's inspection was last done on 4
+    February 2026, so it is due on 4 February 2027. On 20 February 2027 it
+    is 16 days past: Within Tolerance in its own programme. Were the basis
+    of the programme changed behind the service, the same inspection has no
+    tolerance and is Overdue."""
+    fmno = fleet["G-FMNO"]
+    day.today = date(2027, 2, 20)
+    path = f"/aircraft/{fmno.id}/programme/"
+    reader = signed_in(sample.reader)
+    assert dot("Within Tolerance") in page(reader, path)
+    with working_for(sample.ours.id, sample.lucy.id):
+        Programme.objects.filter(aircraft=fmno).update(
+            basis=Basis.INSTRUCTIONS, inspection_category=""
+        )
+    body = page(reader, path)
+    assert dot("Overdue") in body
+    assert "Within Tolerance" not in body
+    assert "Tolerance 1 Month" not in body
 
 
 # Work done

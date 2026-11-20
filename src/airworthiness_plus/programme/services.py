@@ -38,14 +38,15 @@ def set_up_programme(
     """Record the aircraft's one programme, or change it (REQ-040, AMC1 ML.A.302)."""
     if basis == Basis.MINIMUM_INSPECTION_PROGRAMME and not inspection_category:
         raise RefusedError("A Minimum Inspection Programme Says Which Aircraft It Is For")
+    if basis != Basis.MINIMUM_INSPECTION_PROGRAMME:
+        inspection_category = ""
+    _check_inspections_still_agree(aircraft, basis, inspection_category)
     programme, _ = Programme.objects.update_or_create(
         aircraft=aircraft,
         defaults={
             "organisation_id": aircraft.organisation_id,
             "basis": basis,
-            "inspection_category": inspection_category
-            if basis == Basis.MINIMUM_INSPECTION_PROGRAMME
-            else "",
+            "inspection_category": inspection_category,
             "reference": reference,
             "hours_per_day": hours_per_day,
             "cycles_per_day": cycles_per_day,
@@ -54,16 +55,41 @@ def set_up_programme(
     return programme
 
 
+def _check_inspections_still_agree(aircraft: Aircraft, basis: Basis, category: str) -> None:
+    """Refuse a change of programme that its live inspections do not agree with.
+
+    What ``add_task`` refuses for a new inspection of the Minimum
+    Inspection Programme is refused here for the ones already there, so the
+    programme cannot be changed under them (ML.A.302(d)(1)).
+    """
+    inspections = Task.objects.filter(
+        programme__aircraft=aircraft,
+        kind=TaskKind.MINIMUM_INSPECTION_PROGRAMME.value,
+        retired=False,
+    )
+    for inspection in inspections:
+        if basis != Basis.MINIMUM_INSPECTION_PROGRAMME:
+            raise RefusedError(
+                "The Programme Has Minimum Inspection Programme Inspections: "
+                "Retire Its Inspections Before Changing What It Is Based On"
+            )
+        _check_minimum_inspection_interval(category, inspection.interval)
+
+
 def _check_minimum_inspection(programme: Programme, interval: Interval) -> None:
     """Refuse an inspection less often than ML.A.302(d)(1) requires."""
     if programme.basis != Basis.MINIMUM_INSPECTION_PROGRAMME:
         raise RefusedError(
             "A Minimum Inspection Programme Inspection Belongs to a Programme on That Basis"
         )
+    _check_minimum_inspection_interval(programme.inspection_category, interval)
+
+
+def _check_minimum_inspection_interval(category: str, interval: Interval) -> None:
     most = MINIMUM_INSPECTION_PROGRAMME_INTERVAL
     if interval.months is None or most.months is None or interval.months > most.months:
         raise RefusedError("ML.A.302(d)(1): The Inspection Is at Least Annual")
-    aeroplane = programme.inspection_category == InspectionCategory.AEROPLANE
+    aeroplane = category == InspectionCategory.AEROPLANE
     if aeroplane and (interval.hours is None or most.hours is None or interval.hours > most.hours):
         raise RefusedError("ML.A.302(d)(1)(a): The Inspection Is at Least Every 100 Hours")
 
@@ -114,7 +140,22 @@ def add_task(
 
 
 def retire_task(task: Task) -> None:
-    """Take a task out of the programme. It and its records stay (REQ-131)."""
+    """Take a task out of the programme. It and its records stay (REQ-131).
+
+    The task of an airworthiness directive is refused: it ends when the
+    directive is decided Not Applicable or a terminating action is recorded
+    (REQ-066), so that what is due never leaves the Fleet without a record
+    of why.
+    """
+    if task.task_kind is TaskKind.AIRWORTHINESS_DIRECTIVE:
+        raise RefusedError(
+            "The Task of an Airworthiness Directive Ends Under Airworthiness Directives"
+        )
+    end_task(task)
+
+
+def end_task(task: Task) -> None:
+    """Mark a task as no longer in the programme. Callers decide whether it may end."""
     task.retired = True
     task.save(update_fields=["retired"])
 

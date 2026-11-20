@@ -14,7 +14,13 @@ from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.programme.models import InspectionCategory, Programme, Task, WorkDone
+from airworthiness_plus.programme.models import (
+    Basis,
+    InspectionCategory,
+    Programme,
+    Task,
+    WorkDone,
+)
 from airworthiness_rules.dates import days_between
 from airworthiness_rules.intervals import (
     MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
@@ -146,8 +152,14 @@ def thresholds_of(organisation: Organisation) -> Thresholds:
 
 
 def _tolerance(task: Task, programme: Programme) -> Tolerance | None:
-    """Return the tolerance for a task: only for a Minimum Inspection Programme inspection."""
+    """Return the tolerance for a task: only for a Minimum Inspection Programme inspection.
+
+    And only in a programme on that basis: ML.A.302(d)(1) gives the
+    tolerance to the Minimum Inspection Programme and to nothing else.
+    """
     if task.task_kind is not TaskKind.MINIMUM_INSPECTION_PROGRAMME:
+        return None
+    if programme.basis != Basis.MINIMUM_INSPECTION_PROGRAMME:
         return None
     if programme.inspection_category == InspectionCategory.SAILPLANE:
         return MINIMUM_INSPECTION_PROGRAMME_TOLERANCE_SAILPLANE
