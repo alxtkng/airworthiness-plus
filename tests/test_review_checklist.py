@@ -18,6 +18,7 @@ import pytest
 from django.db import DatabaseError, connection, transaction
 from django.http import HttpResponse
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
 
 from airworthiness_plus.accounts.models import AccessEntry
 from airworthiness_plus.accounts.roles import Action, permitted
@@ -425,6 +426,66 @@ def test_a_review_is_never_altered_once_its_certificate_is_issued(
             cursor.execute(
                 "UPDATE reviews_review SET certificate_id = NULL WHERE id = %s", [review.pk]
             )
+
+
+def test_a_point_changed_while_the_certificate_is_issued_waits_and_is_refused(
+    sample: Sample, review: Review
+) -> None:
+    """REQ-107, REQ-110, hazard H-003; review of 20 November 2026, finding 5.
+
+    A second request, a double submit or another tab, could record a
+    finding on a point while the first was issuing the certificate, and
+    both were committed. The race needs two connections, which the tests
+    cannot hold over records that are never deleted, so three things are
+    shown here instead, and the race itself was run again by hand
+    (assurance/independent-verification/code-review-2026-11-20.md):
+
+    - the service reads the review again rather than trusting the copy it
+      was given, which is what a request that started before the issue holds;
+    - it reads it under a lock held to the end of the request, which the
+      issue also takes, so one waits for the other;
+    - the database reads the review under a lock too, by its id alone.
+    """
+    complete(sample, review)
+    with working_for(sample.ours.id, sample.reviewer.id):
+        stale_item = review.items.select_related("review").all()[0]
+        stale_review = Review.objects.get(pk=review.pk)
+        fresh_item = ReviewItem.objects.get(pk=stale_item.pk)
+
+        with CaptureQueriesContext(connection) as queries:
+            services.record_item(fresh_item, result=Result.SATISFACTORY, evidence=EVIDENCE)
+            services.record_details(
+                stale_review,
+                assisted_by="[Part-66 Name]",
+                airframe_hours=D("11206.8"),
+                programme_discrepancy=ProgrammeDiscrepancy.NONE_FOUND,
+            )
+        locks = [
+            query["sql"]
+            for query in queries.captured_queries
+            if 'FROM "reviews_review"' in query["sql"] and "FOR UPDATE" in query["sql"]
+        ]
+        assert len(locks) == 2
+
+        services.issue_from_review(review)
+        assert stale_item.review.certificate_id is None  # the copy held before the issue
+        with pytest.raises(services.RefusedError, match="Never Altered"):
+            services.record_item(
+                stale_item, result=Result.FINDING, evidence=EVIDENCE, finding="[Late]"
+            )
+        with pytest.raises(services.RefusedError, match="Never Altered"):
+            services.close_finding(stale_item, closure="[Closure]")
+        with pytest.raises(services.RefusedError, match="Never Altered"):
+            services.record_details(
+                stale_review, assisted_by="", airframe_hours=None, programme_discrepancy=""
+            )
+
+    with as_owner(), connection.cursor() as cursor:
+        cursor.execute("SELECT pg_get_functiondef('reviews_reviewitem_fixed'::regproc)")
+        row = cursor.fetchone()
+    assert row is not None
+    definition = " ".join(str(row[0]).split())
+    assert "WHERE id = NEW.review_id FOR SHARE;" in definition
 
 
 def test_only_the_person_carrying_out_the_review_records_and_issues_it(

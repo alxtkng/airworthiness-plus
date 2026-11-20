@@ -17,6 +17,7 @@ import hashlib
 import io
 import json
 import zipfile
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
@@ -114,7 +115,12 @@ def verify(content: bytes) -> Verdict:
     except (zipfile.BadZipFile, KeyError, ValueError, TypeError):
         return Verdict("", ("This is not an export of records, or its manifest cannot be read",))
     problems: list[str] = []
-    present = set(archive.namelist()) - {MANIFEST}
+    # Two files of one name: a reader may open either, and only the last is
+    # checked below, so the export cannot be said to be as it was written.
+    names = archive.namelist()
+    for name in sorted(name for name, count in Counter(names).items() if count > 1):
+        problems.append(f"{name}: is in the export more than once")
+    present = set(names) - {MANIFEST}
     for name in sorted(present - set(listed)):
         problems.append(f"{name}: is not in the manifest")
     for name in sorted(set(listed) - present):

@@ -290,6 +290,43 @@ DROP FUNCTION reviews_reviewstaff_fixed();
     + ALLOW_FROM_BEFORE
 )
 
+# The point of a review is checked against the review read under a lock, so
+# that a result recorded while the certificate is being issued waits for the
+# issue and then sees it (independent review of 20 November 2026, finding 5).
+REVIEW_ITEM_FIXED_LOCKED = """
+CREATE OR REPLACE FUNCTION reviews_reviewitem_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    issued uuid;
+BEGIN
+    -- Locked by its id alone: a row left out by a condition on the
+    -- certificate would not be locked, and would not wait for the issue.
+    SELECT certificate_id INTO issued FROM reviews_review
+     WHERE id = NEW.review_id
+       FOR SHARE;
+    IF issued IS NOT NULL THEN
+        RAISE EXCEPTION 'A review is never altered once its certificate is issued'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+"""
+
+REVIEW_ITEM_FIXED_UNLOCKED = """
+CREATE OR REPLACE FUNCTION reviews_reviewitem_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM reviews_review
+                WHERE id = NEW.review_id AND certificate_id IS NOT NULL) THEN
+        RAISE EXCEPTION 'A review is never altered once its certificate is issued'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+"""
+
 DROP_REVIEW_FIXED = """
 DROP TRIGGER reviewitem_fixed ON reviews_reviewitem;
 DROP TRIGGER review_fixed ON reviews_review;

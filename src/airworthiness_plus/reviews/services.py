@@ -774,10 +774,18 @@ def start_review(
 
 
 def _open(review: Review) -> None:
-    if review.certificate_id is not None:
+    """Refuse a change to a review whose certificate is issued.
+
+    The review is read again under a lock held to the end of the
+    transaction, so a change made while the certificate is being issued
+    waits for the issue and is then refused.
+    """
+    locked = Review.objects.select_for_update().only("certificate_id").get(pk=review.pk)
+    if locked.certificate_id is not None:
         raise RefusedError("A Review Is Never Altered Once Its Certificate Is Issued")
 
 
+@transaction.atomic
 def record_item(item: ReviewItem, *, result: Result, evidence: str, finding: str = "") -> None:
     """Record the result of one point, with the evidence sampled and any finding (REQ-107)."""
     _open(item.review)
@@ -795,6 +803,7 @@ def record_item(item: ReviewItem, *, result: Result, evidence: str, finding: str
     item.save(update_fields=["result", "evidence", "finding", "closure", "closed_on"])
 
 
+@transaction.atomic
 def close_finding(item: ReviewItem, *, closure: str, on: date | None = None) -> None:
     """Record how a finding was closed, and when (REQ-109, ML.A.903(e)(2))."""
     _open(item.review)
@@ -810,6 +819,7 @@ def close_finding(item: ReviewItem, *, closure: str, on: date | None = None) -> 
     item.save(update_fields=["closure", "closed_on"])
 
 
+@transaction.atomic
 def record_details(
     review: Review,
     *,
