@@ -82,7 +82,7 @@ def decide(
     existing = Applicability.objects.filter(directive=directive, aircraft=aircraft).first()
     task = existing.task if existing else None
     if decision == Decision.NOT_APPLICABLE and task is not None:
-        programme_services.retire_task(task)
+        programme_services.end_task(task)
         task = None
     if action is not None:
         if task is not None:
@@ -174,7 +174,7 @@ def terminate(applicability: Applicability, *, action: str, on: date) -> None:
     if on > aircraft_services.today():
         raise RefusedError("A Terminating Action Cannot Be Dated After Today")
     if applicability.task is not None:
-        programme_services.retire_task(applicability.task)
+        programme_services.end_task(applicability.task)
     applicability.terminating_action = action.strip()
     applicability.terminated_on = on
     applicability.save(update_fields=["terminating_action", "terminated_on"])

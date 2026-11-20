@@ -23,6 +23,7 @@ from airworthiness_plus.directives.models import Applicability, Compliance, Deci
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.programme import due
+from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Task, WorkDone
 from airworthiness_plus.sample import build
 from airworthiness_rules.intervals import Interval, Reading, State
@@ -391,6 +392,30 @@ def test_a_terminating_action_ends_the_repetition_and_keeps_the_records(
             connection.cursor() as cursor,
         ):
             cursor.execute("UPDATE directives_compliance SET work_id = work_id")
+
+
+def test_a_directive_task_ends_only_under_airworthiness_directives(
+    sample: Sample, fleet: dict[str, Aircraft], directives: dict[int, Directive]
+) -> None:
+    """REQ-066, REQ-131, review of 20 November 2026, finding 1. The programme's
+    address for retiring a task refuses the task of a directive: it would
+    leave the Fleet and the programme with the decision still Applicable and
+    no terminating action. It ends by a decision or a terminating action."""
+    abcd = fleet["G-ABCD"]
+    made = decision_of(sample, directives[1], abcd)
+    assert made.task_id is not None
+    client = signed_in(sample.lucy)
+    assert "[Directive Number 1]" in page(client, f"/aircraft/{abcd.id}/programme/")
+    refused = post(client, f"/tasks/{made.task_id}/retire/")
+    assert refused.status_code == 409
+    assert "Airworthiness Directives" in refused.content.decode()
+    assert "[Directive Number 1]" in page(client, f"/aircraft/{abcd.id}/programme/")
+    with working_for(sample.ours.id, sample.lucy.id):
+        task = Task.objects.get(pk=made.task_id)
+        assert not task.retired
+        with pytest.raises(programme_services.RefusedError, match="Airworthiness Directives"):
+            programme_services.retire_task(task)
+        assert not Task.objects.get(pk=made.task_id).retired
 
 
 def test_an_action_needs_the_programme_and_a_counter_of_the_aircraft(
