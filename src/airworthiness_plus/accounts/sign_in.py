@@ -12,7 +12,7 @@ and the access log entries for that name, and nothing else
 """
 
 import uuid
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta
 
@@ -30,6 +30,7 @@ from airworthiness_rules.dates import uk_today
 # Ours, not the regulation's (Decisions.md, Roles and Permissions).
 LOCK_AFTER_FAILURES = 5
 LOCK_MINUTES = 15
+USERNAME_LENGTH = 254  # as the user record and the access log hold it
 
 
 def current_time() -> datetime:
@@ -69,7 +70,7 @@ def _log(
     AccessEntry.objects.create(
         organisation_id=user.organisation_id if user else None,
         user=user,
-        username=username[:254],
+        username=username[:USERNAME_LENGTH],
         kind=kind,
         detail=detail,
         code_counter=counter,
@@ -77,19 +78,38 @@ def _log(
     )
 
 
+def locks(failures: Sequence[datetime], now: datetime) -> bool:
+    """Return whether these failures, oldest first, lock a name at ``now``.
+
+    Five failures within 15 minutes lock the name until 15 minutes after
+    the fifth of them. Ours, not the regulation's (threat TH-001).
+    """
+    window = timedelta(minutes=LOCK_MINUTES)
+    first_of_five = LOCK_AFTER_FAILURES - 1
+    return any(
+        failures[position] >= now - window
+        and failures[position] - failures[position - first_of_five] <= window
+        for position in range(first_of_five, len(failures))
+    )
+
+
 def _locked(username: str) -> bool:
     """Return whether too many attempts have failed for ``username`` lately.
 
-    Five failures within 15 minutes, counted since the last time the user
-    signed in, lock the name until 15 minutes after the fifth.
+    Failures are counted since the last time the user signed in. A fifth
+    failure that still locks is at most 15 minutes old, and the four before
+    it at most 15 minutes older again, so 30 minutes of the log are read.
     """
-    since = current_time() - timedelta(minutes=LOCK_MINUTES)
-    recent = AccessEntry.objects.filter(username=username, at__gte=since)
+    now = current_time()
+    recent = AccessEntry.objects.filter(
+        username=username, at__gte=now - 2 * timedelta(minutes=LOCK_MINUTES)
+    )
     last_success = recent.filter(kind=AccessKind.SIGNED_IN).aggregate(last=Max("id"))["last"]
     failures = recent.filter(kind=AccessKind.SIGN_IN_FAILED)
     if last_success is not None:
         failures = failures.filter(id__gt=last_success)
-    return failures.count() >= LOCK_AFTER_FAILURES
+    times = failures.order_by("at", "id").values_list("at", flat=True)
+    return locks([moment for moment in times if moment is not None], now)
 
 
 def _refuse_if_locked(username: str, address: str | None) -> bool:
@@ -110,6 +130,15 @@ def check_password_for(username: str, password: str, address: str | None = None)
     if not username.strip():
         # No name was given, so there is no name to look up, lock or log against.
         make_password(password)
+        return None
+    if "\x00" in username or len(username) > USERNAME_LENGTH:
+        # No user can have this name: the database holds neither. It is
+        # refused and logged as an unknown name, as it is written, cut to
+        # the length of the log and with the NUL made visible.
+        shown = username.replace("\x00", "\N{REPLACEMENT CHARACTER}")[:USERNAME_LENGTH]
+        make_password(password)
+        with _checking(shown):
+            _log(AccessKind.SIGN_IN_FAILED, shown, detail="Unknown User Name", address=address)
         return None
     with _checking(username):
         if _refuse_if_locked(username, address):

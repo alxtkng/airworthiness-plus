@@ -52,7 +52,7 @@ def matching_counter(
     cannot be used again.
     """
     code = "".join(submitted.split())
-    if len(code) != DIGITS or not code.isdigit():
+    if len(code) != DIGITS or not (code.isascii() and code.isdigit()):
         return None
     key = base64.b32decode(secret)
     now = counter_at(moment)

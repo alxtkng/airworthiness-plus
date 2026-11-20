@@ -108,7 +108,11 @@ def set_active(user: User, *, active: bool, by: User) -> None:
     if not active and Role.ADMINISTRATOR in user.roles and not _another_administrator(user):
         raise RefusedError("An Organisation Always Has an Active Administrator")
     user.is_active = active
-    user.save(update_fields=["is_active"])
+    if not active:
+        # The sessions end, not wait: a session made before cannot resume
+        # when the user is made active again.
+        user.session_generation += 1
+    user.save(update_fields=["is_active", "session_generation"])
 
 
 def reset_password(user: User, *, password: str, by: User, address: str | None = None) -> None:

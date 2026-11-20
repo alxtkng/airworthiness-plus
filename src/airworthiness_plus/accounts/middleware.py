@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from django.contrib.auth import SESSION_KEY
+from django.contrib.auth import SESSION_KEY, get_user
 from django.http import HttpRequest, HttpResponse
 
 from airworthiness_plus.accounts import sign_in
@@ -58,10 +58,21 @@ class OrganisationContextMiddleware:
         elif self._expired(session.get(SIGNED_IN_AT_KEY), session.get(LAST_SEEN_KEY)):
             session.flush()
             organisation = user = None
+        elif not self._resolves(request, organisation, user):
+            # The user was made inactive, or the session no longer matches
+            # them: the session ends here and is not kept for later (REQ-010).
+            session.flush()
+            organisation = user = None
         else:
             session[LAST_SEEN_KEY] = sign_in.current_time().isoformat()
         with working_for(organisation, user):
             return self.get_response(request)
+
+    @staticmethod
+    def _resolves(request: HttpRequest, organisation: uuid.UUID, user: uuid.UUID) -> bool:
+        """Return whether the session still finds its active user, in its organisation."""
+        with working_for(organisation, user):
+            return bool(get_user(request).is_authenticated)
 
     @staticmethod
     def _expired(signed_in_at: object, last_seen: object) -> bool:
