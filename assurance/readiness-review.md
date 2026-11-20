@@ -26,8 +26,8 @@ As written on 19 November 2026: The private beta slice is built and tested. Thre
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 657 tests pass, on every change, against PostgreSQL in the pipeline. Ten of them run the table script in a real browser.
-- The code merged on 19 November 2026 was reviewed that day by a reviewer that did not write it. It found 15 defects and 4 tests that could not fail; all are fixed (`assurance/independent-verification/code-review-2026-11-19.md`). The code of 18 November 2026 has not had such a review.
+- 704 tests pass (20 November 2026), on every change, against PostgreSQL in the pipeline. Ten of them run the table script in a real browser.
+- The code merged on 19 November 2026 was reviewed that day by a reviewer that did not write it. It found 15 defects and 4 tests that could not fail; all are fixed (`assurance/independent-verification/code-review-2026-11-19.md`). The code of 18 November 2026 and the test site's start-up code were reviewed the same way on 20 November 2026. It found 8 defects and 6 tests that could not fail; all are fixed (`assurance/independent-verification/code-review-2026-11-20.md`).
 
 The eleven that are not:
 

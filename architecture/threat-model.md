@@ -167,6 +167,7 @@ What the build of 19 November 2026 added to the surface, and what answers it. Ea
 | The Access Log page | TH-008, TH-020 | The Administrator only; the database shows an organisation its own entries (`tests/test_users.py`) |
 | A certificate recorded as the organisation's own from before these records | TH-009 | Dated no later than the person's last review before these records, which is never after the day the person was recorded as review staff, in the service and in the database; uses no serial; cannot be altered afterwards (`tests/test_reviews.py`) |
 | A first password shown once to the Administrator | TH-001 | Made by the system, stored only as a hash, good for 7 days, changed before any page answers (`tests/test_users.py`) |
+| The first Administrator's password, typed when an organisation is set up or kept in Render for the test site | TH-001 | A first password like any other: changed at the first sign-in, good for 7 days. Before the independent review of 20 November 2026 it never had to be changed (`tests/test_test_site.py`) |
 | The export of an organisation asked for again and again | TH-007 | 6 in an hour for each organisation, taken one at a time (`tests/test_exports.py`) |
 | Sorting and searching a table in the browser | TH-004 | The script reads and moves what the page already holds; it builds nothing from text as markup (`tests/test_browser.py`) |
 

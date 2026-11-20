@@ -11,6 +11,7 @@ ASVS 5.0 chapters 3, 6, 7, 13, 14 and 16.
 
 import logging
 import re
+import sys
 import uuid
 from datetime import date
 from typing import Any, cast
@@ -89,10 +90,12 @@ def test_no_address_answers_without_sign_in() -> None:
 
 def test_every_write_refuses_a_forged_request(sample: Sample) -> None:
     """Threat TH-003, planned test T-SEC-005. No POST is accepted without the token of the page."""
-    forged = Client(enforce_csrf_checks=True)
-    forged.force_login(
-        sample.administrator, backend="airworthiness_plus.accounts.backends.OrganisationBackend"
-    )
+    forged = signed_in(sample.administrator)
+    forged.handler.enforce_csrf_checks = True
+    # Signed in as the application sees it, so the token is what refuses the
+    # request and not the sign-in (review of 20 November 2026: the client was
+    # never signed in, so this could not fail).
+    assert get(forged, "/users/").status_code == 200
     refused = 0
     for _, path in routes():
         response = forged.post(path, {}, secure=True)
@@ -403,8 +406,23 @@ def test_a_line_of_the_server_log_has_its_time_in_coordinated_universal_time() -
     assert config["loggers"]["django"]["level"] == "WARNING"
     record = logging.LogRecord("django.request", logging.ERROR, "", 0, "Failed", None, None)
     record.created, record.msecs = 1_795_000_000.0, 0.0
-    line = UtcFormatter("%(asctime)s %(levelname)s %(name)s %(message)s").format(record)
+    formatter = UtcFormatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    line = formatter.format(record)
     assert line == "2026-11-18T11:06:40.000Z ERROR django.request Failed"
+
+    # A server error, with its traceback, and a value sent with a line break in
+    # it: each is one line (review of 20 November 2026; ASVS 16.2.4).
+    try:
+        raise ValueError("Wrong")
+    except ValueError:
+        failed = logging.LogRecord(
+            "django.request", logging.ERROR, "", 0, "Failed %s", ("/a\nFORGED",), sys.exc_info()
+        )
+    failed.created, failed.msecs = 1_795_000_000.0, 0.0
+    line = formatter.format(failed)
+    assert "\n" not in line and "\r" not in line
+    assert line.startswith("2026-11-18T11:06:40.000Z ERROR django.request Failed /a\\nFORGED")
+    assert "Traceback (most recent call last):" in line and "ValueError: Wrong" in line
 
 
 def test_today_in_these_tests_is_the_sample_day(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -11,6 +11,7 @@ from collections.abc import Sequence
 
 from django.contrib.auth.password_validation import validate_password
 
+from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.history.session import working_for
@@ -30,7 +31,11 @@ def provision_organisation(
 ) -> tuple[Organisation, User]:
     """Create the organisation and one Administrator, who can then add the others.
 
-    With no password the Administrator cannot sign in until one is set.
+    With no password the Administrator cannot sign in until one is set. A
+    password given here is a first password, as on the Users page: it is
+    changed at the first sign-in, before any page answers, and is good for
+    7 days. Whoever typed it, or can read it where it was kept, knows it
+    only until then (independent review of 20 November 2026, finding 8).
     """
     if first_user_password is not None:
         validate_password(first_user_password)
@@ -51,5 +56,7 @@ def provision_organisation(
             full_name=first_user_full_name,
             roles=[Role.ADMINISTRATOR],
             password=first_user_password,
+            password_must_change=first_user_password is not None,
+            first_password_set_on=sign_in.today() if first_user_password is not None else None,
         )
     return organisation, user
