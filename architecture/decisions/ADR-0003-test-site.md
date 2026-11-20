@@ -1,6 +1,6 @@
 # ADR-0003: A Test Site Before the Server
 
-Status: **Proposed, 20 November 2026.** Alex King accepts it by merging the pull request that carries it (Issue 96).
+Status: **Accepted, 20 November 2026.** Proposed that day in pull request 97 (Issue 96). Alex King gave the word to proceed, the pull request was merged on it, and he made the test site on Render the same day.
 
 Date: 20 November 2026
 
@@ -91,3 +91,5 @@ Option C, with the owner's work done at the start of the container.
 ## Open Before First Use
 
 1. Whether Render's free plan runs a `Dockerfile` service, routes requests to port 8000, lets the database's user create a role and comment on its database, and sets `X-Forwarded-Proto`. Each is expected from Render's documents and none could be tried from the build session. `operations/test-site.md` lists them and how each is shown.
+
+   Answered on 20 November 2026: each was shown by the first deploy. `operations/test-site.md`, First Deploy, has what was seen and what is still to be seen at the first sign-in.
