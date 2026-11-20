@@ -36,9 +36,16 @@ def days_between(start: date, end: date) -> int:
     return (end - start).days
 
 
+class BeyondCalendarError(ValueError):
+    """The date asked for is before 1 January 1 or after 31 December 9999."""
+
+
 def add_days(start: date, days: int) -> date:
     """Return the date ``days`` days after ``start``."""
-    return start + timedelta(days=days)
+    try:
+        return start + timedelta(days=days)
+    except OverflowError as error:
+        raise BeyondCalendarError(f"{days} days after {start} is not a date") from error
 
 
 def add_years(start: date, years: int) -> date:
@@ -46,6 +53,8 @@ def add_years(start: date, years: int) -> date:
 
     29 February lands on 28 February when the target year is not a leap year.
     """
+    if not date.min.year <= start.year + years <= date.max.year:
+        raise BeyondCalendarError(f"{years} years after {start} is not a date")
     try:
         return start.replace(year=start.year + years)
     except ValueError:
@@ -61,6 +70,10 @@ def add_months(start: date, months: int) -> date:
     index = start.year * 12 + (start.month - 1) + months
     year, month = divmod(index, 12)
     month += 1
+    if not date.min.year <= year <= date.max.year:
+        raise BeyondCalendarError(f"{months} months after {start} is not a date")
+    if (year, month) == (date.max.year, 12):
+        return date(year, 12, min(start.day, 31))
     first_of_next = date(year + (month == 12), month % 12 + 1, 1)
     last_day = (first_of_next - timedelta(days=1)).day
     return date(year, month, min(start.day, last_day))

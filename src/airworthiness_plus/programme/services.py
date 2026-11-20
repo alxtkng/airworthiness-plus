@@ -14,6 +14,7 @@ from airworthiness_plus.programme.models import (
     Task,
     WorkDone,
 )
+from airworthiness_rules.dates import BeyondCalendarError, add_days, add_months
 from airworthiness_rules.intervals import (
     MINIMUM_INSPECTION_PROGRAMME_INTERVAL,
     Interval,
@@ -94,6 +95,21 @@ def _check_minimum_inspection_interval(category: str, interval: Interval) -> Non
         raise RefusedError("ML.A.302(d)(1)(a): The Inspection Is at Least Every 100 Hours")
 
 
+def check_calendar(*intervals: Interval | None) -> None:
+    """Refuse a calendar interval so long that no date can be given for it."""
+    today = aircraft_services.today()
+    for interval in intervals:
+        if interval is None:
+            continue
+        try:
+            if interval.months is not None:
+                add_months(today, interval.months)
+            if interval.days is not None:
+                add_days(today, interval.days)
+        except BeyondCalendarError as error:
+            raise RefusedError("The Interval Runs Past 31 December 9999") from error
+
+
 def add_task(
     programme: Programme,
     *,
@@ -114,6 +130,7 @@ def add_task(
     """
     if kind is TaskKind.AIRWORTHINESS_DIRECTIVE:
         raise RefusedError("An Airworthiness Directive Is Recorded Under Airworthiness Directives")
+    check_calendar(interval, first)
     if counter.aircraft_id != programme.aircraft_id:
         raise RefusedError("The Counter Belongs to Another Aircraft")
     if kind is TaskKind.MINIMUM_INSPECTION_PROGRAMME:

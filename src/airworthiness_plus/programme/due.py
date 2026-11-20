@@ -21,7 +21,7 @@ from airworthiness_plus.programme.models import (
     Task,
     WorkDone,
 )
-from airworthiness_rules.dates import days_between
+from airworthiness_rules.dates import BeyondCalendarError, days_between
 from airworthiness_rules.intervals import (
     MINIMUM_INSPECTION_PROGRAMME_TOLERANCE,
     MINIMUM_INSPECTION_PROGRAMME_TOLERANCE_SAILPLANE,
@@ -289,6 +289,8 @@ def due_line(
             kind=task.task_kind if tolerance is not None else None,
             tolerance=tolerance,
         )
+    except BeyondCalendarError:
+        return nothing("A Limit Falls After 31 December 9999 and Cannot Be Calculated")
     except ValueError:
         return nothing(f"Hours Entered for {task.counter} Are Older Than This Task's Last Record")
 

@@ -1,11 +1,15 @@
 """Forms for aircraft records. Labels follow design-system/Writing.md."""
 
 import uuid
+from typing import Any
 
 from django import forms
+from django.core.exceptions import ValidationError
 
 from airworthiness_plus.aircraft.models import Counter, CounterKind, Regime, UtilisationEntry
+from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.forms import Form
+from airworthiness_rules.intervals import Unit
 
 
 class AddAircraftForm(Form):
@@ -70,9 +74,28 @@ class UtilisationForm(Form):
         super().__init__(*args, **kwargs)
         counters = Counter.objects.filter(aircraft_id=aircraft_id)
         self.fields["counter"].queryset = counters  # type: ignore[attr-defined]
-        self.fields["supersedes"].queryset = UtilisationEntry.objects.filter(  # type: ignore[attr-defined]
+        supersedes = self.fields["supersedes"]
+        supersedes.queryset = UtilisationEntry.objects.filter(  # type: ignore[attr-defined]
             counter__in=counters, superseded_by__isnull=True
-        )
+        ).select_related("counter")
+        supersedes.label_from_instance = _entry_label  # type: ignore[attr-defined]
+
+    def clean(self) -> dict[str, Any]:
+        """Refuse a correction of an entry of another counter (REQ-025)."""
+        data = super().clean() or {}
+        counter, supersedes = data.get("counter"), data.get("supersedes")
+        if counter is not None and supersedes is not None and supersedes.counter_id != counter.id:
+            raise ValidationError("A Correction Is of an Entry of the Same Counter")
+        return data
+
+
+def _entry_label(entry: UtilisationEntry) -> str:
+    """Name an entry as a person reads it: the counter, the date, the totals."""
+    return (
+        f"{entry.counter}, {formatting.long_date(entry.dated)}, "
+        f"{formatting.amount(Unit.HOURS, entry.hours)}, "
+        f"{formatting.amount(Unit.CYCLES, entry.cycles)}"
+    )
 
 
 class UnserviceableForm(Form):

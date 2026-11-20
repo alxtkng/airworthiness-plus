@@ -92,6 +92,7 @@ def decide(
             raise RefusedError("Record the Maintenance Programme of This Aircraft First")
         if action.counter.aircraft_id != aircraft.id:
             raise RefusedError("The Counter Belongs to Another Aircraft")
+        programme_services.check_calendar(action.first, action.repeat)
         repeat = action.repeat or action.first
         task = Task.objects.create(
             organisation_id=aircraft.organisation_id,
