@@ -35,7 +35,7 @@ What the private beta taught, and this build keeps:
 
 ## Part 3. Decisions for Alex
 
-Each one below changes what gets built. A recommendation is given for each. Phase 0 needs decisions 1 to 3 before it starts. The others are needed only by the phase named.
+Each one below changes what gets built. A recommendation is given for each. Decided 24 November 2026: Alex King asked for the plan to be carried out in full, and every recommendation is recorded as ours in `design-system/Decisions.md`, Canvas Build. Phase 0 needs decisions 1 to 3 before it starts. The others are needed only by the phase named.
 
 | Number | Decision | Recommendation | Needed By |
 |---|---|---|---|
@@ -220,7 +220,7 @@ The test site grows with each phase, so a demo is possible at every stage. By th
 
 ## Part 7. Start
 
-1. Bring Alex decisions 1 to 3 and wait for his answers.
+1. Decisions 1 to 10 are recorded (Part 3).
 2. Build Phase 0.
 3. Build Phase 1, and keep going in order.
 
