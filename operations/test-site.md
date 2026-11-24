@@ -76,6 +76,16 @@ Five failed sign-ins lock a user name for 15 minutes. The address is public, so 
 - A change to `render.yaml` is applied by Render when it is merged.
 - A migration is applied at the next start, by step 1 above.
 
+## What the Canvas Build Changes on a Database Already Made
+
+Added 24 November 2026. The database live on that day was seeded before the canvas build began. Each migration adds what is missing and changes nothing that is there.
+
+| What | On the Database Already Made | After the Next Remake (Issue 100) |
+|---|---|---|
+| Approvals held | The sample organisation is given the record of its Part-CAO approval | The same |
+| People | Each of the 5 sign-ins is given a person record, named as the sign-in is | The 14 people of `SampleData.md` and the former review staff member |
+| Customers | One customer for each different text that was typed as Owned By: 5 customers for the 7 aircraft. The three aircraft typed as Pilot-Owner share one customer, named Pilot-Owner, until each is given its own on the aircraft's page | The 7 customers of `SampleData.md`, one for each aircraft |
+
 ## When the Database Is Deleted
 
 Render deletes a free database 30 days after it is made, after warning by email. The sample is lost; nothing else was ever there.

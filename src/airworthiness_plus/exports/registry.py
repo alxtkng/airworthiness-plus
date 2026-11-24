@@ -14,6 +14,7 @@ from django.db.models import Q
 from airworthiness_plus.acceptance.models import Problem, ProblemNote
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft, Counter, UtilisationEntry
+from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
@@ -66,6 +67,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Approval, None),
     Exported(User, None),
     Exported(Person, None),
+    # The owner is part of the aircraft's record (REQ-208).
+    Exported(Customer, lambda aircraft: Q(pk=aircraft.customer_id)),
     Exported(Aircraft, lambda aircraft: Q(pk=aircraft.pk)),
     Exported(Counter, _by("aircraft")),
     Exported(UtilisationEntry, _by("counter__aircraft")),

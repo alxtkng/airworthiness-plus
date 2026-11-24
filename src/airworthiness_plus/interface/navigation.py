@@ -103,6 +103,7 @@ BOARD: tuple[Group, ...] = (
                         "enter_utilisation",
                         "make_unserviceable",
                         "make_serviceable",
+                        "change_owner",
                         "add_counter",
                         "records_received",
                         "programme",
@@ -306,7 +307,11 @@ BOARD: tuple[Group, ...] = (
         (
             Item("Marketplace"),
             Item("Enquiries and Quotes", tabs=_tabs("Enquiries", "Quotes")),
-            Item("Customers"),
+            Item(
+                "Customers",
+                "customers",
+                inside=frozenset({"add_customer", "customer", "change_customer"}),
+            ),
             Item("Invoices"),
         ),
     ),

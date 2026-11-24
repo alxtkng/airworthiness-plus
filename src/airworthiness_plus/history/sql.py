@@ -330,6 +330,23 @@ ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;
     return forward, reverse
 
 
+def same_organisation(table: str, column: str, parent: str) -> tuple[str, str]:
+    """Return the SQL that holds one column to its own organisation, and its reverse.
+
+    For a column added to a table after the table was put under the rules:
+    ``protect_record_table`` does this for the columns a table starts with.
+    """
+    for name in (table, column, parent):
+        _identifier(name)
+    return (
+        f"""
+CREATE TRIGGER same_organisation_{column} BEFORE INSERT OR UPDATE ON {table}
+    FOR EACH ROW EXECUTE FUNCTION history_same_organisation('{parent}', '{column}');
+""",
+        f"DROP TRIGGER same_organisation_{column} ON {table};",
+    )
+
+
 def for_each_organisation(statements: str) -> str:
     """Return SQL that runs ``statements`` once for each organisation, in a migration.
 

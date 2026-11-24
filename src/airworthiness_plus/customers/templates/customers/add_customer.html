@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Add a Customer{% endblock %}
+{% block content %}
+<h1>Add a Customer</h1>
+<form method="post">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Add Customer</button></p>
+</form>
+{% endblock %}

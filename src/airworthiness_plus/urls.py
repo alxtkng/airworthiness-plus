@@ -6,6 +6,7 @@ from airworthiness_plus.acceptance import views as acceptance
 from airworthiness_plus.accounts import user_views as users
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
+from airworthiness_plus.customers import views as customers
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
@@ -35,6 +36,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
         aircraft.make_serviceable,
         name="make_serviceable",
     ),
+    path("aircraft/<uuid:aircraft_id>/owner/", aircraft.change_owner, name="change_owner"),
     path("aircraft/<uuid:aircraft_id>/counters/", aircraft.add_counter, name="add_counter"),
     path(
         "aircraft/<uuid:aircraft_id>/records-received/",
@@ -137,6 +139,14 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "extensions/<uuid:extension_id>/copy-sent/",
         reviews.extension_copy_sent,
         name="extension_copy_sent",
+    ),
+    path("customers/", customers.customers_page, name="customers"),
+    path("customers/add/", customers.add_customer, name="add_customer"),
+    path("customers/<uuid:customer_id>/", customers.customer_page, name="customer"),
+    path(
+        "customers/<uuid:customer_id>/change/",
+        customers.change_customer,
+        name="change_customer",
     ),
     path("staff/", people.staff_page, name="staff"),
     path("staff/add/", people.add_person, name="add_person"),

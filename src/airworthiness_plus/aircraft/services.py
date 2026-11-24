@@ -13,6 +13,8 @@ from airworthiness_plus.aircraft.models import (
     Status,
     UtilisationEntry,
 )
+from airworthiness_plus.customers import services as customer_services
+from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_rules.dates import uk_today, utc_now
 from airworthiness_rules.intervals import Reading
@@ -38,7 +40,8 @@ def add_aircraft(
     organisation: Organisation,
     registration: str,
     type_rating: str,
-    owner: str,
+    owner: str = "",
+    customer: Customer | None = None,
     regime: Regime = Regime.PART_21,
     serial_number: str = "",
     manufacturer: str = "",
@@ -52,7 +55,14 @@ def add_aircraft(
     With ``records_expected`` the aircraft is a Transfer In and stays out
     of the Fleet until every record is received (REQ-027). ``airframe`` is
     the first entry of airframe hours and cycles, if it is known.
+
+    The owner is a customer (REQ-208): either ``customer``, or the customer
+    named ``owner``, who is made if nobody of that name is recorded.
     """
+    if (customer is None) == (not owner.strip()):
+        raise customer_services.RefusedError("Choose a Customer or Name a New One")
+    if customer is None:
+        customer = customer_services.named(organisation, owner)
     transfer = records_expected is not None
     aircraft = Aircraft.objects.create(
         organisation=organisation,
@@ -61,7 +71,7 @@ def add_aircraft(
         serial_number=serial_number,
         manufacturer=manufacturer,
         designation=designation,
-        owner=owner,
+        customer=customer,
         regime=regime,
         stage=Stage.TRANSFER_IN if transfer else Stage.FLEET,
         records_expected=records_expected,
@@ -135,6 +145,12 @@ def record_details(
     aircraft.manufacturer = manufacturer.strip()
     aircraft.designation = designation.strip()
     aircraft.save(update_fields=["serial_number", "manufacturer", "designation"])
+
+
+def change_owner(aircraft: Aircraft, customer: Customer) -> None:
+    """Record another customer as the owner. The history keeps who it was (REQ-208)."""
+    aircraft.customer = customer
+    aircraft.save(update_fields=["customer"])
 
 
 def make_unserviceable(aircraft: Aircraft, reason: str, since: date) -> None:

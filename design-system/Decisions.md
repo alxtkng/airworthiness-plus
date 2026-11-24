@@ -44,6 +44,12 @@ Phase 0, Foundations, decided as ours on 24 November 2026 while building (REQ-20
 - **Who adds or changes a person:** the Administrator, who already manages users (role matrix below). A person with an active sign-in is not recorded as having left: the sign-in is made inactive first
 - **How long a former person's record is kept** (REQ-206). 3 years where the organisation holds Part-CAMO or Part-145 (CAMO.A.220 and 145.A.55, Personnel Records); otherwise 2 years for airworthiness review staff (CAO.A.045(e)). Ours: the 3 years are applied to every person of such an organisation; the longer period is shown where two apply; a person who left on 29 February is kept until 1 March. Part-CAO gives no period for its other staff, and the page says so. The system deletes nothing either way
 - **The sample's people.** The 13 people of the Staff board and the former review staff member are person records. The Read Only sign-in of the sample is a fourteenth person, not in `SampleData.md`'s table. The L2 certifying staff member is written [Certifying Staff Name] and the former review staff member [Former Review Name]
+- **A customer record** holds the name, the kind of owner, the members of a syndicate and the day they became a customer (REQ-207). The kinds are Pilot-Owner, Syndicate and Flying Club, as Writing.md gives owners, and Operator, because decision 3 names operators. A customer made from text typed before has no kind. Contract, open work and balance are not on it yet: they come with Phases 1 and 8
+- **Owned By shows the kind of owner,** as the Fleet table of `SampleData.md` and the Fleet board do (Flying Club, Syndicate of 6), and the customer's name where no kind is recorded. The aircraft page shows the customer by name beside it
+- **An owner given by name** (the Add an Aircraft page, an import): the customer of exactly that name is used if there is one, one is made if there is none, and the name is refused if two customers share it. The Add an Aircraft page also lets a customer be chosen
+- **Existing aircraft.** The migration makes one customer for each different text typed in an organisation, so two aircraft with the same text share a customer. Where the text was the kind of owner, as in the sample (Pilot-Owner on three aircraft), they share one customer named Pilot-Owner until each is given its own. The aircraft's history keeps the text
+- **Who adds or changes a customer:** the Continuing Airworthiness Manager and Planning and Records, as for aircraft. The owner of an aircraft is changed under Add or Change Aircraft
+- **The sample's customers** are named apart, so that they can be told from one another: [Flying Club Name], [Syndicate Name G-BXYZ], [Owner Name G-ABCD] and so on. The board writes [Owner Name] for four of them. Customer Since is the first day of the month the board gives. G-HKLM's Owned By in `SampleData.md` is corrected from [Owner Name] to Pilot-Owner, as the Customers board has it
 
 Not decided here, and so not built until Alex King says: the per-flight technical log (Issue 7), and choosing the type from the SRG1782 list, which needs the Civil Aviation Authority's list as data (REQ-021).
 
@@ -224,6 +230,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Change Organisation Record | Yes | No | No | No | No |
 | Add or Change Person | Yes | No | No | No | No |
 | Add or Change Aircraft | No | Yes | No | Yes | No |
+| Add or Change Customer | No | Yes | No | Yes | No |
 | Enter Utilisation | No | Yes | No | Yes | No |
 | Change Maintenance Programme | No | Yes | No | No | No |
 | Record Maintenance Programme Review | No | Yes | Yes | No | No |
