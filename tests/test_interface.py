@@ -187,14 +187,14 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
     assert '<li><a href="/" aria-current="location">Aircraft</a></li>' in crumb
     tabs = body.split('<nav class="tabs" aria-label="Views">', 1)[1].split("</nav>", 1)[0]
     assert re.findall(r">([^<]+)</a>", tabs) == [
-        "Fleet",
+        "All Aircraft",
+        "Airworthiness Reviews",
         "Transfers",
         "Airworthiness Directives",
-        "Airworthiness Review",
     ]
-    assert '<a href="/reviews/" aria-current="page">Airworthiness Review</a>' in tabs
+    assert '<a href="/reviews/" aria-current="page">Airworthiness Reviews</a>' in tabs
     # A section page keeps its heading for screen readers and does not show it.
-    assert '<h1 class="visually-hidden">Airworthiness Review</h1>' in body
+    assert '<h1 class="visually-hidden">Airworthiness Reviews</h1>' in body
     # The Administrator also has Users; nobody else is shown it.
     assert ">Users</a>" not in body
     assert ">Users</a>" in page(signed_in(sample.administrator), "/organisation/")

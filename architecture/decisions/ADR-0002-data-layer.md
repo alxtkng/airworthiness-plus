@@ -48,6 +48,15 @@ Added 18 November 2026.
 - The log decides whether a user name is locked and whether a code has been used, so there is no counter to reset and signing in does not change the user record.
 - The session table is Django's. Sessions are made, renewed and removed, so the application's role may delete from that one table. A session holds the user and the organisation it was made for; the user is then read under row-level security, so a session cannot resolve to a user of another organisation.
 
+### Migrations That Change Existing Records
+
+Added 24 November 2026.
+
+- The owner of the tables is under row-level security too, so a migration cannot read or change every organisation's rows in one statement.
+- A migration that must give existing records something new uses `history.sql.for_each_organisation`. It lifts the forcing of row-level security from the organisation table alone, reads the list of organisations, and puts the forcing back, all inside the migration's transaction and under the lock that changing a table takes.
+- Each organisation's rows are then read and written with that organisation set, exactly as the application sets it. The history trigger records each change against the database role, as it does when an organisation is set up.
+- `tests/test_approvals.py` runs such a statement and checks that the forcing is back and no organisation is left set.
+
 ### Keeping It That Way
 
 `tests/test_data_layer.py` reads the database catalogue and fails the build if any table lacks row-level security, the history trigger or the refusal of deletion, or if the application's role holds a privilege it should not. A new record table is put under the rules by one call, `protect_record_table`, in its migration.

@@ -15,7 +15,7 @@
 <p class="organisation">{{ request.user.organisation.name }}</p>
 <nav aria-label="Sections">
 {% for group, items in sidebar %}
-<h2>{{ group }}</h2>
+{% if group %}<h2>{{ group }}</h2>{% endif %}
 <ul>
 {% for item, current in items %}<li><a href="{% url item.address %}"{% if current %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
 {% endfor %}</ul>
@@ -36,7 +36,7 @@
 <header class="topbar{% if section_tabs %} with-tabs{% endif %}">
 <nav class="breadcrumb" aria-label="Location">
 <ol>
-<li>{{ place.0.label }}</li>
+{% if place.0.label %}<li>{{ place.0.label }}</li>{% endif %}
 <li><a href="{% url place.1.address %}" aria-current="location">{{ place.1.label }}</a></li>
 </ol>
 </nav>

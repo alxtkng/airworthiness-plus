@@ -14,6 +14,7 @@ from airworthiness_plus.acceptance.models import NoteKind, Problem
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
+from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import Organisation
 
 
@@ -83,6 +84,7 @@ def _organisation_page(request: HttpRequest, message: str = "") -> HttpResponse:
         "acceptance/organisation.html",
         {
             "organisation": organisation,
+            "approvals_held": approvals.held(organisation),
             "run": services.parallel_run(organisation),
             "approval_form": ApprovalForm(),
             "run_form": ParallelRunForm(),

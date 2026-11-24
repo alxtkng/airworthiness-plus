@@ -6,8 +6,9 @@
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <dl>
 <dt>Approval</dt><dd>{{ organisation.approval_type }}, {{ organisation.approval_reference }}</dd>
+<dt>Approvals Held</dt><dd>{% for approval in approvals_held %}{{ approval.approval }}, {{ approval.reference }}{% if not forloop.last %}; {% endif %}{% endfor %}</dd>
 <dt>Address</dt><dd>{{ organisation.address }}</dd>
-<dt>Privileges</dt><dd>{{ organisation.privileges|join:", " }}</dd>
+<dt>Privileges</dt><dd>{% if organisation.privileges %}{{ organisation.privileges|join:", " }}{% else %}Not Recorded{% endif %}</dd>
 <dt>Scope of Work</dt><dd>{{ organisation.scope_of_work }}</dd>
 </dl>
 <h2>Approval to Keep Records in This System</h2>

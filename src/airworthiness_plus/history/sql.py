@@ -330,6 +330,43 @@ ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;
     return forward, reverse
 
 
+def for_each_organisation(statements: str) -> str:
+    """Return SQL that runs ``statements`` once for each organisation, in a migration.
+
+    The owner of the tables is under row-level security like anyone else
+    (ADR-0002): with no organisation set it sees no rows, so a migration
+    that must give existing records something new cannot do it in one
+    statement. This lifts the forcing from the organisation table alone,
+    for the length of the list of organisations, inside the migration's own
+    transaction and under the lock that changing a table takes; nothing
+    else can read through it. Each organisation's rows are then read and
+    written with that organisation set, as the application does, and the
+    history records the work against the database role (REQ-004, REQ-130).
+
+    ``statements`` is PL/pgSQL, fixed text written in a migration, and may
+    use the variable ``organisation``. Deferred checks are run before the
+    forcing goes back, so that a later step of the migration can change
+    the tables.
+    """
+    return f"""
+ALTER TABLE organisations_organisation NO FORCE ROW LEVEL SECURITY;
+DO $$
+DECLARE
+    organisation uuid;
+BEGIN
+    FOR organisation IN SELECT id FROM organisations_organisation ORDER BY id LOOP
+        PERFORM set_config('{ORGANISATION_SETTING}', organisation::text, true);
+{statements}
+    END LOOP;
+    PERFORM set_config('{ORGANISATION_SETTING}', '', true);
+END
+$$;
+SET CONSTRAINTS ALL IMMEDIATE;
+SET CONSTRAINTS ALL DEFERRED;
+ALTER TABLE organisations_organisation FORCE ROW LEVEL SECURITY;
+"""
+
+
 # Sign-in (REQ-008, REQ-009). While a user name is being checked, before any
 # organisation is known, the application may read the one user with that
 # name and the access log entries for that name, and nothing else.

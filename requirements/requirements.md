@@ -1,6 +1,6 @@
 # Requirements
 
-Scope: the private beta slice, the Part-CAO core loop for Part-ML aircraft (`prompts/private-beta.md`, Part 5).
+Scope: the private beta slice, the Part-CAO core loop for Part-ML aircraft (`prompts/private-beta.md`, Part 5), and from REQ-200 the rest of the design canvas, one phase at a time (`prompts/canvas-build.md`). Each phase takes the next block of 20 identifiers.
 
 Each requirement has an identifier, the requirement in plain words, its source, its priority and how it is verified. Identifiers are never reused. A withdrawn requirement stays in this file, marked Withdrawn.
 
@@ -170,6 +170,16 @@ Verification: Test (automated), Golden (a fixed worked case from `design-system/
 | REQ-194 | Tables are one line per row, expand on click, and never wrap cell text | Decisions.md, Interface; Components.md | Must | Inspection; Test in a Browser |
 | REQ-195 | Forms are named as Civil Aviation Authority forms: CAA Form 15c, CAA Form 3-CAO, CAA Form 1 | Decisions.md, Product | Must | Automated check that no interface string contains "EASA Form" |
 | REQ-196 | The interface uses the tokens and components in `design-system/` | design-system/README.md | Must | Inspection |
+
+## 11. Canvas Build, Phase 0: Foundations
+
+What many later boards need (`prompts/canvas-build.md`, Part 5). Decisions 1 to 5 are those of `design-system/Decisions.md`, Canvas Build, decided 24 November 2026. References marked "confirmed 24 November 2026" were read in the UK text in the Civil Aviation Authority Regulatory Library on that date.
+
+| Identifier | Requirement | Source | Priority | Verification |
+|---|---|---|---|---|
+| REQ-200 | The system holds a record of each approval an organisation holds: Part-CAO, Part-CAMO or Part-145, each once, with its reference. An organisation is set up with one and may hold the others. An approval that ends is kept, with the day it ended, and may be recorded as held again. The Part-CAO privileges of REQ-001 are asked only of an organisation set up as a Part-CAO | Decisions.md, Canvas Build, decision 1 (D, decided 24 November 2026); Settings board, Approvals Held; CAO.A.095 (R, confirmed 18 November 2026). The privileges of a Part-CAMO (CAMO.A.125) and of a Part-145 (145.A.75) were read on 24 November 2026 and are not yet recorded by the system | Must | Test |
+| REQ-201 | The sidebar is the one the Sidebar board gives: its groups and items, in its order. An item is shown when its page is built, the organisation holds an approval the item is for, and the user's roles permit it. A group with no item left is not shown. Hazard Log and Safety Reports are for Part-CAO as well as Part-CAMO and Part-145 | Sidebar board (`canvas/Sidebar.dc.html`); Decisions.md, Navigation, and Canvas Build, decision 5 (D) | Must | Test: the board written out by hand against the code; each set of approvals worked by hand |
+| REQ-202 | The section tabs are those the Tabs board gives, in its order; a tab is shown when its view is built, and a section with one view shows no tabs. The top bar is the breadcrumb, ending at the section. The Dashboard, Settings and Help stand outside the groups, and their breadcrumb is their own name alone | Tabs and TopBar boards; Components.md, Top Bar and Section Tabs (D) | Must | Test |
 
 ## Open Points
 

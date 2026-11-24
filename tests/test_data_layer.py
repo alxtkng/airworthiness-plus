@@ -455,7 +455,8 @@ def test_setting_up_an_organisation_is_recorded_against_the_database_role(two: T
 def test_the_application_cannot_change_or_remove_history(two: Two) -> None:
     """REQ-131, threat TH-021, planned test T-SEC-014."""
     with working_for(two.ours.id, two.lucy.id):
-        assert one("SELECT count(*) FROM history_event") == 2
+        # The organisation, the approval it holds and its first user.
+        assert one("SELECT count(*) FROM history_event") == 3
         with refused("permission denied"):
             run("UPDATE history_event SET actor_name = 'Someone Else'")
         with refused("permission denied"):
@@ -482,7 +483,7 @@ def test_the_owner_of_the_tables_cannot_change_or_remove_history_either(two: Two
     """REQ-131, threats TH-021, TH-025, planned test T-SEC-014. The trigger
     refuses whoever asks, including a superuser."""
     with as_owner():
-        assert one("SELECT count(*) FROM history_event") == 4
+        assert one("SELECT count(*) FROM history_event") == 6
         with refused("never changed in place or deleted"):
             run("UPDATE history_event SET actor_name = 'Someone Else'")
         with refused("never changed in place or deleted"):
@@ -498,7 +499,7 @@ def test_the_owner_of_the_tables_cannot_change_or_remove_history_either(two: Two
         run("SET CONSTRAINTS ALL IMMEDIATE")
         with refused("never changed in place or deleted"):
             run("TRUNCATE history_event CASCADE")
-        assert one("SELECT count(*) FROM history_event") == 4
+        assert one("SELECT count(*) FROM history_event") == 6
 
 
 def test_a_record_is_never_deleted_by_anyone(two: Two) -> None:
@@ -554,7 +555,8 @@ def test_the_chain_holds_and_the_database_and_the_check_agree(two: Two) -> None:
         User.objects.filter(pk=chris.pk).update(full_name="Christopher Moore")
         User.objects.filter(pk=chris.pk).update(full_name="Chris Moore")
     entries = everything()
-    assert len(entries) == 7
+    # Two organisations, each with its approval and first user; Chris Moore, changed twice.
+    assert len(entries) == 9
     assert chain.problems(entries) == []
     assert all(len(entry.hash) == 64 for entry in entries)
     with as_owner():

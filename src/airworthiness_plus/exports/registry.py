@@ -17,7 +17,7 @@ from airworthiness_plus.aircraft.models import Aircraft, Counter, UtilisationEnt
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
-from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.organisations.models import Approval, Organisation
 from airworthiness_plus.programme.models import Programme, Task, WorkDone
 from airworthiness_plus.reviews.models import (
     Certificate,
@@ -62,6 +62,7 @@ def _type_rating(lookup: str) -> Callable[[Aircraft], Q]:
 
 REGISTRY: tuple[Exported, ...] = (
     Exported(Organisation, None),
+    Exported(Approval, None),
     Exported(User, None),
     Exported(Aircraft, lambda aircraft: Q(pk=aircraft.pk)),
     Exported(Counter, _by("aircraft")),

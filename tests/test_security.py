@@ -275,7 +275,12 @@ def test_hostile_text_is_stored_and_shown_as_text(sample: Sample) -> None:
         assert "&lt;script&gt;alert(1)&lt;/script&gt;" in body
     log = get(planner, "/problem-log/").content.decode()
     assert "{{ 7*7 }}{% debug %}" in log
-    assert "49" not in re.sub(r"[0-9a-f-]{36}", "", log)
+    # Identifiers and forgery tokens are random, and are not what the page says.
+    # A token holds 49 by chance about once in 60 runs, and one failed the
+    # pipeline on 24 November 2026.
+    said = re.sub(r'name="csrfmiddlewaretoken" value="[^"]*"', "", log)
+    assert said != log
+    assert "49" not in re.sub(r"[0-9a-f-]{36}", "", said)
     # A search address with markup in it is not found, and is not echoed.
     echoed = get(planner, "/aircraft/%3Cscript%3Ealert(1)%3C/script%3E/")
     assert echoed.status_code == 404

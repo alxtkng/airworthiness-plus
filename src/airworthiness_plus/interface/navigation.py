@@ -5,33 +5,57 @@ is global navigation, one item for each section. The breadcrumb says where
 the page is and ends at the section. The tabs are the views of one section.
 Every address of the application belongs to exactly one item;
 ``tests/test_interface.py`` fails if one does not.
+
+``BOARD`` is the whole sidebar as the Sidebar board of the canvas gives it,
+with the approvals each item is shown for (REQ-201) and the tabs of the
+Tabs board (REQ-202). An item or a tab has an address once its page is
+built; until then it is recorded here and not shown. ``GROUPS`` is what is
+built. ``tests/test_navigation.py`` holds the board written out by hand.
 """
 
-from dataclasses import dataclass, field
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass, field, replace
 
 from django.http import HttpRequest
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Action
+from airworthiness_plus.organisations import approvals
+from airworthiness_plus.organisations.models import ApprovalType
+
+CAO, CAMO, P145 = ApprovalType.PART_CAO, ApprovalType.PART_CAMO, ApprovalType.PART_145
+# Every approval of this build. The Owner of the board is not an approval: an
+# organisation here always holds one, so the Owner's sidebar is not built.
+EVERY: frozenset[str] = frozenset({str(CAO), str(CAMO), str(P145)})
+# The approvals that carry out maintenance. A Part-CAMO manages and does not.
+MAINTAINS: frozenset[str] = frozenset({str(CAO), str(P145)})
 
 
 @dataclass(frozen=True)
 class Tab:
-    """One view of a section."""
+    """One view of a section. ``ours`` marks a tab that is not on the Tabs board."""
 
     label: str
-    address: str
+    address: str | None = None
+    ours: bool = False
 
 
 @dataclass(frozen=True)
 class Item:
-    """One item of the sidebar: a section, its first page and every address inside it."""
+    """One item of the sidebar: a section, its first page and every address inside it.
+
+    ``shown_for`` is the approvals the item is for: it is shown when the
+    organisation holds any of them. ``ours`` marks an item that is not on
+    the Sidebar board. With no address the page is not built yet.
+    """
 
     label: str
-    address: str
+    address: str | None = None
+    shown_for: frozenset[str] = EVERY
     action: Action = Action.VIEW_RECORDS
     tabs: tuple[Tab, ...] = ()
     inside: frozenset[str] = field(default_factory=frozenset)
+    ours: bool = False
 
     def holds(self, address: str) -> bool:
         """Return whether the page at ``address`` belongs to this section."""
@@ -41,13 +65,22 @@ class Item:
 
 @dataclass(frozen=True)
 class Group:
-    """A group of the sidebar, named as Regulation 1321/2014 names things."""
+    """A group of the sidebar, named as Regulation 1321/2014 names things.
+
+    The Dashboard at the head, and Settings and Help at the foot, stand in
+    groups with no name.
+    """
 
     label: str
     items: tuple[Item, ...]
 
 
-GROUPS: tuple[Group, ...] = (
+def _tabs(*labels: str) -> tuple[Tab, ...]:
+    return tuple(Tab(label) for label in labels)
+
+
+BOARD: tuple[Group, ...] = (
+    Group("", (Item("Dashboard"),)),
     Group(
         "Continuing Airworthiness",
         (
@@ -55,10 +88,12 @@ GROUPS: tuple[Group, ...] = (
                 "Aircraft",
                 "home",
                 tabs=(
-                    Tab("Fleet", "home"),
+                    Tab("All Aircraft", "home"),
+                    Tab("Airworthiness Reviews", "review_schedule"),
                     Tab("Transfers", "transfers"),
-                    Tab("Airworthiness Directives", "directives"),
-                    Tab("Airworthiness Review", "review_schedule"),
+                    # On the board this is a view of Aircraft Configuration. It stays
+                    # here until that section is built.
+                    Tab("Airworthiness Directives", "directives", ours=True),
                 ),
                 inside=frozenset(
                     {
@@ -100,21 +135,94 @@ GROUPS: tuple[Group, ...] = (
                     }
                 ),
             ),
+            Item("Defects", tabs=_tabs("Open and Deferred", "Repeat Defects")),
+            Item("Maintenance Programmes"),
+            Item(
+                "Aircraft Configuration",
+                tabs=_tabs(
+                    "Components and Life Limits",
+                    "Airworthiness Directives",
+                    "Modifications and Repairs",
+                    "Weight and Balance",
+                ),
+            ),
+            Item("Release to Service", shown_for=MAINTAINS),
+            Item("Contracts"),
+        ),
+    ),
+    Group(
+        "Management System",
+        (
+            # The board shows these two to Part-CAMO and Part-145. Decisions.md, Canvas
+            # Build, decision 5, shows them to Part-CAO as well.
+            Item("Hazard Log"),
+            Item("Safety Reports"),
+            Item("Occurrence Reports"),
+            Item("Compliance Monitoring"),
+            Item("Actions"),
+        ),
+    ),
+    Group(
+        "Planning",
+        (
+            Item("Work Packages", shown_for=MAINTAINS),
+            Item(
+                "Manhours and Capacity",
+                shown_for=MAINTAINS,
+                tabs=_tabs("Manhour Plan", "Load and Capacity", "Staff Roster"),
+            ),
+        ),
+    ),
+    Group(
+        "Logistics",
+        (
+            Item("Goods In", shown_for=MAINTAINS, tabs=_tabs("Receiving Inspection")),
+            Item("Stores", shown_for=MAINTAINS, tabs=_tabs("Stock", "Quarantine and Scrap")),
+            Item(
+                "Tools and Equipment",
+                shown_for=MAINTAINS,
+                tabs=_tabs(
+                    "Register",
+                    "Service Providers",
+                    "Alternative Tooling",
+                    "Tooling Need Evaluations",
+                ),
+            ),
+            Item("Suppliers", shown_for=MAINTAINS),
         ),
     ),
     Group(
         "People",
         (
+            Item("Staff", tabs=_tabs("All Staff", "Organisation Chart")),
             Item(
                 "Authorisations",
                 "review_staff",
+                tabs=(Tab("Authorisations", "review_staff"), Tab("Recency")),
                 inside=frozenset({"add_review_staff", "update_involvement", "record_restoration"}),
             ),
         ),
     ),
     Group(
+        "Training",
+        (
+            Item("Recurrent Training"),
+            Item(
+                "Aircraft Maintenance Licence",
+                tabs=_tabs(
+                    "Basic Examinations",
+                    "Experience Logbook",
+                    "Type Training",
+                    "On the Job Training",
+                ),
+            ),
+            Item("Competency Assessments"),
+        ),
+    ),
+    Group(
         "Documentation",
         (
+            Item("Manuals and Procedures"),
             Item(
                 "Maintenance Data",
                 "maintenance_data",
@@ -129,6 +237,9 @@ GROUPS: tuple[Group, ...] = (
                     }
                 ),
             ),
+            Item("Revisions"),
+            Item("Required Reading"),
+            Item("Notices"),
         ),
     ),
     Group(
@@ -139,13 +250,17 @@ GROUPS: tuple[Group, ...] = (
                 "organisation",
                 inside=frozenset({"record_records_approval", "record_parallel_run"}),
             ),
+            Item("Changes"),
+            Item("Oversight"),
+            # Records and Users are ours: the acceptance records of CAP 562 C-90
+            # and the accounts of REQ-005 (Decisions.md, Interface).
             Item(
                 "Records",
                 "imports",
                 tabs=(
-                    Tab("Import", "imports"),
-                    Tab("Records Export", "records_export"),
-                    Tab("Problem Log", "problem_log"),
+                    Tab("Import", "imports", ours=True),
+                    Tab("Records Export", "records_export", ours=True),
+                    Tab("Problem Log", "problem_log", ours=True),
                 ),
                 inside=frozenset(
                     {
@@ -157,12 +272,16 @@ GROUPS: tuple[Group, ...] = (
                         "add_problem_note",
                     }
                 ),
+                ours=True,
             ),
             Item(
                 "Users",
                 "users",
                 action=Action.MANAGE_USERS_AND_ROLES,
-                tabs=(Tab("Users", "users"), Tab("Access Log", "access_log")),
+                tabs=(
+                    Tab("Users", "users", ours=True),
+                    Tab("Access Log", "access_log", ours=True),
+                ),
                 inside=frozenset(
                     {
                         "add_user",
@@ -173,10 +292,39 @@ GROUPS: tuple[Group, ...] = (
                         "end_user_sessions",
                     }
                 ),
+                ours=True,
             ),
         ),
     ),
+    Group(
+        "Commercial",
+        (
+            Item("Marketplace"),
+            Item("Enquiries and Quotes", tabs=_tabs("Enquiries", "Quotes")),
+            Item("Customers"),
+            Item("Invoices"),
+        ),
+    ),
+    Group("", (Item("Settings", tabs=_tabs("Organisation", "Planning")), Item("Help"))),
 )
+
+
+def _built(board: tuple[Group, ...]) -> tuple[Group, ...]:
+    """Return the groups, items and tabs of ``board`` whose pages exist."""
+    groups = []
+    for group in board:
+        items = tuple(
+            replace(item, tabs=tuple(tab for tab in item.tabs if tab.address is not None))
+            for item in group.items
+            if item.address is not None
+        )
+        if items:
+            groups.append(Group(group.label, items))
+    return tuple(groups)
+
+
+# What is built: the sidebar a user may be shown.
+GROUPS: tuple[Group, ...] = _built(BOARD)
 
 # Pages that belong to the person, not to a section.
 OUTSIDE = frozenset(
@@ -201,6 +349,22 @@ def place(address: str) -> tuple[Group, Item] | None:
     return None
 
 
+def shown(
+    groups: Iterable[Group], *, approvals: Iterable[str], may: Callable[[Action], bool]
+) -> list[tuple[str, list[Item]]]:
+    """Return the groups and items to show: for an approval held, to a role that may.
+
+    A group with no item left is not shown (REQ-201).
+    """
+    held = frozenset(approvals)
+    found = []
+    for group in groups:
+        items = [item for item in group.items if item.shown_for & held and may(item.action)]
+        if items:
+            found.append((group.label, items))
+    return found
+
+
 def navigation(request: HttpRequest) -> dict[str, object]:
     """Give every page its sidebar, its breadcrumb and its section tabs."""
     user = request.user
@@ -209,12 +373,13 @@ def navigation(request: HttpRequest) -> dict[str, object]:
     match = request.resolver_match
     address = match.url_name if match and match.url_name else ""
     found = place(address)
+    held = approvals.types_held(user.organisation)
     sidebar = [
-        (group.label, [(item, found is not None and item is found[1]) for item in shown])
-        for group in GROUPS
-        if (shown := [item for item in group.items if user.may(item.action)])
+        (label, [(item, found is not None and item is found[1]) for item in items])
+        for label, items in shown(GROUPS, approvals=held, may=user.may)
     ]
     tabs: list[tuple[Tab, bool]] = []
-    if found and address in {tab.address for tab in found[1].tabs}:
+    # One tab is no choice of views, so it is not shown.
+    if found and len(found[1].tabs) > 1 and address in {tab.address for tab in found[1].tabs}:
         tabs = [(tab, tab.address == address) for tab in found[1].tabs]
     return {"sidebar": sidebar, "place": found, "section_tabs": tabs}
