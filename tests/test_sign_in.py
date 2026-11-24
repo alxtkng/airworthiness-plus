@@ -164,7 +164,7 @@ def test_first_sign_in_sets_up_the_second_factor(people: People, clock: Clock) -
     assert " ".join(secret[i : i + 4] for i in range(0, 32, 4)) in page.content.decode()
 
     done = post(client, "/sign-in/set-up/", code=code_now(LUCY, clock))
-    assert (done.status_code, done["Location"]) == (302, "/")
+    assert (done.status_code, done["Location"]) == (302, "/dashboard/")
     home = get(client, "/")
     assert home.status_code == 200
     body = home.content.decode()
@@ -200,7 +200,7 @@ def test_a_returning_user_gives_a_password_and_a_code(people: People, clock: Clo
     assert give_password(client)["Location"] == "/sign-in/code/"
     assert get(client, "/sign-in/set-up/")["Location"] == "/sign-in/code/"
     assert secret_of(LUCY) not in get(client, "/sign-in/code/").content.decode()
-    assert post(client, "/sign-in/code/", code=code_now(LUCY, clock))["Location"] == "/"
+    assert post(client, "/sign-in/code/", code=code_now(LUCY, clock))["Location"] == "/dashboard/"
     assert get(client, "/").status_code == 200
 
 
@@ -255,7 +255,7 @@ def test_a_wrong_code_and_a_used_code_are_refused(people: People, clock: Clock) 
     assert post(client, "/sign-in/code/", code=wrong).status_code == 200
 
     clock.advance(seconds=30)
-    assert post(client, "/sign-in/code/", code=code_now(LUCY, clock))["Location"] == "/"
+    assert post(client, "/sign-in/code/", code=code_now(LUCY, clock))["Location"] == "/dashboard/"
     assert [entry[1:] for entry in log()][-3:] == [
         ("Sign-In Failed", "Wrong Code"),
         ("Sign-In Failed", "Wrong Code"),
@@ -400,11 +400,11 @@ def test_a_success_clears_earlier_failures(people: People, clock: Clock) -> None
     client = Client()
     for _ in range(4):
         give_password(client, password=WRONG)
-    assert sign_in_fully(client, clock)["Location"] == "/"
+    assert sign_in_fully(client, clock)["Location"] == "/dashboard/"
     post(client, "/sign-out/")
     for _ in range(4):
         give_password(client, password=WRONG)
-    assert sign_in_fully(client, clock)["Location"] == "/"
+    assert sign_in_fully(client, clock)["Location"] == "/dashboard/"
 
 
 def test_sign_in_works_with_the_real_password_hasher(
@@ -419,7 +419,7 @@ def test_sign_in_works_with_the_real_password_hasher(
         people.lucy.set_password(PASSWORD)
         people.lucy.save()
         assert User.objects.get(pk=people.lucy.pk).password.startswith("pbkdf2_sha256$")
-    assert sign_in_fully(Client(), clock)["Location"] == "/"
+    assert sign_in_fully(Client(), clock)["Location"] == "/dashboard/"
 
 
 # Sessions
@@ -733,7 +733,7 @@ def test_an_organisation_is_set_up_from_the_command_line(
         "Continuing Airworthiness Management",
         "Airworthiness Review",
     ]
-    assert sign_in_fully(Client(), clock)["Location"] == "/"
+    assert sign_in_fully(Client(), clock)["Location"] == "/dashboard/"
 
 
 def test_a_weak_password_is_refused_at_set_up(monkeypatch: pytest.MonkeyPatch) -> None:
