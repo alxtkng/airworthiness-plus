@@ -8,6 +8,22 @@ Every page uses this data. Placeholders in square brackets stand for real values
 - Scope: Aeroplanes 2,730 Kilograms Maximum Take-Off Mass or Less; Sailplanes and Powered Sailplanes (management and review only); Piston Engines, Lycoming and Continental; C14 Landing Gear; C16 Propellers.
 - Combined Airworthiness Exposition Revision 7, approved 30 October 2026; Revision 8 in draft.
 
+## Second Organisation
+
+Added on 24 November 2026 (Decisions.md, Canvas Build, decision 1), so that what is shown only to a Part-CAMO or a Part-145 can be shown. It starts small, and each phase adds what its boards need. Every value is made up for the sample and is to be confirmed by Alex King.
+
+- [Second Organisation], Part-CAMO, UK.CAMO.[Number], and Part-145, UK.145.[Number]. Address [Second Organisation Address].
+- Scope: Aeroplanes 2,730 Kilograms Maximum Take-Off Mass or Less. Its aircraft are Part-ML, as in the first organisation.
+- People: [Second Accountable Manager] (Administrator); [Second Continuing Airworthiness Manager] (Continuing Airworthiness Manager), who reports to the Accountable Manager; [Second Maintenance Manager], no sign-in, who reports to the Accountable Manager; [Second Certifying Staff Name], Part-66 B1.2, no sign-in, who reports to the Maintenance Manager; [Second Read Only Name] (Read Only).
+- Customers: [Operator Name], Operator; [Second Owner Name], Pilot-Owner.
+
+| Aircraft Registration | Type Rating | Owned By | Airframe Hours |
+|---|---|---|---|
+| G-JNOP | Piper PA-28 Series (Lycoming) | Operator | 2,406.5 |
+| G-KQRS | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Pilot-Owner | 5,120.0 |
+
+No maintenance programme, directive, maintenance data or review certificate is recorded for it yet, and the Dashboard says so.
+
 ## Documentation
 
 - Controlled documents: Combined Airworthiness Exposition Revision 7 (Revision 8 in draft); Safety Policy and Objectives Issue 3, 1 June 2026, [Accountable Manager]; Company Forms Issue 12, 30 October 2026 (Issue 13 in review, Receiving Inspection Record); Human Factors Training Syllabus Issue 2, 6 January 2026; Hangar Rules and Fire Precautions Issue 4, 12 March 2026, review due 12 December 2026.

@@ -17,6 +17,10 @@ A web application for the continuing airworthiness records of aircraft managed b
 | Airworthiness Directives | Each directive, the decision whether it applies to each aircraft with its basis, compliance, and what is next due |
 | Maintenance Data | The data held, its revision, when its amendment status was last checked and when the next check is due |
 | Airworthiness Review | The review against each point of ML.A.903, the certificate (CAA Form 15c), extensions, the copy to the Civil Aviation Authority, and the recency of review staff |
+| Dashboard | One page of everything due across the organisation, read from the functions above and linking to each. Added 24 November 2026 |
+| Staff | A record for each person of the organisation, whether or not they sign in, and for those who have left, with the day their record is kept until. Added 24 November 2026 |
+| Customers | A record for each owner or operator, and the aircraft each owns. Added 24 November 2026 |
+| Settings | The organisation's name and address, the approvals it holds, how close a limit must be to show as Due Soon, and its default limits for a deferred defect. Added 24 November 2026 |
 | Records | Import from paper or spreadsheet with a verification report; export of an aircraft's or the organisation's whole record; the Problem Log |
 
 Every calculated figure can be opened to show the rule, the inputs and the source reference it came from: what is next due under a programme or a directive, the dates of a review certificate, the copy to the Civil Aviation Authority, the recency of review staff and the 30 days for a release to be in the records. A date that was recorded and not calculated says so. A list such as the Fleet shows the figure and links to the page that opens it.

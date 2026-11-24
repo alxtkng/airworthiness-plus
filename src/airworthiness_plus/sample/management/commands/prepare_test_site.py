@@ -5,8 +5,10 @@
 Run by the owner of the tables each time the test site starts, by
 ``airworthiness_plus.sample.test_site``. It brings the tables up to date,
 makes the role the service signs in to the database as, and sets up the
-sample organisation if it is not there. A second run changes nothing but
-that role's password, which is set again to the one given.
+two sample organisations if they are not there. A sample seeded before the
+canvas build is given what it lacks, and nothing that is there is changed.
+A second run changes nothing but that role's password, which is set again
+to the one given.
 
 The test site holds the sample and nothing else, and the sample can never
 be removed once it is in a database. So this works only on a database it
@@ -25,7 +27,11 @@ from django.db import connection, transaction
 from psycopg import sql
 
 from airworthiness_plus.accounts.models import User
+from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
+from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.people.models import Person
+from airworthiness_plus.sample import build, second
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
     seed,
@@ -75,18 +81,38 @@ def claim_database() -> None:
         )
 
 
-def sample_is_set_up() -> bool:
-    """Return whether the sample organisation's Administrator exists.
+def administrator_named(username: str) -> User | None:
+    """Return the user of this name, if there is one.
 
     The owner of the tables is shown no organisation's rows (ADR-0002), so
     this asks as the sign-in page does: for one user, by name. A user name
     is used once across every organisation.
     """
     with transaction.atomic(), connection.cursor() as cursor:
-        cursor.execute("SELECT set_config(%s, %s, true)", [SIGNING_IN_SETTING, ADMINISTRATOR])
-        found: bool = User.objects.filter(username=ADMINISTRATOR).exists()
+        cursor.execute("SELECT set_config(%s, %s, true)", [SIGNING_IN_SETTING, username])
+        found: User | None = User.objects.filter(username=username).first()
         cursor.execute("SELECT set_config(%s, '', true)", [SIGNING_IN_SETTING])
     return found
+
+
+def sample_is_set_up() -> bool:
+    """Return whether the sample organisation's Administrator exists."""
+    return administrator_named(ADMINISTRATOR) is not None
+
+
+def complete_the_people(administrator: User) -> int:
+    """Give a sample seeded before person records the people it lacks (REQ-218).
+
+    The people of SampleData.md who have no sign-in are added, and the
+    record of each who has one is completed. Nobody whose record already
+    says more than their name is changed, and no sign-in is touched. Return
+    how many people were added.
+    """
+    with working_for(administrator.organisation_id, administrator.id):
+        ours = Organisation.objects.get(pk=administrator.organisation_id)
+        before = Person.objects.count()
+        build.add_person_records(ours, administrator)
+        return Person.objects.count() - before
 
 
 def service_role(name: str, password: str) -> bool:
@@ -145,9 +171,20 @@ class Command(BaseCommand):
         call_command("migrate", interactive=False, verbosity=options["verbosity"])
         made = service_role(user, password)
         self.stdout.write("Service Role Made" if made else "Service Role Password Set Again")
-        if sample_is_set_up():
+        first = administrator_named(ADMINISTRATOR)
+        if first is not None:
             self.stdout.write("Sample Organisation Already Set Up")
-            return
-        seed(administrator)
-        self.stdout.write("Sample Organisation Set Up")
-        self.stdout.write(f"Administrator {ADMINISTRATOR}")
+            added = complete_the_people(first)
+            if added:
+                self.stdout.write(f"People of the Sample Brought Up to Date, {added} Added")
+        else:
+            seed(administrator)
+            self.stdout.write("Sample Organisation Set Up")
+            self.stdout.write(f"Administrator {ADMINISTRATOR}")
+        # The second sample organisation holds Part-CAMO and Part-145 (REQ-218).
+        if administrator_named(second.ADMINISTRATOR) is not None:
+            self.stdout.write("Second Sample Organisation Already Set Up")
+        else:
+            second.seed(administrator)
+            self.stdout.write("Second Sample Organisation Set Up")
+            self.stdout.write(f"Administrator {second.ADMINISTRATOR}")

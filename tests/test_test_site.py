@@ -25,7 +25,7 @@ from django.test.utils import CaptureQueriesContext
 from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
-from airworthiness_plus.sample import test_site
+from airworthiness_plus.sample import second, test_site
 from airworthiness_plus.sample.management.commands import prepare_test_site
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import ADMINISTRATOR
 from tests.conftest import as_owner
@@ -249,6 +249,9 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
             "Service Role Made",
             "Sample Organisation Set Up",
             f"Administrator {ADMINISTRATOR}",
+            # The second sample organisation, which holds Part-CAMO and Part-145 (REQ-218).
+            "Second Sample Organisation Set Up",
+            f"Administrator {second.ADMINISTRATOR}",
         ]
         # The role can sign in, has no power of its own, and is a member of the
         # application's role and of nothing else (ADR-0002).
@@ -271,10 +274,11 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
         assert PASSWORD not in first and FIRST_PASSWORD not in first
 
         assert prepare_test_site.sample_is_set_up()
-        second = prepare()
-        assert second.splitlines() == [
+        again = prepare()
+        assert again.splitlines() == [
             "Service Role Password Set Again",
             "Sample Organisation Already Set Up",
+            "Second Sample Organisation Already Set Up",
         ]
         assert one("SELECT count(*) FROM pg_roles WHERE rolname = %s", [ROLE]) == 1
         # Seen as the sign-in page sees it: the Administrator, whose first password works.
