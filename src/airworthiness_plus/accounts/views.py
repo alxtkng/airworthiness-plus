@@ -53,7 +53,7 @@ def _complete(request: HttpRequest, user: User) -> HttpResponse:
     request.session[BROWSER_KEY] = request.headers.get("User-Agent", "")[:200]
     request.session.pop(PENDING_KEY, None)
     request.session.pop(PENDING_AT_KEY, None)
-    return redirect("home")
+    return redirect("dashboard")
 
 
 @never_cache

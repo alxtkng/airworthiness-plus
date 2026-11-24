@@ -211,7 +211,7 @@ def test_a_first_password_is_changed_before_anything_else(
     for values, message in refusals:
         assert message in post(client, "/account/password/", **values).content.decode()
     done = post(client, "/account/password/", current=FIRST, new=SECOND, again=SECOND)
-    assert (done.status_code, done["Location"]) == (302, "/")
+    assert (done.status_code, done["Location"]) == (302, "/dashboard/")
     # This session continues, and the pages now answer.
     assert get(client, "/").status_code == 200
     assert post(client, "/problem-log/add/", problem="[Problem]").status_code == 302
@@ -219,7 +219,7 @@ def test_a_first_password_is_changed_before_anything_else(
     # The first password no longer signs in; the new one does.
     clock.advance(seconds=31)
     assert give_password(Client(), NEW, FIRST).status_code == 200
-    assert sign_in_with(Client(), clock, NEW, SECOND)["Location"] == "/"
+    assert sign_in_with(Client(), clock, NEW, SECOND)["Location"] == "/dashboard/"
 
 
 def test_changing_a_password_ends_the_users_other_sessions(
@@ -292,7 +292,7 @@ def test_a_change_of_password_needs_a_code_unless_just_signed_in(
     weak = post(client, "/account/password/", current=SECOND, new=WEAK, again=WEAK, code=code)
     assert "too short" in weak.content.decode()
     done = post(client, "/account/password/", **change, code=code)
-    assert (done.status_code, done["Location"]) == (302, "/")
+    assert (done.status_code, done["Location"]) == (302, "/dashboard/")
     assert ("Code Accepted", "") in log_of(new_user)
     # The code that was used cannot be used again, here or to sign in.
     again = post(client, "/account/password/", current=THIRD, new=FOURTH, again=FOURTH, code=code)

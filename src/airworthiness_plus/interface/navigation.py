@@ -80,7 +80,7 @@ def _tabs(*labels: str) -> tuple[Tab, ...]:
 
 
 BOARD: tuple[Group, ...] = (
-    Group("", (Item("Dashboard"),)),
+    Group("", (Item("Dashboard", "dashboard"),)),
     Group(
         "Continuing Airworthiness",
         (

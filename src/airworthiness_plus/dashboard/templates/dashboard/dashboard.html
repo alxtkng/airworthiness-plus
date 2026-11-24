@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Dashboard</h1>
+{% for panel in panels %}
+<h2>{{ panel.title }}</h2>
+{% if panel.rows %}
+<table>
+<thead>
+<tr><th>{{ panel.subject }}</th><th>Item</th><th>Due</th><th class="number">Remaining</th><th>Status</th><th data-detail>Detail</th><th>Page</th></tr>
+</thead>
+<tbody>
+{% for row in panel.rows %}
+<tr>
+<td>{{ row.subject }}</td>
+<td>{{ row.item }}</td>
+<td>{{ row.due }}</td>
+<td class="number">{{ row.remaining }}</td>
+<td>{{ row.status|status }}</td>
+<td>{{ row.detail }}</td>
+<td><a href="{{ row.url }}">{{ row.page }}</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>Nothing Due</p>
+{% endif %}
+{% endfor %}
+{% endblock %}

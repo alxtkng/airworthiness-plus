@@ -112,6 +112,7 @@ WRITES: dict[str, Sets] = {
 READS = frozenset(
     {
         "home",
+        "dashboard",
         "transfers",
         "aircraft",
         "programme",

@@ -306,7 +306,7 @@ def change_password(request: HttpRequest) -> HttpResponse:
             else:
                 # Other sessions of this user end; this one continues.
                 update_session_auth_hash(request, user)
-                return redirect("home")
+                return redirect("dashboard")
     return render(
         request,
         "accounts/change_password.html",
