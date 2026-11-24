@@ -20,6 +20,7 @@ from django.db import DatabaseError, transaction
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.customers import services as customer_services
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.directives.models import Applicability, Decision, Directive
 from airworthiness_plus.imports.layouts import COLUMNS, OPTIONAL, REGISTRATION, TOTALS
@@ -103,7 +104,11 @@ def _load_aircraft(organisation: Organisation, by: User, row: Row) -> str:
             designation=row["Manufacturer's Designation"],
             airframe=reading,
         )
-    except (EntryRefusedError, aircraft_services.ConfirmationNeededError) as error:
+    except (
+        EntryRefusedError,
+        aircraft_services.ConfirmationNeededError,
+        customer_services.RefusedError,
+    ) as error:
         raise RowError(str(error)) from error
     return registration
 

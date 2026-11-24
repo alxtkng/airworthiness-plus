@@ -1,4 +1,5 @@
-"""Database rules for hours and cycles entries (REQ-024, REQ-025).
+"""Database rules for hours and cycles entries (REQ-024, REQ-025), and the
+statements that turned what was typed as Owned By into customer records (REQ-209).
 
 The application checks an entry with ``airworthiness_rules.utilisation``.
 The database repeats the part that must hold whatever the application
@@ -57,4 +58,68 @@ CREATE TRIGGER utilisation_fits BEFORE INSERT ON aircraft_utilisationentry
 DROP_UTILISATION_FITS = """
 DROP TRIGGER utilisation_fits ON aircraft_utilisationentry;
 DROP FUNCTION aircraft_utilisation_fits();
+"""
+
+# What was typed as Owned By becomes a customer record (REQ-209; Decisions.md,
+# Canvas Build, decision 3). Run in this order by migration 0003, each loop by
+# ``history.sql.for_each_organisation``:
+#
+# 1. two tables that last only for the migration say which customer each text
+#    and each aircraft is given;
+# 2. for each organisation, one customer is made for each different text, named
+#    exactly as it was typed, with no kind;
+# 3. the column of free text is removed;
+# 4. for each organisation, each aircraft is given its customer, so that the
+#    entry this writes in its history is of the record as it now stands;
+# 5. the two tables are removed.
+#
+# The text itself stays in every earlier entry of the aircraft's history.
+OWNERS_TO_CUSTOMERS_BEGIN = """
+CREATE TABLE aircraft_owner_migration (
+    organisation_id uuid NOT NULL,
+    owner text NOT NULL,
+    customer_id uuid NOT NULL
+);
+CREATE TABLE aircraft_customer_migration (
+    organisation_id uuid NOT NULL,
+    aircraft_id uuid NOT NULL,
+    customer_id uuid NOT NULL
+);
+"""
+
+CUSTOMER_FOR_EACH_OWNER = """
+        INSERT INTO aircraft_owner_migration (organisation_id, owner, customer_id)
+        SELECT organisation, typed.owner, gen_random_uuid()
+          FROM (SELECT DISTINCT COALESCE(owner, '') AS owner
+                  FROM aircraft_aircraft
+                 WHERE organisation_id = organisation) typed;
+
+        INSERT INTO customers_customer (id, organisation_id, name, kind)
+        SELECT made.customer_id, made.organisation_id,
+               COALESCE(NULLIF(btrim(made.owner), ''), 'Not Recorded'), ''
+          FROM aircraft_owner_migration made
+         WHERE made.organisation_id = organisation
+         ORDER BY made.owner;
+
+        INSERT INTO aircraft_customer_migration (organisation_id, aircraft_id, customer_id)
+        SELECT one.organisation_id, one.id, made.customer_id
+          FROM aircraft_aircraft one
+          JOIN aircraft_owner_migration made
+            ON made.organisation_id = one.organisation_id
+           AND made.owner = COALESCE(one.owner, '')
+         WHERE one.organisation_id = organisation;
+"""
+
+AIRCRAFT_TAKE_THEIR_CUSTOMER = """
+        UPDATE aircraft_aircraft one
+           SET customer_id = given.customer_id
+          FROM aircraft_customer_migration given
+         WHERE given.aircraft_id = one.id
+           AND given.organisation_id = organisation
+           AND one.organisation_id = organisation;
+"""
+
+OWNERS_TO_CUSTOMERS_END = """
+DROP TABLE aircraft_customer_migration;
+DROP TABLE aircraft_owner_migration;
 """

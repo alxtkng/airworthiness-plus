@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Customers{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Customers</h1>
+<p><a href="{% url 'add_customer' %}">Add a Customer</a></p>
+<p>{{ lines|length }} {% if lines|length == 1 %}Customer{% else %}Customers{% endif %}, {{ aircraft }} Aircraft</p>
+<table>
+<thead>
+<tr><th>Customer</th><th>Kind</th><th>Aircraft Registration</th><th>Customer Since</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td><a href="{% url 'customer' line.customer.id %}">{{ line.customer.name }}</a></td>
+<td>{{ line.customer.description }}</td>
+<td>{{ line.registrations|join:", " }}</td>
+<td>{{ line.customer.customer_since|long_date }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

@@ -18,6 +18,9 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
+from airworthiness_plus.customers import services as customer_services
+from airworthiness_plus.customers.models import Customer
+from airworthiness_plus.customers.models import Kind as CustomerKind
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.directives.models import Decision, Directive
 from airworthiness_plus.history.session import working_for
@@ -56,6 +59,20 @@ FLEET = (
     ("G-FMNO", GROB, "Pilot-Owner", "4950.2"),
     ("G-CDEF", "Robin DR 400 series (Lycoming)", "Syndicate of 4", "7731.5"),
 )
+
+# SampleData.md, Commercial: 7 customers, one for each aircraft. The Customers
+# board gives the name, the kind and the month each became a customer; the
+# first day of the month is taken. Each name is written apart from the others,
+# so that one can be told from another.
+CUSTOMERS: dict[str, tuple[str, CustomerKind, int | None, date]] = {
+    "G-DGHI": ("[Flying Club Name]", CustomerKind.FLYING_CLUB, None, date(2025, 3, 1)),
+    "G-EJKL": ("[Owner Name G-EJKL]", CustomerKind.PILOT_OWNER, None, date(2025, 12, 1)),
+    "G-ABCD": ("[Owner Name G-ABCD]", CustomerKind.PILOT_OWNER, None, date(2026, 3, 1)),
+    "G-BXYZ": ("[Syndicate Name G-BXYZ]", CustomerKind.SYNDICATE, 6, date(2025, 1, 1)),
+    "G-FMNO": ("[Owner Name G-FMNO]", CustomerKind.PILOT_OWNER, None, date(2024, 5, 1)),
+    "G-CDEF": ("[Syndicate Name G-CDEF]", CustomerKind.SYNDICATE, 4, date(2024, 4, 1)),
+    "G-HKLM": ("[Owner Name G-HKLM]", CustomerKind.PILOT_OWNER, None, date(2026, 11, 1)),
+}
 
 # SampleData.md, Fleet: Review Certificate Valid To. G-CDEF is shown after its
 # review of 11 November 2026; before it the certificate was valid to 2 December 2026.
@@ -219,13 +236,20 @@ def add_person_records(people: People) -> dict[str, Person]:
 def add_fleet(people: People) -> dict[str, Aircraft]:
     """Add the six aircraft of the Fleet and the Transfer In, as Lucy Grant."""
     fleet: dict[str, Aircraft] = {}
+
+    def customer(registration: str) -> Customer:
+        name, kind, members, since = CUSTOMERS[registration]
+        return customer_services.add_customer(
+            organisation=people.ours, name=name, kind=kind, members=members, customer_since=since
+        )
+
     with working_for(people.ours.id, people.lucy.id):
-        for registration, type_rating, owner, hours in FLEET:
+        for registration, type_rating, _, hours in FLEET:
             fleet[registration] = aircraft_services.add_aircraft(
                 organisation=people.ours,
                 registration=registration,
                 type_rating=type_rating,
-                owner=owner,
+                customer=customer(registration),
                 airframe=Reading(TODAY, Decimal(hours), 0),
             )
         # G-DGHI: Unserviceable, Stabilator Trim Cable, grounded since 14 November.
@@ -237,7 +261,7 @@ def add_fleet(people: People) -> dict[str, Aircraft]:
             organisation=people.ours,
             registration="G-HKLM",
             type_rating=PA38,
-            owner="[Owner Name]",
+            customer=customer("G-HKLM"),
             records_expected=18,
             records_received=14,
         )

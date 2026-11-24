@@ -25,7 +25,7 @@ Every page uses this data. Placeholders in square brackets stand for real values
 | G-BXYZ | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Syndicate of 6 | Serviceable | 100-Hour or Annual Check, 41.0 Hours | 2 August 2027 | 3,318.0 |
 | G-FMNO | Grob G115/120 Series (Lycoming) | Pilot-Owner | Serviceable | Annual Check, 78 Days | 27 April 2027 | 4,950.2 |
 | G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Engine Overhaul, 220 Hours | 2 December 2027 | 7,731.5 |
-| G-HKLM | Piper PA-38 Series (Lycoming) | [Owner Name] | Transfer In | Records 14 of 18 Received | | |
+| G-HKLM | Piper PA-38 Series (Lycoming) | Pilot-Owner | Transfer In | Records 14 of 18 Received | | |
 
 ## Maintenance Programme Inputs
 
@@ -134,6 +134,7 @@ Added on 24 November 2026 for the person records, from the Staff board:
 
 ## Commercial
 
+- Customers, named apart on 24 November 2026 so that one can be told from another, with the day each became a customer taken as the first of the month the Customers board gives: [Flying Club Name] (Flying Club, G-DGHI, 1 March 2025); [Owner Name G-EJKL] (Pilot-Owner, 1 December 2025); [Owner Name G-ABCD] (Pilot-Owner, 1 March 2026); [Syndicate Name G-BXYZ] (Syndicate of 6, 1 January 2025); [Owner Name G-FMNO] (Pilot-Owner, 1 May 2024); [Syndicate Name G-CDEF] (Syndicate of 4, 1 April 2024); [Owner Name G-HKLM] (Pilot-Owner, 1 November 2026).
 - Customers: 7, one per aircraft. Contracts for G-BXYZ, G-CDEF, G-DGHI, G-HKLM (continuing airworthiness management) and G-ABCD (maintenance programme review and airworthiness review); G-EJKL and G-FMNO have none, work orders only.
 - Enquiries: E-2026-036 [Prospective Customer], Robin DR 400 annual, to answer by 19 November; E-2026-035 G-EJKL (quoted); E-2026-034 G-FMNO (accepted); closed E-2026-033 G-DGHI, E-2026-032 G-ABCD, E-2026-031 G-HKLM, E-2026-029 turbine engine overhaul (declined, outside scope).
 - Quotes: Q-2026-023 G-EJKL £1,860.00 awaiting acceptance; Q-2026-022 G-FMNO £420.00; Q-2026-021 G-DGHI £980.00; Q-2026-020 G-ABCD £315.00; Q-2026-019 G-CDEF £2,140.00 (invoiced).

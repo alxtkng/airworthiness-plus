@@ -7,6 +7,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from airworthiness_plus.aircraft.models import Counter, CounterKind, Regime, UtilisationEntry
+from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.forms import Form
 from airworthiness_rules.intervals import Unit
@@ -24,7 +25,13 @@ class AddAircraftForm(Form):
         max_length=100,
         required=False,
     )
-    owner = forms.CharField(label="Owned By", max_length=200)
+    customer = forms.ModelChoiceField(
+        label="Owned By",
+        queryset=Customer.objects.none(),
+        required=False,
+        empty_label="A New Customer",
+    )
+    owner = forms.CharField(label="Name of a New Customer", max_length=200, required=False)
     regime = forms.ChoiceField(label="Regime", choices=Regime.choices)
     dated = forms.DateField(label="Date of Airframe Hours", required=False)
     hours = forms.DecimalField(
@@ -35,9 +42,19 @@ class AddAircraftForm(Form):
         label="Records Expected for a Transfer In", min_value=1, required=False
     )
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["customer"].queryset = Customer.objects.all()  # type: ignore[attr-defined]
+
     def clean(self) -> dict[str, object]:
-        """Hours, cycles and their date are given together or not at all."""
+        """Hours, cycles and their date are given together or not at all.
+
+        The owner is a customer already recorded or the name of a new one,
+        and not both.
+        """
         cleaned = super().clean() or {}
+        if (cleaned.get("customer") is None) == (not cleaned.get("owner")):
+            raise forms.ValidationError("Choose a Customer or Name a New One")
         given = [cleaned.get(name) is not None for name in ("dated", "hours", "cycles")]
         if any(given) and not all(given):
             raise forms.ValidationError("Give the Date, Hours and Cycles Together")
@@ -54,6 +71,16 @@ class DetailsForm(Form):
         max_length=100,
         required=False,
     )
+
+
+class OwnerForm(Form):
+    """Record another customer as the owner of an aircraft."""
+
+    customer = forms.ModelChoiceField(label="Owned By", queryset=Customer.objects.none())
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["customer"].queryset = Customer.objects.all()  # type: ignore[attr-defined]
 
 
 class UtilisationForm(Form):

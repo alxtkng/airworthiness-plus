@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "airworthiness_plus.accounts",
     "airworthiness_plus.people",
     "airworthiness_plus.interface",
+    "airworthiness_plus.customers",
     "airworthiness_plus.aircraft",
     "airworthiness_plus.programme",
     "airworthiness_plus.directives",

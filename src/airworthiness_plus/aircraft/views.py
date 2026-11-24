@@ -23,6 +23,7 @@ from airworthiness_plus.aircraft.forms import (
     AddAircraftForm,
     CounterForm,
     DetailsForm,
+    OwnerForm,
     RecordsReceivedForm,
     UnserviceableForm,
     UtilisationForm,
@@ -35,6 +36,7 @@ from airworthiness_plus.aircraft.models import (
     Stage,
     Status,
 )
+from airworthiness_plus.customers import services as customer_services
 from airworthiness_plus.interface import formatting
 from airworthiness_rules.dates import days_between
 from airworthiness_rules.intervals import Limit, Reading, Unit
@@ -144,7 +146,7 @@ def fleet(request: HttpRequest) -> HttpResponse:
     from airworthiness_plus.reviews import services as review_services
 
     rows = []
-    for aircraft in Aircraft.objects.filter(stage=Stage.FLEET):
+    for aircraft in Aircraft.objects.filter(stage=Stage.FLEET).select_related("customer"):
         valid_to = review_services.current_valid_to(aircraft)
         next_due, rank = _next_due(aircraft, today, valid_to)
         rows.append(FleetRow(aircraft, _airframe(aircraft), next_due, valid_to, rank))
@@ -157,7 +159,7 @@ def fleet(request: HttpRequest) -> HttpResponse:
 @requires(Action.VIEW_RECORDS)
 def transfers(request: HttpRequest) -> HttpResponse:
     """Transfers: aircraft whose records are not yet complete (REQ-027)."""
-    aircraft = Aircraft.objects.filter(stage=Stage.TRANSFER_IN)
+    aircraft = Aircraft.objects.filter(stage=Stage.TRANSFER_IN).select_related("customer")
     return render(request, "aircraft/transfers.html", {"aircraft": aircraft})
 
 
@@ -180,8 +182,24 @@ def aircraft_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     return render(
         request,
         "aircraft/aircraft.html",
-        {"aircraft": aircraft, "counters": counters, "details_form": details},
+        {
+            "aircraft": aircraft,
+            "counters": counters,
+            "details_form": details,
+            "owner_form": OwnerForm(initial={"customer": aircraft.customer_id}),
+        },
     )
+
+
+@requires(Action.ADD_OR_CHANGE_AIRCRAFT)
+@require_POST
+def change_owner(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """Record another customer as the owner of an aircraft (REQ-208)."""
+    aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
+    form = OwnerForm(request.POST)
+    if form.is_valid():
+        services.change_owner(aircraft, form.cleaned_data["customer"])
+    return redirect("aircraft", aircraft_id=aircraft.id)
 
 
 @requires(Action.ADD_OR_CHANGE_AIRCRAFT)
@@ -218,11 +236,12 @@ def add_aircraft(request: HttpRequest) -> HttpResponse:
                     manufacturer=data["manufacturer"],
                     designation=data["designation"],
                     owner=data["owner"],
+                    customer=data["customer"],
                     regime=Regime(data["regime"]),
                     airframe=airframe,
                     records_expected=data["records_expected"],
                 )
-        except EntryRefusedError as error:
+        except (EntryRefusedError, customer_services.RefusedError) as error:
             form.add_error(None, str(error))
         except DatabaseError:
             form.add_error("registration", "This Aircraft Registration Is Already Recorded")

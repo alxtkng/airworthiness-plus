@@ -5,6 +5,7 @@ from typing import Any
 from django.db import models
 from django.db.models import F, Q
 
+from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.history.models import Record, RecordsAreNeverDeletedError
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_rules.intervals import Reading
@@ -45,7 +46,8 @@ class Aircraft(Record):
     # As CAA Form 15c asks for them, beside the type rating.
     manufacturer = models.CharField("Aircraft Manufacturer", max_length=100, blank=True)
     designation = models.CharField("Manufacturer's Designation", max_length=100, blank=True)
-    owner = models.CharField("Owned By", max_length=200)
+    # The owner or operator (REQ-208). Before 24 November 2026 this was free text.
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="aircraft")
     regime = models.CharField("Regime", max_length=20, choices=Regime.choices)
     status = models.CharField(
         "Status", max_length=20, choices=Status.choices, default=Status.SERVICEABLE
@@ -100,6 +102,11 @@ class Aircraft(Record):
 
     def __str__(self) -> str:
         return self.registration
+
+    @property
+    def owner(self) -> str:
+        """Return what Owned By shows: the kind of owner, or the customer's name (REQ-208)."""
+        return self.customer.owned_by
 
     @property
     def calculations_supported(self) -> bool:

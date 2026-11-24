@@ -178,7 +178,9 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
     transfer = row_of(rows(reader, "/transfers/"), "G-HKLM")
     assert transfer[1:4] == [
         "Piper PA-38 Series (Lycoming)",
-        "[Owner Name]",
+        # SampleData.md was corrected on 24 November 2026 from the Customers board: the
+        # owner of G-HKLM is a pilot-owner, and [Owner Name G-HKLM] is the customer's name.
+        "Pilot-Owner",
         "Records 14 of 18 Received",
     ]
 

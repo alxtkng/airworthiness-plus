@@ -12,6 +12,7 @@
 <dt>Aircraft Manufacturer</dt><dd>{{ aircraft.manufacturer }}</dd>
 <dt>Manufacturer&#8217;s Designation</dt><dd>{{ aircraft.designation }}</dd>
 <dt>Owned By</dt><dd>{{ aircraft.owner }}</dd>
+<dt>Customer</dt><dd><a href="{% url 'customer' aircraft.customer.id %}">{{ aircraft.customer.name }}</a></dd>
 <dt>Regime</dt><dd>{{ aircraft.regime }}</dd>
 <dt>Status</dt><dd>{{ aircraft.status|status }}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
 {% if aircraft.stage == "Transfer In" %}<dt>Transfer In</dt><dd>Records {{ aircraft.records_received }} of {{ aircraft.records_expected }} Received</dd>{% endif %}
@@ -34,6 +35,12 @@
 {% csrf_token %}
 {% for field in details_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
 {% endfor %}<p><button type="submit">Save Details of {{ aircraft.registration }}</button></p>
+</form>
+<h2>Owner of {{ aircraft.registration }}</h2>
+<form method="post" action="{% url 'change_owner' aircraft.id %}">
+{% csrf_token %}
+{% for field in owner_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}<p><button type="submit">Save the Owner of {{ aircraft.registration }}</button></p>
 </form>
 {% for counter, current, entries in counters %}
 <h2>{{ counter.kind }}{% if counter.position %}, {{ counter.position }}{% endif %}</h2>

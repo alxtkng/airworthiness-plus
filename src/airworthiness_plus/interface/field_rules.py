@@ -18,6 +18,7 @@ from airworthiness_plus.acceptance import forms as acceptance
 from airworthiness_plus.accounts import user_forms as accounts
 from airworthiness_plus.accounts.roles import MATRIX, Action, Role
 from airworthiness_plus.aircraft import forms as aircraft
+from airworthiness_plus.customers import forms as customers
 from airworthiness_plus.directives import forms as directives
 from airworthiness_plus.imports import forms as imports
 from airworthiness_plus.maintenance_data import forms as maintenance_data
@@ -32,6 +33,9 @@ Sets = tuple[type[forms.Form] | str, ...]
 WRITES: dict[str, Sets] = {
     "add_aircraft": (aircraft.AddAircraftForm,),
     "aircraft_details": (aircraft.DetailsForm,),
+    "change_owner": (aircraft.OwnerForm,),
+    "add_customer": (customers.CustomerForm,),
+    "change_customer": (customers.CustomerForm,),
     "enter_utilisation": (aircraft.UtilisationForm,),
     "make_unserviceable": (aircraft.UnserviceableForm,),
     "make_serviceable": (),
@@ -113,6 +117,8 @@ READS = frozenset(
         "review_schedule",
         "review_staff",
         "staff",
+        "customers",
+        "customer",
         "person",
         "aircraft_review",
         "review",
