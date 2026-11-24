@@ -209,6 +209,8 @@ def test_every_table_is_under_the_record_rules() -> None:
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
     extra_triggers = {
         "organisations_organisation": {"serial_floor_guard"},
+        # A sign-in belongs to a person (REQ-204).
+        "accounts_user": {"user_has_a_person"},
         "aircraft_utilisationentry": {"utilisation_fits"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
@@ -455,8 +457,8 @@ def test_setting_up_an_organisation_is_recorded_against_the_database_role(two: T
 def test_the_application_cannot_change_or_remove_history(two: Two) -> None:
     """REQ-131, threat TH-021, planned test T-SEC-014."""
     with working_for(two.ours.id, two.lucy.id):
-        # The organisation, the approval it holds and its first user.
-        assert one("SELECT count(*) FROM history_event") == 3
+        # The organisation, the approval it holds, its first user and that user's person.
+        assert one("SELECT count(*) FROM history_event") == 4
         with refused("permission denied"):
             run("UPDATE history_event SET actor_name = 'Someone Else'")
         with refused("permission denied"):
@@ -483,7 +485,7 @@ def test_the_owner_of_the_tables_cannot_change_or_remove_history_either(two: Two
     """REQ-131, threats TH-021, TH-025, planned test T-SEC-014. The trigger
     refuses whoever asks, including a superuser."""
     with as_owner():
-        assert one("SELECT count(*) FROM history_event") == 6
+        assert one("SELECT count(*) FROM history_event") == 8
         with refused("never changed in place or deleted"):
             run("UPDATE history_event SET actor_name = 'Someone Else'")
         with refused("never changed in place or deleted"):
@@ -499,7 +501,7 @@ def test_the_owner_of_the_tables_cannot_change_or_remove_history_either(two: Two
         run("SET CONSTRAINTS ALL IMMEDIATE")
         with refused("never changed in place or deleted"):
             run("TRUNCATE history_event CASCADE")
-        assert one("SELECT count(*) FROM history_event") == 6
+        assert one("SELECT count(*) FROM history_event") == 8
 
 
 def test_a_record_is_never_deleted_by_anyone(two: Two) -> None:
@@ -555,8 +557,9 @@ def test_the_chain_holds_and_the_database_and_the_check_agree(two: Two) -> None:
         User.objects.filter(pk=chris.pk).update(full_name="Christopher Moore")
         User.objects.filter(pk=chris.pk).update(full_name="Chris Moore")
     entries = everything()
-    # Two organisations, each with its approval and first user; Chris Moore, changed twice.
-    assert len(entries) == 9
+    # Two organisations, each with its approval, its first user and that user's person;
+    # Chris Moore and his person; his name changed twice.
+    assert len(entries) == 12
     assert chain.problems(entries) == []
     assert all(len(entry.hash) == 64 for entry in entries)
     with as_owner():

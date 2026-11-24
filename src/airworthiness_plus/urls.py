@@ -10,6 +10,7 @@ from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
 from airworthiness_plus.maintenance_data import views as data
+from airworthiness_plus.people import views as people
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.reviews import views as reviews
 
@@ -137,6 +138,10 @@ urlpatterns: list[URLPattern | URLResolver] = [
         reviews.extension_copy_sent,
         name="extension_copy_sent",
     ),
+    path("staff/", people.staff_page, name="staff"),
+    path("staff/add/", people.add_person, name="add_person"),
+    path("staff/<uuid:person_id>/", people.person_page, name="person"),
+    path("staff/<uuid:person_id>/change/", people.change_person, name="change_person"),
     path("records-export/", exports.exports_page, name="records_export"),
     path("records-export/organisation/", exports.export_organisation, name="export_organisation"),
     path("aircraft/<uuid:aircraft_id>/export/", exports.export_aircraft, name="export_aircraft"),

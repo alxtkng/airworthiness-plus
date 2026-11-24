@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ person.full_name }}{% endblock %}
+{% block content %}
+<h1>{{ person.full_name }}</h1>
+<p>{% if person.role %}{{ person.role }}{% else %}Person{% endif %}</p>
+<dl>
+<dt>Name</dt><dd>{{ person.full_name }}</dd>
+<dt>Role</dt><dd>{{ person.role }}</dd>
+<dt>Staff Group</dt><dd>{{ person.staff_group }}</dd>
+<dt>Reports To</dt><dd>{% if person.reports_to %}<a href="{% url 'person' person.reports_to.id %}">{{ person.reports_to.full_name }}</a>{% if person.reports_to.role %}, {{ person.reports_to.role }}{% endif %}{% else %}None{% endif %}</dd>
+<dt>Employment</dt><dd>{{ person.employment }}</dd>
+<dt>Licence</dt><dd>{{ person.licence }}</dd>
+<dt>Joined</dt><dd>{{ person.joined_on|long_date }}</dd>
+<dt>Left</dt><dd>{{ person.left_on|long_date }}</dd>
+<dt>Sign-In</dt><dd>{% if person.user %}{{ person.user.username }}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</dd>
+<dt>Reporting to {{ person.full_name }}</dt><dd>{% for one in reports %}<a href="{% url 'person' one.id %}">{{ one.full_name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
+</dl>
+<h2>Change the Record of {{ person.full_name }}</h2>
+<form method="post" action="{% url 'change_person' person.id %}">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Save the Record of {{ person.full_name }}</button></p>
+</form>
+{% endblock %}

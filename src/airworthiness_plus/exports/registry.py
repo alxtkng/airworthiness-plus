@@ -18,6 +18,7 @@ from airworthiness_plus.directives.models import Applicability, Compliance, Dire
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
 from airworthiness_plus.organisations.models import Approval, Organisation
+from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme.models import Programme, Task, WorkDone
 from airworthiness_plus.reviews.models import (
     Certificate,
@@ -64,6 +65,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Organisation, None),
     Exported(Approval, None),
     Exported(User, None),
+    Exported(Person, None),
     Exported(Aircraft, lambda aircraft: Q(pk=aircraft.pk)),
     Exported(Counter, _by("aircraft")),
     Exported(UtilisationEntry, _by("counter__aircraft")),

@@ -55,12 +55,12 @@ def test_the_record_and_the_code_list_the_same_actions_and_roles() -> None:
     assert {action for action, _ in RECORDED} == {action.value for action in Action}
     assert {role for _, role in RECORDED} == set(Role.values)
     assert set(MATRIX) == set(Action)
-    assert len(RECORDED) == len(Action) * len(Role) == 105
+    assert len(RECORDED) == len(Action) * len(Role) == 110
 
 
 @pytest.mark.parametrize(("action", "role"), sorted(RECORDED))
 def test_every_action_against_every_role(action: str, role: str) -> None:
-    """REQ-006. Each of the 105 cells of the matrix in Decisions.md."""
+    """REQ-006. Each of the 110 cells of the matrix in Decisions.md."""
     assert permitted([role], Action(action)) is RECORDED[(action, role)]
 
 
@@ -86,13 +86,15 @@ def test_read_only_can_view_and_nothing_else() -> None:
 
 
 def test_the_administrator_does_not_change_airworthiness_records() -> None:
-    """REQ-007. Users and the organisation record only, with viewing, export and the problem log."""
+    """REQ-007. Users, people and the organisation record only, with viewing, export and
+    the problem log."""
     allowed = {action for action in Action if permitted([Role.ADMINISTRATOR], action)}
     assert allowed == {
         Action.VIEW_RECORDS,
         Action.EXPORT_RECORDS,
         Action.MANAGE_USERS_AND_ROLES,
         Action.CHANGE_ORGANISATION_RECORD,
+        Action.ADD_OR_CHANGE_PERSON,
         Action.ADD_TO_PROBLEM_LOG,
     }
     for role in Role:

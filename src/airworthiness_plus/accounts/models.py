@@ -4,7 +4,7 @@ from typing import Any, ClassVar, NoReturn
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils.crypto import salted_hmac
 
@@ -25,12 +25,20 @@ class UserManager(BaseUserManager.from_queryset(RecordQuerySet)):  # type: ignor
         password: str | None = None,
         **fields: Any,
     ) -> "User":
-        """Create a named account in ``organisation``. With no password it cannot sign in."""
+        """Create a named account in ``organisation``. With no password it cannot sign in.
+
+        The account is a person's, so it is given its person record with it
+        (REQ-204). The database refuses a sign-in that has none.
+        """
+        from airworthiness_plus.people.services import person_for
+
         user: User = self.model(
             organisation=organisation, username=username, full_name=full_name, **fields
         )
         user.set_password(password)
-        user.save(using=self._db)
+        with transaction.atomic():
+            user.save(using=self._db)
+            person_for(user)
         return user
 
 

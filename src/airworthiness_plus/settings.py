@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "airworthiness_plus.history",
     "airworthiness_plus.organisations",
     "airworthiness_plus.accounts",
+    "airworthiness_plus.people",
     "airworthiness_plus.interface",
     "airworthiness_plus.aircraft",
     "airworthiness_plus.programme",

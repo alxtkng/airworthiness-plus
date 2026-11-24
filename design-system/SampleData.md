@@ -107,6 +107,31 @@ Training: Sam Patel recurrent training due 6 December 2026; the review [Name] ha
 
 Roles are written in full: Continuing Airworthiness Manager, Compliance Monitoring Manager, Safety Manager, Maintenance Manager.
 
+Added on 24 November 2026 for the person records, from the Staff board:
+
+| Name | Role | Staff Group | Reports To | Employment | Licence | Sign-In |
+|---|---|---|---|---|---|---|
+| [Accountable Manager] | Accountable Manager | Management | | Employed | | Administrator |
+| [Continuing Airworthiness Manager] | Continuing Airworthiness Manager | Management | Accountable Manager | Employed | | None |
+| [Maintenance Manager] | Maintenance Manager | Management | Accountable Manager | Employed | | None |
+| [Compliance Monitoring Manager] | Compliance Monitoring Manager | Management | Accountable Manager | Employed | | None |
+| Lucy Grant | Airworthiness Review Staff | Airworthiness Review Staff | Continuing Airworthiness Manager | Employed | | Airworthiness Review Staff, Continuing Airworthiness Manager |
+| [Review Name] | Airworthiness Review Staff | Airworthiness Review Staff | Continuing Airworthiness Manager | Employed | | Airworthiness Review Staff |
+| [Planning and Records Name] | Planning and Records | Other Staff | Maintenance Manager | Employed | | Planning and Records |
+| Chris Moore | Certifying Staff | Certifying Staff | Maintenance Manager | Employed | Part-66 B1.2 | None |
+| Sam Patel | Certifying Staff | Certifying Staff | Maintenance Manager | Employed | Part-66 B1.2 | None |
+| [Certifying Staff Name] | Certifying Staff | Certifying Staff | Maintenance Manager | Contracted | Part-66 L2 | None |
+| [Contract Engineer] | Certifying Staff | Certifying Staff | Maintenance Manager | Contracted | Part-66 B1.2 | None |
+| Ellie Ward | Mechanic, Trainee | Other Staff | Maintenance Manager | Employed | Working Toward Part-66 B1.2 | None |
+| [Independent Auditor] | Auditor | Other Staff | Compliance Monitoring Manager | Contracted | | None |
+| [Read Only Name] | | Other Staff | | Employed | | Read Only |
+| [Former Review Name] | Airworthiness Review Staff | Airworthiness Review Staff | | Employed | | None |
+
+- The board writes Lucy Grant's sign-in as that of the Continuing Airworthiness Manager's staff; in the system she holds the roles Airworthiness Review Staff and Continuing Airworthiness Manager, as recorded on 18 November 2026. The [Continuing Airworthiness Manager] of the board is a person with no sign-in.
+- [Read Only Name] is a sign-in of the sample for the Read Only role. It is not a person of the table above this one.
+- [Planning and Records Name] joined 1 September 2026. Ellie Ward joined 6 January 2025. [Former Review Name] left 30 June 2025; the record is kept until 30 June 2027 (CAO.A.045(e), 2 years).
+- [Contract Engineer] is written here as Contracted with a Part-66 B1.2 licence, as the Staff board gives. The authorisation is a matter for Phase 2.
+
 ## Commercial
 
 - Customers: 7, one per aircraft. Contracts for G-BXYZ, G-CDEF, G-DGHI, G-HKLM (continuing airworthiness management) and G-ABCD (maintenance programme review and airworthiness review); G-EJKL and G-FMNO have none, work orders only.

@@ -35,6 +35,7 @@ class Action(Enum):
     EXPORT_RECORDS = "Export Records"
     MANAGE_USERS_AND_ROLES = "Manage Users and Roles"
     CHANGE_ORGANISATION_RECORD = "Change Organisation Record"
+    ADD_OR_CHANGE_PERSON = "Add or Change Person"
     ADD_OR_CHANGE_AIRCRAFT = "Add or Change Aircraft"
     ENTER_UTILISATION = "Enter Utilisation"
     CHANGE_MAINTENANCE_PROGRAMME = "Change Maintenance Programme"
@@ -65,6 +66,7 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.EXPORT_RECORDS: frozenset({_ADMINISTRATOR, _MANAGER, _REVIEW, _RECORDS}),
     Action.MANAGE_USERS_AND_ROLES: frozenset({_ADMINISTRATOR}),
     Action.CHANGE_ORGANISATION_RECORD: frozenset({_ADMINISTRATOR}),
+    Action.ADD_OR_CHANGE_PERSON: frozenset({_ADMINISTRATOR}),
     Action.ADD_OR_CHANGE_AIRCRAFT: frozenset({_MANAGER, _RECORDS}),
     Action.ENTER_UTILISATION: frozenset({_MANAGER, _RECORDS}),
     Action.CHANGE_MAINTENANCE_PROGRAMME: frozenset({_MANAGER}),

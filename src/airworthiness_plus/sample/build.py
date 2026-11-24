@@ -24,6 +24,8 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import DataSet, Evidence, Kind
 from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.people import services as people_services
+from airworthiness_plus.people.models import Employment, Person, StaffGroup
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis, InspectionCategory, Task
 from airworthiness_plus.reviews import services as review_services
@@ -129,7 +131,89 @@ def add_people(ours: Organisation, administrator: User) -> Staff:
         planner = add("planning", "[Planning and Records Name]", Role.PLANNING_AND_RECORDS)
         reviewer = add("review", "[Review Name]", Role.AIRWORTHINESS_REVIEW_STAFF)
         reader = add("reader", "[Read Only Name]", Role.READ_ONLY)
-    return Staff(ours, administrator, lucy, planner, reviewer, reader)
+    staff = Staff(ours, administrator, lucy, planner, reviewer, reader)
+    add_person_records(staff)
+    return staff
+
+
+# SampleData.md, People, and the Staff board: name, role, staff group, who they
+# report to, employment, licence, the day they joined and the day they left.
+# The first five have a sign-in, named by their place in ``Staff``.
+_M, _C, _R, _O = (
+    StaffGroup.MANAGEMENT,
+    StaffGroup.CERTIFYING,
+    StaffGroup.REVIEW,
+    StaffGroup.OTHER,
+)
+_CONTRACTED = Employment.CONTRACTED
+_MANAGER = "[Continuing Airworthiness Manager]"
+_MAINTENANCE = "[Maintenance Manager]"
+_COMPLIANCE = "[Compliance Monitoring Manager]"
+PEOPLE: tuple[
+    tuple[str, str, StaffGroup, str, Employment, str, date | None, date | None], ...
+] = (
+    ("[Accountable Manager]", "Accountable Manager", _M, "", Employment.EMPLOYED, "", None, None),
+    (_MANAGER, "Continuing Airworthiness Manager", _M, "[Accountable Manager]",
+     Employment.EMPLOYED, "", None, None),
+    (_MAINTENANCE, "Maintenance Manager", _M, "[Accountable Manager]",
+     Employment.EMPLOYED, "", None, None),
+    (_COMPLIANCE, "Compliance Monitoring Manager", _M, "[Accountable Manager]",
+     Employment.EMPLOYED, "", None, None),
+    ("Lucy Grant", "Airworthiness Review Staff", _R, _MANAGER, Employment.EMPLOYED, "", None, None),
+    ("[Review Name]", "Airworthiness Review Staff", _R, _MANAGER,
+     Employment.EMPLOYED, "", None, None),
+    ("[Planning and Records Name]", "Planning and Records", _O, _MAINTENANCE,
+     Employment.EMPLOYED, "", date(2026, 9, 1), None),
+    ("Chris Moore", "Certifying Staff", _C, _MAINTENANCE,
+     Employment.EMPLOYED, "Part-66 B1.2", None, None),
+    ("Sam Patel", "Certifying Staff", _C, _MAINTENANCE,
+     Employment.EMPLOYED, "Part-66 B1.2", None, None),
+    ("[Certifying Staff Name]", "Certifying Staff", _C, _MAINTENANCE,
+     _CONTRACTED, "Part-66 L2", None, None),
+    ("[Contract Engineer]", "Certifying Staff", _C, _MAINTENANCE,
+     _CONTRACTED, "Part-66 B1.2", None, None),
+    ("Ellie Ward", "Mechanic, Trainee", _O, _MAINTENANCE,
+     Employment.EMPLOYED, "Working Toward Part-66 B1.2", date(2025, 1, 6), None),
+    ("[Independent Auditor]", "Auditor", _O, _COMPLIANCE, _CONTRACTED, "", None, None),
+    # A sign-in of the sample for the Read Only role. Not a person of SampleData.md.
+    ("[Read Only Name]", "", _O, "", Employment.EMPLOYED, "", None, None),
+    # Former airworthiness review staff: left 30 June 2025.
+    ("[Former Review Name]", "Airworthiness Review Staff", _R, "",
+     Employment.EMPLOYED, "", None, date(2025, 6, 30)),
+)  # fmt: skip
+
+
+def add_person_records(people: People) -> dict[str, Person]:
+    """Give each person of SampleData.md their record, as the Administrator.
+
+    A person with a sign-in has a record already, made with the sign-in.
+    A person already recorded under a name is left as they are, so this can
+    be run again on a sample that was seeded before person records.
+    """
+    found: dict[str, Person] = {}
+    with working_for(people.ours.id, people.administrator.id):
+        for name, role, group, _, employment, licence, joined, left in PEOPLE:
+            person = Person.objects.filter(full_name=name).first()
+            if person is None:
+                person = people_services.add_person(
+                    organisation=people.ours, full_name=name, joined_on=joined, left_on=left
+                )
+            elif person.role or person.reports_to_id is not None:
+                found[name] = person
+                continue
+            person.role = role
+            person.staff_group = group
+            person.employment = employment
+            person.licence = licence
+            person.joined_on = joined
+            person.save()
+            found[name] = person
+        for name, _, _, above, *_ in PEOPLE:
+            person = found[name]
+            if above and person.reports_to_id is None and person.left_on is None:
+                person.reports_to = found[above]
+                person.save(update_fields=["reports_to"])
+    return found
 
 
 def add_fleet(people: People) -> dict[str, Aircraft]:
