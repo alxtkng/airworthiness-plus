@@ -15,6 +15,23 @@ The running record for Airworthiness+. Read it before any change, and check ever
 - Hosting and budget, corrected by Alex King on 20 November 2026. There is no existing Coolify server: `prompts/private-beta.md` and ADR-0001 said there was one, and his search that day found none. Hosting is the free test site on Render, in Frankfurt, Germany, with the sample organisation only, until a server is rented. There is no budget, so nothing paid is planned for now: no server, no Coolify Cloud, no backup storage, no penetration test, no Cyber Essentials Plus. This replaces the order of paid services in the line above, which had backup storage first. The readiness review stays Not Ready for Sign-Off until there is a paid server, and that is expected. The free database of the test site ends on 20 December 2026 and is remade from the sample before then (Issue 100). The work carries on with sample data
 - Aircraft types come from SRG1782 (Version 16, 11 August 2026), copied verbatim and never re-cased.
 
+## Canvas Build, Decided 24 November 2026
+
+Alex King asked on 24 November 2026 for the plan in `prompts/canvas-build.md` to be carried out in full. The ten decisions of its Part 3 are decided as ours, as recommended there. Each can be changed by Alex King; a change is recorded here with its date.
+
+1. **Approvals.** An organisation may hold Part-CAMO and Part-145 as well as Part-CAO. A second sample organisation holds Part-CAMO and Part-145, so every board can be shown. Aircraft stay Part-ML; Part-M aircraft come later.
+2. **People.** Everyone in an organisation has a person record. A person who uses the system also has a sign-in, linked to that record.
+3. **Customers.** Each owner or operator is a customer record. The free text Owned By on an aircraft gives way to it, and what was typed is kept in the history.
+4. **Lead times.** The defaults stay as recorded under Interface: 10.0 hours, 10 cycles and 30 days. A 60-day alert for review certificates is a setting the organisation may turn on. The Settings board's 15 hours is not taken.
+5. **Management System for Part-CAO.** Hazard Log and Safety Reports show to Part-CAO as well as Part-CAMO and Part-145, as Compliance Monitoring and Actions already do. The section is named to fit Part-CAO's quality system.
+6. **Rules with no reference.** Each is a setting the organisation keeps, with the canvas value as its default, and is shown as the organisation's, not the regulation's: the load margin of 85% and 50.0 other hours a week; the experience logbook's rules and 10-year window; on the job training retakes; the competency minimum of 5 on a scale of 1 to 10; the enquiry reply within 2 working days; quote validity; invoicing on release.
+7. **Money.** Invoices and payments are recorded only. The system takes no payment and connects to no payment service. Value Added Tax is a rate the organisation sets.
+8. **Marketplace.** Built last. Shown only to signed-in users. The email values in the Civil Aviation Authority data are left out. Before anyone outside the organisation sees it, its data protection is checked, and Alex King decides the licence of the open data (Issue 25).
+9. **Questions still open from the private beta brief.** Each is decided as ours in the phase that needs it, recorded here, and put to Alex King in that phase's summary.
+10. **Part 147 and Part 21 Subpart G.** Not in this build (Issues 15 and 16).
+
+Not decided here, and so not built until Alex King says: the per-flight technical log (Issue 7), and choosing the type from the SRG1782 list, which needs the Civil Aviation Authority's list as data (REQ-021).
+
 ## Navigation
 
 - The sidebar follows 1321/2014. See Sections in the README.
