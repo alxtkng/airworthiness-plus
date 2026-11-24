@@ -8,7 +8,12 @@ from datetime import date
 
 from django.db import transaction
 
-from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation
+from airworthiness_plus.organisations.models import (
+    Approval,
+    ApprovalType,
+    Organisation,
+    Privilege,
+)
 from airworthiness_rules.dates import uk_today, utc_now
 
 # The order approvals are listed in: as the regulation's annexes are not, but
@@ -34,6 +39,35 @@ def held(organisation: Organisation) -> list[Approval]:
 def types_held(organisation: Organisation) -> set[str]:
     """Return which approvals ``organisation`` holds now."""
     return {one.approval for one in held(organisation)}
+
+
+# Why an organisation is not offered airworthiness review. CAO.A.095(c) gives
+# the privilege to a Part-CAO whose approval includes it.
+REVIEW_NOT_OPEN = (
+    "Airworthiness Review Is for an Organisation Holding Part-CAO "
+    "with the Airworthiness Review Privilege, CAO.A.095(c)"
+)
+# What the access log says of an action refused for that reason (REQ-009).
+REVIEW_REFUSED = "Airworthiness Review Without the Privilege, CAO.A.095(c)"
+
+
+def review_refusal(organisation: Organisation) -> str:
+    """Return why ``organisation`` is not offered airworthiness review, or nothing.
+
+    Airworthiness review staff, reviews and review certificates are for an
+    organisation that holds Part-CAO now and whose approval includes the
+    airworthiness review privilege (CAO.A.095(c)). The privileges recorded
+    are those of a Part-CAO and are set by Airworthiness Limited when the
+    organisation is set up. The privileges of a Part-CAMO are not yet
+    recorded, so a Part-CAMO is refused until they are (independent review
+    of 24 November 2026, finding 10).
+    """
+    if (
+        ApprovalType.PART_CAO in types_held(organisation)
+        and Privilege.AIRWORTHINESS_REVIEW in organisation.privileges
+    ):
+        return ""
+    return REVIEW_NOT_OPEN
 
 
 @transaction.atomic

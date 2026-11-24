@@ -27,7 +27,7 @@ from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
-from airworthiness_plus.organisations import approvals
+from airworthiness_plus.organisations import approvals, configuration
 from airworthiness_plus.organisations.models import Approval, Organisation
 from airworthiness_plus.programme import due
 from airworthiness_plus.reviews import services as review_services
@@ -372,6 +372,59 @@ def test_the_lead_time_of_a_review_certificate_is_never_shorter_than_the_calenda
 
 
 # Deferral limits
+
+
+def test_the_most_each_setting_may_be_is_held_below_the_form(sample: Sample) -> None:
+    """REQ-212 to REQ-214; independent recompute of 24 November 2026. The form was
+    the only thing that held "at most 365". The service refuses more with the
+    reason, and the database refuses whoever asks."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        organisation = Organisation.objects.get(pk=sample.ours.pk)
+        usual = {
+            "due_soon_days": 30,
+            "due_soon_hours": Decimal("10.0"),
+            "due_soon_cycles": 10,
+            "review_alert_days": None,
+        }
+        for change, message in (
+            ({"due_soon_days": 366}, "A Lead Time Is at Most 365 Days"),
+            ({"due_soon_hours": Decimal("1000.0")}, "999.9 Hours"),
+            ({"due_soon_cycles": 10000}, "9,999 Cycles"),
+            ({"review_alert_days": 366}, "The Earlier Alert Is at Most 365 Days"),
+        ):
+            with pytest.raises(configuration.RefusedError, match=message):
+                configuration.set_lead_times(organisation, **{**usual, **change})  # type: ignore[arg-type]
+        # The most allowed is taken: 365 days, and an alert of 365 over a lead of 364.
+        configuration.set_lead_times(
+            organisation,
+            **{**usual, "due_soon_days": 364, "review_alert_days": 365},  # type: ignore[arg-type]
+        )
+        configuration.set_lead_times(organisation, **{**usual, "due_soon_days": 365})  # type: ignore[arg-type]
+        with pytest.raises(configuration.RefusedError, match="A Default Limit Is at Most 365 Days"):
+            configuration.set_deferral_limits(
+                organisation,
+                deferral_days_non_required=30,
+                deferral_days_with_agreement=366,
+                deferral_days_certifying_staff=30,
+            )
+        for change in (
+            {"due_soon_days": 366},
+            {"due_soon_hours": Decimal("1000.0")},
+            {"due_soon_cycles": 10000},
+            {"due_soon_days": 30, "review_alert_days": 366},
+            {"deferral_days_non_required": 366},
+            {"deferral_days_with_agreement": 366},
+            {"deferral_days_certifying_staff": 366},
+        ):
+            with (
+                pytest.raises(
+                    IntegrityError, match="organisation_settings_are_within_their_bounds"
+                ),
+                transaction.atomic(),
+            ):
+                Organisation.objects.filter(pk=sample.ours.pk).update(**change)
+    stored = ours(sample)
+    assert (stored.due_soon_days, stored.review_alert_days) == (365, None)
 
 
 def test_the_administrator_sets_the_default_deferral_limits(sample: Sample) -> None:

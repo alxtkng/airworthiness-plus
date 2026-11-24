@@ -6,6 +6,7 @@
 <h1>{{ aircraft.registration }}</h1>
 <p>{{ aircraft.type_rating }}</p>
 <h2>Airworthiness Review Certificate</h2>
+{% if refusal %}<p role="alert">{{ refusal }}</p>{% endif %}
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <dl>
 <dt>Review Certificate Valid To</dt><dd>{% if line.valid_to %}{{ line.valid_to|long_date }}{% else %}No Certificate Recorded{% endif %}</dd>
@@ -22,28 +23,28 @@
 {% for certificate, extensions in certificates %}
 <tr>
 <td><a href="{% url 'certificate' certificate.id %}">{{ certificate.reference }}</a></td>
-<td>{% if certificate.issued_by %}{{ certificate.issued_by.user.full_name }}, {{ certificate.issued_by.authorisation_reference }}{% if certificate.from_before_records %}, Before These Records{% endif %}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
+<td>{% if certificate.issued_by %}{{ certificate.review_staff_name }}, {{ certificate.issued_by.authorisation_reference }}{% if certificate.from_before_records %}, Before These Records{% endif %}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
 <td>{{ certificate.issued_on|long_date }}</td>
 <td>{{ certificate.valid_to|long_date }}</td>
 <td>{% if certificate.voided %}Void, {{ certificate.void_reason }}{% elif certificate == line.certificate %}Current{% else %}Superseded{% endif %}</td>
-<td>{% if not certificate.issued_by or certificate.from_before_records %}{% elif certificate.copy_sent_on %}Sent {{ certificate.copy_sent_on|long_date }}{% else %}
+<td>{% if not certificate.issued_by or certificate.from_before_records %}{% elif certificate.copy_sent_on %}Sent {{ certificate.copy_sent_on|long_date }}{% elif refusal %}Not Recorded as Sent{% else %}
 <form method="post" action="{% url 'certificate_copy_sent' certificate.id %}">{% csrf_token %}{{ copy_form.on.label_tag }} {{ copy_form.on }} <button type="submit">Record Copy Sent</button></form>{% endif %}</td>
 </tr>
 {% for extension in extensions %}
 <tr>
 <td>{{ certificate.reference }}, Extension {{ forloop.counter }}</td>
-<td>{{ extension.extended_by.full_name }}</td>
+<td>{{ extension.extended_by_name }}</td>
 <td>{{ extension.extended_on|long_date }}</td>
 <td>{{ extension.valid_to|long_date }}</td>
 <td>Extended, ML.A.901(c) Conditions Confirmed</td>
-<td>{% if extension.copy_sent_on %}Sent {{ extension.copy_sent_on|long_date }}{% else %}
+<td>{% if extension.copy_sent_on %}Sent {{ extension.copy_sent_on|long_date }}{% elif refusal %}Not Recorded as Sent{% else %}
 <form method="post" action="{% url 'extension_copy_sent' extension.id %}">{% csrf_token %}{{ copy_form.on.label_tag }} {{ copy_form.on }} <button type="submit">Record Copy Sent</button></form>{% endif %}</td>
 </tr>
 {% endfor %}
 {% endfor %}
 </tbody>
 </table>
-{% if line.certificate %}
+{% if line.certificate and not refusal %}
 <h2>Extend the Certificate of {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'extend_certificate' line.certificate.id %}">
 {% csrf_token %}
@@ -54,6 +55,7 @@
 <h2>Review {{ aircraft.registration }}</h2>
 {% for review in reviews %}<p><a href="{% url 'review' review.id %}">Review Started {{ review.started_on|long_date }} by {{ review.staff.user.full_name }}{% if review.certificate %}, {{ review.certificate.reference }}{% else %}, in Progress{% endif %}</a></p>
 {% endfor %}
+{% if not refusal %}
 <form method="post" action="{% url 'start_review' aircraft.id %}">
 {% csrf_token %}
 <button type="submit">Start an Airworthiness Review of {{ aircraft.registration }}</button>
@@ -65,4 +67,5 @@
 {% for field in certificate_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Record Certificate</button></p>
 </form>
+{% endif %}
 {% endblock %}

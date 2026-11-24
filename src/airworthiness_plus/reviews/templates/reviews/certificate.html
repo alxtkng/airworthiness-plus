@@ -17,7 +17,7 @@
 <dt>Date of Issue</dt><dd>{{ certificate.issued_on|long_date }}</dd>
 <dt>Date of Expiry</dt><dd>{{ certificate.valid_to|long_date }}</dd>
 <dt>Airframe Flight Hours at the Time of Review</dt><dd>{{ certificate.airframe_hours|hours }}</dd>
-{% if certificate.issued_by %}<dt>Airworthiness Review Staff</dt><dd>{{ certificate.issued_by.user.full_name }}</dd>
+{% if certificate.issued_by %}<dt>Airworthiness Review Staff</dt><dd>{{ certificate.review_staff_name }}</dd>
 <dt>Authorisation Number</dt><dd>{{ certificate.issued_by.authorisation_reference }}</dd>{% endif %}
 </dl>
 {% for extension in extensions %}
@@ -27,14 +27,14 @@
 <dt>Date of Expiry</dt><dd>{{ extension.valid_to|long_date }}</dd>
 <dt>Statement</dt><dd>The aircraft complies with the conditions of point ML.A.901(c) of Annex Vb (Part-ML)</dd>
 <dt>Airframe Flight Hours at the Date of Issue</dt><dd>{{ extension.airframe_hours|hours }}</dd>
-<dt>Extended By</dt><dd>{{ extension.extended_by.full_name }}</dd>
-<dt>Company Name</dt><dd>{{ aircraft.organisation.name }}</dd>
-<dt>Approval Reference</dt><dd>{{ aircraft.organisation.approval_reference }}</dd>
+<dt>Extended By</dt><dd>{{ extension.extended_by_name }}</dd>
+<dt>Company Name</dt><dd>{{ extension.organisation_name }}</dd>
+<dt>Approval Reference</dt><dd>{{ extension.organisation_approval_reference }}</dd>
 </dl>
 {% endfor %}
 <p><a href="{% url 'aircraft_review' aircraft.id %}">Airworthiness Review of {{ aircraft.registration }}</a></p>
 {% if review %}<p><a href="{% url 'review' review.id %}">The Review and Its Evidence</a></p>{% endif %}
-{% if certificate.issued_by and not certificate.voided %}
+{% if certificate.issued_by and not certificate.voided and not refusal %}
 <h2>Void This Certificate</h2>
 <form method="post" action="{% url 'void_certificate' certificate.id %}">
 {% csrf_token %}

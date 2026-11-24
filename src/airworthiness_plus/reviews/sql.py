@@ -333,3 +333,175 @@ DROP TRIGGER review_fixed ON reviews_review;
 DROP FUNCTION reviews_reviewitem_fixed();
 DROP FUNCTION reviews_review_fixed();
 """
+
+# What a certificate shows of who issued it is kept on the certificate, and an
+# extension keeps what it shows too (REQ-110; independent review of
+# 24 November 2026, finding 1). Run once for each organisation by
+# ``history.sql.for_each_organisation``: a certificate or an extension recorded
+# before these were kept is given the names as they stand on the day of the
+# migration, which is the earliest day the records can speak for. The history
+# trigger writes an entry for each, against the database role, naming what was
+# set. One that has them is left as it is.
+KEEP_WHAT_EACH_SHOWED = """
+        UPDATE reviews_certificate certificate
+           SET organisation_name = ours.name,
+               organisation_address = ours.address,
+               organisation_approval_reference = ours.approval_reference,
+               review_staff_name = person.full_name
+          FROM organisations_organisation ours, reviews_reviewstaff staff, accounts_user person
+         WHERE certificate.organisation_id = organisation
+           AND ours.id = organisation
+           AND staff.id = certificate.issued_by_id
+           AND person.id = staff.user_id
+           AND certificate.organisation_name = ''
+           AND certificate.review_staff_name = '';
+
+        UPDATE reviews_extension extension
+           SET extended_by_name = person.full_name,
+               organisation_name = ours.name,
+               organisation_approval_reference = ours.approval_reference
+          FROM organisations_organisation ours, accounts_user person
+         WHERE extension.organisation_id = organisation
+           AND ours.id = organisation
+           AND person.id = extension.extended_by_id
+           AND extension.organisation_name = ''
+           AND extension.extended_by_name = '';
+"""
+
+_CERTIFICATE_FIXED = """
+CREATE OR REPLACE FUNCTION reviews_certificate_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.serial_number IS DISTINCT FROM OLD.serial_number
+       OR NEW.reference IS DISTINCT FROM OLD.reference
+       OR NEW.issued_on IS DISTINCT FROM OLD.issued_on
+       OR NEW.valid_to IS DISTINCT FROM OLD.valid_to
+       OR NEW.aircraft_id IS DISTINCT FROM OLD.aircraft_id
+       OR NEW.issued_by_id IS DISTINCT FROM OLD.issued_by_id
+       OR NEW.issued_elsewhere_by IS DISTINCT FROM OLD.issued_elsewhere_by
+       OR NEW.from_before_records IS DISTINCT FROM OLD.from_before_records-- MORE
+       OR (OLD.voided AND NOT NEW.voided) THEN
+        RAISE EXCEPTION 'What a certificate says is never altered once recorded'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+"""
+
+# The database writes what a certificate of the organisation's own shows, from
+# the organisation and the person as they stand when it is recorded, whatever
+# the application sends. An extension is given what it shows in the same way.
+_BEFORE_INSERT = """
+CREATE OR REPLACE FUNCTION reviews_certificate_before_insert() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    ours organisations_organisation%ROWTYPE;
+    last_before date;
+BEGIN
+    IF NEW.issued_by_id IS NULL THEN
+        NEW.serial_number := NULL;-- BLANK
+        RETURN NEW;
+    END IF;
+    SELECT * INTO ours FROM organisations_organisation WHERE id = NEW.organisation_id;-- KEPT
+    IF NEW.from_before_records THEN
+        SELECT last_review_before_records INTO last_before
+          FROM reviews_reviewstaff
+         WHERE id = NEW.issued_by_id
+           FOR SHARE;
+        IF last_before IS NULL OR NEW.issued_on > last_before THEN
+            RAISE EXCEPTION
+                'No certificate from before these records is after the last review before them'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        NEW.serial_number := NULL;
+        RETURN NEW;
+    END IF;
+    NEW.serial_number := reviews_allocate_serial(NEW.organisation_id);
+    NEW.reference := ours.approval_reference || '-ARC-' || lpad(NEW.serial_number::text, 4, '0');
+    RETURN NEW;
+END
+$$;
+"""
+
+WHAT_IT_SHOWED_FIXED = "\n".join(
+    (
+        _BEFORE_INSERT.replace(
+            "-- BLANK",
+            """
+        NEW.organisation_name := '';
+        NEW.organisation_address := '';
+        NEW.organisation_approval_reference := '';
+        NEW.review_staff_name := '';""",
+        ).replace(
+            "-- KEPT",
+            """
+    NEW.organisation_name := ours.name;
+    NEW.organisation_address := ours.address;
+    NEW.organisation_approval_reference := ours.approval_reference;
+    SELECT person.full_name INTO NEW.review_staff_name
+      FROM reviews_reviewstaff staff
+      JOIN accounts_user person ON person.id = staff.user_id
+     WHERE staff.id = NEW.issued_by_id;""",
+        ),
+        """
+CREATE FUNCTION reviews_extension_before_insert() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    SELECT name, approval_reference
+      INTO NEW.organisation_name, NEW.organisation_approval_reference
+      FROM organisations_organisation
+     WHERE id = NEW.organisation_id;
+    SELECT full_name INTO NEW.extended_by_name FROM accounts_user WHERE id = NEW.extended_by_id;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER extension_keeps BEFORE INSERT ON reviews_extension
+    FOR EACH ROW EXECUTE FUNCTION reviews_extension_before_insert();
+""",
+        _CERTIFICATE_FIXED.replace(
+            "-- MORE",
+            """
+       OR NEW.organisation_name IS DISTINCT FROM OLD.organisation_name
+       OR NEW.organisation_address IS DISTINCT FROM OLD.organisation_address
+       OR NEW.organisation_approval_reference IS DISTINCT FROM OLD.organisation_approval_reference
+       OR NEW.review_staff_name IS DISTINCT FROM OLD.review_staff_name""",
+        ),
+        """
+CREATE FUNCTION reviews_extension_fixed() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.certificate_id IS DISTINCT FROM OLD.certificate_id
+       OR NEW.extended_on IS DISTINCT FROM OLD.extended_on
+       OR NEW.valid_to IS DISTINCT FROM OLD.valid_to
+       OR NEW.extended_by_id IS DISTINCT FROM OLD.extended_by_id
+       OR NEW.extended_by_name IS DISTINCT FROM OLD.extended_by_name
+       OR NEW.organisation_name IS DISTINCT FROM OLD.organisation_name
+       OR NEW.organisation_approval_reference
+          IS DISTINCT FROM OLD.organisation_approval_reference THEN
+        RAISE EXCEPTION 'What an extension says is never altered once recorded'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER extension_fixed BEFORE UPDATE ON reviews_extension
+    FOR EACH ROW EXECUTE FUNCTION reviews_extension_fixed();
+""",
+    )
+)
+
+WHAT_IT_SHOWED_NOT_FIXED = "\n".join(
+    (
+        """
+DROP TRIGGER extension_fixed ON reviews_extension;
+DROP FUNCTION reviews_extension_fixed();
+DROP TRIGGER extension_keeps ON reviews_extension;
+DROP FUNCTION reviews_extension_before_insert();
+""",
+        _CERTIFICATE_FIXED.replace("-- MORE", ""),
+        _BEFORE_INSERT.replace("-- BLANK", "").replace("-- KEPT", ""),
+    )
+)

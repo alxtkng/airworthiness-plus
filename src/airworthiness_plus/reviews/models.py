@@ -92,6 +92,16 @@ class Certificate(Record):
         ReviewStaff, on_delete=models.PROTECT, null=True, blank=True, related_name="certificates"
     )
     issued_elsewhere_by = models.CharField("Issued By", max_length=200, blank=True)
+    # What a certificate of the organisation's own shows of who issued it, as it
+    # stood on the day the certificate was recorded. CAA Form 15c carries the
+    # organisation's name, address and approval reference and the name of the
+    # review staff. Never altered afterwards (REQ-110).
+    organisation_name = models.CharField("Organisation Name", max_length=200, blank=True)
+    organisation_address = models.CharField("Address", max_length=300, blank=True)
+    organisation_approval_reference = models.CharField(
+        "Approval Reference", max_length=40, blank=True
+    )
+    review_staff_name = models.CharField("Airworthiness Review Staff", max_length=200, blank=True)
     # Issued by the organisation's own review staff before these records.
     from_before_records = models.BooleanField("Recorded From Before These Records", default=False)
     airframe_hours = models.DecimalField(
@@ -142,6 +152,18 @@ class Certificate(Record):
                 | Q(serial_number__isnull=False),
                 name="certificate_issued_in_these_records_has_its_serial",
             ),
+            # One of the organisation's own says who issued it. The address is
+            # not held to this: only a certificate issued after a review needs
+            # one, and the review is refused without it (REQ-109).
+            models.CheckConstraint(
+                condition=Q(issued_by__isnull=True)
+                | (
+                    ~Q(organisation_name="")
+                    & ~Q(organisation_approval_reference="")
+                    & ~Q(review_staff_name="")
+                ),
+                name="certificate_issued_here_keeps_what_it_showed",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -161,6 +183,11 @@ class Extension(Record):
     extended_on = models.DateField("Extended")
     valid_to = models.DateField("Date of Expiry")
     extended_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    # What the extension shows on CAA Form 15c, as it stood on the day it was
+    # made. Never altered afterwards (REQ-110).
+    extended_by_name = models.CharField("Extended By", max_length=200)
+    organisation_name = models.CharField("Company Name", max_length=200)
+    organisation_approval_reference = models.CharField("Approval Reference", max_length=40)
     # CAA Form 15c: airframe flight hours at the date of issue of the extension.
     airframe_hours = models.DecimalField(max_digits=8, decimal_places=1, null=True, blank=True)
     managed_for_12_months = models.BooleanField()
@@ -180,6 +207,12 @@ class Extension(Record):
                     no_evidence_not_airworthy=True,
                 ),
                 name="extension_every_condition_confirmed",
+            ),
+            models.CheckConstraint(
+                condition=~Q(extended_by_name="")
+                & ~Q(organisation_name="")
+                & ~Q(organisation_approval_reference=""),
+                name="extension_keeps_what_it_showed",
             ),
         ]
 

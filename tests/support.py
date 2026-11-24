@@ -66,7 +66,9 @@ def make_sample() -> Sample:
         other, stranger = provision_organisation(
             name="[Other Organisation]",
             approval_reference="UK.CAO.[Other Number]",
-            privileges=[Privilege.CONTINUING_AIRWORTHINESS_MANAGEMENT],
+            # Every privilege, as ours has: what keeps it out is that it is another
+            # organisation, and nothing else.
+            privileges=list(Privilege),
             scope_of_work="Aeroplanes 2,730 Kilograms Maximum Take-Off Mass or Less",
             first_user_username="name@other-organisation.example",
             first_user_full_name="[Other Name]",

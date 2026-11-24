@@ -1,5 +1,6 @@
 """What can be done with review staff, certificates and extensions. Views check the role first."""
 
+import uuid
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -12,6 +13,7 @@ from airworthiness_plus.aircraft.models import Aircraft, CounterKind, Stage
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.formatting import long_date
 from airworthiness_plus.interface.working import Working
+from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due
 from airworthiness_plus.reviews.checklist import CHECKLIST, SURVEY
@@ -48,6 +50,19 @@ class RefusedError(ValueError):
     """What was asked for does not agree with the regulation or the records."""
 
 
+def _open_to(organisation_id: uuid.UUID) -> Organisation:
+    """Return the organisation, or refuse one whose approval does not give the privilege.
+
+    CAO.A.095(c). The pages check first and enter the refusal in the access
+    log; this holds whatever the page does.
+    """
+    organisation = Organisation.objects.get(pk=organisation_id)
+    reason = approvals.review_refusal(organisation)
+    if reason:
+        raise RefusedError(reason)
+    return organisation
+
+
 # Review staff
 
 
@@ -65,6 +80,7 @@ def add_review_staff(
     Their last review before these records is on or before today, the day
     they are recorded here. Anything later is a review in these records.
     """
+    _open_to(user.organisation_id)
     today = aircraft_services.today()
     _check_before_records(last_review_before_records, today)
     return ReviewStaff.objects.create(
@@ -349,6 +365,7 @@ def record_certificate(
     person has recent experience (REQ-113), and cannot stand in for a review
     carried out in these records (REQ-109).
     """
+    _open_to(aircraft.organisation_id)
     elsewhere = issued_elsewhere_by.strip()
     if issued_by is not None and elsewhere:
         raise RefusedError(
@@ -369,7 +386,7 @@ def record_certificate(
                 "A Certificate From Before These Records Is Dated No Later Than the Person's "
                 "Last Review Before These Records"
             )
-    return Certificate.objects.create(
+    certificate = Certificate.objects.create(
         organisation_id=aircraft.organisation_id,
         aircraft=aircraft,
         reference=reference.strip(),
@@ -380,6 +397,10 @@ def record_certificate(
         from_before_records=issued_by is not None,
         airframe_hours=airframe_hours,
     )
+    # The database writes what one of the organisation's own shows of who
+    # issued it, as it stands today, and never lets it be altered (REQ-110).
+    certificate.refresh_from_db()
+    return certificate
 
 
 @transaction.atomic
@@ -394,11 +415,15 @@ def issue_certificate(
 
     The caller has established that the review is complete. This checks the
     person: review staff of this organisation with recent experience on the
-    day of issue. The last day of validity comes from the rules: a year
+    day of issue. What it shows of the organisation and the person is written
+    by the database as they stand at issue, and is never altered afterwards
+    (independent review of 24 November 2026, finding 1). The last day of
+    validity comes from the rules: a year
     after the previous one if the review is within the 90 days before it
     (ML.A.903(d)), otherwise a year after issue (ML.A.901(a)). The serial
     and reference are set by the database.
     """
+    _open_to(aircraft.organisation_id)
     if issued_on > aircraft_services.today():
         raise RefusedError("A Certificate Cannot Be Issued After Today")
     if staff.organisation_id != aircraft.organisation_id:
@@ -445,6 +470,9 @@ def extend_certificate(
     Each of the three conditions is confirmed. At most two consecutive
     extensions, and not more than 30 days before expiry.
     """
+    organisation = _open_to(certificate.organisation_id)
+    if extended_by.organisation_id != organisation.id:
+        raise RefusedError("A Certificate Is Extended by a User of the Same Organisation")
     on = extended_on or aircraft_services.today()
     if on > aircraft_services.today():
         raise RefusedError("An Extension Cannot Be Dated After Today")
@@ -460,7 +488,7 @@ def extend_certificate(
         raise RefusedError(str(error)) from error
     airframe = certificate.aircraft.counters.filter(kind=CounterKind.AIRFRAME).first()
     reading = aircraft_services.current_reading(airframe) if airframe is not None else None
-    return Extension.objects.create(
+    extension = Extension.objects.create(
         organisation_id=certificate.organisation_id,
         certificate=certificate,
         extended_on=on,
@@ -471,6 +499,10 @@ def extend_certificate(
         maintained_by_approved_organisations=True,
         no_evidence_not_airworthy=True,
     )
+    # The database writes who extended it and the organisation's name and
+    # approval reference, as they stand today (REQ-110).
+    extension.refresh_from_db()
+    return extension
 
 
 def record_copy_sent(item: Certificate | Extension, on: date) -> None:
@@ -751,6 +783,7 @@ def start_review(
     aircraft: Aircraft, *, staff: ReviewStaff, started_on: date | None = None
 ) -> Review:
     """Start a review, with every point of ML.A.903(a) and (c) to be verified (REQ-107, REQ-108)."""
+    _open_to(aircraft.organisation_id)
     on = started_on or aircraft_services.today()
     if on > aircraft_services.today():
         raise RefusedError("A Review Cannot Be Started After Today")

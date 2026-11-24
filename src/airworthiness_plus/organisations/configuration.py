@@ -13,6 +13,13 @@ from decimal import Decimal
 
 from airworthiness_plus.organisations.models import Organisation
 
+# Ours, not the regulation's: the most a lead time or a default limit may be
+# (REQ-212 to REQ-214). Held here, by the form and by the database, so that no
+# caller can store more (independent recompute of 24 November 2026).
+MOST_DAYS = 365
+MOST_HOURS = Decimal("999.9")
+MOST_CYCLES = 9999
+
 
 class RefusedError(ValueError):
     """What was asked for does not agree with the records."""
@@ -43,8 +50,12 @@ def set_lead_times(
     """
     if due_soon_days < 0 or due_soon_hours < 0 or due_soon_cycles < 0:
         raise RefusedError("A Lead Time Is Not Below Zero")
+    if due_soon_days > MOST_DAYS or due_soon_hours > MOST_HOURS or due_soon_cycles > MOST_CYCLES:
+        raise RefusedError("A Lead Time Is at Most 365 Days, 999.9 Hours or 9,999 Cycles")
     if review_alert_days is not None and review_alert_days <= due_soon_days:
         raise RefusedError("The Earlier Alert Is More Days Than the Calendar Lead Time")
+    if review_alert_days is not None and review_alert_days > MOST_DAYS:
+        raise RefusedError("The Earlier Alert Is at Most 365 Days")
     organisation.due_soon_days = due_soon_days
     organisation.due_soon_hours = due_soon_hours
     organisation.due_soon_cycles = due_soon_cycles
@@ -69,6 +80,8 @@ def set_deferral_limits(
     )
     if min(limits) < 1:
         raise RefusedError("A Default Limit Is at Least 1 Day")
+    if max(limits) > MOST_DAYS:
+        raise RefusedError("A Default Limit Is at Most 365 Days")
     organisation.deferral_days_non_required = deferral_days_non_required
     organisation.deferral_days_with_agreement = deferral_days_with_agreement
     organisation.deferral_days_certifying_staff = deferral_days_certifying_staff
