@@ -1,4 +1,4 @@
-"""The organisation record (REQ-001)."""
+"""The organisation record and the approvals it holds (REQ-001, REQ-200)."""
 
 from decimal import Decimal
 
@@ -10,9 +10,11 @@ from airworthiness_plus.history.models import Record
 
 
 class ApprovalType(models.TextChoices):
-    """The approval an organisation holds. The private beta slice is Part-CAO only."""
+    """An approval an organisation may hold (Decisions.md, Canvas Build, decision 1)."""
 
     PART_CAO = "Part-CAO", "Part-CAO"
+    PART_CAMO = "Part-CAMO", "Part-CAMO"
+    PART_145 = "Part-145", "Part-145"
 
 
 class Privilege(models.TextChoices):
@@ -28,7 +30,13 @@ class Privilege(models.TextChoices):
 
 
 class Organisation(Record):
-    """One approved organisation. Every other record belongs to exactly one (REQ-002)."""
+    """One approved organisation. Every other record belongs to exactly one (REQ-002).
+
+    ``approval_type`` and ``approval_reference`` are the approval the
+    organisation was set up with. Its certificates carry that reference
+    (REQ-110). Every approval it holds, that one among them, is an
+    ``Approval`` record (REQ-200).
+    """
 
     name = models.CharField(max_length=200)
     approval_type = models.CharField(
@@ -57,8 +65,12 @@ class Organisation(Record):
 
     class Meta:
         constraints = [
+            # CAO.A.095 gives the privileges of a Part-CAO: an organisation set up
+            # as one has at least one. The privileges of the other approvals are
+            # not yet recorded (REQ-200).
             models.CheckConstraint(
-                condition=Q(privileges__len__gte=1)
+                condition=(Q(privileges__len__gte=1) | ~Q(approval_type=ApprovalType.PART_CAO))
+                & Q(approval_type__in=ApprovalType.values)
                 & Q(
                     privileges__contained_by=[
                         Privilege.MAINTENANCE,
@@ -98,3 +110,36 @@ class Organisation(Record):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Approval(Record):
+    """One approval an organisation holds, with its reference (REQ-200).
+
+    An approval is recorded once for an organisation. One that ends is kept,
+    marked with the day it ended, and may be recorded as held again.
+    """
+
+    organisation = models.ForeignKey(
+        Organisation, on_delete=models.PROTECT, related_name="approvals"
+    )
+    approval = models.CharField("Approval", max_length=20, choices=ApprovalType.choices)
+    reference = models.CharField("Approval Reference", max_length=40)
+    no_longer_held_on = models.DateField("No Longer Held From", null=True, blank=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(fields=["organisation", "approval"], name="approval_held_once"),
+            models.CheckConstraint(
+                condition=Q(approval__in=ApprovalType.values) & ~Q(reference=""),
+                name="approval_is_known_and_has_its_reference",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.approval}, {self.reference}"
+
+    @property
+    def held(self) -> bool:
+        """Return whether the approval is held now."""
+        return self.no_longer_held_on is None
