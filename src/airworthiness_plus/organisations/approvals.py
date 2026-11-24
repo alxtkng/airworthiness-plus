@@ -9,6 +9,7 @@ from datetime import date
 from django.db import transaction
 
 from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation
+from airworthiness_rules.dates import uk_today, utc_now
 
 # The order approvals are listed in: as the regulation's annexes are not, but
 # as Decisions.md names them.
@@ -62,6 +63,8 @@ def end(approval: Approval, *, on: date) -> None:
     """Record an approval as no longer held from ``on``. The record stays (REQ-131)."""
     if not approval.held:
         raise RefusedError("Already Recorded as No Longer Held")
+    if on > uk_today(utc_now()):
+        raise RefusedError("No Longer Held From Is Not After Today")
     organisation = Organisation.objects.get(pk=approval.organisation_id)
     if approval.approval == organisation.approval_type:
         raise RefusedError(

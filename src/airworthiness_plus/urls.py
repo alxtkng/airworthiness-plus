@@ -11,6 +11,7 @@ from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
 from airworthiness_plus.maintenance_data import views as data
+from airworthiness_plus.organisations import views as settings
 from airworthiness_plus.people import views as people
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.reviews import views as reviews
@@ -165,6 +166,20 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("organisation/", acceptance.organisation_page, name="organisation"),
     path("organisation/approval/", acceptance.record_approval, name="record_records_approval"),
     path("organisation/parallel-run/", acceptance.record_parallel_run, name="record_parallel_run"),
+    path("settings/", settings.settings_page, name="settings"),
+    path("settings/details/", settings.change_details, name="change_organisation_details"),
+    path("settings/approvals/", settings.record_approval_held, name="record_approval_held"),
+    path(
+        "settings/approvals/<uuid:approval_id>/end/",
+        settings.end_approval_held,
+        name="end_approval_held",
+    ),
+    path("settings/lead-times/", settings.set_lead_times, name="set_lead_times"),
+    path(
+        "settings/deferral-limits/",
+        settings.set_deferral_limits,
+        name="set_deferral_limits",
+    ),
     path("users/", users.users_page, name="users"),
     path("users/access-log/", users.access_log, name="access_log"),
     path("users/add/", users.add_user, name="add_user"),

@@ -22,6 +22,7 @@ from airworthiness_plus.customers import forms as customers
 from airworthiness_plus.directives import forms as directives
 from airworthiness_plus.imports import forms as imports
 from airworthiness_plus.maintenance_data import forms as maintenance_data
+from airworthiness_plus.organisations import forms as organisations
 from airworthiness_plus.people import forms as people
 from airworthiness_plus.programme import forms as programme
 from airworthiness_plus.reviews import forms as reviews
@@ -81,6 +82,11 @@ WRITES: dict[str, Sets] = {
     "add_problem_note": (acceptance.NoteForm,),
     "record_records_approval": (acceptance.ApprovalForm,),
     "record_parallel_run": (acceptance.ParallelRunForm,),
+    "change_organisation_details": (organisations.DetailsForm,),
+    "record_approval_held": (organisations.ApprovalHeldForm,),
+    "end_approval_held": (organisations.EndApprovalForm,),
+    "set_lead_times": (organisations.LeadTimesForm,),
+    "set_deferral_limits": (organisations.DeferralLimitsForm,),
     "add_user": (accounts.AddUserForm, "Code From the Administrator's Authenticator Application"),
     "set_user_roles": (
         accounts.RolesForm,
@@ -128,6 +134,7 @@ READS = frozenset(
         "import_report",
         "problem_log",
         "organisation",
+        "settings",
         "users",
         "access_log",
     }

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Settings</h1>
+{% if message %}<p role="alert">{{ message }}</p>{% endif %}
+<h2>Organisation Details</h2>
+<dl>
+<dt>Organisation Name</dt><dd>{{ organisation.name }}</dd>
+<dt>Address</dt><dd>{{ organisation.address }}</dd>
+<dt>Approval Reference</dt><dd>{{ organisation.approval_reference }}</dd>
+<dt>Certificate, Privileges and Scope of Work</dt><dd><a href="{% url 'organisation' %}">Approval and Scope</a></dd>
+</dl>
+{% if may_change %}
+<form method="post" action="{% url 'change_organisation_details' %}">
+{% csrf_token %}
+{% if details_form.non_field_errors %}<p role="alert">{{ details_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in details_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}<p><button type="submit">Save Organisation Details</button></p>
+</form>
+{% endif %}
+<h2>Approvals Held</h2>
+<table>
+<thead><tr><th>Approval</th><th>Approval Reference</th><th>Status</th>{% if may_change %}<th>Change</th>{% endif %}</tr></thead>
+<tbody>
+{% for approval, can_end in approvals %}
+<tr>
+<td>{{ approval.approval }}</td><td>{{ approval.reference }}</td><td>{% if approval.held %}Held{% else %}No Longer Held From {{ approval.no_longer_held_on|long_date }}{% endif %}</td>{% if may_change %}<td>{% if can_end %}<form method="post" action="{% url 'end_approval_held' approval.id %}">{% csrf_token %}<label for="end-{{ approval.id }}">No Longer Held From</label> <input id="end-{{ approval.id }}" name="on" type="text" required> <button type="submit">Record {{ approval.approval }} as No Longer Held</button></form>{% endif %}</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% if may_change %}
+<form method="post" action="{% url 'record_approval_held' %}">
+{% csrf_token %}
+{% if approval_form.non_field_errors %}<p role="alert">{{ approval_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in approval_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}<p><button type="submit">Record an Approval Held</button></p>
+</form>
+{% endif %}
+<h2>Deferral Limits</h2>
+<p>Limit in the Maintenance Data Applies When Shorter, ML.A.403(c)</p>
+<table>
+<thead><tr><th>Decision By</th><th>Applies To</th><th>Default Limit</th><th>Point</th></tr></thead>
+<tbody>
+{% for line in deferral_lines %}
+<tr><td>{{ line.decision_by }}</td><td>{{ line.applies_to }}</td><td>{{ line.limit }}</td><td>{{ line.point }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% if may_change %}
+<form method="post" action="{% url 'set_deferral_limits' %}">
+{% csrf_token %}
+{% if deferral_form.non_field_errors %}<p role="alert">{{ deferral_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in deferral_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}<p><button type="submit">Save Deferral Limits</button></p>
+</form>
+{% endif %}
+<h2>Alert Lead Times</h2>
+<p>Each Item Is Due Soon From Its Lead Time</p>
+<table>
+<thead><tr><th>Alert</th><th>Lead Time</th></tr></thead>
+<tbody>
+{% for alert, lead in lead_times %}
+<tr><td>{{ alert }}</td><td>{{ lead }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% if may_change %}
+<form method="post" action="{% url 'set_lead_times' %}">
+{% csrf_token %}
+{% if lead_form.non_field_errors %}<p role="alert">{{ lead_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in lead_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}<p><button type="submit">Save Alert Lead Times</button></p>
+</form>
+{% endif %}
+{% endblock %}

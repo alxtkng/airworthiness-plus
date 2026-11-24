@@ -315,7 +315,26 @@ BOARD: tuple[Group, ...] = (
             Item("Invoices"),
         ),
     ),
-    Group("", (Item("Settings", tabs=_tabs("Organisation", "Planning")), Item("Help"))),
+    Group(
+        "",
+        (
+            Item(
+                "Settings",
+                "settings",
+                tabs=(Tab("Organisation", "settings"), Tab("Planning")),
+                inside=frozenset(
+                    {
+                        "change_organisation_details",
+                        "record_approval_held",
+                        "end_approval_held",
+                        "set_lead_times",
+                        "set_deferral_limits",
+                    }
+                ),
+            ),
+            Item("Help"),
+        ),
+    ),
 )
 
 
