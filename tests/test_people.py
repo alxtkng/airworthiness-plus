@@ -531,5 +531,5 @@ def test_a_sign_in_from_before_person_records_is_given_its_person(sample: Sample
         cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
     with working_for(sample.ours.id, sample.administrator.id):
         count = Person.objects.count()
-        build.add_person_records(sample)
+        build.add_person_records(sample.ours, sample.administrator)
         assert Person.objects.count() == count

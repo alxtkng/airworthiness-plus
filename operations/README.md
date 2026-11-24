@@ -8,6 +8,7 @@ Nothing here names the server, its address or any credential. Those are held by 
 |---|---|---|
 | `deployment.md` | Building and running the service; settings; the reverse proxy; what is checked on the server | REQ-132 |
 | `test-site.md` | The test site on a free host, holding the sample organisation only: how it is made, started, used and removed. It is not the server | ADR-0003; Issue 96 |
+| `demo.md` | How to give a demo of what is built, on the test site: what to show, in what order, signed in as whom | REQ-219 |
 | `backup-and-restore.md` | What is backed up, how, for how long; the recovery point and recovery time objectives; how to restore | REQ-150 to REQ-154 |
 | `restore-tests/` | The record of each restore test | REQ-153 |
 | `backup-storage-options.md` | Where to keep backups away from the server: what it must do, what was found, and a recommendation for Alex King | REQ-151; Issue 27 |

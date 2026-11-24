@@ -29,7 +29,7 @@ Render gives a free service no way to run a command before it starts and no term
    - It refuses any database it did not find empty and mark as the test site's own.
    - It brings the tables up to date.
    - It makes the role the service signs in as, a member of `airworthiness_application` and nothing more, or sets that role's password again. An existing role that is anything else is refused.
-   - It sets up the sample organisation, if it is not there.
+   - It sets up the sample organisation, if it is not there, and the second sample organisation, if it is not there.
 2. The service is started by the `Dockerfile`'s own command, in place of the program, with every `AIRWORTHINESS_TEST_SITE_` value removed from its environment. The running service holds its own role's credentials and no others (ADR-0002).
 
 If step 1 fails, the service is not started and Render shows the deploy as failed.
@@ -83,8 +83,15 @@ Added 24 November 2026. The database live on that day was seeded before the canv
 | What | On the Database Already Made | After the Next Remake (Issue 100) |
 |---|---|---|
 | Approvals held | The sample organisation is given the record of its Part-CAO approval | The same |
-| People | Each of the 5 sign-ins is given a person record, named as the sign-in is | The 14 people of `SampleData.md` and the former review staff member |
+| People | Each of the 5 sign-ins is given a person record by the migration. At the next start the 10 people with no sign-in are added and the 5 records are completed (REQ-218) | The same 14 people and the former review staff member |
+| The second organisation | Set up at the next start: [Second Organisation], Part-CAMO and Part-145, with 5 people, 2 customers and 2 aircraft | The same |
 | Customers | One customer for each different text that was typed as Owned By: 5 customers for the 7 aircraft. The three aircraft typed as Pilot-Owner share one customer, named Pilot-Owner, until each is given its own on the aircraft's page | The 7 customers of `SampleData.md`, one for each aircraft |
+
+The second organisation's Administrator is `accountable.manager@second-organisation.example`. Its first password is the value of `AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD` in Render on the day it is set up. It is changed at the first sign-in and works for 7 days from that day. After 7 days nobody can sign in to the second organisation until the database is remade.
+
+What a start writes to its log, one line each: Service Role Made or Service Role Password Set Again; Sample Organisation Set Up or Already Set Up; People of the Sample Brought Up to Date, with how many were added, when any were; Second Sample Organisation Set Up or Already Set Up. No password is written.
+
+Not yet seen on the test site itself: the build session may not reach it. It was rehearsed on 24 November 2026 on a database seeded from `main` before the canvas build, with an owner of the tables that is not a superuser, as Render's is. Every migration applied, 10 people were added and then none, the second organisation was set up, and the records agreed with their history. `demo.md` says what to show.
 
 ## When the Database Is Deleted
 

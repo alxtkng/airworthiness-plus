@@ -148,9 +148,8 @@ def add_people(ours: Organisation, administrator: User) -> Staff:
         planner = add("planning", "[Planning and Records Name]", Role.PLANNING_AND_RECORDS)
         reviewer = add("review", "[Review Name]", Role.AIRWORTHINESS_REVIEW_STAFF)
         reader = add("reader", "[Read Only Name]", Role.READ_ONLY)
-    staff = Staff(ours, administrator, lucy, planner, reviewer, reader)
-    add_person_records(staff)
-    return staff
+    add_person_records(ours, administrator)
+    return Staff(ours, administrator, lucy, planner, reviewer, reader)
 
 
 # SampleData.md, People, and the Staff board: name, role, staff group, who they
@@ -200,20 +199,21 @@ PEOPLE: tuple[
 )  # fmt: skip
 
 
-def add_person_records(people: People) -> dict[str, Person]:
+def add_person_records(ours: Organisation, administrator: User) -> dict[str, Person]:
     """Give each person of SampleData.md their record, as the Administrator.
 
     A person with a sign-in has a record already, made with the sign-in.
-    A person already recorded under a name is left as they are, so this can
-    be run again on a sample that was seeded before person records.
+    A person whose record says more than their name is left as they are, so
+    this can be run again, and on a sample that was seeded before person
+    records (``operations/test-site.md``).
     """
     found: dict[str, Person] = {}
-    with working_for(people.ours.id, people.administrator.id):
+    with working_for(ours.id, administrator.id):
         for name, role, group, _, employment, licence, joined, left in PEOPLE:
             person = Person.objects.filter(full_name=name).first()
             if person is None:
                 person = people_services.add_person(
-                    organisation=people.ours, full_name=name, joined_on=joined, left_on=left
+                    organisation=ours, full_name=name, joined_on=joined, left_on=left
                 )
             elif person.role or person.reports_to_id is not None:
                 found[name] = person
