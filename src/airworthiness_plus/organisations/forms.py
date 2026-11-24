@@ -1,17 +1,12 @@
 """Forms for the Settings page. Labels follow design-system/Writing.md."""
 
-from decimal import Decimal
 from typing import Any
 
 from django import forms
 
 from airworthiness_plus.interface.forms import Form
+from airworthiness_plus.organisations.configuration import MOST_CYCLES, MOST_DAYS, MOST_HOURS
 from airworthiness_plus.organisations.models import ApprovalType
-
-# Ours, not the regulation's: the most a lead time or a default limit may be.
-MOST_DAYS = 365
-MOST_HOURS = Decimal("999.9")
-MOST_CYCLES = 9999
 
 
 class DetailsForm(Form):

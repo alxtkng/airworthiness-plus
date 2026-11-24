@@ -70,7 +70,8 @@ def test_a_person_who_left_on_29_february_is_kept_to_1_march() -> None:
 
     29 February 2024 and 2 years has no such day in 2026; 28 February 2026
     would be a day less than 2 years, so the record is kept until 1 March.
-    Four years later there is a 29 February again.
+    The same holds 3 years on: 2027 has no 29 February either. A person who
+    left on 28 February, in a leap year or not, is kept until 28 February.
     """
     left = date(2024, 2, 29)
     assert record_kept_until(left, approvals={CAO}, review_staff=True) == Retention(

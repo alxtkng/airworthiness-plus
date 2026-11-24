@@ -6,6 +6,9 @@ not found (REQ-003).
 """
 
 import uuid
+from collections.abc import Callable
+from functools import wraps
+from typing import Any
 
 from django.db import DatabaseError, transaction
 from django.http import HttpRequest, HttpResponse
@@ -13,11 +16,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
+from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
-from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
+from airworthiness_plus.accounts.permissions import ActionRefusedError, address_of, requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.organisations import approvals
 from airworthiness_plus.reviews import services
 from airworthiness_plus.reviews.forms import (
     CertificateForm,
@@ -47,13 +52,41 @@ def _user(request: HttpRequest) -> User:
     return user
 
 
+def _refusal(request: HttpRequest) -> str:
+    """Return why the organisation is not offered airworthiness review, or nothing."""
+    return approvals.review_refusal(_user(request).organisation)
+
+
+def with_the_privilege(view: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
+    """Let an action of airworthiness review run only for an organisation it is open to.
+
+    CAO.A.095(c): a Part-CAO whose approval includes airworthiness review.
+    Any other organisation is refused with the reason, whatever the roles
+    of the user, and the refusal is entered in the access log (REQ-009;
+    independent review of 24 November 2026, finding 10). Placed under
+    ``requires``, so the role matrix is checked first.
+    """
+
+    @wraps(view)
+    def wrapped(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        reason = _refusal(request)
+        if reason:
+            sign_in.log_action_refused(
+                _user(request), approvals.REVIEW_REFUSED, address_of(request)
+            )
+            return render(request, "reviews/not_open.html", {"refusal": reason}, status=403)
+        return view(request, *args, **kwargs)
+
+    return wrapped
+
+
 @never_cache
 @requires(Action.VIEW_RECORDS)
 def schedule_page(request: HttpRequest) -> HttpResponse:
     """The review schedule: every aircraft by days remaining to expiry (REQ-116)."""
     today = aircraft_services.today()
     lines = services.schedule(_user(request).organisation, today)
-    return render(request, "reviews/schedule.html", {"lines": lines})
+    return render(request, "reviews/schedule.html", {"lines": lines, "refusal": _refusal(request)})
 
 
 def _aircraft_page(
@@ -69,7 +102,7 @@ def _aircraft_page(
             "line": line,
             "working": services.working(line, today),
             "certificates": [
-                (certificate, list(certificate.extensions.select_related("extended_by")))
+                (certificate, list(certificate.extensions.all()))
                 for certificate in services.certificates(aircraft)
             ],
             "reviews": Review.objects.filter(aircraft=aircraft).select_related("staff__user"),
@@ -77,6 +110,7 @@ def _aircraft_page(
             "extension_form": ExtensionForm(),
             "copy_form": CopySentForm(),
             "message": message,
+            "refusal": _refusal(request),
         },
     )
 
@@ -91,6 +125,7 @@ def aircraft_review_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpRe
 
 @requires(Action.ADD_OR_CHANGE_AIRCRAFT)
 @require_POST
+@with_the_privilege
 def record_certificate(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """Record a certificate issued elsewhere, or by the organisation before these records."""
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
@@ -110,6 +145,7 @@ def record_certificate(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResp
 
 @requires(Action.EXTEND_AIRWORTHINESS_REVIEW_CERTIFICATE)
 @require_POST
+@with_the_privilege
 def extend(request: HttpRequest, certificate_id: uuid.UUID) -> HttpResponse:
     """Extend a certificate, each condition of ML.A.901(c) confirmed (REQ-104 to REQ-106)."""
     certificate = get_object_or_404(Certificate, pk=certificate_id)
@@ -144,6 +180,7 @@ def _copy_sent(
 
 @requires(Action.RECORD_COPY_SENT_TO_THE_AUTHORITY)
 @require_POST
+@with_the_privilege
 def certificate_copy_sent(request: HttpRequest, certificate_id: uuid.UUID) -> HttpResponse:
     """Record the copy of a certificate sent to the authority (REQ-111)."""
     certificate = get_object_or_404(Certificate, pk=certificate_id)
@@ -152,6 +189,7 @@ def certificate_copy_sent(request: HttpRequest, certificate_id: uuid.UUID) -> Ht
 
 @requires(Action.RECORD_COPY_SENT_TO_THE_AUTHORITY)
 @require_POST
+@with_the_privilege
 def extension_copy_sent(request: HttpRequest, extension_id: uuid.UUID) -> HttpResponse:
     """Record the copy of an extended certificate sent to the authority (REQ-111)."""
     extension = get_object_or_404(Extension, pk=extension_id)
@@ -172,6 +210,7 @@ def _staff_page(request: HttpRequest, form: ReviewStaffForm, message: str = "") 
             "involvement_form": InvolvementForm(),
             "restoration_form": RestorationForm(),
             "message": message,
+            "refusal": _refusal(request),
         },
     )
 
@@ -185,6 +224,7 @@ def staff_page(request: HttpRequest) -> HttpResponse:
 
 @requires(Action.MANAGE_USERS_AND_ROLES)
 @require_POST
+@with_the_privilege
 def add_staff(request: HttpRequest) -> HttpResponse:
     """Record a person as airworthiness review staff."""
     form = ReviewStaffForm(request.POST)
@@ -200,6 +240,7 @@ def add_staff(request: HttpRequest) -> HttpResponse:
 
 @requires(Action.MANAGE_USERS_AND_ROLES)
 @require_POST
+@with_the_privilege
 def update_involvement(request: HttpRequest, staff_id: uuid.UUID) -> HttpResponse:
     """Change the recorded months of involvement. A lapse already reached is recorded first."""
     staff = get_object_or_404(ReviewStaff, pk=staff_id)
@@ -217,6 +258,7 @@ def update_involvement(request: HttpRequest, staff_id: uuid.UUID) -> HttpRespons
 
 @requires(Action.MANAGE_USERS_AND_ROLES)
 @require_POST
+@with_the_privilege
 def record_restoration(request: HttpRequest, staff_id: uuid.UUID) -> HttpResponse:
     """Record a review under supervision that restores a lapsed authorisation (REQ-114)."""
     staff = get_object_or_404(ReviewStaff, pk=staff_id)
@@ -266,12 +308,14 @@ def _review_page(request: HttpRequest, review: Review, message: str = "") -> Htt
                 }
             ),
             "message": message,
+            "refusal": _refusal(request),
         },
     )
 
 
 @requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
 @require_POST
+@with_the_privilege
 def start_review(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """Start a review of an aircraft, as the signed-in member of review staff."""
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
@@ -291,6 +335,7 @@ def review_page(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
 
 @requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
 @require_POST
+@with_the_privilege
 def record_item(request: HttpRequest, item_id: uuid.UUID) -> HttpResponse:
     """Record the result of one point."""
     item = get_object_or_404(ReviewItem, pk=item_id)
@@ -315,6 +360,7 @@ def record_item(request: HttpRequest, item_id: uuid.UUID) -> HttpResponse:
 
 @requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
 @require_POST
+@with_the_privilege
 def close_finding(request: HttpRequest, item_id: uuid.UUID) -> HttpResponse:
     """Record how a finding was closed."""
     item = get_object_or_404(ReviewItem, pk=item_id)
@@ -333,6 +379,7 @@ def close_finding(request: HttpRequest, item_id: uuid.UUID) -> HttpResponse:
 
 @requires(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
 @require_POST
+@with_the_privilege
 def review_details(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
     """Record who assisted at the survey, the airframe hours and the state of the programme."""
     review = get_object_or_404(Review, pk=review_id)
@@ -351,6 +398,7 @@ def review_details(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
 
 @requires(Action.ISSUE_AIRWORTHINESS_REVIEW_CERTIFICATE)
 @require_POST
+@with_the_privilege
 def issue(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
     """Issue the certificate for a completed review (REQ-109, REQ-110).
 
@@ -373,10 +421,15 @@ def issue(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
 def certificate_page(request: HttpRequest, certificate_id: uuid.UUID) -> HttpResponse:
     """One certificate, with the entries of CAA Form 15c (REQ-110)."""
     certificate = get_object_or_404(Certificate, pk=certificate_id)
-    organisation = certificate.aircraft.organisation
+    # What the certificate kept when it was recorded, never the organisation
+    # or the person as they stand today (finding 1 of 24 November 2026).
     issued_by = ", ".join(
         part
-        for part in (organisation.name, organisation.address, organisation.approval_reference)
+        for part in (
+            certificate.organisation_name,
+            certificate.organisation_address,
+            certificate.organisation_approval_reference,
+        )
         if part
     )
     return render(
@@ -386,15 +439,17 @@ def certificate_page(request: HttpRequest, certificate_id: uuid.UUID) -> HttpRes
             "certificate": certificate,
             "issued_by": issued_by,
             "aircraft": certificate.aircraft,
-            "extensions": list(certificate.extensions.select_related("extended_by")),
+            "extensions": list(certificate.extensions.all()),
             "review": Review.objects.filter(certificate=certificate).first(),
             "void_form": VoidForm(),
+            "refusal": _refusal(request),
         },
     )
 
 
 @requires(Action.ISSUE_AIRWORTHINESS_REVIEW_CERTIFICATE)
 @require_POST
+@with_the_privilege
 def void(request: HttpRequest, certificate_id: uuid.UUID) -> HttpResponse:
     """Void a certificate. It stays in the record and its serial is not used again."""
     certificate = get_object_or_404(Certificate, pk=certificate_id)

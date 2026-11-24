@@ -103,6 +103,17 @@ class Organisation(Record):
                 | Q(review_alert_days__gt=F("due_soon_days")),
                 name="organisation_review_alert_is_the_earlier",
             ),
+            # The most each may be (REQ-212 to REQ-214). Ours, not the regulation's.
+            models.CheckConstraint(
+                condition=Q(due_soon_days__lte=365)
+                & Q(due_soon_hours__lte=Decimal("999.9"))
+                & Q(due_soon_cycles__lte=9999)
+                & (Q(review_alert_days__isnull=True) | Q(review_alert_days__lte=365))
+                & Q(deferral_days_non_required__lte=365)
+                & Q(deferral_days_with_agreement__lte=365)
+                & Q(deferral_days_certifying_staff__lte=365),
+                name="organisation_settings_are_within_their_bounds",
+            ),
             models.CheckConstraint(
                 condition=Q(deferral_days_non_required__gte=1)
                 & Q(deferral_days_with_agreement__gte=1)

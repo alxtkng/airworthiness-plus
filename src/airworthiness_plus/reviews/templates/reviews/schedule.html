@@ -3,6 +3,7 @@
 {% block title %}Airworthiness Reviews{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Airworthiness Reviews</h1>
+{% if refusal %}<p role="alert">{{ refusal }}</p>{% endif %}
 <p><a href="{% url 'review_staff' %}">Airworthiness Review Staff</a></p>
 <table>
 <thead>
