@@ -48,6 +48,7 @@ from airworthiness_rules.programme import (
     pilot_owner_notification_deadline,
     pilot_owner_told_late,
     programme_review_due,
+    review_certificate_lead_days,
     task_flag,
 )
 from airworthiness_rules.records import release_record_deadline
@@ -146,6 +147,21 @@ def thresholds_of(organisation: Organisation) -> Thresholds:
     """Return the organisation's Due Soon thresholds (REQ-055)."""
     return Thresholds(
         days=organisation.due_soon_days,
+        hours=organisation.due_soon_hours,
+        cycles=organisation.due_soon_cycles,
+    )
+
+
+def certificate_thresholds(organisation: Organisation) -> Thresholds:
+    """Return the thresholds for an airworthiness review certificate (REQ-213).
+
+    As for everything else, but for the days: an organisation may turn on an
+    earlier alert for its review certificates.
+    """
+    return Thresholds(
+        days=review_certificate_lead_days(
+            organisation.due_soon_days, organisation.review_alert_days
+        ),
         hours=organisation.due_soon_hours,
         cycles=organisation.due_soon_cycles,
     )

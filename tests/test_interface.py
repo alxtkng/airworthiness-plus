@@ -182,6 +182,7 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
         "Approval and Scope",
         "Records",
         "Customers",
+        "Settings",
     ]
     assert '<a href="/" aria-current="page">Aircraft</a>' in sidebar
     assert sidebar.count("aria-current") == 1

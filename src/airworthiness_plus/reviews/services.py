@@ -541,7 +541,8 @@ def schedule_line(aircraft: Aircraft, today: date) -> ScheduleLine:
         return ScheduleLine(aircraft, None, None, None, Flag.NONE, False, False, 0, ())
     expiry = valid_to(certificate)
     days = days_to_expiry(today, expiry)
-    flag = limit_flag(Limit(Unit.CALENDAR, expiry, days), due.thresholds_of(aircraft.organisation))
+    thresholds = due.certificate_thresholds(aircraft.organisation)
+    flag = limit_flag(Limit(Unit.CALENDAR, expiry, days), thresholds)
     extended = certificate.extensions.count()
     copies = _copies(certificate, today)
     return ScheduleLine(
@@ -666,7 +667,7 @@ def working(line: ScheduleLine, today: date) -> tuple[Working, ...]:
         return ()
     expiry = line.valid_to
     remaining = formatting.amount(Unit.CALENDAR, line.days)
-    limit = due.thresholds_of(line.aircraft.organisation).days
+    limit = due.certificate_thresholds(line.aircraft.organisation).days
     found = [
         _validity_working(certificate),
         Working(

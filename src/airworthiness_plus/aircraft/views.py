@@ -96,7 +96,6 @@ def _next_due(
     registration = aircraft.registration
     if aircraft.status == Status.UNSERVICEABLE:
         return "Rectify Defect", (0, 0, 0, registration)
-    thresholds = due.thresholds_of(aircraft.organisation)
     lines = due.due_lines(aircraft, today)
     first, complete = due.next_due(lines)
     candidates: list[tuple[int, str]] = []
@@ -117,7 +116,8 @@ def _next_due(
         review = f"Airworthiness Review, {formatting.amount(Unit.CALENDAR, remaining)}"
         candidates.append((min(remaining, -1) if remaining <= 0 else remaining, review))
         expiry = Limit(Unit.CALENDAR, review_valid_to, remaining)
-        severity = max(severity, SEVERITY[limit_flag(expiry, thresholds)])
+        certificate = due.certificate_thresholds(aircraft.organisation)
+        severity = max(severity, SEVERITY[limit_flag(expiry, certificate)])
     else:
         # No certificate recorded: nobody knows where the aircraft stands, so it
         # comes with what cannot be calculated, as it comes first on the review schedule.

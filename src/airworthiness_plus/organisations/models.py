@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 
 from airworthiness_plus.history.models import Record
 
@@ -52,6 +52,14 @@ class Organisation(Record):
     due_soon_days = models.PositiveSmallIntegerField(default=30)
     due_soon_hours = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal("10.0"))
     due_soon_cycles = models.PositiveSmallIntegerField(default=10)
+    # An earlier alert for airworthiness review certificates, in days before
+    # expiry, where the organisation has turned one on (REQ-213).
+    review_alert_days = models.PositiveSmallIntegerField(null=True, blank=True)
+    # The organisation's own default limits, in days, for a deferred defect
+    # (REQ-214). ML.A.403(b) says who may defer; the regulation gives no number.
+    deferral_days_non_required = models.PositiveSmallIntegerField(db_default=30)
+    deferral_days_with_agreement = models.PositiveSmallIntegerField(db_default=30)
+    deferral_days_certifying_staff = models.PositiveSmallIntegerField(db_default=30)
     # The Civil Aviation Authority's written approval to keep records in this
     # system, and the day the parallel run began (REQ-173, REQ-174).
     records_approval_reference = models.CharField(max_length=100, blank=True)
@@ -89,6 +97,17 @@ class Organisation(Record):
             models.CheckConstraint(
                 condition=Q(due_soon_hours__gte=0),
                 name="organisation_due_soon_hours_not_below_zero",
+            ),
+            models.CheckConstraint(
+                condition=Q(review_alert_days__isnull=True)
+                | Q(review_alert_days__gt=F("due_soon_days")),
+                name="organisation_review_alert_is_the_earlier",
+            ),
+            models.CheckConstraint(
+                condition=Q(deferral_days_non_required__gte=1)
+                & Q(deferral_days_with_agreement__gte=1)
+                & Q(deferral_days_certifying_staff__gte=1),
+                name="organisation_deferral_limits_are_at_least_a_day",
             ),
             # CAO.A.095(c): airworthiness review is open to an organisation
             # whose approval includes maintenance or continuing airworthiness

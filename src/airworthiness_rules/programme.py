@@ -58,6 +58,18 @@ class Thresholds:
         return self.days
 
 
+def review_certificate_lead_days(calendar_days: int, earlier_alert_days: int | None) -> int:
+    """Return how many days before expiry a review certificate is Due Soon (REQ-213).
+
+    The calendar lead time, or the earlier alert where the organisation has
+    turned one on and it is the longer. Ours, not the regulation's
+    (Decisions.md, Canvas Build, decision 4).
+    """
+    if earlier_alert_days is None:
+        return calendar_days
+    return max(calendar_days, earlier_alert_days)
+
+
 def limit_flag(limit: Limit, thresholds: Thresholds) -> Flag:
     """Return the flag for one limit (REQ-055, REQ-056).
 
