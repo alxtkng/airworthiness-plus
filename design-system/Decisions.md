@@ -39,6 +39,11 @@ Phase 0, Foundations, decided as ours on 24 November 2026 while building (REQ-20
 - **Not built from the Sidebar board:** the count beside an item, and the search. The board does not say what each count counts (Aircraft shows every aircraft, Maintenance Data only what needs attention), and gives the search no behaviour. Icons are still not built, as recorded under Interface
 - **The tabs of Aircraft follow the Tabs board:** All Aircraft, Airworthiness Reviews, Transfers. Airworthiness Directives stays a tab of Aircraft until Aircraft Configuration is built in Phase 1, where the board puts it. This replaces the tab names recorded under Interface on 19 November 2026 (Fleet, Airworthiness Review). A section with one view built shows no tabs
 - **A migration that must give existing records something new** goes through the organisations one at a time, as the owner of the tables, with that organisation set (`history.sql.for_each_organisation`). The owner sees no rows otherwise (ADR-0002). The forcing of row-level security is lifted from the organisation table alone, inside the migration's own transaction, and put back before it ends. The history records the work against the database role
+- **A person record** holds name, role, staff group, who they report to, employment, licence, and the days they joined and left (REQ-203). The staff groups are those of the Staff board. Authorisation and recurrent training are not on it yet: they come with Phases 2 and 7
+- **A sign-in and its person.** Adding a user makes their person record. If one person of that exact name is already recorded with no sign-in and has not left, the sign-in is linked to that person instead. The database refuses a sign-in with no person (REQ-204). A change of a person's name changes the name of their sign-in
+- **Who adds or changes a person:** the Administrator, who already manages users (role matrix below). A person with an active sign-in is not recorded as having left: the sign-in is made inactive first
+- **How long a former person's record is kept** (REQ-206). 3 years where the organisation holds Part-CAMO or Part-145 (CAMO.A.220 and 145.A.55, Personnel Records); otherwise 2 years for airworthiness review staff (CAO.A.045(e)). Ours: the 3 years are applied to every person of such an organisation; the longer period is shown where two apply; a person who left on 29 February is kept until 1 March. Part-CAO gives no period for its other staff, and the page says so. The system deletes nothing either way
+- **The sample's people.** The 13 people of the Staff board and the former review staff member are person records. The Read Only sign-in of the sample is a fourteenth person, not in `SampleData.md`'s table. The L2 certifying staff member is written [Certifying Staff Name] and the former review staff member [Former Review Name]
 
 Not decided here, and so not built until Alex King says: the per-flight technical log (Issue 7), and choosing the type from the SRG1782 list, which needs the Civil Aviation Authority's list as data (REQ-021).
 
@@ -217,6 +222,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Export Records | Yes | Yes | Yes | Yes | No |
 | Manage Users and Roles | Yes | No | No | No | No |
 | Change Organisation Record | Yes | No | No | No | No |
+| Add or Change Person | Yes | No | No | No | No |
 | Add or Change Aircraft | No | Yes | No | Yes | No |
 | Enter Utilisation | No | Yes | No | Yes | No |
 | Change Maintenance Programme | No | Yes | No | No | No |
@@ -272,7 +278,9 @@ Confirmed against the UK text in the Civil Aviation Authority Regulatory Library
 | Maintenance records retention | 36 months after release; totals and directive status 12 months after withdrawal | ML.A.305(h) |
 | Human factors training | Within 6 months of joining, then every 2 years | 145.A.30(e) |
 | Fuel tank safety training | Phase 1 within 6 months, Phase 2 within 12 months, then every 2 years | AMC 145.A.30(e) |
-| Airworthiness review staff records | Kept 2 years after the person leaves | CAO.A.045(e) |
+| Airworthiness review staff records | Kept at least 2 years after the person no longer works for the CAO | CAO.A.045(e), confirmed 24 November 2026 |
+| Personnel records, Part-CAMO and Part-145 | Kept as long as the person works for the organisation, and until 3 years after they have left | CAMO.A.220, Personnel Records; 145.A.55, Personnel Records (which adds: or 3 years after an authorisation is withdrawn). Read 24 November 2026; the point letters were not shown in the text read |
+| Personnel of a Part-CAO | The CAO assesses and records the qualification of all personnel. No period of retention is given | CAO.A.035(e), confirmed 24 November 2026 |
 | Lapsed airworthiness review staff | Restored by 1 review under supervision | AMC1 CAO.A.045(d) |
 | Component classes | Serviceable with release document, unserviceable, unsalvageable, standard part, material | M.A.501, ML.A.501, 145.A.42 |
 | Unsalvageable items | Secure area, mutilated, or kept for training or research, with a named person responsible | ML.A.504, AMC1 CAO.A.030(n) |

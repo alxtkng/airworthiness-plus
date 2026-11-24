@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Staff{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Staff</h1>
+<p><a href="{% url 'add_person' %}">Add a Person</a></p>
+<table>
+<thead>
+<tr><th>Name</th><th>Role</th><th>Reports To</th><th>Employment</th><th>Licence</th><th data-detail>Staff Group</th><th data-detail>Joined</th><th data-detail>Sign-In</th></tr>
+</thead>
+<tbody>
+{% for person in staff.current %}
+<tr>
+<td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td>
+<td>{{ person.role }}</td>
+<td>{% if person.reports_to %}{% if person.reports_to.role %}{{ person.reports_to.role }}{% else %}{{ person.reports_to.full_name }}{% endif %}{% endif %}</td>
+<td>{{ person.employment }}</td>
+<td>{{ person.licence }}</td>
+<td>{{ person.staff_group }}</td>
+<td>{{ person.joined_on|long_date }}</td>
+<td>{% if person.user %}{{ person.user.username }}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<p>{{ staff.current|length }} {% if staff.current|length == 1 %}Person{% else %}People{% endif %}</p>
+<h2>Former Staff</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Role</th><th>Left</th><th>Record Kept Until</th><th data-detail>How It Was Calculated</th></tr>
+</thead>
+<tbody>
+{% for line in staff.former %}
+<tr>
+<td><a href="{% url 'person' line.person.id %}">{{ line.person.full_name }}</a></td>
+<td>{{ line.person.role }}</td>
+<td>{{ line.person.left_on|long_date }}</td>
+<td>{{ line.kept_text }}</td>
+<td>{% if line.working %}{% with item=line.working %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endwith %}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,81 @@
+"""A record for each person of an organisation (REQ-203, REQ-204).
+
+Decisions.md, Canvas Build, decision 2: everyone in an organisation has a
+person record. A person who uses the system also has a sign-in, linked to
+that record. Not everyone signs in: certifying staff, mentors, assessors,
+contracted engineers and auditors are people of the organisation too.
+"""
+
+from django.db import models
+from django.db.models import F, Q
+
+from airworthiness_plus.accounts.models import User
+from airworthiness_plus.history.models import Record
+from airworthiness_plus.organisations.models import Organisation
+
+
+class StaffGroup(models.TextChoices):
+    """The groups of the Staff board."""
+
+    MANAGEMENT = "Management", "Management"
+    CERTIFYING = "Certifying Staff", "Certifying Staff"
+    REVIEW = "Airworthiness Review Staff", "Airworthiness Review Staff"
+    OTHER = "Other Staff", "Other Staff"
+
+
+class Employment(models.TextChoices):
+    """Whether a person is employed or contracted (Staff board)."""
+
+    EMPLOYED = "Employed", "Employed"
+    CONTRACTED = "Contracted", "Contracted"
+
+
+class Person(Record):
+    """One person of an organisation.
+
+    A person who leaves is kept, with the day they left (REQ-131). The
+    sign-in, where there is one, is the person's own and no other's.
+    """
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    user = models.OneToOneField(
+        User, on_delete=models.PROTECT, null=True, blank=True, related_name="person"
+    )
+    full_name = models.CharField("Name", max_length=200)
+    role = models.CharField("Role", max_length=100, blank=True)
+    staff_group = models.CharField(
+        "Staff Group", max_length=40, choices=StaffGroup.choices, default=StaffGroup.OTHER
+    )
+    reports_to = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="reports"
+    )
+    employment = models.CharField(
+        "Employment", max_length=20, choices=Employment.choices, default=Employment.EMPLOYED
+    )
+    licence = models.CharField("Licence", max_length=100, blank=True)
+    joined_on = models.DateField("Joined", null=True, blank=True)
+    left_on = models.DateField("Left", null=True, blank=True)
+
+    class Meta:
+        ordering = ["full_name", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(staff_group__in=StaffGroup.values)
+                & Q(employment__in=Employment.values)
+                & ~Q(full_name=""),
+                name="person_has_a_name_a_known_group_and_employment",
+            ),
+            models.CheckConstraint(
+                condition=Q(reports_to__isnull=True) | ~Q(reports_to=F("id")),
+                name="person_does_not_report_to_themselves",
+            ),
+            models.CheckConstraint(
+                condition=Q(joined_on__isnull=True)
+                | Q(left_on__isnull=True)
+                | Q(left_on__gte=F("joined_on")),
+                name="person_did_not_leave_before_joining",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.full_name

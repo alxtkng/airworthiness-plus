@@ -185,6 +185,18 @@ The test site (ADR-0003, `operations/test-site.md`): a second place the applicat
 
 Accepted for the test site and not for the server: the owner's database password is stored by the host with the service's settings, and whoever can sign in to the host's account can read it.
 
+## Added on 24 November 2026
+
+The canvas build, Phase 0 (`prompts/canvas-build.md`): approvals held, person records.
+
+| What Was Added | Threat | How It Is Met |
+|---|---|---|
+| A record of each approval an organisation holds, which decides what the sidebar shows | TH-008, TH-020 | A record like any other: row-level security, history, no delete. The sidebar is navigation only. Every address still checks the role matrix on the server, and the database still shows an organisation its own rows alone (`tests/test_approvals.py`, `tests/test_navigation.py`) |
+| A migration that reads each organisation in turn as the owner of the tables | TH-020, TH-025 | The forcing of row-level security is lifted from the organisation table alone, inside the migration's transaction and under the lock that changing a table takes, and put back before it ends. Each organisation's rows are written with that organisation set, and the history records the database role (ADR-0002; `tests/test_approvals.py` checks the forcing is back) |
+| A person record for everyone, linked to a sign-in where there is one | TH-020, TH-022 | A record like any other. A person and the person they report to belong to one organisation, by trigger. The database refuses a sign-in with no person. The check sets the organisation of the sign-in it is checking and puts back what was set before, so it shows nothing of another organisation (`tests/test_people.py`) |
+| A new sign-in linked to the person already recorded under the same name | TH-008 | Only within the organisation, only to a person with no sign-in who has not left, and only when there is exactly one. The link gives the sign-in nothing: what a user may do comes from their roles alone. A wrong link is seen on the Staff page and is in the history |
+| Names, roles and licences of people who do not use the system | TH-020 | Personal data of the organisation's staff, protected as its other records are. Added to `operations/data-protection/record-of-processing.md` |
+
 ## Not Yet Covered
 
 - Email (password reset, notifications): no email flow is designed yet. It is modelled when it is added.

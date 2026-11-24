@@ -21,6 +21,7 @@ from airworthiness_plus.aircraft import forms as aircraft
 from airworthiness_plus.directives import forms as directives
 from airworthiness_plus.imports import forms as imports
 from airworthiness_plus.maintenance_data import forms as maintenance_data
+from airworthiness_plus.people import forms as people
 from airworthiness_plus.programme import forms as programme
 from airworthiness_plus.reviews import forms as reviews
 
@@ -51,6 +52,8 @@ WRITES: dict[str, Sets] = {
     "record_check": (maintenance_data.CheckForm,),
     "customer_status": (maintenance_data.CustomerStatusForm,),
     "end_holding": (maintenance_data.EndHoldingForm,),
+    "add_person": (people.PersonForm,),
+    "change_person": (people.PersonForm,),
     "add_review_staff": (reviews.ReviewStaffForm,),
     "update_involvement": (reviews.InvolvementForm,),
     "record_restoration": (reviews.RestorationForm,),
@@ -109,6 +112,8 @@ READS = frozenset(
         "aircraft_data",
         "review_schedule",
         "review_staff",
+        "staff",
+        "person",
         "aircraft_review",
         "review",
         "certificate",

@@ -194,7 +194,12 @@ BOARD: tuple[Group, ...] = (
     Group(
         "People",
         (
-            Item("Staff", tabs=_tabs("All Staff", "Organisation Chart")),
+            Item(
+                "Staff",
+                "staff",
+                tabs=(Tab("All Staff", "staff"), Tab("Organisation Chart")),
+                inside=frozenset({"add_person", "person", "change_person"}),
+            ),
             Item(
                 "Authorisations",
                 "review_staff",
