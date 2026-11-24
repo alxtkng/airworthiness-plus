@@ -14,7 +14,7 @@ Regulatory source documents are not stored here; fetch them from the Civil Aviat
 
 The project follows the UK Government Service Manual phases. Discovery and alpha are finished. Private beta is the current phase: the first real version is built and verified, and used internally only. No customer data enters the system in this phase.
 
-Scope is one slice, the Part-CAO core loop for Part-ML aircraft: Organisation and Access, Aircraft, Maintenance Programme, Airworthiness Directives, Maintenance Data, Airworthiness Review, Records. Everything else in the canvas is backlog.
+Scope is one slice, the Part-CAO core loop for Part-ML aircraft: Organisation and Access, Aircraft, Maintenance Programme, Airworthiness Directives, Maintenance Data, Airworthiness Review, Records. Everything else in the canvas is backlog, to be built in the order of `prompts/canvas-build.md`.
 
 | Folder | Holds |
 |---|---|
