@@ -6,7 +6,7 @@
 <form method="post" autocomplete="on">
 {% csrf_token %}
 <p><label for="username">User Name</label><br>
-<input id="username" name="username" type="text" autocomplete="username" autofocus required maxlength="254"></p>
+<input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" autofocus required maxlength="254"></p>
 <p><label for="password">Password</label><br>
 <input id="password" name="password" type="password" autocomplete="current-password" required></p>
 <p><button type="submit" class="primary">Continue</button></p>

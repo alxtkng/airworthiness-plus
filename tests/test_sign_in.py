@@ -300,6 +300,17 @@ def test_a_code_in_digits_other_than_0_to_9_is_refused(people: People, clock: Cl
     assert totp.matching_counter(secret_of(LUCY), other_digits, clock.now, after=None) is None
 
 
+def test_a_phone_does_not_change_the_user_name_as_it_is_typed(people: People) -> None:
+    """REQ-008. Found on 24 November 2026 on an iPhone: the keyboard made the
+    first letter a capital, and the name, which is matched exactly, was
+    refused. The field asks for no capital, no correction and no spelling check."""
+    page = get(Client(), "/sign-in/").content.decode()
+    field = re.search(r'<input id="username"[^>]*>', page)
+    assert field is not None
+    for attribute in ('autocapitalize="none"', 'autocorrect="off"', 'spellcheck="false"'):
+        assert attribute in field.group(0)
+
+
 def test_five_failures_lock_the_name_for_15_minutes(people: People, clock: Clock) -> None:
     """Threat TH-001, planned test T-SEC-002. The right password is refused
     while the name is locked, and the refusal is logged."""
