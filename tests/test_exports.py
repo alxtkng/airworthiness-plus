@@ -170,6 +170,8 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     phase1.add_contracts(sample.ours, sample.lucy, fleet)
     # Certificates of release to service (REQ-260).
     phase1.add_releases(sample.ours, sample.planner, fleet)
+    # Components and where each has been fitted (REQ-230, REQ-231).
+    phase1.add_components(sample.ours, sample.planner, fleet)
     return fleet
 
 

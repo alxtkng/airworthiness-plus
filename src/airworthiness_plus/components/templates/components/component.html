@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ component.name }}{% endblock %}
+{% block content %}
+<h1>{{ component.name }}</h1>
+<p>Component{% if component.identity %}, {{ component.identity }}{% endif %}</p>
+<dl>
+<dt>Component</dt><dd>{{ component.name }}</dd>
+<dt>Part Number</dt><dd>{{ component.part_number }}</dd>
+<dt>Serial Number</dt><dd>{{ component.serial_number }}</dd>
+<dt>Fitted To</dt><dd>{{ line.fitted_to }}</dd>
+<dt>Position</dt><dd>{{ line.fitted_note }}</dd>
+<dt>Limit</dt><dd>{{ line.limit_text }}</dd>
+<dt>Source of the Limit</dt><dd>{{ component.source }}</dd>
+<dt>Since New or Overhaul</dt><dd>{{ line.since_text }}</dd>
+<dt>Due</dt><dd>{% if line.problem %}{{ line.problem }}{% else %}{{ line.due_text }}{% endif %}</dd>
+<dt>Remaining</dt><dd>{{ line.remaining_text }}</dd>
+<dt>Status</dt><dd>{{ line.status|status }}</dd>
+{% if on_condition %}<dt>Last Reviewed</dt><dd>{{ component.last_review_on|long_date }}, {{ component.last_review_hours|hours }} Airframe Hours</dd>{% endif %}
+</dl>
+{% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}
+{% if line.fitting and not line.fitted and line.fitting.sent_to %}<p>Airworthiness Directive Applicability to Check Before Refit, ML.A.504(a)</p>{% endif %}
+<h2>Installation History</h2>
+{% if fittings %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Position</th><th>Fitted</th><th class="number">Airframe Hours When Fitted</th><th>Removed</th><th data-detail>Hours Since New or Overhaul When Fitted</th><th data-detail>New or Last Overhauled</th><th data-detail>Release Document</th><th data-detail>Airframe Hours When Removed</th><th data-detail>Reason for Removal</th><th data-detail>Sent To</th><th data-detail>Due Back</th></tr>
+</thead>
+<tbody>
+{% for fitting in fittings %}
+<tr>
+<td>{{ fitting.aircraft_registration }}</td>
+<td>{{ fitting.position }}</td>
+<td>{{ fitting.fitted_on|long_date }}</td>
+<td class="number">{{ fitting.airframe_hours_fitted|hours }}</td>
+<td>{% if fitting.removed_on %}{{ fitting.removed_on|long_date }}{% else %}Fitted{% endif %}</td>
+<td>{{ fitting.hours_at_fitting|hours }}</td>
+<td>{% if fitting.life_from %}{{ fitting.life_from|long_date }}{% else %}Not Recorded{% endif %}</td>
+<td>{{ fitting.release_document }}</td>
+<td>{% if fitting.removed_on %}{{ fitting.airframe_hours_removed|hours }}{% endif %}</td>
+<td>{{ fitting.removal_reason }}</td>
+<td>{{ fitting.sent_to }}</td>
+<td>{% if fitting.due_back_on %}{{ fitting.due_back_on|long_date }}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>Never Fitted</p>
+{% endif %}
+{% if may_record %}
+{% if line.fitted or remove_form.is_bound %}
+<h2>Record a Removal</h2>
+{% include "components/form.html" with form=remove_form address="remove_component" button="Record Removal" %}
+{% endif %}
+{% if needs_life_from or life_form.is_bound %}
+<h2>Record the Day It Was New or Last Overhauled</h2>
+{% include "components/form.html" with form=life_form address="component_life_from" button="Record Day" %}
+{% endif %}
+{% if on_condition or review_form.is_bound %}
+<h2>Record a Review</h2>
+{% include "components/form.html" with form=review_form address="review_component" button="Record Review" %}
+{% endif %}
+{% if not line.fitted or fit_form.is_bound %}
+<h2>Record an Installation</h2>
+{% include "components/form.html" with form=fit_form address="fit_component" button="Record Installation" %}
+{% endif %}
+<h2>Change the Limit</h2>
+{% include "components/form.html" with form=limit_form address="change_component_limit" button="Change Limit" %}
+{% endif %}
+{% endblock %}

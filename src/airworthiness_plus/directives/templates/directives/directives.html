@@ -4,6 +4,9 @@
 {% block content %}
 <h1 class="visually-hidden">Airworthiness Directives</h1>
 <p><a href="{% url 'add_directive' %}">Record an Airworthiness Directive</a></p>
+{% for fitting in awaiting_refit %}
+<p><a href="{% url 'component' fitting.component_id %}">{{ fitting.aircraft_registration }} {{ fitting.component.name }}</a>, At {{ fitting.sent_to }}, Applicability Check Before Refit</p>
+{% endfor %}
 <table>
 <thead>
 <tr><th>Directive Number</th><th data-detail>Revision</th><th data-detail>Issuing Authority</th><th>Subject</th><th>Effective Date</th><th data-detail>Supersedes</th><th>Status</th></tr>

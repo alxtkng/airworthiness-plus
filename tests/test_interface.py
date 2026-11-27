@@ -179,6 +179,7 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
         "Aircraft",
         "Defects",
         "Maintenance Programmes",
+        "Aircraft Configuration",
         "Release to Service",
         "Contracts",
         "Staff",
@@ -199,7 +200,6 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
         "All Aircraft",
         "Airworthiness Reviews",
         "Transfers",
-        "Airworthiness Directives",
     ]
     assert '<a href="/reviews/" aria-current="page">Airworthiness Reviews</a>' in tabs
     # A section page keeps its heading for screen readers and does not show it.

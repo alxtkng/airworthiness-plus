@@ -91,9 +91,6 @@ BOARD: tuple[Group, ...] = (
                     Tab("All Aircraft", "home"),
                     Tab("Airworthiness Reviews", "review_schedule"),
                     Tab("Transfers", "transfers"),
-                    # On the board this is a view of Aircraft Configuration. It stays
-                    # here until that section is built.
-                    Tab("Airworthiness Directives", "directives", ours=True),
                 ),
                 inside=frozenset(
                     {
@@ -113,7 +110,6 @@ BOARD: tuple[Group, ...] = (
                         "record_work",
                         "retire_task",
                         "record_release",
-                        "add_directive",
                         "directive_status",
                         "decide_directive",
                         "comply_directive",
@@ -150,11 +146,24 @@ BOARD: tuple[Group, ...] = (
             Item("Maintenance Programmes", "programmes"),
             Item(
                 "Aircraft Configuration",
-                tabs=_tabs(
-                    "Components and Life Limits",
-                    "Airworthiness Directives",
-                    "Modifications and Repairs",
-                    "Weight and Balance",
+                "components",
+                tabs=(
+                    Tab("Components and Life Limits", "components"),
+                    Tab("Airworthiness Directives", "directives"),
+                    Tab("Modifications and Repairs"),
+                    Tab("Weight and Balance"),
+                ),
+                inside=frozenset(
+                    {
+                        "add_component",
+                        "component",
+                        "fit_component",
+                        "remove_component",
+                        "review_component",
+                        "component_life_from",
+                        "change_component_limit",
+                        "add_directive",
+                    }
                 ),
             ),
             Item(

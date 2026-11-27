@@ -18,6 +18,7 @@ from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.components import services as component_services
 from airworthiness_plus.directives import services
 from airworthiness_plus.directives.forms import (
     ComplianceForm,
@@ -46,7 +47,15 @@ def _interval(data: dict[str, object], prefix: str) -> Interval | None:
 @requires(Action.VIEW_RECORDS)
 def directives_page(request: HttpRequest) -> HttpResponse:
     """Every directive recorded, with the one that superseded it if any."""
-    return render(request, "directives/directives.html", {"directives": Directive.objects.all()})
+    return render(
+        request,
+        "directives/directives.html",
+        {
+            "directives": Directive.objects.all(),
+            # ML.A.504(a): applicability is checked before a component is fitted again.
+            "awaiting_refit": component_services.awaiting_refit(),
+        },
+    )
 
 
 @never_cache

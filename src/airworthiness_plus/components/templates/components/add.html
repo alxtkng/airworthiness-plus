@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Add a Component{% endblock %}
+{% block content %}
+<h1>Add a Component</h1>
+<form method="post">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Add Component</button></p>
+</form>
+<p>A Life Limit Is in Calendar Time, Flight Hours, Landings or Cycles, ML.A.503</p>
+{% endblock %}

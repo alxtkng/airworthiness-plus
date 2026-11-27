@@ -621,6 +621,7 @@ def build(ours: Organisation, administrator: User) -> Staff:
     phase1.add_repeat_actions(ours, people.lucy)
     phase1.add_contracts(ours, people.lucy, fleet)
     phase1.add_releases(ours, people.planner, fleet)
+    phase1.add_components(ours, people.planner, fleet)
     add_reviews(people, fleet)
     add_directives(people, fleet)
     add_maintenance_data(people)
