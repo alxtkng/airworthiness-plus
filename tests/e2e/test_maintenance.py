@@ -172,7 +172,9 @@ def test_component_review_and_overhaul_date(
                 "position": "Test date position",
                 "fitted_on": "2026-11-18",
                 "airframe_hours_fitted": "6412.6",
+                "airframe_cycles_fitted": "0",
                 "hours_at_fitting": "0.0",
+                "cycles_at_fitting": "0",
             },
             "Test date position",
         )

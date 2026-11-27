@@ -216,8 +216,8 @@ def fit_component(
     fitted_on: date,
     airframe_hours_fitted: Decimal,
     hours_at_fitting: Decimal,
-    airframe_cycles_fitted: int = 0,
-    cycles_at_fitting: int = 0,
+    airframe_cycles_fitted: int | None = None,
+    cycles_at_fitting: int | None = None,
     life_from: date | None = None,
     release_document: str = "",
 ) -> Installation:
@@ -235,6 +235,10 @@ def fit_component(
         raise RefusedError("A Component Is Not Fitted After Today")
     if life_from is not None and life_from > fitted_on:
         raise RefusedError("A Component Is Not New or Overhauled After It Was Fitted")
+    if airframe_cycles_fitted is None:
+        raise RefusedError("Give the Airframe Cycles When Fitted")
+    if cycles_at_fitting is None:
+        raise RefusedError("Give the Component Cycles Since New or Overhaul When Fitted")
     _check_counts(airframe_hours_fitted, airframe_cycles_fitted)
     _check_counts(hours_at_fitting, cycles_at_fitting)
     component = Component.objects.select_for_update().get(pk=component.pk)

@@ -28,8 +28,8 @@ def _hours(label: str, *, required: bool = True, most: Any = MOST_HOURS) -> form
     )
 
 
-def _cycles(label: str, *, most: int = MOST_CYCLES) -> forms.IntegerField:
-    return forms.IntegerField(label=label, min_value=0, max_value=most, required=False)
+def _cycles(label: str) -> forms.IntegerField:
+    return forms.IntegerField(label=label, min_value=0, max_value=MOST_CYCLES)
 
 
 class LimitForm(Form):
@@ -82,23 +82,13 @@ class FitForm(Form):
         super().__init__(*args, **kwargs)
         self.fields["aircraft"].queryset = Aircraft.objects.all()  # type: ignore[attr-defined]
 
-    def clean(self) -> dict[str, Any]:
-        """Take no cycles given as none."""
-        values = super().clean() or {}
-        for name in ("airframe_cycles_fitted", "cycles_at_fitting"):
-            if values.get(name) is None:
-                values[name] = 0
-        return values
-
 
 class RemoveForm(Form):
     """Record that a component was removed."""
 
     removed_on = forms.DateField(label="Removed")
     airframe_hours_removed = _hours("Airframe Hours When Removed")
-    airframe_cycles_removed = forms.IntegerField(
-        label="Airframe Cycles When Removed", min_value=0, max_value=MOST_CYCLES
-    )
+    airframe_cycles_removed = _cycles("Airframe Cycles When Removed")
     removal_reason = forms.CharField(label="Reason for Removal", max_length=200)
     sent_to = forms.CharField(label="Sent To", max_length=200, required=False)
     due_back_on = forms.DateField(label="Due Back", required=False)
