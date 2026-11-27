@@ -132,3 +132,49 @@ def test_release_cannot_be_entered_before_issue(
         page.goto("/release-to-service/")
         expect(row).to_contain_text("11 November 2026")
         expect(reveal(row).get_by_role("link", name=link, exact=True)).to_be_visible()
+
+
+def test_grounded_release_can_only_be_retained_as_historical_evidence(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
+        page.goto("/defects/")
+        page.get_by_role("link", name="Record a Defect", exact=True).click()
+        defect = form_with(page, "found_on")
+        fill(
+            defect,
+            {
+                "aircraft": "G-ABCD",
+                "title": "Test grounding defect",
+                "found_on": "2026-10-22",
+                "chapter": "71",
+                "system": "Engine",
+                "decision": "Not Deferrable",
+                "decided_on": "2026-10-22",
+            },
+        )
+        submit(page, defect.get_by_role("button"))
+        expect(page.locator("main")).to_contain_text("Test grounding defect")
+
+        page.goto("/release-to-service/")
+        row = page.locator("main table.compact tbody tr:not(.detail)").filter(
+            has_text="Right Main Tyre Replaced"
+        )
+        reveal(row).get_by_role("link", name="Record the Certificate, G-ABCD").click()
+        page.get_by_role("link", name="Retain Unverified Historical Evidence").click()
+        evidence = form_with(page, "source")
+        fill(
+            evidence,
+            {
+                "reference": "TEST-GROUNDED",
+                "issuer_name": "Test Engineer",
+                "issued_on": "2026-10-22",
+                "source": "Signed work sheet",
+            },
+        )
+        submit(page, evidence.get_by_role("button"))
+        expect(page.get_by_role("heading", name="Unverified Historical Evidence")).to_be_visible()
+        expect(page.get_by_role("row").filter(has_text="TEST-GROUNDED")).to_contain_text(
+            "Signed work sheet"
+        )
+        expect(row).to_contain_text("Due 21 November 2026")

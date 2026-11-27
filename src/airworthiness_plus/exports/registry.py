@@ -41,7 +41,7 @@ from airworthiness_plus.programme.models import (
     Task,
     WorkDone,
 )
-from airworthiness_plus.releases.models import Release
+from airworthiness_plus.releases.models import HistoricalReleaseEvidence, Release
 from airworthiness_plus.reviews.models import (
     Certificate,
     Extension,
@@ -128,6 +128,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Departure, _by("programme__aircraft")),
     Exported(AnnualReview, _by("programme__aircraft")),
     Exported(Release, _by("work__aircraft")),
+    Exported(HistoricalReleaseEvidence, _by("work__aircraft")),
     Exported(Contract, _by("aircraft")),
     Exported(WorkOrder, _by("aircraft")),
     Exported(WorkPackage, _by("aircraft")),

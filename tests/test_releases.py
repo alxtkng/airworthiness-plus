@@ -182,7 +182,7 @@ def test_what_is_listed_and_counted_as_days_pass(
     day.today = date(2026, 11, 22)
     rows, counts = listed()
     assert rows[0][4:6] == ["Due 21 November 2026", "Overdue"]
-    # The tyre was completed 31 days ago: no longer among those issued in 30 days.
+    # The outstanding tyre remains listed. The two 4 November releases count as issued.
     assert counts.startswith("2 Issued, Last 30 Days, 1 Not Yet in Records")
     day.today = date(2026, 12, 4)
     assert [row[0] for row in listed()[0]] == ["G-ABCD", "G-CDEF", "G-CDEF"]
@@ -675,3 +675,39 @@ def test_new_staff_release_needs_in_force_authorisation_and_confirmation(
     assert "Later Withdrawal Effective 18 November 2026" in evidence
     programme = page(review, f"/aircraft/{work.aircraft_id}/programme/")
     assert f"/release-to-service/certificates/{verified.pk}/" in programme
+
+
+def test_a_grounded_period_release_can_be_retained_as_unverified_evidence(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    from airworthiness_plus.releases.models import HistoricalReleaseEvidence
+
+    work = tyre(sample)
+    with working_for(sample.ours.id, sample.planner.id):
+        defect_services.record_defect(
+            fleet["G-ABCD"],
+            title="Grounding defect before issue",
+            chapter=71,
+            system="Engine",
+            found_on=work.dated,
+            decided_on=work.dated,
+            decision=Decision.NOT_DEFERRABLE,
+        )
+    response = post(
+        signed_in(sample.planner),
+        f"/release-to-service/{work.pk}/historical-evidence/",
+        reference="Original release",
+        issuer_name="Recorded certifier",
+        issued_on=work.dated.isoformat(),
+        source="Signed logbook entry",
+    )
+    assert response.status_code == 302
+    with working_for(sample.ours.id, sample.reader.id):
+        evidence = HistoricalReleaseEvidence.objects.get(work=work)
+        assert evidence.reference == "Original release"
+        work.refresh_from_db()
+        assert work.release_recorded_on is None
+    body = page(signed_in(sample.reader), "/release-to-service/")
+    assert "Unverified Historical Evidence" in body
+    assert "Original release" in body
+    assert "1 Not Yet in Records" in body

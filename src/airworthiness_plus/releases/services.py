@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from django.db import transaction
+from django.db.models import QuerySet
 
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
@@ -24,7 +25,7 @@ from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, S
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import WorkDone
-from airworthiness_plus.releases.models import IssuedBy, Release
+from airworthiness_plus.releases.models import HistoricalReleaseEvidence, IssuedBy, Release
 from airworthiness_rules.dates import days_between
 from airworthiness_rules.programme import Flag, pilot_owner_notification_deadline
 
@@ -51,6 +52,47 @@ def maintains(organisation: Organisation) -> bool:
     held = approvals.types_held(organisation)
     return ApprovalType.PART_145 in held or (
         ApprovalType.PART_CAO in held and Privilege.MAINTENANCE in organisation.privileges
+    )
+
+
+def _grounding_defects(aircraft: Aircraft, on: date) -> QuerySet[Defect]:
+    return Defect.objects.filter(
+        aircraft=aircraft,
+        decision=Decision.NOT_DEFERRABLE,
+        found_on__lte=on,
+    ).exclude(closed_on__lte=on)
+
+
+@transaction.atomic
+def retain_historical_evidence(
+    work: WorkDone,
+    *,
+    reference: str,
+    issuer_name: str,
+    issued_on: date,
+    source: str,
+) -> HistoricalReleaseEvidence:
+    """Retain signed evidence from a grounding period without posting a release."""
+    work = WorkDone.objects.select_for_update().get(pk=work.pk)
+    if not work.dated <= issued_on < aircraft_services.today():
+        raise RefusedError("Give an Earlier Issue Date On or After the Work Was Completed")
+    reference, issuer_name, source = reference.strip(), issuer_name.strip(), source.strip()
+    if not reference or not issuer_name or not source:
+        raise RefusedError("Enter the Signed Release Reference, Issuer and Evidence Reference")
+    Aircraft.objects.select_for_update().get(pk=work.aircraft_id)
+    grounding = _grounding_defects(work.aircraft, issued_on).first()
+    if grounding is None:
+        raise RefusedError("No Grounding Defect Was Open on the Date Given")
+    if work.historical_releases.filter(reference=reference, issued_on=issued_on).exists():
+        raise RefusedError("This Historical Evidence Is Already Retained")
+    return HistoricalReleaseEvidence.objects.create(
+        organisation_id=work.organisation_id,
+        work=work,
+        grounding_defect=grounding,
+        reference=reference,
+        issuer_name=issuer_name,
+        issued_on=issued_on,
+        source=source,
     )
 
 
@@ -156,13 +198,7 @@ def record_certificate(
             "Incomplete Maintenance Is Released With Its Limitations Stated, ML.A.801(f)"
         )
     Aircraft.objects.select_for_update().get(pk=work.aircraft_id)
-    stops = (
-        Defect.objects.filter(
-            aircraft=work.aircraft, decision=Decision.NOT_DEFERRABLE, found_on__lte=issued_on
-        )
-        .exclude(closed_on__lte=issued_on)
-        .first()
-    )
+    stops = _grounding_defects(work.aircraft, issued_on).first()
     if stops is not None:
         raise RefusedError(
             f"Open Defect That Is Not Deferrable on the Day of Issue, ML.A.801(g): {stops.title}"

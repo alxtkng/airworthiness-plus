@@ -163,6 +163,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         releases.record_release_certificate,
         name="record_release_certificate",
     ),
+    path(
+        "release-to-service/<uuid:work_id>/historical-evidence/",
+        releases.record_historical_release_evidence,
+        name="record_historical_release_evidence",
+    ),
     path("directives/sources/add/", directives.add_directive_source, name="add_directive_source"),
     path(
         "directives/sources/<uuid:source_id>/check/",

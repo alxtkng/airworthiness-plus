@@ -53,6 +53,7 @@ from airworthiness_plus.people.models import Person
 from airworthiness_plus.planning import services as planning_services
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis
+from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.sample import phase1
@@ -237,6 +238,21 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     phase1.add_set_up(sample.ours, sample.lucy, fleet)
     with working_for(sample.ours.id, sample.planner.id):
         aircraft = fleet["G-DGHI"]
+        historical_work = programme_services.record_work(
+            aircraft,
+            description="Historical repair",
+            dated=date(2026, 11, 16),
+            hours=D("9869.5"),
+            cycles=0,
+            historical=True,
+        )
+        release_services.retain_historical_evidence(
+            historical_work,
+            reference="Sample Historic Release",
+            issuer_name="Sample Issuer",
+            issued_on=date(2026, 11, 17),
+            source="Sample Signed Worksheet",
+        )
         package = planning_services.build_package(
             aircraft,
             reference="WP-2026-046",

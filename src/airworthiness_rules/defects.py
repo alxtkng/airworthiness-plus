@@ -39,11 +39,11 @@ FIRST_CHAPTER, LAST_CHAPTER = 1, 99
 """The chapter of the system a defect is in is a number of two digits at most."""
 
 
-def deferral_limit(decided_on: date, default_days: int | None, data_limit: date | None) -> date:
+def deferral_limit(identified_on: date, default_days: int | None, data_limit: date | None) -> date:
     """Return the last day by which a deferred defect is rectified (REQ-222).
 
     ``default_days`` is the organisation's default for the decision, counted
-    from the day of the decision; none where the minimum equipment list
+    from the day the defect was first identified; none where the minimum equipment list
     gives the limit. ``data_limit`` is a limit specified in the maintenance
     data or the list, and applies when it is the earlier (ML.A.403(c)).
     """
@@ -51,9 +51,9 @@ def deferral_limit(decided_on: date, default_days: int | None, data_limit: date 
         raise ValueError("A deferred defect has a limit")
     if default_days is not None and not 1 <= default_days <= MOST_DAYS:
         raise ValueError("A default limit is from 1 to 365 days")
-    if data_limit is not None and data_limit < decided_on:
-        raise ValueError("A limit is not before the day of the decision")
-    found = [] if default_days is None else [add_days(decided_on, default_days)]
+    if data_limit is not None and data_limit < identified_on:
+        raise ValueError("A limit is not before the day the defect was first identified")
+    found = [] if default_days is None else [add_days(identified_on, default_days)]
     if data_limit is not None:
         found.append(data_limit)
     return min(found)
