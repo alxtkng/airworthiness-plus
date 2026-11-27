@@ -119,10 +119,22 @@ def test_each_approval_has_its_own_supplier_decision(
     assert post(manager, address + "evaluate/", **next_evaluation).status_code == 302
     assert b"No Current Evaluation" not in get(manager, "/suppliers/").content
     with working_for(sample.ours.id, sample.administrator.id):
-        approvals.end(second_approval, on=date(2026, 11, 18))
+        approvals.end(second_approval, on=date(2026, 11, 19))
         approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[New]")
     assert b"No Current Evaluation" in get(manager, "/suppliers/").content
     assert b"UK.145.[First]" in get(manager, address).content
+    gap = post(manager, address + "evaluate/", **dict(next_evaluation, evaluated_on="2026-11-20"))
+    assert b"The Organisation Held No Part-145 Maintenance Approval" in gap.content
+    backdated = post(
+        manager,
+        address + "evaluate/",
+        **dict(next_evaluation, evaluated_on="2026-11-17", evidence="Earlier Part-145 Evaluation"),
+    )
+    assert backdated.status_code == 302
+    history = get(manager, address).content
+    assert history.count(b"UK.145.[First]") == 2
+    assert b"UK.145.[New]" not in history
+    assert b"No Current Evaluation" in get(manager, "/suppliers/").content
 
 
 def test_sample_suppliers_are_added_once(sample: Sample, monkeypatch: pytest.MonkeyPatch) -> None:

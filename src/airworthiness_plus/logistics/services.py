@@ -108,7 +108,8 @@ def record_evaluation(
         ),
         None,
     )
-    if term is None:
+    reference = term.reference_on(evaluated_on) if term is not None else None
+    if reference is None or term is None:
         raise RefusedError(f"The Organisation Held No {approval} Maintenance Approval on This Day")
     if supplier is None:
         try:
@@ -124,7 +125,7 @@ def record_evaluation(
         organisation=organisation,
         supplier=supplier,
         approval=term,
-        approval_reference=term.reference,
+        approval_reference=reference,
         supplies=supplies,
         release_documents=release_documents,
         evaluated_on=evaluated_on,

@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("organisations", "0011_approval_for_activity"),
+        ("organisations", "0012_approval_periods"),
     ]
 
     operations = [
