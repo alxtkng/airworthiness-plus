@@ -16,7 +16,7 @@
 <dt>Due</dt><dd>{% if line.problem %}{{ line.problem }}{% else %}{{ line.due_text }}{% endif %}</dd>
 <dt>Remaining</dt><dd>{{ line.remaining_text }}</dd>
 <dt>Status</dt><dd>{{ line.status|status }}</dd>
-{% if on_condition %}<dt>Last Reviewed</dt><dd>{{ component.last_review_on|long_date }}, {{ component.last_review_hours|hours }} Airframe Hours</dd>{% endif %}
+{% if on_condition %}<dt>Last Reviewed</dt><dd>{{ component.last_review_on|long_date }}, {{ component.last_review_hours|hours }} Airframe Hours{% if component.last_review_fitting %}, {{ component.last_review_fitting.aircraft_registration }}{% endif %}</dd>{% endif %}
 </dl>
 {% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}
 {% if line.fitting and not line.fitted and line.fitting.sent_to %}<p>Airworthiness Directive Applicability to Check Before Refit, ML.A.504(a)</p>{% endif %}

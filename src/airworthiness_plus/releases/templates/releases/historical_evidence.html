@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Retain Unverified Historical Evidence{% endblock %}
+{% block content %}
+<h1>Retain Unverified Historical Evidence</h1>
+<p>{{ work.aircraft.registration }}, {{ work.description }}</p>
+<form method="post">
+{% csrf_token %}
+{{ form.as_p }}
+<p><button type="submit">Retain Evidence</button></p>
+</form>
+{% endblock %}

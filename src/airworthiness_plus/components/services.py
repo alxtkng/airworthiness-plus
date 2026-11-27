@@ -176,6 +176,17 @@ def change_limit(component: Component, *, source: str = "", **limit: object) -> 
     values["source"] = source.strip()
     if all(getattr(component, field) == value for field, value in values.items()):
         raise RefusedError("This Limit Is Already Recorded")
+    if values["basis"] != Basis.ON_CONDITION:
+        values["last_review_fitting"] = None
+    elif (
+        values["last_review_hours"] != component.last_review_hours
+        or values["last_review_on"] != component.last_review_on
+    ):
+        fittings = _review_installations(component)
+        if fittings:
+            reviewed_on, hours = values["last_review_on"], values["last_review_hours"]
+            assert isinstance(reviewed_on, date) and isinstance(hours, Decimal)  # noqa: S101
+            values["last_review_fitting"] = _review_fitting(fittings, reviewed_on, hours)
     for field, value in values.items():
         setattr(component, field, value)
     component.save(update_fields=list(values))
@@ -189,7 +200,11 @@ def current_installation(component: Component) -> Installation | None:
 
 def last_installation(component: Component) -> Installation | None:
     """Return the latest fitting of the component, removed or not."""
-    return Installation.objects.filter(component=component).order_by("-fitted_on", "-id").first()
+    return (
+        Installation.objects.filter(component=component)
+        .order_by("-fitted_on", "-removed_on", "-id")
+        .first()
+    )
 
 
 @transaction.atomic
@@ -201,8 +216,8 @@ def fit_component(
     fitted_on: date,
     airframe_hours_fitted: Decimal,
     hours_at_fitting: Decimal,
-    airframe_cycles_fitted: int = 0,
-    cycles_at_fitting: int = 0,
+    airframe_cycles_fitted: int | None = None,
+    cycles_at_fitting: int | None = None,
     life_from: date | None = None,
     release_document: str = "",
 ) -> Installation:
@@ -220,6 +235,10 @@ def fit_component(
         raise RefusedError("A Component Is Not Fitted After Today")
     if life_from is not None and life_from > fitted_on:
         raise RefusedError("A Component Is Not New or Overhauled After It Was Fitted")
+    if airframe_cycles_fitted is None:
+        raise RefusedError("Give the Airframe Cycles When Fitted")
+    if cycles_at_fitting is None:
+        raise RefusedError("Give the Component Cycles Since New or Overhaul When Fitted")
     _check_counts(airframe_hours_fitted, airframe_cycles_fitted)
     _check_counts(hours_at_fitting, cycles_at_fitting)
     component = Component.objects.select_for_update().get(pk=component.pk)
@@ -228,6 +247,8 @@ def fit_component(
     last = last_installation(component)
     if last is not None and last.removed_on is not None and fitted_on < last.removed_on:
         raise RefusedError("A Component Is Not Fitted Before It Was Last Removed")
+    if last is not None:
+        _check_refit_usage(last, life_from, hours_at_fitting, cycles_at_fitting)
     now = airframe(aircraft)
     if now is not None and (
         airframe_hours_fitted > now.hours or airframe_cycles_fitted > now.cycles
@@ -256,6 +277,25 @@ def _check_counts(hours: Decimal, cycles: int) -> None:
         raise RefusedError("Hours Are From 0 to 999,999.9")
     if not 0 <= cycles <= rules.MOST_CYCLES:
         raise RefusedError("Cycles Are From 0 to 9,999,999")
+
+
+def _check_refit_usage(
+    last: Installation, life_from: date | None, hours: Decimal, cycles: int
+) -> None:
+    removed_on = last.removed_on
+    assert removed_on is not None  # noqa: S101 - fit_component rules out an active fitting
+    if life_from is not None and life_from >= removed_on and life_from != last.life_from:
+        return
+    assert last.airframe_hours_removed is not None  # noqa: S101
+    assert last.airframe_cycles_removed is not None  # noqa: S101
+    minimum_hours = rules.hours_since(
+        last.hours_at_fitting, last.airframe_hours_fitted, last.airframe_hours_removed
+    )
+    minimum_cycles = rules.cycles_since(
+        last.cycles_at_fitting, last.airframe_cycles_fitted, last.airframe_cycles_removed
+    )
+    if hours < minimum_hours or cycles < minimum_cycles:
+        raise RefusedError("Earlier Accumulated Hours or Cycles Need a New or Overhaul Date")
 
 
 @transaction.atomic
@@ -292,6 +332,7 @@ def remove_component(
     Once: a second removal, or the same form sent twice, is refused.
     """
     today = aircraft_services.today()
+    component = Component.objects.select_for_update().get(pk=fitting.component_id)
     fitting = Installation.objects.select_for_update().get(pk=fitting.pk)
     if fitting.removed_on is not None:
         raise RefusedError("This Component Is Already Removed")
@@ -302,11 +343,9 @@ def remove_component(
         raise RefusedError("A Component Is Not Removed After Today")
     if removed_on < fitting.fitted_on:
         raise RefusedError("A Component Is Not Removed Before It Was Fitted")
-    cycles = (
-        fitting.airframe_cycles_fitted
-        if airframe_cycles_removed is None
-        else (airframe_cycles_removed)
-    )
+    if airframe_cycles_removed is None:
+        raise RefusedError("Give the Airframe Cycles When Removed")
+    cycles = airframe_cycles_removed
     _check_counts(airframe_hours_removed, cycles)
     if airframe_hours_removed < fitting.airframe_hours_fitted or (
         cycles < fitting.airframe_cycles_fitted
@@ -315,6 +354,17 @@ def remove_component(
     now = airframe(fitting.aircraft)
     if now is not None and (airframe_hours_removed > now.hours or cycles > now.cycles):
         raise RefusedError("The Airframe Had Not More Hours or Cycles Then Than It Has Now")
+    review_hours, reviewed_on = component.last_review_hours, component.last_review_on
+    if (
+        component.last_review_fitting_id == fitting.pk
+        and review_hours is not None
+        and reviewed_on is not None
+        and (
+            review_hours > airframe_hours_removed
+            or (reviewed_on > removed_on and review_hours != airframe_hours_removed)
+        )
+    ):
+        raise RefusedError("The Removal Reading Must Agree With the Recorded Component Review")
     if due_back_on is not None and due_back_on < removed_on:
         raise RefusedError("A Component Is Not Due Back Before It Was Removed")
     fitting.removed_on = removed_on
@@ -336,12 +386,87 @@ def remove_component(
     return fitting
 
 
+def _review_installations(component: Component) -> list[Installation]:
+    return list(
+        component.installations.select_related("aircraft").order_by("fitted_on", "removed_on", "id")
+    )
+
+
+def _review_reading_error(fitting: Installation, reviewed_on: date, hours: Decimal) -> str:
+    """Check against the fitting and the relevant recorded end of its utilisation."""
+    if fitting.removed_on is not None and reviewed_on > fitting.removed_on:
+        if hours != fitting.airframe_hours_removed:
+            return "An Off-Wing Review Uses the Airframe Reading Recorded at Removal"
+        return ""
+    if hours < fitting.airframe_hours_fitted:
+        return "The Review Reading Is Not Below the Airframe Hours When Fitted"
+    if fitting.removed_on is not None:
+        upper = fitting.airframe_hours_removed
+    else:
+        reading = airframe(fitting.aircraft)
+        upper = reading.hours if reading is not None else None
+    if upper is None:
+        return "No Recorded Airframe Reading Can Confirm This Review"
+    if hours > upper:
+        return "The Airframe Had Not More Hours Then Than Are Recorded for This Fitting"
+    return ""
+
+
+def _review_fitting(
+    fittings: list[Installation],
+    reviewed_on: date,
+    hours: Decimal,
+    installation: Installation | None = None,
+) -> Installation:
+    """Identify the fitting that can support the dated review and counter reading."""
+    candidates = [
+        fitting
+        for fitting in fittings
+        if fitting.fitted_on <= reviewed_on
+        and (fitting.removed_on is None or fitting.removed_on >= reviewed_on)
+    ]
+    if not candidates or any(fitting.fitted_on == reviewed_on for fitting in candidates):
+        previous = [
+            fitting
+            for fitting in fittings
+            if fitting.removed_on is not None and fitting.removed_on < reviewed_on
+        ]
+        if previous:
+            candidates.extend(
+                fitting for fitting in previous if fitting.removed_on == previous[-1].removed_on
+            )
+    if installation is not None:
+        candidates = [fitting for fitting in candidates if fitting.pk == installation.pk]
+    if not candidates:
+        raise RefusedError("No Fitting Evidence Matches the Review Date")
+    if len(candidates) == 1:
+        fitting = candidates[0]
+        error = _review_reading_error(fitting, reviewed_on, hours)
+        if error:
+            raise RefusedError(error)
+        return fitting
+    matching = [
+        fitting for fitting in candidates if not _review_reading_error(fitting, reviewed_on, hours)
+    ]
+    if len(matching) == 1:
+        return matching[0]
+    if not matching:
+        raise RefusedError("No Recorded Fitting Supports Those Review Hours")
+    raise RefusedError("Choose the Fitting Used for the Airframe Hours")
+
+
 @transaction.atomic
-def record_review(component: Component, *, airframe_hours: Decimal, reviewed_on: date) -> Component:
+def record_review(
+    component: Component,
+    *,
+    airframe_hours: Decimal,
+    reviewed_on: date,
+    installation: Installation | None = None,
+) -> Component:
     """Record a review of a component kept on condition (REQ-233).
 
-    Not before the last review, in hours or by day, and not above the
-    hours the aircraft has now. The same review sent twice is refused.
+    Use the recorded fitting or removal reading that supports the date.
+    Reviews advance by date, fitting and airframe hours in that order.
     """
     component = Component.objects.select_for_update().get(pk=component.pk)
     if component.basis != Basis.ON_CONDITION:
@@ -352,17 +477,30 @@ def record_review(component: Component, *, airframe_hours: Decimal, reviewed_on:
         raise RefusedError("A Review Is Not After Today")
     if not 0 <= airframe_hours <= rules.MOST_HOURS:
         raise RefusedError("Airframe Hours Are From 0 to 999,999.9")
-    if (airframe_hours, reviewed_on) == (component.last_review_hours, component.last_review_on):
-        raise RefusedError("This Review Is Already Recorded")
-    if airframe_hours < component.last_review_hours or reviewed_on < component.last_review_on:
+    if reviewed_on < component.last_review_on:
         raise RefusedError("A Review Is Not Before the Last Review")
-    fitting = current_installation(component)
-    now = airframe(fitting.aircraft) if fitting is not None else None
-    if now is not None and airframe_hours > now.hours:
-        raise RefusedError("The Airframe Had Not More Hours Then Than It Has Now")
+    fittings = _review_installations(component)
+    fitting = _review_fitting(fittings, reviewed_on, airframe_hours, installation)
+    previous = component.last_review_fitting
+    if previous is None:
+        try:
+            previous = _review_fitting(
+                fittings, component.last_review_on, component.last_review_hours
+            )
+        except RefusedError:
+            # Imported reviews may predate the available installation history.
+            pass
+    if previous == fitting:
+        if airframe_hours < component.last_review_hours:
+            raise RefusedError("A Review Is Not Before the Last Review")
+        if (airframe_hours, reviewed_on) == (component.last_review_hours, component.last_review_on):
+            raise RefusedError("This Review Is Already Recorded")
+    if previous is not None and fittings.index(fitting) < fittings.index(previous):
+        raise RefusedError("A Review Is Not Before the Last Review")
     component.last_review_hours = airframe_hours
     component.last_review_on = reviewed_on
-    component.save(update_fields=["last_review_hours", "last_review_on"])
+    component.last_review_fitting = fitting
+    component.save(update_fields=["last_review_hours", "last_review_on", "last_review_fitting"])
     return component
 
 
@@ -456,7 +594,11 @@ class ComponentLine:
     def due_text(self) -> str:
         """Return each due point: 2,000.0 Hours, 28 February 2027, Review at 9,900.0."""
         if self.component.basis == Basis.ON_CONDITION and self.limits:
-            return f"Review at {formatting.hours(Decimal(self.limits[0].due))}"  # type: ignore[arg-type]
+            due_at = self.limits[0].due
+            if isinstance(due_at, Decimal):
+                if self.fitting is not None and due_at < self.fitting.airframe_hours_fitted:
+                    return "Review Due Before Fitting"
+                return f"Review at {formatting.hours(due_at)}"
         return "; ".join(formatting.point(limit.unit, limit.due) for limit in self.limits)
 
     @property
@@ -476,6 +618,53 @@ def _utilisation(aircraft: Aircraft) -> Utilisation | None:
     if programme is None:
         return None
     return Utilisation(programme.hours_per_day, programme.cycles_per_day)
+
+
+def _review_limit(
+    component: Component, current: Installation, now: Decimal
+) -> tuple[Limit, list[tuple[str, str]]]:
+    reviewed_on, review_hours, every = (
+        component.last_review_on,
+        component.last_review_hours,
+        component.review_hours,
+    )
+    assert reviewed_on is not None and review_hours is not None and every is not None  # noqa: S101
+    fittings = _review_installations(component)
+    original = _review_fitting(fittings, reviewed_on, review_hours, component.last_review_fitting)
+    inputs = [
+        ("Airframe Hours Now", formatting.hours(now)),
+        ("Airframe Hours at the Last Review", formatting.hours(review_hours)),
+        ("Aircraft Registration at the Last Review", original.aircraft_registration),
+        ("Reviewed Every", formatting.amount(Unit.HOURS, every)),
+    ]
+    if current == original:
+        if now < review_hours:
+            raise RefusedError("Airframe Hours Entered Are Below the Last Review")
+        return rules.review_limit(review_hours, every, now), inputs
+
+    # The review interval follows the component, including hours flown on earlier fittings.
+    earlier = fittings[fittings.index(original) : fittings.index(current)]
+    if any(
+        fitting != original
+        and (fitting.fitted_on, fitting.removed_on) == (original.fitted_on, original.removed_on)
+        for fitting in fittings
+    ):
+        raise RefusedError("The Order of the Same-Day Fittings Is Not Recorded")
+    flown = Decimal(0)
+    for fitting in earlier:
+        end = fitting.airframe_hours_removed
+        if end is None:
+            raise RefusedError("A Removal Reading Is Needed to Carry the Review Forward")
+        starts = review_hours if fitting == original else fitting.airframe_hours_fitted
+        flown += end - starts
+    due_at = current.airframe_hours_fitted + every - flown
+    inputs.extend(
+        [
+            ("Airframe Hours When Fitted Here", formatting.hours(current.airframe_hours_fitted)),
+            ("Hours Flown on Earlier Fittings Since the Last Review", formatting.hours(flown)),
+        ]
+    )
+    return Limit(Unit.HOURS, due_at, due_at - now), inputs
 
 
 def component_line(component: Component, today: date) -> ComponentLine:
@@ -555,21 +744,15 @@ def component_line(component: Component, today: date) -> ComponentLine:
         rule = "The Date on the Component"
         source = "ML.A.503"
     elif component.basis == Basis.ON_CONDITION:
-        assert component.last_review_hours is not None  # noqa: S101
-        assert component.review_hours is not None  # noqa: S101
-        if now.hours < component.last_review_hours:
-            return line(
-                hours, cycles, problem="Airframe Hours Entered Are Below the Last Review", soon=True
-            )
-        found = (
-            rules.review_limit(component.last_review_hours, component.review_hours, now.hours),
+        try:
+            review, inputs = _review_limit(component, fitting, now.hours)
+        except RefusedError as error:
+            return line(hours, cycles, problem=str(error), soon=True)
+        found = (review,)
+        rule = (
+            "The Review Interval Less the Hours Flown With the Component Fitted "
+            "Since the Last Review"
         )
-        inputs = [
-            ("Airframe Hours Now", formatting.hours(now.hours)),
-            ("Airframe Hours at the Last Review", formatting.hours(component.last_review_hours)),
-            ("Reviewed Every", formatting.amount(Unit.HOURS, component.review_hours)),
-        ]
-        rule = "The Airframe Hours at the Last Review and the Review Interval"
         source = "The Organisation's Own, a Departure From the Manufacturer's Interval"
     else:
         return line(hours, cycles)

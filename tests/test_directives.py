@@ -489,6 +489,14 @@ def test_an_action_is_recorded_through_the_page(
 # The list of directives
 
 
+def test_directive_recording_link_follows_the_role_matrix(sample: Sample) -> None:
+    """REQ-006, REQ-060. Show the write action only to roles allowed to use it."""
+    path = "/directives/"
+    link = '<a href="/directives/add/">Record an Airworthiness Directive</a>'
+    assert link not in page(signed_in(sample.reader), path)
+    assert link in page(signed_in(sample.planner), path)
+
+
 def test_a_superseded_directive_stays_and_names_its_successor(
     sample: Sample, fleet: dict[str, Aircraft], directives: dict[int, Directive]
 ) -> None:

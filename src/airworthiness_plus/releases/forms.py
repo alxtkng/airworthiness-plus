@@ -35,3 +35,12 @@ class CertificateForm(CertificationEvidenceForm, Form):
         self.fields["issued_by"].queryset = Person.objects.filter(  # type: ignore[attr-defined]
             staff_group=StaffGroup.CERTIFYING
         )
+
+
+class HistoricalReleaseEvidenceForm(Form):
+    """Identify the signed source for an unverified historical release."""
+
+    reference = forms.CharField(label="Signed Release Reference", max_length=100)
+    issuer_name = forms.CharField(label="Issuer Named in the Source", max_length=200)
+    issued_on = forms.DateField(label="Date on the Signed Release")
+    source = forms.CharField(label="Signed Evidence Reference", max_length=200)

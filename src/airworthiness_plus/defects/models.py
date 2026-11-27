@@ -78,6 +78,7 @@ class Defect(Record):
     # The organisation's default for the decision, as it stood (REQ-214).
     default_days = models.PositiveSmallIntegerField(null=True, blank=True)
     # A limit specified in the maintenance data or the minimum equipment list.
+    default_started_on = models.DateField(null=True, editable=False)
     data_limit_on = models.DateField("Limit in the Maintenance Data", null=True, blank=True)
     limit_on = models.DateField("Limit", null=True, blank=True)
 
@@ -110,7 +111,7 @@ class Defect(Record):
                     decision=Decision.DEFERRED,
                     basis__in=Basis.values,
                     limit_on__isnull=False,
-                    limit_on__gte=F("decided_on"),
+                    limit_on__gte=F("found_on"),
                 ),
                 name="defect_deferred_has_a_basis_and_a_limit",
             ),

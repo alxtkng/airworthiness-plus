@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib.postgres.fields import ArrayField
-from django.db import models
+from django.db import connections, models
 from django.db.models import F, Q
 
 from airworthiness_plus.history.models import Record
@@ -191,9 +191,13 @@ class Approval(Record):
     def held_on(self, day: date) -> bool:
         """Return whether the record says the approval was held on ``day``.
 
-        The record carries the day the approval was no longer held from,
-        and no day it was first held: an approval is taken as held on any
-        day before it ended. So one recorded after ``day`` counts as held
-        on it, which errs toward keeping a record longer (REQ-206).
+        The database also uses this rule when it records an activity's approval
+        reference. Before the first ending, the initial start is unknown
+        and the approval is taken as held, as before (REQ-206).
         """
-        return self.no_longer_held_on is None or self.no_longer_held_on > day
+        with connections[self._state.db or "default"].cursor() as cursor:
+            cursor.execute(
+                "SELECT organisations_approval_reference_on(%s, %s) IS NOT NULL", [self.pk, day]
+            )
+            result = cursor.fetchone()
+        return bool(result and result[0])

@@ -485,7 +485,7 @@ def test_the_database_refuses_a_grounding_defect_on_a_serviceable_aircraft(
         ({"basis": ""}, "Says Who Deferred It, ML.A.403(b)"),
         ({"basis": "Certifying Staff"}, "Certifying Staff Who Defer a Defect Are Named"),
         ({"basis": "Pilot-in-Command, Minimum Equipment List"}, "Minimum Equipment List Gives"),
-        ({"data_limit_on": "2026-11-02"}, "Not Before the Day of the Decision"),
+        ({"data_limit_on": "2026-11-02"}, "Not Before the Day the Defect Was First Identified"),
         (
             {"basis": "Pilot-in-Command, Minimum Equipment List", "data_limit_on": "2028-01-01"},
             "365 Days After the Decision",
@@ -659,7 +659,7 @@ def test_the_database_holds_the_bounds_of_a_defect(
 ) -> None:
     """REQ-220, REQ-222. Whatever the application sends: a chapter from 1 to 99, a
     default from 1 to 365 days, a limit at most 365 days after the decision and
-    never before it, and a basis and a limit for every deferred defect."""
+    never before identification, and a basis and a limit for every deferred defect."""
     abcd = fleet["G-ABCD"]
     good: dict[str, object] = {
         "organisation": sample.ours,
@@ -692,6 +692,14 @@ def test_the_database_holds_the_bounds_of_a_defect(
         (
             {"basis": Basis.PILOT_LIST, "default_days": None},
             "defect_limit_comes_from_the_list_or_the_default",
+        ),
+        (
+            {"basis": Basis.PILOT_LIST, "default_days": None, "data_limit_on": TODAY},
+            "minimum equipment list gives the deferral limit",
+        ),
+        (
+            {"found_on": date(2026, 11, 17)},
+            "Deferral limit must use the date first identified",
         ),
         ({"basis": Basis.CERTIFYING_STAFF}, "defect_certifying_staff_are_named"),
         ({"closed_on": TODAY}, "defect_closed_has_a_rectification_and_a_day"),
@@ -1062,3 +1070,62 @@ def test_certifying_staff_cannot_defer_outside_their_authorisation_dates(
             maintenance_authorisation=authorisation,
             scope_confirmed=True,
         )
+
+
+def test_deferral_uses_the_identified_date_and_keeps_an_expired_limit(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    aircraft = fleet["G-ABCD"]
+    with working_for(sample.ours.id, sample.planner.id):
+        defect = services.record_defect(
+            aircraft,
+            title="Earlier report",
+            found_on=date(2026, 10, 1),
+            chapter=33,
+            system="Lights",
+            decision=Decision.DEFERRED,
+            basis=Basis.PILOT_NON_REQUIRED,
+            decided_on=TODAY,
+        )
+        assert defect.limit_on == date(2026, 10, 31)
+        with pytest.raises(IntegrityError, match="Deferral calculation date"), transaction.atomic():
+            Defect.objects.filter(pk=defect.pk).update(default_started_on=TODAY)
+        earlier = services.record_defect(
+            aircraft,
+            title="Earlier maintenance data limit",
+            found_on=date(2026, 10, 1),
+            chapter=33,
+            system="Lights",
+            decision=Decision.DEFERRED,
+            basis=Basis.PILOT_NON_REQUIRED,
+            decided_on=TODAY,
+            data_limit_on=date(2026, 10, 25),
+        )
+        assert earlier.limit_on == date(2026, 10, 25)
+    body = page(signed_in(sample.reader), f"/defects/{defect.pk}/")
+    assert "The Day the Defect Was First Identified" in body
+    assert "Overdue" in body
+
+
+def test_a_new_repeat_reopens_assessment_after_a_previous_action(
+    sample: Sample, fleet: dict[str, Aircraft], day: Day
+) -> None:
+    for found in (1, 3, 5):
+        record(sample, fleet["G-ABCD"], title=f"Light {found}", found_on=date(2026, 11, found))
+    type_rating = fleet["G-ABCD"].type_rating
+    day.today = date(2026, 11, 12)
+    with working_for(sample.ours.id, sample.lucy.id):
+        original = services.record_repeat_action(
+            sample.ours, type_rating=type_rating, chapter=33, action="Check the wiring"
+        )
+    day.today = TODAY
+    record(sample, fleet["G-DGHI"], title="Light after action", found_on=date(2026, 11, 17))
+    with working_for(sample.ours.id, sample.lucy.id):
+        line = services.repeat_lines(TODAY)[0]
+        assert line.action == original
+        assert line.status == "To Assess"
+        renewal = services.record_repeat_action(
+            sample.ours, type_rating=type_rating, chapter=33, action="Check the wiring"
+        )
+        assert renewal.supersedes == original
+        assert services.repeat_lines(TODAY)[0].status == ""

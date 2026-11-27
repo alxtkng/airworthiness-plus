@@ -40,14 +40,14 @@ No maintenance programme, directive, maintenance data or review certificate is r
 | G-ABCD | Piper PA-28 Series (Lycoming) | Pilot-Owner | Serviceable | 50-Hour Check and Left Landing Light Deferral | 12.4 Hours and 15 Days | 14 March 2027 | 6,412.6 |
 | G-BXYZ | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Syndicate of 6 | Serviceable | Cabin Entry Step Deferral | 9 Days | 2 August 2027 | 3,318.0 |
 | G-FMNO | Grob G115/120 Series (Lycoming) | Pilot-Owner | Serviceable | Annual Check | 78 Days | 27 April 2027 | 4,950.2 |
-| G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Engine Overhaul | 220 Hours | 2 December 2027 | 7,731.5 |
+| G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Maintenance Programme Annual Review | 358 Days | 2 December 2027 | 7,731.5 |
 | G-HKLM | Piper PA-38 Series (Lycoming) | Pilot-Owner | Transfer In | Records 14 of 18 Received | | | |
 
 Corrected on 27 November 2026 from the Fleet board: what remains is a column of its own, Remaining, beside Next Due. With deferred defects included, four aircraft are Due in 30 Days on 18 November 2026: G-DGHI, Unserviceable; G-BXYZ, 9 days to its cabin entry step limit; G-ABCD, 15 days to both its check and its defect limit; G-EJKL, 18 days to its review certificate expiry. One is Unserviceable.
 
 ## Maintenance Programme Inputs
 
-The Fleet table shows results. These are the inputs that produce them, added on 18 November 2026 so that the golden test cases can be worked by hand. The Fleet also compares these results with deferred defect limits and review certificate expiry.
+The Fleet table shows results. These are the inputs that produce them, added on 18 November 2026 so that the golden test cases can be worked by hand. The Fleet compares these results with fitted component limits, recorded annual programme reviews, deferred defect limits and review certificate expiry.
 
 | Aircraft Registration | Task | Interval | Last Done | Airframe Hours When Done | Planning Utilisation |
 |---|---|---|---|---|---|
@@ -59,7 +59,7 @@ The Fleet table shows results. These are the inputs that produce them, added on 
 - G-BXYZ: due at 3,359.0 hours (41.0 hours remaining) or on 30 July 2027 (254 days). At 0.5 hours a day 41.0 hours is 82 days, so hours come first.
 - G-FMNO: due at 5,012.0 hours (61.8 hours remaining) or on 4 February 2027 (78 days). At 0.2 hours a day 61.8 hours is 309 days, so the calendar limit comes first.
 
-Added on 18 November 2026 for the programme pages, to be confirmed by Alex King: G-ABCD and G-CDEF are taken to be on the design approval holder's instructions. G-CDEF's engine counts hours since its last overhaul, 0.0 on 12 March 2019, and reads 1,780.0; the overhaul is taken as every 2,000 hours, so 220.0 remain. The Fleet table writes this as 220 Hours; the system writes hours to one decimal place, 220.0 Hours. G-CDEF's programme was last reviewed with its airworthiness review on 11 November 2026. The G-ABCD tyre was replaced at 6,390.0 airframe hours.
+Added on 18 November 2026 for the programme pages, to be confirmed by Alex King: G-ABCD and G-CDEF are taken to be on the design approval holder's instructions. G-CDEF's engine counts hours since its last overhaul, 0.0 on 12 March 2019, and reads 1,780.0; the overhaul is taken as every 2,000 hours, so 220.0 remain. The original Fleet board writes this as 220 Hours. G-CDEF's programme was last reviewed with its airworthiness review on 11 November 2026. The next annual programme review on 11 November 2027 is 358 days from the sample date, before the projected overhaul at 366 days and the airworthiness review certificate expiry at 379 days. The G-ABCD tyre was replaced at 6,390.0 airframe hours.
 
 The basis of each aircraft's maintenance programme is not yet recorded here. The tolerance cases, added on 18 November 2026, take G-BXYZ and G-FMNO to be on the Minimum Inspection Programme (ML.A.302(d)(1): tolerance 1 month or 10 hours); to be confirmed by Alex King.
 
@@ -126,7 +126,7 @@ Added on 27 November 2026 for the Defects and Repeat Defects boards (Phase 1 of 
 | G-DGHI | Landing Light Inoperative | 16 June 2026 (Made Up) | Chapter 33, Lights | Deferred, 16 June 2026 | Pilot-in-Command | 16 July 2026 | 19 June 2026, Lamp Replaced (Made Up) |
 | G-DGHI | Stabilator Trim Cable Wear | 9 December 2025 (Made Up) | Chapter 27, Flight Controls | Deferred, 9 December 2025 | Chris Moore | 8 January 2026 | 16 December 2025, Cable Tension Adjusted (Made Up) |
 
-- Each limit is the day of the decision and the organisation's default of 30 days: 3 November to 3 December 2026 (15 days from 18 November), 28 October to 27 November 2026 (9 days), 12 November to 12 December 2026 (24 days).
+- In these cases identification and decision share a date. Add the organisation's default 30 days to that date: 3 November to 3 December 2026 (15 days from 18 November), 28 October to 27 November 2026 (9 days), 12 November to 12 December 2026 (24 days).
 - Repeat defects in the 12 months from 19 November 2025 to 18 November 2026: Piper PA-28 Series (Lycoming), Chapter 33, 3 (G-ABCD February and November, G-DGHI June), action Add Lamp Holder Check to 50-Hour Check; Chapter 27, 2 (G-DGHI December 2025 and November 2026), action Pulley Alignment, WP-2026-046; Cessna 152, Chapter 23, 1; Robin DR 400, Chapter 61, 1.
 - Contradictions between boards, corrected here: the Repeat Defects board leaves out G-BXYZ's step and G-ABCD's tyre, which the Defects board shows; by the rule they are one each (Cessna 172, Chapter 53; Piper PA-28, Chapter 32) and the page shows them. The Defects board gives G-EJKL's socket, at 24 days, no amber dot while the Home board gives it one: with a lead time of 30 days it is Due Soon. The Repeat Defects board dates the spinner crack November; the Components board says 2 November 2026.
 - The work package beside each defect on the board (WP-2026-046, WP-2026-047, Not Planned, With Airworthiness Review) is not recorded until work packages are built (Phase 3).
@@ -272,7 +272,7 @@ Added on 19 November 2026 for the seed, to be confirmed by Alex King: the releas
 
 Added on 19 November 2026, to be confirmed by Alex King: the certificates of G-DGHI, G-ABCD, G-BXYZ and G-FMNO from before these records are recorded as Lucy Grant's own, from the recency figures below. The sample does not say who issued the earlier certificates of G-EJKL (6 December 2025) and G-CDEF (2 December 2025); they stay recorded from the aircraft records.
 
-Recency figures: experience in the last 2 years is Chris Moore 214 days, Sam Patel 176 days, L2 [Name] 61 days (last maintenance 14 August 2025). Lucy Grant has 5 reviews in 12 months (G-DGHI, G-ABCD, G-BXYZ, G-FMNO, G-CDEF). The lapsing review [Name] has 4 months of continuing airworthiness work; the G-EJKL review by 6 December 2026 keeps them current. Chris Moore's last work is WP-2026-046; Sam Patel's is WP-2026-043. This line is the Recency board's and contradicts the Phase 3 sample above, where Sam Patel installed the trim cable on WP-2026-046 and Chris Moore is only planned for its inspection. WP-2026-046 is not seeded; the seed has only draft WP-2026-048. To be confirmed by Alex King, 27 November 2026.
+Recency figures: experience in the last 2 years is Chris Moore 214 days, Sam Patel 176 days, L2 [Name] 61 days (last maintenance 14 August 2025). Lucy Grant has 5 reviews in 12 months (G-DGHI, G-ABCD, G-BXYZ, G-FMNO, G-CDEF). The lapsing review [Name] has 4 months of continuing airworthiness work; the G-EJKL review by 6 December 2026 keeps them current. Sam Patel’s last completed maintenance in the canvas example is fitting the stabilator trim cable on WP-2026-046. Chris Moore is scheduled to inspect it and has no completed work on that package. The test site seeds WP-2026-048 as its editable planning example. This line is the Recency board's and contradicts the Phase 3 sample above, where Sam Patel installed the trim cable on WP-2026-046 and Chris Moore is only planned for its inspection. WP-2026-046 is not seeded; the seed has only draft WP-2026-048. To be confirmed by Alex King, 27 November 2026.
 
 | Ellie Ward | Mechanic, Trainee | Working toward Part-66 B1.2 | Joined 6 January 2025; on the job training for Cessna/Reims-Cessna 172/F172 Series (Lycoming) on G-BXYZ, 31 of 40 tasks; mentor Sam Patel, assessor Chris Moore |
 

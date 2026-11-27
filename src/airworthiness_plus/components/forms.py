@@ -5,7 +5,7 @@ from typing import Any
 from django import forms
 
 from airworthiness_plus.aircraft.models import Aircraft
-from airworthiness_plus.components.models import Basis
+from airworthiness_plus.components.models import Basis, Component, Installation
 from airworthiness_plus.interface.forms import Form
 from airworthiness_rules.components import (
     MOST_CYCLES,
@@ -28,8 +28,8 @@ def _hours(label: str, *, required: bool = True, most: Any = MOST_HOURS) -> form
     )
 
 
-def _cycles(label: str, *, most: int = MOST_CYCLES) -> forms.IntegerField:
-    return forms.IntegerField(label=label, min_value=0, max_value=most, required=False)
+def _cycles(label: str) -> forms.IntegerField:
+    return forms.IntegerField(label=label, min_value=0, max_value=MOST_CYCLES)
 
 
 class LimitForm(Form):
@@ -82,14 +82,6 @@ class FitForm(Form):
         super().__init__(*args, **kwargs)
         self.fields["aircraft"].queryset = Aircraft.objects.all()  # type: ignore[attr-defined]
 
-    def clean(self) -> dict[str, Any]:
-        """Take no cycles given as none."""
-        values = super().clean() or {}
-        for name in ("airframe_cycles_fitted", "cycles_at_fitting"):
-            if values.get(name) is None:
-                values[name] = 0
-        return values
-
 
 class RemoveForm(Form):
     """Record that a component was removed."""
@@ -102,11 +94,26 @@ class RemoveForm(Form):
     due_back_on = forms.DateField(label="Due Back", required=False)
 
 
+class FittingChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
+    def label_from_instance(self, obj: Installation) -> str:
+        return f"{obj.aircraft_registration}, {obj.position}, Fitted {obj.fitted_on:%d %B %Y}"
+
+
 class ReviewForm(Form):
     """Record a review of a component kept on condition."""
 
     airframe_hours = _hours("Airframe Hours at the Review")
     reviewed_on = forms.DateField(label="Reviewed")
+    installation = FittingChoice(
+        label="Fitting Used for the Airframe Hours",
+        queryset=Installation.objects.none(),
+        required=False,
+        help_text="Choose the fitting if more than one matches the date and hours",
+    )
+
+    def __init__(self, *args: Any, component: Component, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["installation"].queryset = component.installations.all()  # type: ignore[attr-defined]
 
 
 class LifeFromForm(Form):

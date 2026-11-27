@@ -107,7 +107,9 @@ def fit(sample: Sample, component: Component, aircraft: Aircraft, **values: Any)
         "position": "[Position]",
         "fitted_on": date(2026, 11, 1),
         "airframe_hours_fitted": D("6400.0"),
+        "airframe_cycles_fitted": 0,
         "hours_at_fitting": D("0.0"),
+        "cycles_at_fitting": 0,
         "life_from": date(2026, 11, 1),
     }
     given.update(values)
@@ -205,6 +207,7 @@ def test_the_record_of_a_component_shows_where_it_has_been_fitted(
             services.current_installation(loan),  # type: ignore[arg-type]
             removed_on=TODAY,
             airframe_hours_removed=D("7731.5"),
+            airframe_cycles_removed=0,
             removal_reason="Own Propeller Returned",
         )
     fit(
@@ -246,7 +249,9 @@ def test_a_component_is_fitted_in_one_place_at_a_time(
                 position="[Position]",
                 fitted_on=TODAY,
                 airframe_hours_fitted=D("3300.0"),
+                airframe_cycles_fitted=0,
                 hours_at_fitting=D("0"),
+                cycles_at_fitting=0,
             )
         assert Installation.objects.count() == 1
     client = signed_in(sample.planner)
@@ -256,7 +261,9 @@ def test_a_component_is_fitted_in_one_place_at_a_time(
         "position": "Engine",
         "fitted_on": "2026-11-01",
         "airframe_hours_fitted": "6400.0",
+        "airframe_cycles_fitted": "0",
         "hours_at_fitting": "12.5",
+        "cycles_at_fitting": "0",
     }
     assert post(client, f"/components/{other.id}/fit/", **form).status_code == 302
     twice = post(client, f"/components/{other.id}/fit/", **form)
@@ -296,6 +303,7 @@ def test_a_removal_is_recorded_once_and_the_fitting_never_changes(
             fitted,
             removed_on=date(2026, 11, 10),
             airframe_hours_removed=D("6405.0"),
+            airframe_cycles_removed=0,
             removal_reason="[Reason]",
         )
         with pytest.raises(services.RefusedError, match="Already Removed"):
@@ -303,6 +311,7 @@ def test_a_removal_is_recorded_once_and_the_fitting_never_changes(
                 fitted,
                 removed_on=date(2026, 11, 10),
                 airframe_hours_removed=D("6405.0"),
+                airframe_cycles_removed=0,
                 removal_reason="[Reason]",
             )
         with pytest.raises(IntegrityError, match="removed is never altered"), transaction.atomic():
@@ -339,7 +348,9 @@ def test_a_fitting_keeps_the_registration_as_it_stood(
             position="[Position]",
             fitted_on=TODAY,
             airframe_hours_fitted=D("6412.6"),
+            airframe_cycles_fitted=0,
             hours_at_fitting=D("0"),
+            cycles_at_fitting=0,
         )
         made.refresh_from_db()
         assert made.aircraft_registration == "G-ABCD"
@@ -359,6 +370,41 @@ REFUSED_FITTINGS: tuple[tuple[dict[str, Any], str], ...] = (
     ({"hours_at_fitting": D("1000000.0")}, "Hours Are From 0"),
     ({"cycles_at_fitting": 10_000_000}, "Cycles Are From 0"),
 )
+
+
+def test_a_fitting_requires_both_cycle_readings(sample: Sample, fleet: dict[str, Aircraft]) -> None:
+    component = add(sample, basis=Basis.CERTIFIED, limit_cycles=100)
+    aircraft = fleet["G-ABCD"]
+    client = signed_in(sample.planner)
+    url = f"/components/{component.id}/fit/"
+    values = {
+        "aircraft": str(aircraft.pk),
+        "position": "Engine",
+        "fitted_on": TODAY.isoformat(),
+        "airframe_hours_fitted": "6412.6",
+        "hours_at_fitting": "12.5",
+        "airframe_cycles_fitted": "0",
+        "cycles_at_fitting": "0",
+    }
+    for field in ("airframe_cycles_fitted", "cycles_at_fitting"):
+        response = post(client, url, **{**values, field: ""})
+        assert response.status_code == 200
+        assert "This field is required." in response.content.decode()
+        with working_for(sample.ours.id, sample.planner.id):
+            readings: dict[str, Any] = {"airframe_cycles_fitted": 0, "cycles_at_fitting": 0}
+            del readings[field]
+            with pytest.raises(services.RefusedError, match=r"Give the .*Cycles .*When Fitted"):
+                services.fit_component(
+                    component,
+                    aircraft,
+                    position="Engine",
+                    fitted_on=TODAY,
+                    airframe_hours_fitted=D("6412.6"),
+                    hours_at_fitting=D("12.5"),
+                    **readings,
+                )
+            assert not Installation.objects.filter(component=component).exists()
+    assert post(client, url, **values).status_code == 302
 
 
 @pytest.mark.parametrize(("change", "reason"), REFUSED_FITTINGS)
@@ -394,6 +440,7 @@ def test_what_cannot_be_true_of_a_removal_is_refused(
     given: dict[str, Any] = {
         "removed_on": date(2026, 11, 10),
         "airframe_hours_removed": D("6405.0"),
+        "airframe_cycles_removed": 0,
         "removal_reason": "[Reason]",
     }
     with (
@@ -449,7 +496,9 @@ def test_the_database_holds_the_bounds_of_a_component_and_a_fitting(
         "position": "[Position]",
         "fitted_on": date(2026, 11, 1),
         "airframe_hours_fitted": D("6400.0"),
+        "airframe_cycles_fitted": 0,
         "hours_at_fitting": D("0"),
+        "cycles_at_fitting": 0,
     }
     removal = {
         "removed_on": date(2026, 11, 10),
@@ -461,7 +510,9 @@ def test_the_database_holds_the_bounds_of_a_component_and_a_fitting(
         ({"position": ""}, "installation_fitting_within_bounds"),
         ({"airframe_hours_fitted": D("-0.1")}, "installation_fitting_within_bounds"),
         ({"airframe_hours_fitted": D("1000000.0")}, "installation_fitting_within_bounds"),
+        ({"airframe_cycles_fitted": None}, "not-null"),
         ({"hours_at_fitting": D("1000000.0")}, "installation_fitting_within_bounds"),
+        ({"cycles_at_fitting": None}, "not-null"),
         ({"cycles_at_fitting": 10_000_000}, "installation_fitting_within_bounds"),
         ({"life_from": date(2026, 11, 2)}, "installation_fitting_within_bounds"),
         (removal, "recorded after the fitting"),
@@ -732,7 +783,9 @@ FIT = {
     "position": "Engine",
     "fitted_on": "2026-11-01",
     "airframe_hours_fitted": "6400.0",
+    "airframe_cycles_fitted": "0",
     "hours_at_fitting": "0",
+    "cycles_at_fitting": "0",
 }
 
 
@@ -757,6 +810,7 @@ def test_who_may_record_components(sample: Sample, fleet: dict[str, Aircraft], r
             f"/components/{fitted.id}/remove/",
             removed_on="2026-11-10",
             airframe_hours_removed="6405.0",
+            airframe_cycles_removed="0",
             removal_reason="[Reason]",
         ),
         post(client, f"/components/{loose.id}/limit/", basis="No Limit Recorded"),
@@ -820,7 +874,9 @@ def test_another_organisations_components_are_not_found_or_shown(
                     position="[Position]",
                     fitted_on=TODAY,
                     airframe_hours_fitted=D("0"),
+                    airframe_cycles_fitted=0,
                     hours_at_fitting=D("0"),
+                    cycles_at_fitting=0,
                     **values,
                 )
 
@@ -877,3 +933,207 @@ def test_aircraft_configuration_is_in_the_sidebar_with_directives_as_its_view(
         "Airworthiness Reviews",
         "Transfers",
     ]
+
+
+def test_removal_requires_a_measured_cycle_count(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-231. Missing cycles cannot stand for no cycles flown."""
+    component = add(sample, limit_hours=None, limit_cycles=100)
+    fitted = fit(sample, component, fleet["G-ABCD"])
+    client = signed_in(sample.planner)
+    removal = dict(
+        removed_on="2026-11-18",
+        airframe_hours_removed="6405.0",
+        removal_reason="Inspection",
+    )
+
+    refused = post(client, f"/components/{component.id}/remove/", **removal)
+    assert refused.status_code == 200
+    with working_for(sample.ours.id, sample.planner.id):
+        with pytest.raises(services.RefusedError, match="Airframe Cycles When Removed"):
+            services.remove_component(
+                fitted,
+                removed_on=TODAY,
+                airframe_hours_removed=D("6405.0"),
+                removal_reason="Inspection",
+            )
+        assert Installation.objects.get(pk=fitted.pk).removed_on is None
+
+    saved = post(
+        client, f"/components/{component.id}/remove/", **removal, airframe_cycles_removed="0"
+    )
+    assert saved.status_code == 302
+    assert line(sample, component).cycles == 0
+
+
+def test_a_component_kept_on_condition_carries_its_review_across_airframes(
+    sample: Sample, components: dict[str, Component], fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-233. The old airframe has flown 50 hours and the new one 12.6."""
+    component = components["Engine, Lycoming O-360 [Serial Number Engine G-DGHI]"]
+    with working_for(sample.ours.id, sample.planner.id):
+        old = Installation.objects.get(component=component)
+        services.remove_component(
+            old,
+            removed_on=date(2026, 11, 12),
+            airframe_hours_removed=D("9850.0"),
+            airframe_cycles_removed=0,
+            removal_reason="Transfer",
+        )
+    new = fit(
+        sample,
+        component,
+        fleet["G-ABCD"],
+        fitted_on=date(2026, 11, 14),
+        life_from=None,
+        hours_at_fitting=D("2115.7"),
+    )
+    before = line(sample, component)
+    assert (before.due_text, before.remaining_text) == ("Review at 6,450.0", "37.4 Hours")
+
+    client = signed_in(sample.planner)
+    response = post(
+        client,
+        f"/components/{component.id}/review/",
+        reviewed_on="2026-11-17",
+        airframe_hours="6410",
+    )
+    assert response.status_code == 302, response.content.decode()
+    after = line(sample, component)
+    assert (after.due_text, after.remaining_text) == ("Review at 6,510.0", "97.4 Hours")
+    assert after.fitting == new
+
+
+def test_on_condition_review_off_wing_uses_the_removal_reading(
+    sample: Sample, components: dict[str, Component], fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-233. The old airframe continued to fly after the component was removed."""
+    component = components["Engine, Lycoming O-360 [Serial Number Engine G-DGHI]"]
+    with working_for(sample.ours.id, sample.planner.id):
+        old = Installation.objects.get(component=component)
+        services.remove_component(
+            old,
+            removed_on=date(2026, 11, 12),
+            airframe_hours_removed=D("9850.0"),
+            airframe_cycles_removed=0,
+            removal_reason="Transfer",
+        )
+        with pytest.raises(services.RefusedError, match="Reading Recorded at Removal"):
+            services.record_review(component, airframe_hours=D("9851.0"), reviewed_on=TODAY)
+        with pytest.raises(services.RefusedError, match="Reading Recorded at Removal"):
+            services.record_review(component, airframe_hours=D("9849.0"), reviewed_on=TODAY)
+        off_wing = services.record_review(component, airframe_hours=D("9850.0"), reviewed_on=TODAY)
+    assert off_wing.last_review_hours == D("9850.0")
+    fit(
+        sample,
+        component,
+        fleet["G-ABCD"],
+        fitted_on=TODAY,
+        life_from=None,
+        hours_at_fitting=D("2115.7"),
+    )
+    found = line(sample, component)
+    assert (found.due_text, found.remaining_text) == ("Review at 6,500.0", "87.4 Hours")
+
+
+def test_refitting_preserves_accumulated_usage_without_new_life_evidence(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    component = add(sample, basis=Basis.CERTIFIED, limit_cycles=100)
+    original = fit(
+        sample, component, fleet["G-ABCD"], hours_at_fitting=D("485"), cycles_at_fitting=20
+    )
+    with working_for(sample.ours.id, sample.planner.id):
+        services.remove_component(
+            original,
+            removed_on=date(2026, 11, 10),
+            airframe_hours_removed=D("6405.0"),
+            airframe_cycles_removed=0,
+            removal_reason="For Inspection",
+        )
+    refit = dict(fitted_on=date(2026, 11, 12), airframe_hours_fitted=D("6405"))
+    for hours, cycles in ((D("489.9"), 20), (D("490"), 19)):
+        with pytest.raises(services.RefusedError, match="Earlier Accumulated Hours or Cycles"):
+            fit(
+                sample,
+                component,
+                fleet["G-ABCD"],
+                **refit,
+                hours_at_fitting=hours,
+                cycles_at_fitting=cycles,
+            )
+    with working_for(sample.ours.id, sample.planner.id):
+        with (
+            pytest.raises(IntegrityError, match="Earlier accumulated hours or cycles"),
+            transaction.atomic(),
+        ):
+            Installation.objects.create(
+                organisation=sample.ours,
+                component=component,
+                aircraft=fleet["G-ABCD"],
+                position="[Position]",
+                **refit,
+                airframe_cycles_fitted=0,
+                hours_at_fitting=D("489.9"),
+                cycles_at_fitting=20,
+            )
+    with working_for(sample.ours.id, sample.reader.id):
+        assert Installation.objects.filter(component=component).count() == 1
+
+    # An overhaul supported by the fitting's recorded life commencement can start a new life.
+    fitted = fit(
+        sample,
+        component,
+        fleet["G-ABCD"],
+        **refit,
+        life_from=date(2026, 11, 11),
+        hours_at_fitting=D("0"),
+        cycles_at_fitting=0,
+    )
+    assert fitted.hours_at_fitting == 0
+    assert fitted.life_from == date(2026, 11, 11)
+
+
+def test_a_review_can_identify_either_fitting_on_the_day_of_a_move(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    component = add(
+        sample,
+        basis=Basis.ON_CONDITION,
+        limit_hours=None,
+        last_review_hours=D("6400"),
+        last_review_on=date(2026, 11, 2),
+        review_hours=D("100"),
+    )
+    old = fit(sample, component, fleet["G-ABCD"])
+    moved_on = date(2026, 11, 12)
+    with working_for(sample.ours.id, sample.planner.id):
+        services.remove_component(
+            old,
+            removed_on=moved_on,
+            airframe_hours_removed=D("6405"),
+            airframe_cycles_removed=0,
+            removal_reason="Changed Position",
+        )
+    new = fit(
+        sample,
+        component,
+        fleet["G-ABCD"],
+        position="[New Position]",
+        fitted_on=moved_on,
+        airframe_hours_fitted=D("6405"),
+        hours_at_fitting=D("5"),
+    )
+    client = signed_in(sample.planner)
+    url = f"/components/{component.id}/review/"
+    review = {"reviewed_on": moved_on.isoformat(), "airframe_hours": "6405"}
+    assert "Choose the Fitting" in post(client, url, **review).content.decode()
+    assert post(client, url, **review, installation=str(old.pk)).status_code == 302
+    assert post(client, url, **review, installation=str(new.pk)).status_code == 302
+    assert (
+        "A Review Is Not Before the Last Review"
+        in post(client, url, **review, installation=str(old.pk)).content.decode()
+    )
+    with working_for(sample.ours.id, sample.reader.id):
+        assert Component.objects.get(pk=component.pk).last_review_fitting == new

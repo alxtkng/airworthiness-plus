@@ -3,7 +3,7 @@
 {% block title %}Airworthiness Directives{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Airworthiness Directives</h1>
-<p><a href="{% url 'add_directive' %}">Record an Airworthiness Directive</a></p>
+{% if may_record %}<p><a href="{% url 'add_directive' %}">Record an Airworthiness Directive</a></p>{% endif %}
 {% for fitting in awaiting_refit %}
 <p><a href="{% url 'component' fitting.component_id %}">{{ fitting.aircraft_registration }} {{ fitting.component.name }}</a>, At {{ fitting.sent_to }}, Applicability Check Before Refit</p>
 {% endfor %}

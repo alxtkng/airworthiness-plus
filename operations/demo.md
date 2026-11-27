@@ -131,7 +131,7 @@ Say: the annual review is not completed with a point still open. That rule is ou
 
 ### Aircraft Configuration
 
-1. Open Aircraft Configuration, under Continuing Airworthiness. It opens on Components and Life Limits: 7 tracked, the nearest limit first.
+1. Open Aircraft Configuration, under Continuing Airworthiness. It opens on Components and Life Limits: 9 tracked in the full sample, the nearest limit first.
 2. G-CDEF's own propeller is Off-Wing, due back 25 November 2026. Open it: fitted in 2020, removed at its 6-year limit, and directive applicability to check before refit.
 3. Go back. Open the detail of G-CDEF's engine, then How What Remains Was Calculated: 1,780.0 hours since overhaul, 220.0 left, ML.A.503.
 4. G-DGHI's engine is On Condition: Review at 9,900.0.
@@ -152,9 +152,9 @@ Say: the hours of a component are those it had when fitted and what the airframe
 
 1. Open Defects, under Continuing Airworthiness. Four are open. G-DGHI comes first: Not Deferrable, Grounded.
 2. Point to G-BXYZ: deferred by Sam Patel on 28 October 2026, limit 27 November 2026.
-3. Open it. Open How the Limit Was Calculated: the day of the decision, the organisation's 30 days, and ML.A.403.
+3. Open it. Open How the Limit Was Calculated. Look for the recorded start date, the organisation's 30 days and the ML.A.403 reference.
 4. Open Deferral Limits. It is the Settings page, where the 30 days are set.
-5. Go back. Choose Record a Defect. Choose G-FMNO, Deferred, Pilot-in-Command. Record it. Its limit is 30 days from the day decided.
+5. Go back. Choose Record a Defect. Choose G-FMNO, Deferred, Pilot-in-Command. Record it. Set the date first identified a day before the decision. Its limit is 30 days from identification.
 6. Open the tab Repeat Defects. Landing light failures on the Piper PA-28: 3 in 12 months, a Repeat, with the action taken.
 7. Open the Dashboard. The deferred defects are in Continuing Airworthiness, each with its limit and days remaining.
 8. Open G-DGHI under Aircraft. Choose Record as Serviceable. It is refused: a defect that is Not Deferrable is open.
@@ -167,7 +167,7 @@ Say: the limit is the organisation's own number of days; the regulation gives no
 2. G-ABCD's tyre comes first: Due 21 November 2026. Open its detail, then How the Release Was Calculated: 30 days, ML.A.305(a).
 3. G-CDEF's two certificates were issued by Chris Moore and entered the next day.
 4. Choose Record the Certificate for the tyre. Choose Pilot-Owner, type a name and a licence number. Record it. It is now in the records, and gone from the Dashboard.
-5. Point to Who May Release, with the point of ML.A.801 for each.
+5. Point to Who May Release, with the point of ML.A.801 for each. The recording page also offers Retain Unverified Historical Evidence for a signed source dated during an earlier grounding period. That entry leaves any outstanding release deadline due.
 
 Say: the system records a certificate that was issued. It does not issue one.
 

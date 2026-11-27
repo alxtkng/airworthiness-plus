@@ -19,8 +19,8 @@ from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.planning.pending import releases_waiting
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases import services
-from airworthiness_plus.releases.forms import CertificateForm
-from airworthiness_plus.releases.models import Release
+from airworthiness_plus.releases.forms import CertificateForm, HistoricalReleaseEvidenceForm
+from airworthiness_plus.releases.models import HistoricalReleaseEvidence, Release
 
 
 def _user(request: HttpRequest) -> User:
@@ -45,6 +45,9 @@ def release_to_service(request: HttpRequest) -> HttpResponse:
             "summary": summary,
             "waiting_packages": waiting,
             "not_in_records": summary.not_in_records + len(waiting),
+            "historical_evidence": HistoricalReleaseEvidence.objects.select_related(
+                "work__aircraft", "grounding_defect"
+            ),
             "who": services.WHO_MAY_RELEASE,
             "may_record": _user(request).may(Action.RECORD_RELEASE_CERTIFICATE),
         },
@@ -89,3 +92,20 @@ def record_release_certificate(request: HttpRequest, work_id: uuid.UUID) -> Http
         "releases/record.html",
         {"form": form, "work": work, "who": services.WHO_MAY_RELEASE},
     )
+
+
+@never_cache
+@requires(Action.RECORD_RELEASE_CERTIFICATE)
+@require_http_methods(["GET", "POST"])
+def record_historical_release_evidence(request: HttpRequest, work_id: uuid.UUID) -> HttpResponse:
+    """Retain a signed historical source dated during a grounding period."""
+    work = get_object_or_404(WorkDone.objects.select_related("aircraft"), pk=work_id)
+    form = HistoricalReleaseEvidenceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.retain_historical_evidence(work, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("release_to_service")
+    return render(request, "releases/historical_evidence.html", {"form": form, "work": work})

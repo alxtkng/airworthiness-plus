@@ -210,6 +210,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "defects_repeataction": ["INSERT", "SELECT"],
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
+        "releases_historicalreleaseevidence": ["INSERT", "SELECT"],
         "people_maintenanceauthorisation": ["INSERT", "SELECT"],
         "people_maintenanceauthorisationwithdrawal": ["INSERT", "SELECT"],
         "people_experienceevidence": ["INSERT", "SELECT"],
@@ -249,7 +250,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "configuration_position": {"position_rules"},
         "configuration_baseline": {"baseline_keeps"},
         # A defect keeps its decision and who made it (REQ-225).
-        "defects_defect": {"defect_rules", "defect_certification_evidence"},
+        "defects_defect": {"defect_rules", "defect_certification_evidence", "defect_timing"},
         # A contract and a work order keep what they said when recorded (REQ-241).
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
@@ -263,11 +264,14 @@ def test_every_table_is_under_the_record_rules() -> None:
         "releases_release": {
             "release_rules",
             "release_certification_evidence",
+            "release_grounding_guard",
             "release_work_package_snapshot",
         },
+        "releases_historicalreleaseevidence": {"historical_release_period"},
         "programme_workdone": {"release_entry_fixed", "work_performer"},
         # A fitting keeps what it said, and its removal is added once (REQ-235).
-        "components_installation": {"installation_rules"},
+        "components_component": {"review_fitting_rules"},
+        "components_installation": {"installation_rules", "fitting_usage_rules"},
         # A decision on a service bulletin, and a change or repair, are fixed (REQ-250, REQ-252).
         "modifications_bulletin": {"bulletin_rules"},
         "modifications_change": {"change_rules"},

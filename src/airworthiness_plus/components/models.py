@@ -69,6 +69,9 @@ class Component(Record):
         "Airframe Hours at the Last Review", max_digits=8, decimal_places=1, null=True, blank=True
     )
     last_review_on = models.DateField("Last Reviewed", null=True, blank=True)
+    last_review_fitting = models.ForeignKey(
+        "Installation", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         ordering = ["name", "serial_number", "id"]
@@ -163,14 +166,12 @@ class Installation(Record):
     airframe_hours_fitted = models.DecimalField(
         "Airframe Hours When Fitted", max_digits=8, decimal_places=1
     )
-    airframe_cycles_fitted = models.PositiveIntegerField("Airframe Cycles When Fitted", default=0)
+    airframe_cycles_fitted = models.PositiveIntegerField("Airframe Cycles When Fitted")
     # The component's own since new or overhaul, when it was fitted.
     hours_at_fitting = models.DecimalField(
         "Hours Since New or Overhaul When Fitted", max_digits=8, decimal_places=1
     )
-    cycles_at_fitting = models.PositiveIntegerField(
-        "Cycles Since New or Overhaul When Fitted", default=0
-    )
+    cycles_at_fitting = models.PositiveIntegerField("Cycles Since New or Overhaul When Fitted")
     # The day a calendar life runs from: new, or last overhauled.
     life_from = models.DateField("New or Last Overhauled", null=True, blank=True)
     release_document = models.CharField("Release Document", max_length=100, blank=True)

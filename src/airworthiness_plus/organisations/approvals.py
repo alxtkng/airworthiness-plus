@@ -46,14 +46,14 @@ def may_act_on(
 ) -> bool:
     """Check whether a recorded approval and privilege cover an action on the given day."""
     return any(
-        approval.held_on(day)
-        and (
+        (
             approval.approval == approval_type
             or (
                 approval.approval == ApprovalType.PART_CAO
                 and cao_privilege in organisation.privileges
             )
         )
+        and approval.held_on(day)
         for approval in every(organisation)
     )
 
@@ -100,7 +100,8 @@ def record(organisation: Organisation, *, approval: ApprovalType, reference: str
     """Record an approval as held, with its reference.
 
     One that ended is recorded as held again on its own record, so that an
-    approval has one record and one history.
+    approval has one record and one history. That history keeps the previous
+    end date and reference. The UK day of re-recording opens the next period.
     """
     reference = reference.strip()
     if not reference:

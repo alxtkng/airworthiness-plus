@@ -79,7 +79,9 @@ def test_component_fit_limit_and_removal(
                 "position": "Test position",
                 "fitted_on": "2026-11-18",
                 "airframe_hours_fitted": "6412.6",
+                "airframe_cycles_fitted": "0",
                 "hours_at_fitting": "5.0",
+                "cycles_at_fitting": "0",
                 "release_document": "TEST-FIT-18",
             },
             "495.0",
@@ -91,6 +93,7 @@ def test_component_fit_limit_and_removal(
             {
                 "removed_on": "2026-11-18",
                 "airframe_hours_removed": "6412.6",
+                "airframe_cycles_removed": "0",
                 "removal_reason": "Test inspection",
                 "sent_to": "Test workshop",
                 "due_back_on": "2026-11-28",
@@ -681,6 +684,16 @@ def test_open_transfer_checklist_keeps_aircraft_out_of_fleet(
         row = page.locator("main tbody tr:not(.detail)").filter(has=registration)
         expect(row).to_contain_text("Records 14 of 18 Received")
         form = reveal(row).locator("form")
+        # Let the server validate the count, as it must for a stale form.
+        form.locator("input[name=received]").evaluate("(input) => input.removeAttribute('max')")
+        fill(form, {"received": "999"})
+        submit(page, form.get_by_role("button", name="Save", exact=True))
+        expect(page.get_by_role("alert")).to_have_text("Enter 18 or Fewer Records")
+        count = page.get_by_label("Records Received", exact=True)
+        expect(count).to_be_visible()
+        expect(count).to_have_value("999")
+        expect(row).to_contain_text("Records 14 of 18 Received")
+        form = form_with(page, "received")
         fill(form, {"received": "16"})
         submit(page, form.get_by_role("button", name="Save", exact=True))
         expect(row).to_contain_text("Records 16 of 18 Received")
