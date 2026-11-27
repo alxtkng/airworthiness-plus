@@ -345,6 +345,7 @@ def test_the_limit_uses_the_default_for_who_deferred_it(
             basis=basis,
             decided_by=by,
             data_limit_on=data_limit,
+            legacy_evidence="[Signed Defect Entry]" if by else "",
         )
         assert (defect.limit_on, defect.default_days) == (limit, days), basis
 
@@ -559,6 +560,7 @@ def test_who_may_be_named_as_deferring_a_defect(sample: Sample, fleet: dict[str,
             "decision": Decision.DEFERRED,
             "basis": Basis.CERTIFYING_STAFF,
             "decided_by": sam,
+            "legacy_evidence": "[Signed Defect Entry]",
         }
         with pytest.raises(services.RefusedError, match="Had Left by the Day"):
             services.record_defect(
@@ -599,6 +601,9 @@ def test_the_decision_keeps_who_made_it_as_they_then_were(
     with working_for(sample.ours.id, sample.planner.id):
         # What the application sends for them is not what is kept.
         chris = Person.objects.get(full_name="Chris Moore")
+        grant = people_services.record_maintenance_authorisation(
+            chris, reference="TEST-DEFECT", scope=step.aircraft.type_rating, valid_from=TODAY
+        )
         made = Defect.objects.create(
             organisation=sample.ours,
             aircraft=step.aircraft,
@@ -610,6 +615,8 @@ def test_the_decision_keeps_who_made_it_as_they_then_were(
             basis=Basis.CERTIFYING_STAFF,
             decided_on=TODAY,
             decided_by=chris,
+            maintenance_authorisation=grant,
+            scope_confirmed=True,
             decided_by_name="[Somebody Else]",
             decided_by_licence="[Any Licence]",
             default_days=30,
@@ -931,16 +938,17 @@ def test_another_organisations_defects_are_not_found_or_shown(
                 Defect.objects.create(
                     organisation=sample.other,
                     title="[Defect]",
-                    found_on=TODAY,
+                    found_on=date(2026, 11, 17),
                     chapter=33,
                     system="Lights",
                     decision=Decision.DEFERRED,
                     basis=Basis.CERTIFYING_STAFF
                     if "decided_by" in values
                     else Basis.PILOT_NON_REQUIRED,
-                    decided_on=TODAY,
+                    decided_on=date(2026, 11, 17),
+                    legacy_evidence="Original Signed Record" if "decided_by" in values else "",
                     default_days=30,
-                    limit_on=date(2026, 12, 18),
+                    limit_on=date(2026, 12, 17),
                     **values,
                 )
 
@@ -1034,12 +1042,12 @@ def test_the_export_of_an_aircraft_holds_its_defects_and_the_actions_for_its_typ
     assert read(ejkl, "defects_repeataction") == []
 
 
-def test_certifying_staff_cannot_defer_outside_their_known_authorisation_dates(
+def test_certifying_staff_cannot_defer_outside_their_authorisation_dates(
     sample: Sample, fleet: dict[str, Aircraft]
 ) -> None:
     certifier = person(sample, "Sam Patel")
     with working_for(sample.ours.id, sample.administrator.id):
-        people_services.record_maintenance_authorisation(
+        authorisation = people_services.record_maintenance_authorisation(
             certifier,
             reference="TEST-OLD",
             scope="Part-ML aircraft",
@@ -1047,4 +1055,11 @@ def test_certifying_staff_cannot_defer_outside_their_known_authorisation_dates(
             valid_to=date(2026, 11, 17),
         )
     with pytest.raises(services.RefusedError, match="No Recorded Maintenance Authorisation Covers"):
-        record(sample, fleet["G-BXYZ"], basis=Basis.CERTIFYING_STAFF, decided_by=certifier)
+        record(
+            sample,
+            fleet["G-BXYZ"],
+            basis=Basis.CERTIFYING_STAFF,
+            decided_by=certifier,
+            maintenance_authorisation=authorisation,
+            scope_confirmed=True,
+        )

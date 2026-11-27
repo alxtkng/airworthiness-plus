@@ -29,6 +29,7 @@ from airworthiness_plus.people.models import (
     ExperienceEvidence,
     ExperienceWithdrawal,
     MaintenanceAuthorisation,
+    MaintenanceAuthorisationWithdrawal,
     Person,
     RecurrentTraining,
 )
@@ -88,6 +89,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(User, None),
     Exported(Person, None),
     Exported(MaintenanceAuthorisation, None),
+    Exported(MaintenanceAuthorisationWithdrawal, None),
     Exported(ExperienceEvidence, None),
     Exported(ExperienceWithdrawal, None),
     Exported(RecurrentTraining, None),

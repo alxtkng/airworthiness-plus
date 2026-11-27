@@ -87,6 +87,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     path("release-to-service/", releases.release_to_service, name="release_to_service"),
     path(
+        "release-to-service/certificates/<uuid:release_id>/",
+        releases.release_certificate,
+        name="release_certificate",
+    ),
+    path(
         "release-to-service/<uuid:work_id>/record/",
         releases.record_release_certificate,
         name="record_release_certificate",
@@ -329,6 +334,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "staff/maintenance-authorisations/<uuid:authorisation_id>/experience/",
         people.experience_evidence,
         name="maintenance_experience",
+    ),
+    path(
+        "staff/maintenance-authorisations/<uuid:authorisation_id>/withdraw/",
+        people.withdraw_maintenance_authorisation,
+        name="withdraw_maintenance_authorisation",
     ),
     path(
         "staff/maintenance-authorisations/<uuid:authorisation_id>/experience/record/",

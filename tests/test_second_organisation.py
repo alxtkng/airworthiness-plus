@@ -149,6 +149,7 @@ def test_maintenance_and_management_records_take_the_approval_for_the_activity(
 ) -> None:
     from airworthiness_plus.contracts import services as contracts
     from airworthiness_plus.contracts.models import Scope
+    from airworthiness_plus.people import services as people_services
     from airworthiness_plus.programme import services as programmes
     from airworthiness_plus.releases import services as releases
     from airworthiness_plus.releases.models import IssuedBy
@@ -172,12 +173,17 @@ def test_maintenance_and_management_records_take_the_approval_for_the_activity(
             hours=Decimal("2406.5"),
             cycles=0,
         )
+        authorisation = people_services.record_maintenance_authorisation(
+            staff, reference="CA-1", scope=aircraft.type_rating, valid_from=TODAY
+        )
         certificate = releases.record_certificate(
             work,
             reference="CRS-1",
             kind=IssuedBy.ORGANISATION,
             issued_by=staff,
             issued_on=TODAY,
+            maintenance_authorisation=authorisation,
+            scope_confirmed=True,
         )
         assert contract.organisation_approval_reference == "UK.CAMO.[Number]"
         assert certificate.approval_reference == "UK.145.[Number]"

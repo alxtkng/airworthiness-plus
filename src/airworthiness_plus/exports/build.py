@@ -17,15 +17,19 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from django.db.models import Q
+
 from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.defects.models import Defect
 from airworthiness_plus.exports.registry import REGISTRY
 from airworthiness_plus.exports.verify import MANIFEST
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.people.models import Person
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
 from airworthiness_plus.programme.models import WorkDone
+from airworthiness_plus.releases.models import Release
 from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_rules.dates import utc_now
 
@@ -188,6 +192,33 @@ def build(organisation: Organisation, *, by: User, aircraft: Aircraft | None = N
                         .exclude(performed_by_id=None)
                         .values("performed_by_id")
                     ).order_by("pk")
+                ],
+                "maintenance_authorisations": [
+                    {
+                        "id": str(grant.pk),
+                        "person_id": str(grant.person_id),
+                        "reference": grant.reference,
+                        "scope": grant.scope,
+                        "valid_from": grant.valid_from.isoformat(),
+                        "valid_to": grant.valid_to.isoformat() if grant.valid_to else None,
+                        "withdrawn_on": grant.withdrawn_on.isoformat()
+                        if grant.withdrawn_on
+                        else None,
+                    }
+                    for grant in MaintenanceAuthorisation.objects.select_related("withdrawal")
+                    .filter(
+                        Q(
+                            pk__in=Release.objects.filter(work__aircraft=aircraft).values(
+                                "maintenance_authorisation_id"
+                            )
+                        )
+                        | Q(
+                            pk__in=Defect.objects.filter(aircraft=aircraft).values(
+                                "maintenance_authorisation_id"
+                            )
+                        )
+                    )
+                    .order_by("pk")
                 ],
                 "review_staff": [
                     {

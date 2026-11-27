@@ -7,7 +7,7 @@ from django.db.models import Q
 
 from airworthiness_plus.history.models import Record, RecordsAreNeverDeletedError
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.people.models import Person
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
 from airworthiness_plus.programme.models import WorkDone
 
 
@@ -47,6 +47,13 @@ class Release(Record):
     # For certifying staff of the organisation the database writes these three
     # from the person and the organisation; for anyone else the name and the
     # licence number are as given.
+    maintenance_authorisation = models.ForeignKey(
+        MaintenanceAuthorisation, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    scope_confirmed = models.BooleanField(default=False)
+    legacy_evidence = models.CharField(
+        "Signed Legacy Evidence Reference", max_length=160, blank=True
+    )
     issuer_name = models.CharField("Name", max_length=200, blank=True)
     licence = models.CharField("Licence Number", max_length=100, blank=True)
     approval_reference = models.CharField(max_length=40, blank=True)

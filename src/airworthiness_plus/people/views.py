@@ -22,6 +22,7 @@ from airworthiness_plus.people.forms import (
     ExperienceEvidenceForm,
     ExperienceWithdrawalForm,
     MaintenanceAuthorisationForm,
+    MaintenanceAuthorisationWithdrawalForm,
     PersonForm,
     RecurrentTrainingForm,
 )
@@ -212,6 +213,7 @@ def _experience_page(
     form: ExperienceEvidenceForm,
     *,
     withdrawal_message: str = "",
+    authorisation_form: MaintenanceAuthorisationWithdrawalForm | None = None,
 ) -> HttpResponse:
     evidence = list(authorisation.experience_evidence.select_related("withdrawal", "replacement"))
     today = aircraft_services.today()
@@ -222,6 +224,11 @@ def _experience_page(
             "authorisation": authorisation,
             "evidence": evidence,
             "withdrawal_message": withdrawal_message,
+            "authorisation_form": (
+                authorisation_form or MaintenanceAuthorisationWithdrawalForm()
+                if _user(request).may(Action.ADD_OR_CHANGE_PERSON)
+                else None
+            ),
             "result": services.assessed_experience(evidence, today),
             "start": window_start(today),
             "assessment_on": today,
@@ -236,7 +243,7 @@ def _experience_page(
 def experience_evidence(request: HttpRequest, authorisation_id: uuid.UUID) -> HttpResponse:
     """Read assessed experience for one authorisation (REQ-301)."""
     authorisation = get_object_or_404(
-        MaintenanceAuthorisation.objects.select_related("person"), pk=authorisation_id
+        MaintenanceAuthorisation.objects.select_related("person", "withdrawal"), pk=authorisation_id
     )
     return _experience_page(request, authorisation, ExperienceEvidenceForm())
 
@@ -285,4 +292,27 @@ def withdraw_experience_evidence(
         message = str(form.errors["reason"][0])
     return _experience_page(
         request, evidence.authorisation, ExperienceEvidenceForm(), withdrawal_message=message
+    )
+
+
+@never_cache
+@requires(Action.ADD_OR_CHANGE_PERSON)
+@require_POST
+def withdraw_maintenance_authorisation(
+    request: HttpRequest, authorisation_id: uuid.UUID
+) -> HttpResponse:
+    """Withdraw existing authorisation evidence from a given date (REQ-302)."""
+    authorisation = get_object_or_404(
+        MaintenanceAuthorisation.objects.select_related("person", "withdrawal"), pk=authorisation_id
+    )
+    form = MaintenanceAuthorisationWithdrawalForm(request.POST)
+    if form.is_valid():
+        try:
+            services.withdraw_maintenance_authorisation(authorisation, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("maintenance_experience", authorisation_id=authorisation_id)
+    return _experience_page(
+        request, authorisation, ExperienceEvidenceForm(), authorisation_form=form
     )

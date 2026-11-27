@@ -8,7 +8,7 @@ from django.db.models import F, Q
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.history.models import Record, RecordsAreNeverDeletedError
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.people.models import Person
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_rules.defects import FIRST_CHAPTER, LAST_CHAPTER, MOST_DAYS
 
@@ -64,6 +64,13 @@ class Defect(Record):
     decided_on = models.DateField("Decided")
     decided_by = models.ForeignKey(
         Person, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    maintenance_authorisation = models.ForeignKey(
+        MaintenanceAuthorisation, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    scope_confirmed = models.BooleanField(default=False)
+    legacy_evidence = models.CharField(
+        "Signed Legacy Evidence Reference", max_length=160, blank=True
     )
     # As they stood on the day the defect was recorded, written by the database.
     decided_by_name = models.CharField(max_length=200, blank=True)

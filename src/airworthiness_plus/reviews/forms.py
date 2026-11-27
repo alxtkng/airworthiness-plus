@@ -107,6 +107,13 @@ class ReviewStaffForm(Form):
         return data
 
 
+class ReviewStartForm(Form):
+    scope_version = forms.CharField(widget=forms.HiddenInput, max_length=64, required=False)
+    scope_confirmed = forms.BooleanField(
+        label="Confirm the Authorisation Covers This Aircraft and Review", required=False
+    )
+
+
 class ReviewAuthorisationForm(Form):
     """Record the scope and term stated on a review authorisation."""
 

@@ -58,6 +58,7 @@
 {% if not refusal %}
 <form method="post" action="{% url 'start_review' aircraft.id %}">
 {% csrf_token %}
+{% if start_scope %}<p>Review Authorisation Scope. {{ start_scope }}</p>{{ start_form.as_p }}{% endif %}
 <button type="submit">Start an Airworthiness Review of {{ aircraft.registration }}</button>
 </form>
 <h2>Record a Certificate Issued Elsewhere or Before These Records for {{ aircraft.registration }}</h2>

@@ -91,6 +91,9 @@ class MaintenanceAuthorisation(Record):
     person = models.ForeignKey(
         Person, on_delete=models.PROTECT, related_name="maintenance_authorisations"
     )
+    supersedes = models.OneToOneField(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="replacement"
+    )
     reference = models.CharField("Authorisation Reference", max_length=80)
     scope = models.CharField("Scope and Limitations", max_length=400)
     valid_from = models.DateField("Valid From")
@@ -109,17 +112,43 @@ class MaintenanceAuthorisation(Record):
             ),
             models.UniqueConstraint(
                 fields=["person", "reference", "valid_from"],
-                name="maintenance_authorisation_recorded_once",
+                condition=Q(supersedes__isnull=True),
+                name="maintenance_authorisation_starts_one_chain",
             ),
         ]
 
     def term_on(self, on: date) -> str:
         """Distinguish the terms of the evidence from assessed experience."""
+        if self.withdrawn_on is not None and self.withdrawn_on <= on:
+            return "Withdrawn"
         if on < self.valid_from:
             return "Not Yet In Force"
         if self.valid_to is not None and self.valid_to < on:
             return "Ended"
         return "Within Recorded Dates"
+
+    @property
+    def withdrawn_on(self) -> date | None:
+        withdrawal = getattr(self, "withdrawal", None)
+        return withdrawal.withdrawn_from if withdrawal is not None else None
+
+
+class MaintenanceAuthorisationWithdrawal(Record):
+    """An effective-dated withdrawal that keeps the original authorisation."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    authorisation = models.OneToOneField(
+        MaintenanceAuthorisation, on_delete=models.PROTECT, related_name="withdrawal"
+    )
+    withdrawn_from = models.DateField("Withdrawn From")
+    reason = models.CharField("Reason", max_length=400)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(reason=""), name="maintenance_withdrawal_has_reason"
+            )
+        ]
 
 
 class RecurrentTraining(Record):

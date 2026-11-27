@@ -193,7 +193,7 @@ BOARD: tuple[Group, ...] = (
                 "Release to Service",
                 "release_to_service",
                 shown_for=MAINTAINS,
-                inside=frozenset({"record_release_certificate"}),
+                inside=frozenset({"record_release_certificate", "release_certificate"}),
             ),
             Item(
                 "Contracts",
@@ -277,6 +277,7 @@ BOARD: tuple[Group, ...] = (
                         "maintenance_experience",
                         "record_maintenance_experience",
                         "withdraw_maintenance_experience",
+                        "withdraw_maintenance_authorisation",
                     }
                 ),
             ),

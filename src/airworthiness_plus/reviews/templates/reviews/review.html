@@ -15,6 +15,7 @@
 {% if refusal %}<p role="alert">{{ refusal }}</p>{% endif %}
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <dl>
+{% if review.confirmed_authorisation_scope %}<dt>Confirmed Authorisation Scope</dt><dd>{{ review.confirmed_authorisation_scope }}</dd>{% endif %}
 <dt>Review Staff</dt><dd>{% if review.certificate %}{{ review.certificate.review_staff_name }}, {{ review.certificate.review_staff_authorisation }}{% else %}{{ review.staff.user.full_name }}, {{ review.staff.authorisation_reference }}{% endif %}</dd>
 <dt>Started</dt><dd>{{ review.started_on|long_date }}</dd>
 <dt>Assisted at the Survey By</dt><dd>{{ review.assisted_by }}</dd>
@@ -54,6 +55,7 @@
 <ul>
 {% for reason in outstanding %}<li>{{ reason }}</li>
 {% endfor %}</ul>
+{% if review.staff.authorisation_scope != review.confirmed_authorisation_scope %}<p><a href="{% url 'aircraft_review' aircraft.id %}">Start a New Review</a></p>{% endif %}
 {% else %}
 <form method="post" action="{% url 'issue_certificate' review.id %}">
 {% csrf_token %}

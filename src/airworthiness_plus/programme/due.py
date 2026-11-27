@@ -505,7 +505,11 @@ class WorkLine:
 def work_lines(aircraft: Aircraft, today: date) -> list[WorkLine]:
     """Return the work done on the aircraft, newest first, with what is outstanding."""
     lines = []
-    for work in WorkDone.objects.filter(aircraft=aircraft).order_by("-dated", "-hours"):
+    for work in (
+        WorkDone.objects.filter(aircraft=aircraft)
+        .select_related("certificate")
+        .order_by("-dated", "-hours")
+    ):
         deadline = release_record_deadline(work.dated)
         outstanding = not work.release_reference
         told_late = (

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ certificate.reference }}{% endblock %}
+{% block content %}
+<h1>{{ certificate.reference }}</h1>
+<dl>
+<dt>Aircraft Registration</dt><dd>{{ certificate.registration }}</dd>
+<dt>Maintenance</dt><dd>{{ certificate.maintenance }}</dd>
+<dt>Completed</dt><dd>{{ certificate.completed_on|long_date }}</dd>
+<dt>Issued By</dt><dd>{{ certificate.issued_by_text }}</dd>
+<dt>Issued</dt><dd>{{ certificate.issued_on|long_date }}</dd>
+<dt>Entered in Records</dt><dd>{{ certificate.work.release_recorded_on|long_date }}</dd>
+<dt>Approval Reference or Licence</dt><dd>{{ certificate.identity_text }}</dd>
+{% if certificate.limitations_text %}<dt>Limitations</dt><dd>{{ certificate.limitations_text }}</dd>{% endif %}
+{% if certificate.kind == "Organisation Certifying Staff" %}
+<dt>Certification Evidence</dt>
+<dd>{% if certificate.maintenance_authorisation %}{{ certificate.maintenance_authorisation.reference }}, Scope Confirmed{% if certificate.maintenance_authorisation.withdrawn_on and certificate.maintenance_authorisation.withdrawn_on <= certificate.issued_on %}. Later Withdrawal Effective {{ certificate.maintenance_authorisation.withdrawn_on|long_date }}{% endif %}{% else %}Unverified Historical Evidence{% if certificate.legacy_evidence %}, {{ certificate.legacy_evidence }}{% endif %}{% endif %}</dd>
+{% if certificate.maintenance_authorisation %}<dt>Authorisation Scope</dt><dd>{{ certificate.maintenance_authorisation.scope }}</dd>{% endif %}
+{% endif %}
+</dl>
+{% endblock %}

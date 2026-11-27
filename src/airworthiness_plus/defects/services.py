@@ -19,7 +19,7 @@ from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people import services as people_services
-from airworthiness_plus.people.models import Person, StaffGroup
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_rules import defects as rules
 from airworthiness_rules.dates import days_between
@@ -65,6 +65,9 @@ def record_defect(
     rectification: str = "",
     closed_on: date | None = None,
     work_done: WorkDone | None = None,
+    maintenance_authorisation: MaintenanceAuthorisation | None = None,
+    scope_confirmed: bool = False,
+    legacy_evidence: str = "",
 ) -> Defect:
     """Record a defect with what was decided of it (REQ-220 to REQ-222).
 
@@ -105,8 +108,6 @@ def record_defect(
             if decided_by is None:
                 raise RefusedError("Certifying Staff Who Defer a Defect Are Named, ML.A.403(b)(4)")
             _check_certifying(decided_by, decided_on)
-            if people_services.contradicts_known_maintenance_term(decided_by, decided_on):
-                raise RefusedError("No Recorded Maintenance Authorisation Covers the Decision Date")
         elif decided_by is not None:
             raise RefusedError("A Pilot-in-Command Is Not Chosen From the Staff")
         days = default_days(aircraft.organisation, basis)
@@ -126,6 +127,18 @@ def record_defect(
     else:
         raise RefusedError("A Defect Is Deferred or Not Deferrable")
 
+    legacy_evidence = legacy_evidence.strip()
+    try:
+        people_services.check_certification_evidence(
+            person=decided_by if basis == Basis.CERTIFYING_STAFF else None,
+            on=decided_on,
+            today=today,
+            authorisation=maintenance_authorisation,
+            scope_confirmed=scope_confirmed,
+            legacy_evidence=legacy_evidence,
+        )
+    except people_services.RefusedError as error:
+        raise RefusedError(str(error)) from error
     closing = closed_on is not None or bool(rectification.strip()) or work_done is not None
     if closing:
         _check_closure(aircraft, found_on, decided_on, rectification, closed_on, work_done, today)
@@ -158,6 +171,9 @@ def record_defect(
         basis=basis,
         decided_on=decided_on,
         decided_by=decided_by,
+        maintenance_authorisation=maintenance_authorisation,
+        scope_confirmed=scope_confirmed,
+        legacy_evidence=legacy_evidence,
         default_days=days,
         data_limit_on=data_limit_on if decision == Decision.DEFERRED else None,
         limit_on=limit,

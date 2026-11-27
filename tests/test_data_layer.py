@@ -211,6 +211,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
         "people_maintenanceauthorisation": ["INSERT", "SELECT"],
+        "people_maintenanceauthorisationwithdrawal": ["INSERT", "SELECT"],
         "people_experienceevidence": ["INSERT", "SELECT"],
         "people_experiencewithdrawal": ["INSERT", "SELECT"],
         "people_recurrenttraining": ["INSERT", "SELECT"],
@@ -240,12 +241,12 @@ def test_every_table_is_under_the_record_rules() -> None:
         "configuration_position": {"position_rules"},
         "configuration_baseline": {"baseline_keeps"},
         # A defect keeps its decision and who made it (REQ-225).
-        "defects_defect": {"defect_rules"},
+        "defects_defect": {"defect_rules", "defect_certification_evidence"},
         # A contract and a work order keep what they said when recorded (REQ-241).
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
-        "releases_release": {"release_rules"},
+        "releases_release": {"release_rules", "release_certification_evidence"},
         "programme_workdone": {"release_entry_fixed", "work_performer"},
         # A fitting keeps what it said, and its removal is added once (REQ-235).
         "components_installation": {"installation_rules"},
@@ -266,8 +267,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         # An extension keeps what it showed when it was made (REQ-110).
         "reviews_extension": {"extension_keeps", "extension_fixed"},
         "people_experienceevidence": {"experience_replacement"},
+        "people_maintenanceauthorisation": {"maintenance_authorisation_replacement"},
         "reviews_reviewstaff": {"reviewstaff_fixed"},
-        "reviews_review": {"review_fixed"},
+        "reviews_review": {"review_fixed", "review_keeps_confirmed_authorisation_scope"},
         "reviews_reviewitem": {"reviewitem_fixed"},
     }
     required_triggers = {"history_refuse_delete", "history_refuse_truncate", "history_write"}

@@ -158,14 +158,17 @@ def _check_before_records(last_review_before_records: date | None, recorded_on: 
         )
 
 
-def last_review(staff: ReviewStaff) -> date | None:
+def last_review(staff: ReviewStaff, *, through: date | None = None) -> date | None:
     """Return the date of the person's last airworthiness review, here or before these records.
 
     A review under supervision that restored a lapsed authorisation counts
     (AMC1 CAO.A.045(d)). It has its own date: it is a review in these
     records, not one from before them.
     """
-    issued = staff.certificates.filter(voided=False).order_by("issued_on").last()
+    certificates = staff.certificates.filter(voided=False)
+    if through is not None:
+        certificates = certificates.filter(issued_on__lte=through)
+    issued = certificates.order_by("issued_on").last()
     dates = [
         value
         for value in (
@@ -173,7 +176,7 @@ def last_review(staff: ReviewStaff) -> date | None:
             staff.last_review_before_records,
             staff.restored_on,
         )
-        if value is not None
+        if value is not None and (through is None or value <= through)
     ]
     return max(dates) if dates else None
 
@@ -189,6 +192,8 @@ class StaffLine:
     lapses: date | None
     flag: Flag
     authorisation_date_status: str
+    months_usable: int
+    involvement_needs_confirmation: bool
 
     @property
     def state(self) -> str:
@@ -196,13 +201,19 @@ class StaffLine:
             return "Left"
         if self.restoration_needed:
             return "Lapsed, Restoration Needed"
-        return "Current" if self.recent else "Lapsed, Restoration Needed"
+        if self.recent:
+            return "Current"
+        if self.involvement_needs_confirmation:
+            return "Experience Evidence Needs Reassessment"
+        return "Lapsed, Restoration Needed"
 
     @property
     def basis(self) -> str:
         """Return what recency rests on, so that a missing date is never read as all clear."""
-        if self.staff.months_involved >= 6:
+        if self.months_usable >= 6:
             return "6 Months of Continuing Airworthiness Management in the 2-Year Period"
+        if self.involvement_needs_confirmation and not self.recent:
+            return "Management Experience Was Assessed on an Earlier Date"
         if self.last_review is not None:
             return "A Review in the Last 12 Months"
         return "No Review and Less Than 6 Months of Continuing Airworthiness Management"
@@ -248,11 +259,16 @@ class StaffLine:
         )
 
 
+def _months_usable(staff: ReviewStaff, today: date) -> int:
+    """An aggregate with no underlying dates supports its assessment day only."""
+    return staff.months_involved if staff.months_recorded_on == today else 0
+
+
 def _recent_by_rule(staff: ReviewStaff, today: date) -> bool:
     return review_staff_recent(
         today,
-        last_review=last_review(staff),
-        months_involved_in_two_years=staff.months_involved,
+        last_review=last_review(staff, through=today),
+        months_involved_in_two_years=_months_usable(staff, today),
     )
 
 
@@ -265,9 +281,10 @@ def _restoration_needed(staff: ReviewStaff) -> bool:
 
 def staff_line(staff: ReviewStaff, today: date) -> StaffLine:
     """Work out whether one member of review staff is recent, AMC1 CAO.A.045(c) and (d)."""
-    last = last_review(staff)
-    recent = _recent_by_rule(staff, today)
-    lapses = recency_lapses(last_review=last, months_involved_in_two_years=staff.months_involved)
+    last = last_review(staff, through=today)
+    months = _months_usable(staff, today)
+    recent = review_staff_recent(today, last_review=last, months_involved_in_two_years=months)
+    lapses = recency_lapses(last_review=last, months_involved_in_two_years=months)
     flag = Flag.NONE
     if staff.left_on is None and lapses is not None:
         thresholds = due.thresholds_of(staff.organisation)
@@ -281,7 +298,15 @@ def staff_line(staff: ReviewStaff, today: date) -> StaffLine:
     else:
         authorisation_date_status = f"To {long_date(staff.authorisation_valid_to)}"
     return StaffLine(
-        staff, last, recent, _restoration_needed(staff), lapses, flag, authorisation_date_status
+        staff,
+        last,
+        recent,
+        _restoration_needed(staff),
+        lapses,
+        flag,
+        authorisation_date_status,
+        months,
+        staff.months_involved >= 6 and staff.months_recorded_on < today,
     )
 
 
@@ -296,6 +321,10 @@ def note_lapse(staff: ReviewStaff, today: date) -> bool:
         return True
     if _recent_by_rule(staff, today):
         return False
+    if staff.months_involved >= 6 and staff.months_recorded_on < today:
+        # Earlier evidence is inconclusive for this day. Refuse issue without
+        # recording a regulatory lapse that a new assessment may disprove.
+        return True
     staff.lapsed_on = today
     staff.save(update_fields=["lapsed_on"])
     return True
@@ -876,7 +905,12 @@ def schedule(organisation: Organisation, today: date) -> list[ScheduleLine]:
 
 @transaction.atomic
 def start_review(
-    aircraft: Aircraft, *, staff: ReviewStaff, started_on: date | None = None
+    aircraft: Aircraft,
+    *,
+    staff: ReviewStaff,
+    started_on: date | None = None,
+    scope_confirmed: bool = False,
+    scope_version: str = "",
 ) -> Review:
     """Start a review, with every point of ML.A.903(a) and (c) to be verified (REQ-107, REQ-108)."""
     _open_to(aircraft.organisation_id)
@@ -885,8 +919,20 @@ def start_review(
         raise RefusedError("A Review Cannot Be Started After Today")
     if staff.organisation_id != aircraft.organisation_id:
         raise RefusedError("Review Staff Belong to Another Organisation")
+    staff = ReviewStaff.objects.select_for_update(of=("self",)).get(pk=staff.pk)
+    if _authorisation_date_refusal(staff, on):
+        raise RefusedError("The Review Authorisation Does Not Cover the Review Start Date")
+    if staff.authorisation_scope:
+        if not scope_confirmed:
+            raise RefusedError("Confirm the Review Authorisation Covers This Aircraft and Review")
+        if scope_version != review_authorisation_version(staff):
+            raise RefusedError("The Review Authorisation Changed. Check the Scope and Start Again")
     review = Review.objects.create(
-        organisation_id=aircraft.organisation_id, aircraft=aircraft, staff=staff, started_on=on
+        organisation_id=aircraft.organisation_id,
+        aircraft=aircraft,
+        staff=staff,
+        started_on=on,
+        confirmed_authorisation_scope=staff.authorisation_scope if scope_confirmed else "",
     )
     ReviewItem.objects.bulk_create(
         ReviewItem(
@@ -1009,6 +1055,10 @@ def outstanding(review: Review, today: date) -> list[str]:
         )
     elif review.programme_discrepancy == ProgrammeDiscrepancy.NOT_ADDRESSED:
         reasons.append("ML.A.903(e)(3): The Maintenance Programme Discrepancy Is Not Yet Addressed")
+    if _authorisation_date_refusal(review.staff, review.started_on):
+        reasons.append("The Review Authorisation Does Not Cover the Review Start Date")
+    if review.staff.authorisation_scope != review.confirmed_authorisation_scope:
+        reasons.append("The Applicable Review Authorisation Scope Was Not Confirmed at the Start")
     if refusal := _authorisation_date_refusal(review.staff, today):
         reasons.append(refusal)
     elif not may_issue(review.staff, today):
@@ -1026,6 +1076,11 @@ def issue_from_review(review: Review) -> Certificate:
     review = Review.objects.select_for_update().get(pk=review.pk)
     _open(review)
     today = aircraft_services.today()
+    review.staff = (
+        ReviewStaff.objects.select_for_update(of=("self",))
+        .select_related("user")
+        .get(pk=review.staff_id)
+    )
     reasons = outstanding(review, today)
     if reasons:
         raise RefusedError("; ".join(reasons))
