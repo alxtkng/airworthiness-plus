@@ -106,6 +106,8 @@ BOARD: tuple[Group, ...] = (
                         "start_transfer",
                         "set_transfer_item",
                         "set_up_configuration",
+                        "aircraft_forecast",
+                        "aircraft_configuration",
                         "add_position",
                         "record_position",
                         "sign_baseline",

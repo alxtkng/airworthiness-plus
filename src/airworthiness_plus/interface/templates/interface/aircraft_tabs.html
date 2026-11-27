@@ -1,7 +1,9 @@
 <nav class="tabs" aria-label="Views of {{ aircraft.registration }}">
 <a href="{% url 'aircraft' aircraft.id %}"{% if active == "Record" %} aria-current="page"{% endif %}>Record</a>
 <a href="{% url 'programme' aircraft.id %}"{% if active == "Maintenance Programme" %} aria-current="page"{% endif %}>Maintenance Programme</a>
+<a href="{% url 'aircraft_forecast' aircraft.id %}"{% if active == "Maintenance Forecast" %} aria-current="page"{% endif %}>Maintenance Forecast</a>
 <a href="{% url 'directive_status' aircraft.id %}"{% if active == "Airworthiness Directives" %} aria-current="page"{% endif %}>Airworthiness Directives</a>
+<a href="{% url 'aircraft_configuration' aircraft.id %}"{% if active == "Configuration" %} aria-current="page"{% endif %}>Configuration</a>
 <a href="{% url 'aircraft_data' aircraft.id %}"{% if active == "Maintenance Data" %} aria-current="page"{% endif %}>Maintenance Data</a>
 <a href="{% url 'aircraft_review' aircraft.id %}"{% if active == "Airworthiness Review" %} aria-current="page"{% endif %}>Airworthiness Review</a>
 </nav>

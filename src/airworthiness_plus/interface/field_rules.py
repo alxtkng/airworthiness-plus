@@ -156,6 +156,8 @@ READS = frozenset(
         "dashboard",
         "transfers",
         "set_up_configuration",
+        "aircraft_forecast",
+        "aircraft_configuration",
         "baseline",
         "contracts",
         "contract",
