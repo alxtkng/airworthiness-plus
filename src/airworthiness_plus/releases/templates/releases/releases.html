@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Release to Service{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Release to Service</h1>
+<p>{{ summary.issued }} Issued, Last 30 Days, {{ summary.not_in_records }} Not Yet in Records, {{ summary.incomplete }} Incomplete Maintenance, {{ summary.notice_overdue }} Pilot-Owner Notice Overdue</p>
+<h2>Certificates of Release to Service</h2>
+<p>In Records Within 30 Days of Completion, ML.A.305(a)</p>
+{% if lines %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Maintenance</th><th>Issued By</th><th>Completed</th><th>In Records</th><th>Status</th><th>Limitations</th><th data-detail>Approval Reference or Licence</th><th data-detail>Certificate Reference</th><th data-detail>Issued</th><th data-detail>Organisation Told</th><th data-detail>How It Was Calculated</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+</thead>
+<tbody>
+{% for one in lines %}
+<tr>
+<td><a href="{% url 'aircraft' one.work.aircraft.id %}">{{ one.work.aircraft.registration }}</a></td>
+<td>{{ one.work.description }}{% if one.work.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}</td>
+<td>{% if one.certificate %}{{ one.certificate.issued_by_text }}{% elif one.work.by_pilot_owner %}Pilot-Owner{% endif %}</td>
+<td>{{ one.work.dated|long_date }}</td>
+<td>{% if one.in_records %}{{ one.work.release_recorded_on|long_date }}{% else %}Due {{ one.line.release_deadline|long_date }}{% endif %}</td>
+<td>{{ one.status|status }}</td>
+<td>{% if one.certificate %}{{ one.certificate.limitations_text }}{% endif %}</td>
+<td>{{ one.certificate.identity_text }}</td>
+<td>{% if one.certificate %}{{ one.certificate.reference }}{% else %}{{ one.work.release_reference }}{% endif %}</td>
+<td>{{ one.certificate.issued_on|long_date }}</td>
+<td>{{ one.work.pilot_owner_told_on|long_date }}</td>
+<td>{% for item in one.line.workings %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}</td>
+{% if may_record %}<td>{% if not one.certificate %}<a href="{% url 'record_release_certificate' one.work.id %}">Record the Certificate, {{ one.work.aircraft.registration }}, {{ one.work.description }}</a>{% endif %}</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>Nothing Completed in the Last 30 Days, and Nothing Waiting to Be Entered</p>
+{% endif %}
+<h2>Who May Release</h2>
+{% include "releases/who.html" %}
+{% endblock %}

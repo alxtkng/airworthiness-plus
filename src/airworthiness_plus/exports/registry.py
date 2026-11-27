@@ -24,6 +24,7 @@ from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, 
 from airworthiness_plus.organisations.models import Approval, Organisation
 from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme.models import Programme, Task, WorkDone
+from airworthiness_plus.releases.models import Release
 from airworthiness_plus.reviews.models import (
     Certificate,
     Extension,
@@ -81,6 +82,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Programme, _by("aircraft")),
     Exported(Task, _by("programme__aircraft")),
     Exported(WorkDone, _by("aircraft")),
+    Exported(Release, _by("work__aircraft")),
     Exported(Contract, _by("aircraft")),
     Exported(WorkOrder, _by("aircraft")),
     Exported(Defect, _by("aircraft")),

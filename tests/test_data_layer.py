@@ -208,6 +208,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         "sample_added": ["INSERT", "SELECT"],
         # What was done about a repeat defect is added and never changed (REQ-227).
         "defects_repeataction": ["INSERT", "SELECT"],
+        # A certificate of release to service is added and never changed (REQ-261).
+        "releases_release": ["INSERT", "SELECT"],
     }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
@@ -227,6 +229,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A contract and a work order keep what they said when recorded (REQ-241).
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
+        # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
+        "releases_release": {"release_rules"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
         "reviews_certificate": {"certificate_serial", "certificate_fixed"},

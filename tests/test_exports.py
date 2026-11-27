@@ -168,6 +168,8 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     phase1.add_repeat_actions(sample.ours, sample.lucy)
     # Contracts and the work orders under them (REQ-240, REQ-244).
     phase1.add_contracts(sample.ours, sample.lucy, fleet)
+    # Certificates of release to service (REQ-260).
+    phase1.add_releases(sample.ours, sample.planner, fleet)
     return fleet
 
 

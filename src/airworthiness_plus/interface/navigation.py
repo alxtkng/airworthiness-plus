@@ -157,7 +157,12 @@ BOARD: tuple[Group, ...] = (
                     "Weight and Balance",
                 ),
             ),
-            Item("Release to Service", shown_for=MAINTAINS),
+            Item(
+                "Release to Service",
+                "release_to_service",
+                shown_for=MAINTAINS,
+                inside=frozenset({"record_release_certificate"}),
+            ),
             Item(
                 "Contracts",
                 "contracts",
