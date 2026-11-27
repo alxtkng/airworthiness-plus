@@ -4,6 +4,7 @@ The records are those of design-system/SampleData.md, with one of every
 type of record so that every type is compared with the database.
 """
 
+import csv
 import hashlib
 import io
 import json
@@ -19,6 +20,7 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
 from django.http import HttpResponse
 from django.test import Client
 
@@ -31,6 +33,8 @@ from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
 from airworthiness_plus.configuration import services as configuration_services
 from airworthiness_plus.configuration.models import Product
+from airworthiness_plus.defects.models import Basis as DeferralBasis
+from airworthiness_plus.defects.models import Decision as DefectDecision
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.directives.models import Decision
 from airworthiness_plus.exports.build import _entry, build, neutralised
@@ -44,12 +48,14 @@ from airworthiness_plus.imports.layouts import CERTIFICATES
 from airworthiness_plus.imports.models import LoadKind
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
+from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis
+from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.sample import phase1
 from airworthiness_rules.intervals import Interval, Reading
-from tests.conftest import as_owner
+from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import (
     TODAY,
     Sample,
@@ -310,6 +316,112 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
     assert "[Other Name]" not in text
     assert files["access-log.json"] == []
     assert "people.json" not in files
+
+
+def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history(
+    sample: Sample,
+) -> None:
+    """REQ-302. Upgrade records made before the certification evidence fields existed."""
+    aircraft = add_sample_fleet(sample)["G-CDEF"]
+    old_targets = [
+        ("history", "0004_hash_algorithm"),
+        ("releases", "0003_keep_release_entry"),
+        ("defects", "0002_closure_matches_defect"),
+    ]
+    with as_owner():
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        old_apps = executor.migrate(old_targets).apps
+    release_model = old_apps.get_model("releases", "Release")
+    defect_model = old_apps.get_model("defects", "Defect")
+    with working_for(sample.ours.id, sample.planner.id):
+        chris = Person.objects.get(full_name="Chris Moore")
+        sam = Person.objects.get(full_name="Sam Patel")
+        work = programme_services.record_work(
+            aircraft,
+            description="Propeller Spinner Replaced",
+            dated=date(2026, 11, 4),
+            hours=D("7715.0"),
+            cycles=0,
+        )
+        work.release_reference = "[Release Reference WP-2026-043]"
+        work.release_recorded_on = date(2026, 11, 5)
+        work.save(update_fields=["release_reference", "release_recorded_on"])
+        release = release_model.objects.create(
+            organisation_id=sample.ours.id,
+            work_id=work.id,
+            reference=work.release_reference,
+            kind=IssuedBy.ORGANISATION,
+            issued_by_id=chris.id,
+            issued_on=date(2026, 11, 4),
+        )
+        defect = defect_model.objects.create(
+            organisation_id=sample.ours.id,
+            aircraft_id=aircraft.id,
+            title="Cabin Entry Step Loose",
+            chapter=53,
+            system="Fuselage",
+            found_on=date(2026, 10, 27),
+            decision=DefectDecision.DEFERRED,
+            basis=DeferralBasis.CERTIFYING_STAFF,
+            decided_by_id=sam.id,
+            decided_on=date(2026, 10, 28),
+            default_days=30,
+            limit_on=date(2026, 11, 27),
+            closed_on=date(2026, 10, 30),
+            rectification="Step Secured",
+        )
+        original_entries = {
+            row._meta.db_table: _entry(Event.of(row).get()) for row in (release, defect)
+        }
+        Person.objects.filter(pk=chris.id).update(full_name="Chris Moore Updated")
+        Person.objects.filter(pk=sam.id).update(full_name="Sam Patel Updated")
+    with as_owner_who_is_not_a_superuser():
+        MigrationExecutor(connection).migrate(latest)
+
+    client = signed_in(sample.planner)
+    evidence = {
+        "legacy_evidence": "",
+        "maintenance_authorisation_id": None,
+        "scope_confirmed": False,
+    }
+    for path in (f"/aircraft/{aircraft.id}/export/", "/records-export/organisation/"):
+        response = post(client, path)
+        assert response.status_code == 200
+        assert verify(response.content).problems == ()
+        files = opened(response.content)
+        for table, original in original_entries.items():
+            old_snapshot = json.loads(original["after"])
+            assert evidence.keys().isdisjoint(old_snapshot)
+            (record,) = files[f"records/{table}.json"]
+            assert record == old_snapshot | evidence
+            (csv_record,) = csv.DictReader(io.StringIO(files[f"records/{table}.csv"]))
+            assert {field: csv_record[field] for field in evidence} == {
+                "legacy_evidence": "",
+                "maintenance_authorisation_id": "",
+                "scope_confirmed": "No",
+            }
+            for field in ("issuer_name", "decided_by_name", "issued_on", "decided_on", "closed_on"):
+                if field in old_snapshot:
+                    assert csv_record[field] == old_snapshot[field]
+            first, added = files[f"history/{table}.json"]
+            assert first == original
+            assert added["previous_hash"] == original["hash"]
+            assert added["before"] == original["after"]
+            assert added["changed"] == sorted(evidence)
+        (released,) = files["records/releases_release.json"]
+        assert released["issuer_name"] == "Chris Moore"
+        assert released["issued_on"] == "2026-11-04"
+        (completed_work,) = files["records/programme_workdone.json"]
+        assert completed_work["release_recorded_on"] == "2026-11-05"
+        (csv_work,) = csv.DictReader(io.StringIO(files["records/programme_workdone.csv"]))
+        assert csv_work["release_recorded_on"] == "2026-11-05"
+        (deferred,) = files["records/defects_defect.json"]
+        assert deferred["decided_by_name"] == "Sam Patel"
+        assert deferred["decided_on"] == "2026-10-28"
+        assert deferred["closed_on"] == "2026-10-30"
 
 
 def test_an_export_carries_no_password_and_no_second_factor_key(
