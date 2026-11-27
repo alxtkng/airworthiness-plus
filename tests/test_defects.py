@@ -659,7 +659,7 @@ def test_the_database_holds_the_bounds_of_a_defect(
 ) -> None:
     """REQ-220, REQ-222. Whatever the application sends: a chapter from 1 to 99, a
     default from 1 to 365 days, a limit at most 365 days after the decision and
-    never before it, and a basis and a limit for every deferred defect."""
+    never before identification, and a basis and a limit for every deferred defect."""
     abcd = fleet["G-ABCD"]
     good: dict[str, object] = {
         "organisation": sample.ours,
@@ -692,6 +692,14 @@ def test_the_database_holds_the_bounds_of_a_defect(
         (
             {"basis": Basis.PILOT_LIST, "default_days": None},
             "defect_limit_comes_from_the_list_or_the_default",
+        ),
+        (
+            {"basis": Basis.PILOT_LIST, "default_days": None, "data_limit_on": TODAY},
+            "minimum equipment list gives the deferral limit",
+        ),
+        (
+            {"found_on": date(2026, 11, 17)},
+            "deferral limit must use the date first identified",
         ),
         ({"basis": Basis.CERTIFYING_STAFF}, "defect_certifying_staff_are_named"),
         ({"closed_on": TODAY}, "defect_closed_has_a_rectification_and_a_day"),

@@ -1,4 +1,4 @@
-"""Keep the start date of a new deferral’s default allowance."""
+"""Keep the start date of the default allowance on a new deferral."""
 
 from django.db import migrations, models
 
@@ -15,6 +15,7 @@ BEGIN
     NEW.default_started_on := NULL;
     IF NEW.decision = 'Deferred'
        AND NEW.basis = 'Pilot-in-Command, Minimum Equipment List'
+       AND NEW.data_limit_on IS NOT NULL
        AND NEW.limit_on IS DISTINCT FROM NEW.data_limit_on THEN
         RAISE EXCEPTION 'The minimum equipment list gives the deferral limit'
             USING ERRCODE = 'check_violation';

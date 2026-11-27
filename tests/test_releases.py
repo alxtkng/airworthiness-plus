@@ -696,6 +696,16 @@ def test_a_grounded_period_release_can_be_retained_as_unverified_evidence(
         defect_services.close_defect(
             grounding, rectification="Grounding defect resolved", closed_on=date(2026, 10, 25)
         )
+        with pytest.raises(IntegrityError, match="needs a reference"), transaction.atomic():
+            HistoricalReleaseEvidence.objects.create(
+                organisation=sample.ours,
+                work=work,
+                grounding_defect=grounding,
+                reference="   ",
+                issuer_name="Recorded certifier",
+                issued_on=work.dated,
+                source="Signed logbook entry",
+            )
         with pytest.raises(IntegrityError, match="grounding period"), transaction.atomic():
             HistoricalReleaseEvidence.objects.create(
                 organisation=sample.ours,
