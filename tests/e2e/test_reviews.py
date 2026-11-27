@@ -41,9 +41,7 @@ def test_review_staff_authorisation_and_restoration(
         expect(row).to_contain_text("3, Recorded 18 November 2026")
         restore = reveal(row).get_by_role("button", name="Record Restoration")
         form = restore.locator("xpath=ancestor::form[1]")
-        form.locator('[name="supervisor"]').select_option(
-            label="[Authorisation Reference 1]"
-        )
+        form.locator('[name="supervisor"]').select_option(label="[Authorisation Reference 1]")
         fill(form, {"on": "2026-11-18"})
         submit(page, restore)
         page.reload()
