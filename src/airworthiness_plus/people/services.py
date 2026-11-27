@@ -52,11 +52,6 @@ def person_for(user: User, person: Person | None = None) -> Person:
     return chosen
 
 
-def without_a_sign_in() -> list[Person]:
-    """Return the people of the organisation who may be given a sign-in (REQ-204)."""
-    return list(Person.objects.filter(user__isnull=True, left_on__isnull=True))
-
-
 def _checked(
     organisation: Organisation,
     *,
