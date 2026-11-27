@@ -19,7 +19,7 @@
 <tbody>
 {% for item in evidence %}
 <tr><td>{{ item.evidence_reference }}</td><td>{{ item.starts_on|long_date }}</td><td>{{ item.ends_on|long_date }}</td><td>{{ item.get_kind_display }}</td><td>{{ item.days|default_if_none:"" }}</td><td>{{ item.qualification_basis }}</td><td>{{ item.aircraft_type }} {{ item.aircraft_registration }}</td><td>{{ item.licence_subcategory }}</td><td>
-{% if item.withdrawal %}Withdrawn, {{ item.withdrawal.reason }}
+{% if item.withdrawal %}Withdrawn, {{ item.withdrawal.reason }}{% if item.replacement %}. Corrected in a Later Entry{% endif %}
 {% elif form %}<form method="post" action="{% url 'withdraw_maintenance_experience' authorisation.id item.id %}">
 {% csrf_token %}
 <label for="withdraw-{{ item.id }}">Reason</label>

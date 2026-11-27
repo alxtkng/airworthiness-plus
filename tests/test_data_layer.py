@@ -265,6 +265,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         },
         # An extension keeps what it showed when it was made (REQ-110).
         "reviews_extension": {"extension_keeps", "extension_fixed"},
+        "people_experienceevidence": {"experience_replacement"},
         "reviews_reviewstaff": {"reviewstaff_fixed"},
         "reviews_review": {"review_fixed"},
         "reviews_reviewitem": {"reviewitem_fixed"},

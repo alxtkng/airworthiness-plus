@@ -11,7 +11,7 @@ from functools import wraps
 from typing import Any
 
 from django.db import DatabaseError, transaction
-from django.db.models import Max
+from django.db.models import Count, F, Max, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
@@ -247,14 +247,21 @@ def recency_page(request: HttpRequest) -> HttpResponse:
         "user", "organisation"
     )
     certifying_people = Person.objects.filter(
-        staff_group=StaffGroup.CERTIFYING, left_on__isnull=True
+        Q(staff_group=StaffGroup.CERTIFYING) | Q(maintenance_authorisations__isnull=False),
+        left_on__isnull=True,
+    ).distinct()
+    within_employment = Q(performed_by__joined_on__isnull=True) | Q(
+        dated__gte=F("performed_by__joined_on")
     )
     dates = {
-        row["performed_by_id"]: row["last_work"]
+        row["performed_by_id"]: (row["last_work"], row["outside_employment"])
         for row in WorkDone.objects.filter(performed_by__in=certifying_people, dated__lte=today)
         .order_by()
         .values("performed_by_id")
-        .annotate(last_work=Max("dated"))
+        .annotate(
+            last_work=Max("dated", filter=within_employment),
+            outside_employment=Count("pk", filter=~within_employment),
+        )
     }
     authorisations = (
         MaintenanceAuthorisation.objects.filter(person__in=certifying_people)
@@ -272,7 +279,9 @@ def recency_page(request: HttpRequest) -> HttpResponse:
         {
             "review_lines": [services.staff_line(staff, today) for staff in review_staff],
             "assessments": assessments,
-            "certifying_staff": [(person, dates.get(person.pk)) for person in certifying_people],
+            "certifying_staff": [
+                (person, *dates.get(person.pk, (None, 0))) for person in certifying_people
+            ],
         },
     )
 

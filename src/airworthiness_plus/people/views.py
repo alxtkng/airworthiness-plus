@@ -213,7 +213,7 @@ def _experience_page(
     *,
     withdrawal_message: str = "",
 ) -> HttpResponse:
-    evidence = list(authorisation.experience_evidence.select_related("withdrawal"))
+    evidence = list(authorisation.experience_evidence.select_related("withdrawal", "replacement"))
     today = aircraft_services.today()
     return render(
         request,

@@ -165,6 +165,9 @@ class ExperienceEvidence(Record):
     authorisation = models.ForeignKey(
         MaintenanceAuthorisation, on_delete=models.PROTECT, related_name="experience_evidence"
     )
+    supersedes = models.OneToOneField(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="replacement"
+    )
     kind = models.CharField("Evidence Type", max_length=20, choices=ExperienceKind.choices)
     evidence_reference = models.CharField("Evidence Reference", max_length=160)
     qualification_basis = models.CharField("Basis for Counting the Experience", max_length=500)
@@ -184,7 +187,8 @@ class ExperienceEvidence(Record):
         constraints = [
             models.UniqueConstraint(
                 fields=["authorisation", "evidence_reference"],
-                name="experience_evidence_reference_used_once",
+                condition=Q(supersedes__isnull=True),
+                name="experience_evidence_reference_starts_one_chain",
             ),
             models.CheckConstraint(
                 condition=~Q(evidence_reference="") & ~Q(qualification_basis=""),

@@ -8,8 +8,8 @@
 <table>
 <thead><tr><th>Name</th><th>Licence</th><th>Last Attributed Work</th></tr></thead>
 <tbody>
-{% for person, last_work in certifying_staff %}
-<tr><td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td><td>{{ person.licence }}</td><td>{% if last_work %}Last Recorded Work {{ last_work|long_date }}{% else %}No Attributed Work Recorded{% endif %}</td></tr>
+{% for person, last_work, outside_employment in certifying_staff %}
+<tr><td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td><td>{{ person.licence }}</td><td>{% if last_work %}Last Recorded Work {{ last_work|long_date }}{% else %}No Attributed Work Within Recorded Employment{% endif %}{% if outside_employment %}. {{ outside_employment }} Outside Recorded Employment{% endif %}</td></tr>
 {% endfor %}
 </tbody>
 </table>

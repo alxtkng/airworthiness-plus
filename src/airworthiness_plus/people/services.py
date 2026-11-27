@@ -457,9 +457,16 @@ def record_experience_evidence(
             raise RefusedError("Give the Aircraft Registration for Direct Maintenance")
     else:
         raise RefusedError("Choose the Evidence Type")
-    if ExperienceEvidence.objects.filter(
-        authorisation=authorisation, evidence_reference=evidence_reference
-    ).exists():
+    previous = (
+        ExperienceEvidence.objects.filter(
+            authorisation=authorisation,
+            evidence_reference=evidence_reference,
+            replacement__isnull=True,
+        )
+        .select_related("withdrawal")
+        .first()
+    )
+    if previous is not None and not hasattr(previous, "withdrawal"):
         raise RefusedError("This Evidence Reference Is Already Recorded")
     return ExperienceEvidence.objects.create(
         organisation_id=authorisation.organisation_id,
@@ -467,6 +474,7 @@ def record_experience_evidence(
         kind=kind,
         evidence_reference=evidence_reference,
         qualification_basis=qualification_basis,
+        supersedes=previous,
         starts_on=starts_on,
         ends_on=ends_on,
         days=days,
@@ -503,4 +511,12 @@ def withdraw_experience_evidence(evidence: ExperienceEvidence, *, reason: str) -
         raise RefusedError("Give a Reason for Withdrawing the Evidence")
     ExperienceWithdrawal.objects.create(
         organisation_id=evidence.organisation_id, evidence=evidence, reason=reason
+    )
+
+
+def contradicts_known_maintenance_term(person: Person, on: date) -> bool:
+    """Return whether recorded maintenance terms rule out the supplied date."""
+    terms = list(person.maintenance_authorisations.order_by().values_list("valid_from", "valid_to"))
+    return bool(terms) and not any(
+        first <= on and (last is None or on <= last) for first, last in terms
     )

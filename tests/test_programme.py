@@ -800,7 +800,7 @@ def test_record_work_keeps_the_person_who_performed_it(
     fleet: dict[str, Aircraft],
 ) -> None:
     from airworthiness_plus.people import services as people_services
-    from airworthiness_plus.people.models import StaffGroup
+    from airworthiness_plus.people.models import Person, StaffGroup
 
     with working_for(sample.ours.id, sample.lucy.id):
         mechanic = people_services.add_person(
@@ -824,3 +824,9 @@ def test_record_work_keeps_the_person_who_performed_it(
     recency = page(signed_in(sample.reader), "/review-staff/recency/")
     assert "Last Attributed Work" in recency
     assert "Last Recorded Work 18 November 2026" in recency
+    with working_for(sample.ours.id, sample.administrator.id):
+        Person.objects.filter(pk=mechanic.pk).update(joined_on=date(2026, 11, 19))
+        assert WorkDone.objects.get(pk=work.pk).performed_by == mechanic
+    corrected = page(signed_in(sample.reader), "/review-staff/recency/")
+    assert "Last Recorded Work 18 November 2026" not in corrected
+    assert "1 Outside Recorded Employment" in corrected

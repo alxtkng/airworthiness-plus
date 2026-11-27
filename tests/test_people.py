@@ -907,7 +907,7 @@ def test_recency_tab_uses_review_records_and_identifies_missing_maintenance_evid
     assert f'href="{path}"' in page(reader, "/review-staff/")
     body = page(reader, path)
     assert "Certifying Engineer" in body
-    assert "No Attributed Work Recorded" in body
+    assert "No Attributed Work Within Recorded Employment" in body
     assert "Airworthiness Review Staff" in body
     assert "Certifying Engineer" not in page(signed_in(sample.stranger), path)
 
@@ -1021,3 +1021,11 @@ def test_recency_shows_assessed_duration_by_maintenance_authorisation(sample: Sa
     assert post(admin, withdrawal, reason="Wrong evidence").status_code == 302
     assert "6 Complete Months" not in page(reader, "/review-staff/recency/")
     assert "Wrong evidence" in page(reader, path)
+    corrected = {**fields, "ends_on": "2025-04-30"}
+    assert post(admin, path + "record/", **corrected).status_code == 302
+    assert "4 Complete Months" in page(reader, "/review-staff/recency/")
+    with working_for(sample.ours.id, sample.administrator.id):
+        replacement = authorisation.experience_evidence.get(supersedes=record)
+        assert replacement.evidence_reference == "EMP-1"
+        Person.objects.filter(pk=person.pk).update(staff_group=StaffGroup.MANAGEMENT)
+    assert "4 Complete Months" in page(reader, "/review-staff/recency/")

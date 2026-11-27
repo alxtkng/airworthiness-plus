@@ -73,6 +73,8 @@ def add_review_staff(
     user: User,
     authorisation_reference: str,
     accepted_on: date,
+    authorisation_scope: str = "",
+    authorisation_valid_to: date | None = None,
     part_66_qualified: bool = False,
     months_involved: int = 0,
     last_review_before_records: date | None = None,
@@ -87,11 +89,19 @@ def add_review_staff(
     _check_before_records(last_review_before_records, today)
     if accepted_on > today:
         raise RefusedError("Review Staff Cannot Be Accepted After Today")
+    scope = authorisation_scope.strip()
+    if authorisation_valid_to is not None:
+        if authorisation_valid_to < accepted_on:
+            raise RefusedError("The Review Authorisation Cannot End Before Acceptance")
+        if not scope:
+            raise RefusedError("Give the Scope of the Review Authorisation")
     return ReviewStaff.objects.create(
         organisation_id=user.organisation_id,
         user=user,
         authorisation_reference=authorisation_reference,
         accepted_on=accepted_on,
+        authorisation_scope=scope,
+        authorisation_valid_to=authorisation_valid_to,
         part_66_qualified=part_66_qualified,
         months_involved=months_involved,
         months_recorded_on=today,
