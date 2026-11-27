@@ -63,6 +63,19 @@ ADDED = [
     "Sources of Directives of the Sample Added, 4 Records",
     "Transfer and Configuration of the Sample Added, 13 Records",
 ]
+
+# The markers available after the separate Phase 1 routine, including earlier People.
+PHASE_1_PARTS = {
+    Part.PEOPLE,
+    Part.DEFECTS,
+    Part.CONTRACTS,
+    Part.COMPONENTS,
+    Part.MODIFICATIONS,
+    Part.PROGRAMME,
+    Part.SOURCES,
+    Part.SET_UP,
+}
+
 COUNTED = (
     Defect, RepeatAction, Contract, WorkOrder, Release, Component, Installation, Bulletin,
     Change, Weighing, WeightSchedule, Departure, AnnualReview, Source, Transfer, TransferItem,
@@ -140,9 +153,7 @@ def test_a_sample_seeded_before_phase_1_is_given_its_records_once(seeded: Sample
     once = history(seeded)
     assert unchanged(before, once)
     with working_for(seeded.ours.id, seeded.reader.id):
-        assert sorted(Added.objects.values_list("part", flat=True)) == sorted(
-            set(Part.values) - {Part.WORK_PACKAGES, Part.STAFFING_PLAN}
-        )
+        assert sorted(Added.objects.values_list("part", flat=True)) == sorted(PHASE_1_PARTS)
         # Nobody was looked up: no defect names a person.
         assert not Defect.objects.exclude(decided_by__isnull=True).exists()
         assert set(Defect.objects.values_list("decided_by_name", flat=True)) == {""}
@@ -383,7 +394,7 @@ def test_a_part_is_recorded_once_and_is_one_the_sample_has(seeded: Sample) -> No
     a part that is known."""
     prepare_test_site.bring_phase_1(seeded.administrator)
     with working_for(seeded.ours.id, seeded.administrator.id):
-        for part in set(Part.values) - {Part.WORK_PACKAGES, Part.STAFFING_PLAN}:
+        for part in PHASE_1_PARTS:
             with pytest.raises(IntegrityError, match="sample_part_added_once"):
                 with transaction.atomic():
                     Added.objects.create(organisation=seeded.ours, part=part)

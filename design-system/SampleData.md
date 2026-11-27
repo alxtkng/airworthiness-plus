@@ -315,4 +315,4 @@ Added on 24 November 2026 for the person records, from the Staff board:
 
 ## Suppliers
 
-[Parts Distributor], [Engine Overhaul Organisation], [Propeller Organisation], [Calibration Laboratory], [Oil Supplier] (suspended).
+[Parts Distributor], [Engine Overhaul Organisation], [Propeller Organisation], [Calibration Laboratory], [Oil Supplier] (suspended). The Suppliers board shows the illustrative Part-CAO evaluations dated 18 November 2026. The propeller organisation has a next evaluation of 30 November 2026. The oil supplier retains the missing conformity evidence with its suspension and has no next evaluation date in the sample.

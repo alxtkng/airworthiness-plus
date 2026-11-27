@@ -203,6 +203,10 @@ Sign in as Planning and Records and open **Planning → Staffing and Capacity �
 
 Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staff Roster**. A maintenance shift on 19 November from 08:00 to 19:00 with a 30-minute break records 10.5 working hours and flags the organisation's 10-hour limit. Record handover notes and sign in as the named recipient to see the acknowledgement action. **Load and Capacity** shows the roster hours and preparation demand, and links to unplanned work. **Settings → Planning** shows and, for the Administrator, edits the calculation inputs.
 
+## Part 6. Logistics (Phase 4)
+
+Sign in as the Continuing Airworthiness Manager and open **Logistics → Suppliers**. Find the propeller organisation and its 30 November 2026 evaluation date, and open the oil supplier to review its suspension evidence. Select **Evaluate a Supplier** to record a new sample supplier, then open that supplier and **Record an Evaluation** to append a decision. The register shows the latest decision and the supplier record retains both evaluations. Use a fictitious supplier on the test site.
+
 ## What Cannot Be Shown Yet
 
-The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and Phases 4 to 9 of `prompts/canvas-build.md`: suppliers, goods in, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: goods in, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

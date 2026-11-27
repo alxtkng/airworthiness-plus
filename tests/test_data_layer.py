@@ -216,6 +216,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "people_experienceevidence": ["INSERT", "SELECT"],
         "people_experiencewithdrawal": ["INSERT", "SELECT"],
         "people_recurrenttraining": ["INSERT", "SELECT"],
+        # Supplier identities and their evaluation evidence are retained (REQ-343).
+        "logistics_supplier": ["INSERT", "SELECT"],
+        "logistics_supplierevaluation": ["INSERT", "SELECT"],
         "staffing_review": ["INSERT", "SELECT"],
         "staffing_report": ["INSERT", "SELECT"],
         "staffing_absence": ["INSERT", "SELECT"],

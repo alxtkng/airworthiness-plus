@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Suppliers{% endblock %}
+{% block content %}
+<h1>Suppliers</h1>
+{% if may_evaluate %}<p><a class="button" href="{% url 'add_supplier' %}">Evaluate a Supplier</a></p>{% endif %}
+{% if lines %}
+<table data-search="always">
+<thead><tr><th scope="col">Supplier</th><th scope="col">Approval</th><th scope="col">Supplies</th><th scope="col">Release Documents</th><th scope="col">Next Evaluation</th><th scope="col">Status</th></tr></thead>
+<tbody>
+{% for line in lines %}
+{% for row in line.evaluations %}
+<tr>
+<td><a href="{% url 'supplier' line.supplier.id %}">{{ line.supplier.name }}</a></td>
+<td>{{ row.approval }}</td>
+{% if row.evaluation %}
+<td>{{ row.evaluation.supplies }}</td>
+<td>{{ row.evaluation.release_documents }}</td>
+<td>{{ row.evaluation.next_evaluation_on|long_date }} {% if row.due_status %}{{ row.due_status|status }}{% endif %}</td>
+<td>{{ row.evaluation.status|status }}</td>
+{% else %}
+<td></td><td></td><td></td><td>No Current Evaluation</td>
+{% endif %}
+</tr>
+{% endfor %}
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Suppliers Recorded</p>{% endif %}
+{% endblock %}

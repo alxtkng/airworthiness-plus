@@ -99,6 +99,8 @@ The people of the sample are added once. A record says that they have been, and 
 
 The Phase 1 sample is added the same way, from 27 November 2026 (REQ-294): defects, contracts, components, modifications and weighings, departures and the annual review, the sources of directives, and G-HKLM's transfer and configuration. Each part is added once, only where the organisation holds no record of its kind, and a record says that it has been dealt with. Nothing that is there is changed, nobody is looked up by name, and a part that fails is undone whole and said in the log without stopping the start. Left out of a top-up, because they name a member of certifying staff: the two defects deferred by certifying staff and the two certificates of release to service of WP-2026-043. A remade database has them. It was rehearsed on 27 November 2026 on a database seeded from `main` as it stood before Phase 1, with an owner of the tables that is not a superuser.
 
+The Suppliers board adds its five example suppliers to the marked primary sample database. A matching supplier name is left as recorded. A successful top-up is marked once, and a failed top-up rolls back and is logged for the next start.
+
 Not yet seen on the test site itself: the build session may not reach it. It was rehearsed on 24 November 2026 on a database seeded from `main` before the canvas build, with an owner of the tables that is not a superuser, as Render's is. Every migration applied, 10 people were added and then none, the second organisation was set up, and the records agreed with their history. `demo.md` says what to show.
 
 ## When the Database Is Deleted

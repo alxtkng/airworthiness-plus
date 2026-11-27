@@ -1,0 +1,25 @@
+"""Forms for the supplier register (REQ-340 to REQ-343)."""
+
+from django import forms
+
+from airworthiness_plus.interface.forms import Form
+from airworthiness_plus.logistics.models import SupplierStatus
+from airworthiness_plus.organisations.models import ApprovalType
+
+
+class EvaluationForm(Form):
+    approval = forms.ChoiceField(
+        label="Approval",
+        choices=[(kind, kind.label) for kind in (ApprovalType.PART_CAO, ApprovalType.PART_145)],
+    )
+    supplies = forms.CharField(label="Supplies", max_length=200)
+    release_documents = forms.CharField(label="Release Documents", max_length=200, required=False)
+    evaluated_on = forms.DateField(label="Evaluated On")
+    next_evaluation_on = forms.DateField(label="Next Evaluation", required=False)
+    status = forms.ChoiceField(label="Status", choices=SupplierStatus.choices)
+    evidence = forms.CharField(label="Evaluation Evidence", max_length=2000, widget=forms.Textarea)
+
+
+class NewSupplierForm(EvaluationForm):
+    name = forms.CharField(label="Supplier", max_length=200)
+    field_order = ["name"]

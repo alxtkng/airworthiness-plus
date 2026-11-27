@@ -20,6 +20,8 @@ Each line is an address that changes something: the action it needs, the roles t
 
 | Action | Roles | Address | What It Does | Values It May Set |
 |---|---|---|---|---|
+| Record Supplier Evaluation | Continuing Airworthiness Manager | `/suppliers/evaluate/` | Record a supplier and its initial evaluation (REQ-341) | Approval; Supplies; Release Documents; Evaluated On; Next Evaluation; Status; Evaluation Evidence; Supplier |
+| Record Supplier Evaluation | Continuing Airworthiness Manager | `/suppliers/<uuid:supplier_id>/evaluate/` | Record a further evaluation of an existing supplier (REQ-342) | Approval; Supplies; Release Documents; Evaluated On; Next Evaluation; Status; Evaluation Evidence |
 | Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/roster/add/` | Add a shift with roster times, work and fatigue evidence | Approval; Person; Area; Shift; Starts; Ends; Break in Minutes; Other Work in Minutes That Day; Performs Maintenance; Critical Task Time; Risk Assessment or Mitigation; Civil Aviation Authority Permission Reference |
 | Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/roster/publish/` | Record publication or a change of the selected roster week | Week Beginning; Changes and Agreement |
 | Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/roster/<uuid:shift_id>/withdraw/` | Withdraw a shift and keep it in roster history | Reason Withdrawn |

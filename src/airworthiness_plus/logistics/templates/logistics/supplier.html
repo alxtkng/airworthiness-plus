@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ supplier.name }}{% endblock %}
+{% block content %}
+<h1>{{ supplier.name }}</h1>
+{% if may_evaluate %}<p><a class="button" href="{% url 'evaluate_supplier' supplier.id %}">Record an Evaluation</a></p>{% endif %}
+<h2>Evaluation History</h2>
+<table>
+<thead><tr><th scope="col">Evaluated On</th><th scope="col">Approval</th><th scope="col">Supplies</th><th scope="col">Release Documents</th><th scope="col">Next Evaluation</th><th scope="col">Status</th><th data-detail>Evaluation Evidence</th></tr></thead>
+<tbody>
+{% for row in evaluations %}
+<tr><td>{{ row.evaluated_on|long_date }}</td><td>{{ row.approval.approval }}, {{ row.approval_reference }}</td><td>{{ row.supplies }}</td><td>{{ row.release_documents }}</td><td>{{ row.next_evaluation_on|long_date }}</td><td>{{ row.status|status }}</td><td>{{ row.evidence }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

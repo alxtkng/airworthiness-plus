@@ -195,9 +195,11 @@ class Approval(Record):
         reference. Before the first ending, the initial start is unknown
         and the approval is taken as held, as before (REQ-206).
         """
+        return self.reference_on(day) is not None
+
+    def reference_on(self, day: date) -> str | None:
+        """Return the reference in force on the given day, if held."""
         with connections[self._state.db or "default"].cursor() as cursor:
-            cursor.execute(
-                "SELECT organisations_approval_reference_on(%s, %s) IS NOT NULL", [self.pk, day]
-            )
+            cursor.execute("SELECT organisations_approval_reference_on(%s, %s)", [self.pk, day])
             result = cursor.fetchone()
-        return bool(result and result[0])
+        return str(result[0]) if result and result[0] is not None else None

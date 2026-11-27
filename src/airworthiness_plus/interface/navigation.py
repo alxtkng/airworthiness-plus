@@ -21,7 +21,7 @@ from django.http import HttpRequest
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.organisations import approvals
-from airworthiness_plus.organisations.models import ApprovalType
+from airworthiness_plus.organisations.models import ApprovalType, Privilege
 
 CAO, CAMO, P145 = ApprovalType.PART_CAO, ApprovalType.PART_CAMO, ApprovalType.PART_145
 # Every approval of this build. The Owner of the board is not an approval: an
@@ -288,7 +288,12 @@ BOARD: tuple[Group, ...] = (
                     "Tooling Need Evaluations",
                 ),
             ),
-            Item("Suppliers", shown_for=MAINTAINS),
+            Item(
+                "Suppliers",
+                "suppliers",
+                shown_for=MAINTAINS,
+                inside=frozenset({"supplier", "add_supplier", "evaluate_supplier"}),
+            ),
         ),
     ),
     Group(
@@ -526,9 +531,15 @@ def navigation(request: HttpRequest) -> dict[str, object]:
     address = match.url_name if match and match.url_name else ""
     found = place(address)
     held = approvals.types_held(user.organisation)
+    groups = GROUPS
+    if (
+        ApprovalType.PART_145 not in held
+        and Privilege.MAINTENANCE not in user.organisation.privileges
+    ):
+        groups = tuple(group for group in groups if group.label != "Logistics")
     sidebar = [
         (label, [(item, found is not None and item is found[1]) for item in items])
-        for label, items in shown(GROUPS, approvals=held, may=user.may)
+        for label, items in shown(groups, approvals=held, may=user.may)
     ]
     tabs: list[tuple[Tab, bool]] = []
     # One tab is no choice of views, so it is not shown.
