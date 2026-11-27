@@ -329,6 +329,7 @@ def test_the_staff_page_lists_everyone_and_those_who_have_left(sample: Sample) -
         "Part-66 B1.2",
         "Certifying Staff",
         "",
+        "No Training Recorded",
         "None",
     ]
     assert by_name["Lucy Grant"] == [
@@ -338,6 +339,7 @@ def test_the_staff_page_lists_everyone_and_those_who_have_left(sample: Sample) -
         "",
         "Airworthiness Review Staff",
         "",
+        "No Training Recorded",
         "lucy.grant@your-organisation.example",
     ]
     assert by_name["Ellie Ward"][:4] == [
@@ -931,3 +933,49 @@ def test_administrator_records_a_maintenance_authorisation_with_scope_and_dates(
     assert "CA-42" in body and "Piper PA-28 Airframe" in body
     assert "CA-42" not in page(signed_in(sample.stranger), "/review-staff/")
     assert post(signed_in(sample.administrator), path, **fields).status_code == 200
+
+
+def test_staff_shows_recurrent_training_evidence_and_due_date(sample: Sample) -> None:
+    with working_for(sample.ours.id, sample.administrator.id):
+        engineer = services.add_person(
+            organisation=sample.ours,
+            full_name="Training Engineer",
+            staff_group=StaffGroup.CERTIFYING,
+        )
+    path = f"/staff/{engineer.id}/recurrent-training/"
+    fields = {
+        "subject": "Human Factors",
+        "evidence_reference": "TR-65",
+        "completed_on": "2024-12-06",
+        "due_on": "2026-12-06",
+    }
+    assert post(signed_in(sample.reader), path, **fields).status_code == 403
+    assert post(signed_in(sample.stranger), path, **fields).status_code in (403, 404)
+    administrator = signed_in(sample.administrator)
+    assert post(administrator, path, **{**fields, "due_on": "2024-12-05"}).status_code == 200
+    assert post(administrator, path, **fields).status_code == 302
+    assert (
+        "Already Recorded"
+        in post(administrator, path, **{**fields, "subject": "HUMAN FACTORS"}).content.decode()
+    )
+    reader = signed_in(sample.reader)
+    detail = page(reader, f"/staff/{engineer.id}/")
+    assert "Human Factors" in detail and "TR-65" in detail
+    assert "6 December 2026" in page(reader, "/staff/")
+    assert (
+        post(
+            administrator,
+            path,
+            subject="Human Factors",
+            evidence_reference="TR-66",
+            completed_on="2025-12-05",
+            due_on="2027-12-05",
+        ).status_code
+        == 302
+    )
+    by_name = {row[0]: row[-2] for row in rows(page(reader, "/staff/"), "Name")}
+    assert by_name["Training Engineer"] == (
+        "Human Factors, Completed 5 December 2025, Due 5 December 2027"
+    )
+    renewed = page(reader, f"/staff/{engineer.id}/")
+    assert "TR-65" in renewed and "TR-66" in renewed

@@ -326,6 +326,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         people.add_maintenance_authorisation,
         name="add_maintenance_authorisation",
     ),
+    path(
+        "staff/<uuid:person_id>/recurrent-training/",
+        people.add_recurrent_training,
+        name="add_recurrent_training",
+    ),
     path("staff/<uuid:person_id>/change/", people.change_person, name="change_person"),
     path("records-export/", exports.exports_page, name="records_export"),
     path("records-export/organisation/", exports.export_organisation, name="export_organisation"),

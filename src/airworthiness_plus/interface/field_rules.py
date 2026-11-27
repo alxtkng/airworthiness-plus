@@ -98,6 +98,7 @@ WRITES: dict[str, Sets] = {
     "customer_status": (maintenance_data.CustomerStatusForm,),
     "end_holding": (maintenance_data.EndHoldingForm,),
     "add_maintenance_authorisation": (people.MaintenanceAuthorisationForm,),
+    "add_recurrent_training": (people.RecurrentTrainingForm,),
     "add_person": (people.PersonForm,),
     "change_person": (people.PersonForm,),
     "add_review_staff": (reviews.ReviewStaffForm,),
