@@ -52,12 +52,13 @@ positions from pull request 135. Export tests download
 both archives, run `verify_export` and check the result against the page and
 selected archive contents. The fleet keyboard test operates a row at 390 pixels.
 
-[Form coverage](form-coverage.tsv) identifies the browser case or current gap
-for each form route. The inventory check in the normal suite requires an entry
-when a route is added. Browser submission coverage is still partial. Forms
-requiring records absent from the seed need a prerequisite journey. Use the
-existing calculation, role and database tests for low-level rules. Add to the
-live suite where the user journey or what is displayed matters.
+[Form coverage](form-coverage.tsv) maps each form route to a browser scenario.
+The inventory check requires an entry when a route is added. The sole
+exception is `retire_task`. The maintenance programme page has no link or
+form control to retire an inspection, even when changing the programme
+basis requires retirement. The existing Django test
+`test_a_retired_task_leaves_the_programme_and_stays_in_the_record` covers
+that server action. Add a browser journey when a retirement control is available.
 
 `test_regressions.py` describes the three high-severity independent findings.
 Their strict expected-failure markers recognise only the specified defect.

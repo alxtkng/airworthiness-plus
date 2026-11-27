@@ -66,9 +66,18 @@ def test_completed_review_keeps_its_reviewer(
         for index in range(16):
             form = reveal(rows.nth(index)).locator("form").first
             note = f"[Test evidence point {index + 1}]"
-            fill(form, {"result": "Satisfactory", "evidence": note})
+            result = "Finding" if index == 0 else "Satisfactory"
+            values = {"result": result, "evidence": note}
+            if index == 0:
+                values["finding"] = "Logbook cover did not identify the aircraft"
+            fill(form, values)
             submit(page, form.get_by_role("button"))
-            expect(rows.nth(index)).to_contain_text("Satisfactory")
+            expect(rows.nth(index)).to_contain_text(result)
+        first = rows.first
+        closure = reveal(first).get_by_role("button", name="Close Finding")
+        fill(closure.locator("xpath=ancestor::form[1]"), {"closure": "Logbook cover corrected"})
+        submit(page, closure)
+        expect(first).to_contain_text("Logbook cover corrected")
         form = form_with(page, "assisted_by")
         fill(
             form,

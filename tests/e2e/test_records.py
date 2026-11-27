@@ -1,33 +1,20 @@
 """Sample record workflows through rendered browser forms."""
 
-from collections.abc import Mapping
-
 import pytest
-from playwright.sync_api import Browser, Page, expect
+from playwright.sync_api import Browser, expect
 
 from tests.e2e.browser import (
     choose_aircraft,
     definition,
     fill,
     form_with,
+    open_row_action,
     reveal,
+    save,
     signed_in,
     submit,
 )
 from tests.e2e.conftest import Account
-
-
-def save(page: Page, button: str, values: Mapping[str, str], shown: str) -> None:
-    control = page.get_by_role("button", name=button, exact=True)
-    fill(control.locator("xpath=ancestor::form[1]"), values)
-    submit(page, control)
-    page.reload()
-    expect(page.locator("main")).to_contain_text(shown)
-
-
-def open_row_action(page: Page, record: str, action: str) -> None:
-    row = page.locator("main tr:not(.detail)").filter(has_text=record)
-    reveal(row).get_by_role("link", name=action).click()
 
 
 def test_record_and_close_a_defect(
@@ -256,6 +243,25 @@ def test_aircraft_programme_and_directive(
         page.reload()
         row = page.locator("main tbody tr:not(.detail)").filter(has_text="TEST-2026-01")
         expect(row).to_contain_text("Applicable")
+        open_row_action(page, "TEST-2026-01", "Record Compliance")
+        form = form_with(page, "method")
+        fill(
+            form,
+            {
+                "method": "Visual cable inspection",
+                "dated": "2026-11-17",
+                "hours": "124.0",
+                "cycles": "95",
+                "release_reference": "TEST-CABLE",
+            },
+        )
+        submit(page, form.get_by_role("button"))
+        expect(row).to_contain_text("Visual cable inspection")
+        open_row_action(page, "TEST-2026-01", "Record Terminating Action")
+        form = form_with(page, "action")
+        fill(form, {"action": "Replacement cable fitted", "on": "2026-11-18"})
+        submit(page, form.get_by_role("button"))
+        expect(row).to_contain_text("Replacement cable fitted")
 
 
 def test_service_bulletin_owner_decision(
@@ -309,6 +315,9 @@ def test_maintenance_data_revision_and_amendment_check(
                 "applies_to": "Piper PA-28 Series (Lycoming)",
                 "revision": "TEST-1",
                 "revision_date": "2026-11-15",
+                "provided_by": "Test data owner",
+                "evidence": "Written Confirmation",
+                "evidence_dated": "2026-11-15",
             },
             "TEST-1",
         )
@@ -341,6 +350,15 @@ def test_maintenance_data_revision_and_amendment_check(
                 "next_due": "2027-01-18",
             },
             "18 January 2027",
+        )
+        save(
+            page,
+            "Record Amendment Status",
+            {
+                "evidence": "Work Order",
+                "dated": "2026-11-18",
+            },
+            "Work Order",
         )
         save(page, "Record as No Longer Held", {"on": "2026-11-18"}, "No Longer Held")
 

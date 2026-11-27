@@ -21,8 +21,8 @@ def test_every_form_route_is_in_the_browser_inventory() -> None:
         if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
     }
     for row in rows:
-        names = set(row["Scenario or gap"].split(", "))
-        assert names <= scenarios or names in (
-            {"Browser submission pending"},
-            {"No on-screen control"},
-        ), row
+        notes = row["Scenario or gap"]
+        if row["Route"] == "retire_task":
+            assert notes == "No on-screen retirement control on the maintenance programme page"
+        else:
+            assert set(notes.split(", ")) <= scenarios, row
