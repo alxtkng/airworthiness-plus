@@ -329,6 +329,7 @@ def test_the_staff_page_lists_everyone_and_those_who_have_left(sample: Sample) -
         "Part-66 B1.2",
         "Certifying Staff",
         "",
+        "No Authorisations Recorded",
         "No Training Recorded",
         "None",
     ]
@@ -339,6 +340,7 @@ def test_the_staff_page_lists_everyone_and_those_who_have_left(sample: Sample) -
         "",
         "Airworthiness Review Staff",
         "",
+        "No Authorisations Recorded",
         "No Training Recorded",
         "lucy.grant@your-organisation.example",
     ]
@@ -931,6 +933,7 @@ def test_administrator_records_a_maintenance_authorisation_with_scope_and_dates(
     assert post(signed_in(sample.administrator), path, **fields).status_code == 302
     body = page(signed_in(sample.reader), "/review-staff/")
     assert "CA-42" in body and "Piper PA-28 Airframe" in body
+    assert "CA-42" in page(signed_in(sample.reader), "/staff/")
     assert "CA-42" not in page(signed_in(sample.stranger), "/review-staff/")
     assert post(signed_in(sample.administrator), path, **fields).status_code == 200
 

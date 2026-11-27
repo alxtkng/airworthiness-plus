@@ -276,7 +276,11 @@ def staff(organisation: Organisation) -> Staff:
     it holds today: an approval given up afterwards does not shorten it.
     """
     every = approvals.every(organisation)
-    people = list(Person.objects.select_related("reports_to", "user"))
+    people = list(
+        Person.objects.select_related("reports_to", "user__review_staff").prefetch_related(
+            "maintenance_authorisations"
+        )
+    )
     gone = [person for person in people if person.left_on is not None]
     ever = _ever_review_staff(gone)
     former = []

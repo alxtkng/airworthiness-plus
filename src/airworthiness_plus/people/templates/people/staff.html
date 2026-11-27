@@ -6,7 +6,7 @@
 {% if may_change %}<p><a href="{% url 'add_person' %}">Add a Person</a></p>{% endif %}
 <table>
 <thead>
-<tr><th>Name</th><th>Role</th><th>Reports To</th><th>Employment</th><th>Licence</th><th data-detail>Staff Group</th><th data-detail>Joined</th><th>Recurrent Training</th><th data-detail>Sign-In</th></tr>
+<tr><th>Name</th><th>Role</th><th>Reports To</th><th>Employment</th><th>Licence</th><th data-detail>Staff Group</th><th data-detail>Joined</th><th data-detail>Authorisations</th><th>Recurrent Training</th><th data-detail>Sign-In</th></tr>
 </thead>
 <tbody>
 {% for person, training in staff_rows %}
@@ -18,6 +18,12 @@
 <td>{{ person.licence }}</td>
 <td>{{ person.staff_group }}</td>
 <td>{{ person.joined_on|long_date }}</td>
+<td>
+{% for grant in person.maintenance_authorisations.all %}
+<a href="{% url 'maintenance_experience' grant.id %}">{{ grant.reference }}</a>, From {{ grant.valid_from|long_date }}{% if grant.valid_to %} to {{ grant.valid_to|long_date }}{% endif %}{% if not forloop.last %}<br>{% endif %}
+{% endfor %}
+{% if person.user.review_staff %}{% if person.maintenance_authorisations.all %}<br>{% endif %}<a href="{% url 'review_staff' %}">{{ person.user.review_staff.authorisation_reference }}</a>, Accepted {{ person.user.review_staff.accepted_on|long_date }}{% if person.user.review_staff.authorisation_valid_to %}, To {{ person.user.review_staff.authorisation_valid_to|long_date }}{% endif %}{% elif not person.maintenance_authorisations.all %}No Authorisations Recorded{% endif %}
+</td>
 <td>{% for course in training %}{{ course.subject }}, Completed {{ course.completed_on|long_date }}{% if course.due_on %}, Due {{ course.due_on|long_date }}{% else %}, No Renewal Date Recorded{% endif %}{% if not forloop.last %}<br>{% endif %}{% empty %}No Training Recorded{% endfor %}</td>
 <td>{% if person.user %}{% if may_manage_users %}{{ person.user.username }}{% else %}Has a Sign-In{% endif %}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</td>
 </tr>
