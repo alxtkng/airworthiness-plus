@@ -26,6 +26,8 @@ class ReviewStaff(Record):
     authorisation_reference = models.CharField("Authorisation Reference", max_length=60)
     # CAO.A.045(b): formally accepted after a review under supervision.
     accepted_on = models.DateField("Accepted")
+    authorisation_scope = models.CharField("Scope and Limitations", max_length=400, blank=True)
+    authorisation_valid_to = models.DateField("Authorisation Valid To", null=True, blank=True)
     # ML.A.903(b): staff not qualified under Part-66 are assisted at the survey.
     part_66_qualified = models.BooleanField("Qualified Under Part-66", default=False)
     # AMC1 CAO.A.045(c)(1): months of continuing airworthiness management in
@@ -53,6 +55,11 @@ class ReviewStaff(Record):
     class Meta:
         ordering = ["accepted_on"]
         constraints = [
+            models.CheckConstraint(
+                condition=Q(authorisation_valid_to__isnull=True)
+                | (Q(authorisation_valid_to__gte=F("accepted_on")) & ~Q(authorisation_scope="")),
+                name="reviewstaff_authorisation_expiry_follows_acceptance",
+            ),
             models.CheckConstraint(
                 condition=Q(restored_on__isnull=True, restored_under="")
                 | (Q(restored_on__isnull=False) & ~Q(restored_under="")),
@@ -105,6 +112,8 @@ class Certificate(Record):
     review_staff_authorisation = models.CharField(
         "Authorisation Reference", max_length=60, blank=True
     )
+    review_staff_scope = models.CharField("Review Authorisation Scope", max_length=400, blank=True)
+    review_staff_valid_to = models.DateField("Review Authorisation Valid To", null=True, blank=True)
     aircraft_registration = models.CharField("Aircraft Registration", max_length=10, blank=True)
     aircraft_type_rating = models.CharField("Aircraft Type Rating", max_length=200, blank=True)
     aircraft_manufacturer = models.CharField("Aircraft Manufacturer", max_length=100, blank=True)

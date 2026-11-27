@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Record Review Authorisation{% endblock %}
+{% block content %}
+<h1>Record Review Authorisation</h1>
+<p>{{ staff.user.full_name }}, {{ staff.authorisation_reference }}</p>
+<form method="post">
+{% csrf_token %}
+{{ form.as_p }}
+<button type="submit">Save Review Authorisation</button>
+</form>
+{% endblock %}

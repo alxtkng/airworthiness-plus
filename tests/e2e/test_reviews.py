@@ -48,6 +48,27 @@ def test_review_staff_authorisation_and_restoration(
         expect(row).to_contain_text("Restored 18 November 2026 Under Lucy Grant")
 
 
+def test_records_review_authorisation_scope_and_end_date(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][0]) as page:
+        page.goto("/review-staff/")
+        row = page.locator("main tbody tr:not(.detail)").filter(has_text="Lucy Grant")
+        reveal(row).get_by_role("link", name="Record Review Authorisation").click()
+        save(
+            page,
+            "Save Review Authorisation",
+            {
+                "authorisation_scope": "Part-ML aeroplanes under the CAE",
+                "authorisation_valid_to": "2027-11-18",
+            },
+            "Lucy Grant",
+        )
+        details = reveal(row)
+        expect(details).to_contain_text("Part-ML aeroplanes under the CAE")
+        expect(row).to_contain_text("18 November 2027")
+
+
 def test_external_review_certificate_and_extension_copy(
     chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
 ) -> None:

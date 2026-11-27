@@ -273,6 +273,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("review-staff/recency/", reviews.recency_page, name="staff_recency"),
     path("review-staff/add/", reviews.add_staff, name="add_review_staff"),
     path(
+        "review-staff/<uuid:staff_id>/authorisation/",
+        reviews.record_review_authorisation,
+        name="record_review_authorisation",
+    ),
+    path(
         "review-staff/<uuid:staff_id>/involvement/",
         reviews.update_involvement,
         name="update_involvement",

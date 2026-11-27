@@ -18,7 +18,10 @@
 <dt>Date of Expiry</dt><dd>{{ certificate.valid_to|long_date }}</dd>
 <dt>Airframe Flight Hours at the Time of Review</dt><dd>{{ certificate.airframe_hours|hours }}</dd>
 {% if certificate.issued_by %}<dt>Airworthiness Review Staff</dt><dd>{{ certificate.review_staff_name }}</dd>
-<dt>Authorisation Number</dt><dd>{{ certificate.review_staff_authorisation }}</dd>{% endif %}
+<dt>Authorisation Number</dt><dd>{{ certificate.review_staff_authorisation }}</dd>
+{% if certificate.review_staff_scope %}<dt>Review Authorisation Scope</dt><dd>{{ certificate.review_staff_scope }}</dd>{% endif %}
+{% if certificate.review_staff_valid_to %}<dt>Review Authorisation Valid To</dt><dd>{{ certificate.review_staff_valid_to|long_date }}</dd>{% endif %}
+{% endif %}
 </dl>
 {% for extension in extensions %}
 <h2>{% if forloop.counter == 1 %}First{% else %}Second{% endif %} Extension</h2>

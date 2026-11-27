@@ -270,6 +270,7 @@ BOARD: tuple[Group, ...] = (
                 inside=frozenset(
                     {
                         "add_review_staff",
+                        "record_review_authorisation",
                         "update_involvement",
                         "record_restoration",
                         "add_maintenance_authorisation",

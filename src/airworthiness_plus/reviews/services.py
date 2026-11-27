@@ -1,9 +1,11 @@
 """What can be done with review staff, certificates and extensions. Views check the role first."""
 
+import json
 import uuid
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from hashlib import sha256
 
 from django.db import transaction
 
@@ -83,6 +85,8 @@ def add_review_staff(
     _open_to(user.organisation_id)
     today = aircraft_services.today()
     _check_before_records(last_review_before_records, today)
+    if accepted_on > today:
+        raise RefusedError("Review Staff Cannot Be Accepted After Today")
     return ReviewStaff.objects.create(
         organisation_id=user.organisation_id,
         user=user,
@@ -94,6 +98,46 @@ def add_review_staff(
         recorded_on=today,
         last_review_before_records=last_review_before_records,
     )
+
+
+def review_authorisation_version(staff: ReviewStaff) -> str:
+    """Identify the terms visible when the Administrator opened the form."""
+    terms = json.dumps(
+        (str(staff.pk), staff.authorisation_scope, str(staff.authorisation_valid_to))
+    )
+    return sha256(terms.encode()).hexdigest()
+
+
+@transaction.atomic
+def record_review_authorisation(
+    staff: ReviewStaff,
+    *,
+    authorisation_scope: str,
+    authorisation_valid_to: date | None,
+    version: str,
+    remove_end_date: bool,
+) -> None:
+    """Record the terms of the existing review authorisation."""
+    _open_to(staff.organisation_id)
+    staff = ReviewStaff.objects.select_for_update().get(pk=staff.pk)
+    if version != review_authorisation_version(staff):
+        raise RefusedError("The Review Authorisation Changed. Open the Form Again")
+    if remove_end_date and authorisation_valid_to is not None:
+        raise RefusedError("Clear the End Date Before Confirming Its Removal")
+    if (
+        staff.authorisation_valid_to is not None
+        and authorisation_valid_to is None
+        and not remove_end_date
+    ):
+        raise RefusedError("Confirm That the Authorisation Has No Stated End Date")
+    scope = authorisation_scope.strip()
+    if not scope:
+        raise RefusedError("Give the Scope of the Review Authorisation")
+    if authorisation_valid_to is not None and authorisation_valid_to < staff.accepted_on:
+        raise RefusedError("The Review Authorisation Cannot End Before Acceptance")
+    staff.authorisation_scope = scope
+    staff.authorisation_valid_to = authorisation_valid_to
+    staff.save(update_fields=["authorisation_scope", "authorisation_valid_to"])
 
 
 def _check_before_records(last_review_before_records: date | None, recorded_on: date) -> None:
@@ -134,6 +178,7 @@ class StaffLine:
     restoration_needed: bool
     lapses: date | None
     flag: Flag
+    authorisation_date_status: str
 
     @property
     def state(self) -> str:
@@ -217,7 +262,17 @@ def staff_line(staff: ReviewStaff, today: date) -> StaffLine:
     if staff.left_on is None and lapses is not None:
         thresholds = due.thresholds_of(staff.organisation)
         flag = limit_flag(Limit(Unit.CALENDAR, lapses, days_between(today, lapses)), thresholds)
-    return StaffLine(staff, last, recent, _restoration_needed(staff), lapses, flag)
+    if today < staff.accepted_on:
+        authorisation_date_status = "Awaiting Acceptance"
+    elif staff.authorisation_valid_to is None:
+        authorisation_date_status = "No End Date Recorded"
+    elif staff.authorisation_valid_to < today:
+        authorisation_date_status = f"Ended {long_date(staff.authorisation_valid_to)}"
+    else:
+        authorisation_date_status = f"To {long_date(staff.authorisation_valid_to)}"
+    return StaffLine(
+        staff, last, recent, _restoration_needed(staff), lapses, flag, authorisation_date_status
+    )
 
 
 def note_lapse(staff: ReviewStaff, today: date) -> bool:
@@ -236,6 +291,14 @@ def note_lapse(staff: ReviewStaff, today: date) -> bool:
     return True
 
 
+def _authorisation_date_refusal(staff: ReviewStaff, on: date) -> str:
+    if on < staff.accepted_on:
+        return "The Review Staff Member Was Not Yet Accepted"
+    if staff.authorisation_valid_to is not None and staff.authorisation_valid_to < on:
+        return "The Review Authorisation Ended Before Issue"
+    return ""
+
+
 def may_issue(staff: ReviewStaff, today: date) -> bool:
     """Return whether this person may issue a certificate today (REQ-109, threat TH-009).
 
@@ -245,6 +308,7 @@ def may_issue(staff: ReviewStaff, today: date) -> bool:
     return (
         staff.left_on is None
         and staff.user.is_active
+        and not _authorisation_date_refusal(staff, today)
         and not _restoration_needed(staff)
         and _recent_by_rule(staff, today)
     )
@@ -284,6 +348,7 @@ def update_involvement(
     )
 
 
+@transaction.atomic
 def record_restoration(
     staff: ReviewStaff, *, on: date, supervisor: ReviewStaff | None = None, under: str = ""
 ) -> None:
@@ -296,12 +361,28 @@ def record_restoration(
     today = aircraft_services.today()
     if on > today:
         raise RefusedError("A Restoration Cannot Be Dated After Today")
-    if not note_lapse(staff, on):
-        raise RefusedError("Only a Lapsed Authorisation Is Restored")
+    locked_ids = [staff.pk]
     if supervisor is not None:
         if supervisor.pk == staff.pk:
             raise RefusedError("Nobody Supervises Their Own Restoration")
-        if supervisor.organisation_id != staff.organisation_id or not may_issue(supervisor, on):
+        if supervisor.organisation_id != staff.organisation_id:
+            raise RefusedError(
+                "The Supervisor Is Currently Valid Review Staff of This Organisation"
+            )
+        locked_ids.append(supervisor.pk)
+    locked = {
+        one.pk: one
+        for one in ReviewStaff.objects.select_for_update(of=("self",))
+        .select_related("user")
+        .filter(pk__in=locked_ids)
+        .order_by("pk")
+    }
+    staff = locked[staff.pk]
+    if not note_lapse(staff, on):
+        raise RefusedError("Only a Lapsed Authorisation Is Restored")
+    if supervisor is not None:
+        supervisor = locked.get(supervisor.pk)
+        if supervisor is None or not may_issue(supervisor, on):
             raise RefusedError(
                 "The Supervisor Is Currently Valid Review Staff of This Organisation"
             )
@@ -428,6 +509,11 @@ def issue_certificate(
         raise RefusedError("A Certificate Cannot Be Issued After Today")
     if staff.organisation_id != aircraft.organisation_id:
         raise RefusedError("Review Staff Belong to Another Organisation")
+    staff = (
+        ReviewStaff.objects.select_for_update(of=("self",)).select_related("user").get(pk=staff.pk)
+    )
+    if refusal := _authorisation_date_refusal(staff, issued_on):
+        raise RefusedError(refusal)
     if not may_issue(staff, issued_on):
         raise RefusedError("CAO.A.045(c): The Review Staff Member Does Not Have Recent Experience")
     previous = current_certificate(aircraft)
@@ -913,7 +999,9 @@ def outstanding(review: Review, today: date) -> list[str]:
         )
     elif review.programme_discrepancy == ProgrammeDiscrepancy.NOT_ADDRESSED:
         reasons.append("ML.A.903(e)(3): The Maintenance Programme Discrepancy Is Not Yet Addressed")
-    if not may_issue(review.staff, today):
+    if refusal := _authorisation_date_refusal(review.staff, today):
+        reasons.append(refusal)
+    elif not may_issue(review.staff, today):
         reasons.append("CAO.A.045(c): The Review Staff Member Does Not Have Recent Experience")
     return reasons
 
