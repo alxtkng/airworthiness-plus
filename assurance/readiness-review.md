@@ -26,8 +26,8 @@ As written on 19 November 2026: The private beta slice is built and tested. Thre
 
 - Traced: 104 of 104. `requirements/traceability.csv`, checked by the pipeline on every change.
 - Tested or inspected as its requirement asks: 93 of 104. Counted again on 19 November 2026 from the status of each row of the matrix, after those statuses were brought up to date with the interface as built.
-- 704 tests pass (20 November 2026), on every change, against PostgreSQL in the pipeline. Ten of them run the table script in a real browser.
-- The code merged on 19 November 2026 was reviewed that day by a reviewer that did not write it. It found 15 defects and 4 tests that could not fail; all are fixed (`assurance/independent-verification/code-review-2026-11-19.md`). The code of 18 November 2026 and the test site's start-up code were reviewed the same way on 20 November 2026. It found 8 defects and 6 tests that could not fail; all are fixed (`assurance/independent-verification/code-review-2026-11-20.md`).
+- 877 tests pass (27 November 2026), on every change, against PostgreSQL in the pipeline. Ten of them run the table script in a real browser. There were 704 on 20 November 2026 and 814 when Phase 0 of the canvas build was merged on 24 November 2026.
+- The code merged on 19 November 2026 was reviewed that day by a reviewer that did not write it. It found 15 defects and 4 tests that could not fail; all are fixed (`assurance/independent-verification/code-review-2026-11-19.md`). The code of 18 November 2026 and the test site's start-up code were reviewed the same way on 20 November 2026. It found 8 defects and 6 tests that could not fail; all are fixed (`assurance/independent-verification/code-review-2026-11-20.md`). Phase 0 of the canvas build was reviewed the same way on 24 November 2026, and its two calculations recomputed. The review found 14 defects and 6 groups of tests that could not fail; all are fixed, except that an existing second organisation on the test site keeps the first password it was given (`assurance/independent-verification/code-review-2026-11-24.md`, `personnel-and-alerts.md`).
 
 The eleven that are not:
 
