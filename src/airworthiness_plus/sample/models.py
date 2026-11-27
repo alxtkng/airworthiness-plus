@@ -16,6 +16,14 @@ class Part(models.TextChoices):
     """A part of the sample that is added once."""
 
     PEOPLE = "People", "People"
+    # Phase 1 of the canvas build (REQ-294): each part of its sample, added once.
+    DEFECTS = "Defects", "Defects"
+    CONTRACTS = "Contracts", "Contracts"
+    COMPONENTS = "Components", "Components"
+    MODIFICATIONS = "Modifications and Weighings", "Modifications and Weighings"
+    PROGRAMME = "Departures and Annual Review", "Departures and Annual Review"
+    SOURCES = "Sources of Directives", "Sources of Directives"
+    SET_UP = "Transfer and Configuration", "Transfer and Configuration"
 
 
 class Added(Record):
