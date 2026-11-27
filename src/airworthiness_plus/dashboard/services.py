@@ -19,6 +19,7 @@ from django.urls import reverse
 
 from airworthiness_plus.acceptance import services as acceptance_services
 from airworthiness_plus.aircraft.models import Aircraft, Regime, Stage, Status
+from airworthiness_plus.components import services as component_services
 from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.directives import services as directive_services
@@ -366,9 +367,72 @@ def _ended_contracts() -> list[Row]:
     ]
 
 
+def _components(today: date) -> list[Row]:
+    """Return each component with a limit near, reached or not calculable (REQ-237).
+
+    And each component that is off-wing and due back within the lead time.
+    """
+    rows = []
+    for line in component_services.component_lines(today):
+        fitting = line.fitting
+        if fitting is None:
+            continue
+        component = line.component
+        url = reverse("component", args=[component.id])
+        page = "Aircraft Configuration"
+        if not line.fitted:
+            if fitting.due_back_on is None or line.flag is Flag.NONE or line.days is None:
+                continue
+            where = f", At {fitting.sent_to}" if fitting.sent_to else ""
+            rows.append(
+                Row(
+                    fitting.aircraft_registration,
+                    f"{component.name} Due Back",
+                    f"Removed {formatting.long_date(fitting.removed_on or today)}{where}",
+                    formatting.long_date(fitting.due_back_on),
+                    _remaining(Unit.CALENDAR, line.days, line.flag),
+                    line.flag.value,
+                    page,
+                    url,
+                    days=line.days,
+                )
+            )
+        elif line.problem:
+            rows.append(
+                Row(
+                    fitting.aircraft_registration,
+                    f"Component Limit, {component.name}",
+                    line.problem,
+                    "Cannot Be Calculated",
+                    "",
+                    "",
+                    page,
+                    url,
+                    first=True,
+                )
+            )
+        elif line.flag is not Flag.NONE:
+            rows.append(
+                Row(
+                    fitting.aircraft_registration,
+                    f"Component Limit, {component.name}",
+                    f"{line.limit_text}, ML.A.503",
+                    line.due_text,
+                    line.remaining_text,
+                    line.flag.value,
+                    page,
+                    url,
+                    days=line.days if line.days is not None else NO_DAY,
+                )
+            )
+    return rows
+
+
 def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
-    """Return what is due on the aircraft of the organisation (REQ-216, REQ-228)."""
-    rows: list[Row] = _deferred_defects(organisation, today) + _ended_contracts()
+    """Return what is due on the aircraft of the organisation (REQ-216, REQ-228, REQ-237)."""
+    rows: list[Row] = (
+        _deferred_defects(organisation, today) + _ended_contracts() + _components(today)
+    )
     for aircraft in Aircraft.objects.all():
         if aircraft.stage == Stage.TRANSFER_IN:
             rows.append(

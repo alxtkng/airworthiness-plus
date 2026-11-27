@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Components and Life Limits{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Components and Life Limits</h1>
+{% if may_record %}<p><a href="{% url 'add_component' %}">Add a Component</a></p>{% endif %}
+<p>{{ counts.tracked }} Tracked, {{ counts.off_wing }} Off-Wing, {{ counts.on_condition }} On Condition, {{ counts.due_in_six_months }} Due in 6 Months</p>
+<h2>Nearest Limits</h2>
+{% if lines %}
+<table>
+<thead>
+<tr><th>Component</th><th>Fitted To</th><th>Limit</th><th>Since New or Overhaul</th><th class="number">Remaining</th><th>Status</th><th data-detail>Part Number</th><th data-detail>Serial Number</th><th data-detail>Position</th><th data-detail>Due</th><th data-detail>Source of the Limit</th><th data-detail>How What Remains Was Calculated</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td><a href="{% url 'component' line.component.id %}">{{ line.component.name }}</a></td>
+<td>{% if line.fitted %}<a href="{% url 'aircraft' line.fitting.aircraft_id %}">{{ line.fitted_to }}</a>{% else %}{{ line.fitted_to }}{% endif %}</td>
+<td>{{ line.limit_text }}</td>
+<td>{{ line.since_text }}</td>
+<td class="number">{{ line.remaining_text }}</td>
+<td>{{ line.status|status }}</td>
+<td>{{ line.component.part_number }}</td>
+<td>{{ line.component.serial_number }}</td>
+<td>{{ line.fitted_note }}</td>
+<td>{% if line.problem %}{{ line.problem }}{% else %}{{ line.due_text }}{% endif %}</td>
+<td>{{ line.component.source }}</td>
+<td>{% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Components Recorded</p>
+{% endif %}
+<p>An Installed Component Does Not Exceed Its Approved Service Life Limit, ML.A.503</p>
+{% endblock %}

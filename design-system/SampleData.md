@@ -142,6 +142,26 @@ Added on 27 November 2026 for the Release to Service board (Phase 1 of the canva
 - The organisation was told of the tyre on 23 October 2026, as the board has it. No certificate is recorded for it yet, so the board's Licence [Number] is not in the sample.
 - By hand for 18 November 2026: 3 issued in the last 30 days (22 October is 27 days ago, 4 November 14), 1 not yet in the records, 0 incomplete maintenance, 0 pilot-owner notices overdue.
 
+## Components
+
+Added on 27 November 2026 for the Components board (Phase 1 of the canvas build). The components are the board's. Every value marked Made Up, and every day and airframe figure of a fitting, is made up so that the hours since new or overhaul are the board's on 18 November 2026, and is to be confirmed by Alex King.
+
+| Component | Fitted To | Position | Limit | Fitted | Airframe Hours When Fitted | Hours When Fitted | New or Last Overhauled |
+|---|---|---|---|---|---|---|---|
+| Propeller, Fixed Pitch, [Serial Number Propeller G-CDEF] | Off-Wing, From G-CDEF | Propeller | 2,000 Hours or 72 Months, Manufacturer Recommendation | 2 November 2020 (Made Up) | 6,319.5 | 16.5 (Made Up) | 2 November 2020 (Made Up) |
+| Propeller, Fixed Pitch, on Loan, [Serial Number Loan Propeller] | G-CDEF | Propeller | No Limit Recorded | 4 November 2026 | 7,715.0 | 0.0 (Made Up) | |
+| Engine, Lycoming O-360, [Serial Number Engine G-DGHI] | G-DGHI | Engine | On Condition, Reviewed Every 100 Hours, Last at 9,800.0 on 20 October 2026 (Made Up) | 4 June 2018 (Made Up) | 7,734.3 | 0.0 | 4 June 2018 (Made Up) |
+| Emergency Locator Transmitter Battery | G-ABCD | Emergency Locator Transmitter | Battery Date, 28 February 2027 (Day Made Up) | 14 February 2022 (Day Made Up) | 5,890.0 (Made Up) | 0.0 | |
+| Fire Extinguisher | G-BXYZ | Cabin (Made Up) | Label Inspection Date, 31 March 2027 (Day Made Up) | 1 April 2022 (Made Up) | 2,950.0 (Made Up) | 0.0 | |
+| Engine, Lycoming O-360, [Serial Number Engine G-CDEF] | G-CDEF | Engine | 2,000 Hours, Manufacturer Recommendation | 12 March 2019 | 5,951.5 | 0.0 | 12 March 2019 |
+| Vacuum Pump | G-ABCD | Engine | 500 Hours, Manufacturer Recommendation | 6 April 2026 (Made Up) | 6,230.6 | 0.0 | 6 April 2026 (Made Up) |
+
+- By hand for 18 November 2026. G-CDEF engine: 7,731.5 less 5,951.5 is 1,780.0 hours; 220.0 remain; at 0.6 hours a day, 366 days. Vacuum pump: 6,412.6 less 6,230.6 is 182.0; 318.0 remain; at 0.8 hours a day, 397 days. G-DGHI engine: 9,874.3 less 7,734.3 is 2,140.0; review at 9,900.0, 25.7 hours remain. Battery: 102 days. Fire extinguisher: 133 days.
+- G-CDEF's own propeller was removed at its 6-year limit on 2 November 2026 at 7,715.0 airframe hours, taken as the hours of WP-2026-043 two days later: 16.5 and 7,715.0 less 6,319.5 is the board's 1,412.0 hours since overhaul. It is at [Propeller Organisation], due back 25 November 2026, 7 days. The 16.5 hours it is taken to have had when fitted are made up so that the board's 6,319.5 and 1,412 both hold.
+- The loan propeller's limit is not in the sample, so none is recorded.
+- Counts: 7 tracked, 1 off-wing, 1 on condition, 3 due in 6 months (the G-DGHI engine, which has no planning utilisation to place it by, the battery and the fire extinguisher). The board's 38 Tracked and its 3 Months and 4 Months are not taken: day counts are exact.
+- The board writes the limits of the battery and the fire extinguisher as February 2027 and March 2027; the last day of each month is taken.
+
 ## Management System
 
 - Hazards: 7 open (2026-0001 to 2026-0007); Lucy Grant owns 2026-0004 (from the G-CDEF review on 11 November) and 2026-0005.

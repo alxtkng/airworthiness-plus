@@ -231,6 +231,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         "contracts_workorder": {"workorder_rules"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
         "releases_release": {"release_rules"},
+        # A fitting keeps what it said, and its removal is added once (REQ-235).
+        "components_installation": {"installation_rules"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
         "reviews_certificate": {"certificate_serial", "certificate_fixed"},

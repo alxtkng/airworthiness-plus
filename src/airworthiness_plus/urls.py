@@ -6,6 +6,7 @@ from airworthiness_plus.acceptance import views as acceptance
 from airworthiness_plus.accounts import user_views as users
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
+from airworthiness_plus.components import views as components
 from airworthiness_plus.contracts import views as contracts
 from airworthiness_plus.customers import views as customers
 from airworthiness_plus.dashboard import views as dashboard
@@ -46,6 +47,30 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="record_release_certificate",
     ),
     path("programmes/", programme.programmes_page, name="programmes"),
+    path("components/", components.components_page, name="components"),
+    path("components/add/", components.add_component, name="add_component"),
+    path("components/<uuid:component_id>/", components.component_page, name="component"),
+    path("components/<uuid:component_id>/fit/", components.fit_component, name="fit_component"),
+    path(
+        "components/<uuid:component_id>/remove/",
+        components.remove_component,
+        name="remove_component",
+    ),
+    path(
+        "components/<uuid:component_id>/review/",
+        components.review_component,
+        name="review_component",
+    ),
+    path(
+        "components/<uuid:component_id>/new-or-overhauled/",
+        components.component_life_from,
+        name="component_life_from",
+    ),
+    path(
+        "components/<uuid:component_id>/limit/",
+        components.change_component_limit,
+        name="change_component_limit",
+    ),
     path("defects/", defects.defects_page, name="defects"),
     path("defects/record/", defects.record_defect, name="record_defect"),
     path("defects/repeat/", defects.repeat_defects, name="repeat_defects"),

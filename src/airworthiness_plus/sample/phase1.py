@@ -10,6 +10,9 @@ from decimal import Decimal
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.components import services as component_services
+from airworthiness_plus.components.models import Basis as LimitBasis
+from airworthiness_plus.components.models import Component
 from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.contracts.models import Contract, OrderedBy, Scope
 from airworthiness_plus.defects import services as defect_services
@@ -212,4 +215,100 @@ def add_releases(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> li
                     recorded_on=date(2026, 11, 5),
                 )
             )
+    return added
+
+
+_RECOMMENDED = LimitBasis.RECOMMENDATION
+
+# SampleData.md, Components, and the Components board. Each: the component, its
+# limit, then its fitting: Aircraft Registration, position, the day fitted, the
+# airframe hours then, the component's own hours then, and the day it was new or
+# last overhauled. The days and the hours when fitted are made up so that the
+# hours since new or overhaul are the board's on 18 November 2026.
+COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
+    (
+        {"name": "Propeller, Fixed Pitch", "part_number": "[Part Number Propeller G-CDEF]",
+         "serial_number": "[Serial Number Propeller G-CDEF]", "basis": _RECOMMENDED,
+         "limit_hours": Decimal("2000"), "limit_months": 72,
+         "source": "[Propeller Manufacturer's Service Information]"},
+        {"aircraft": "G-CDEF", "position": "Propeller", "fitted_on": date(2020, 11, 2),
+         "airframe_hours_fitted": Decimal("6319.5"), "hours_at_fitting": Decimal("16.5"),
+         "life_from": date(2020, 11, 2), "release_document": "Release Certificate on File"},
+    ),
+    (
+        {"name": "Propeller, Fixed Pitch, on Loan", "part_number": "[Part Number Loan Propeller]",
+         "serial_number": "[Serial Number Loan Propeller]", "basis": LimitBasis.NONE},
+        {"aircraft": "G-CDEF", "position": "Propeller", "fitted_on": date(2026, 11, 4),
+         "airframe_hours_fitted": Decimal("7715.0"), "hours_at_fitting": Decimal("0.0"),
+         "release_document": "[Release Reference WP-2026-043]"},
+    ),
+    (
+        {"name": "Engine, Lycoming O-360", "serial_number": "[Serial Number Engine G-DGHI]",
+         "basis": LimitBasis.ON_CONDITION, "review_hours": Decimal("100"),
+         "last_review_hours": Decimal("9800.0"), "last_review_on": date(2026, 10, 20),
+         "source": "Departure From the Manufacturer's 2,000 Hours or 12 Years"},
+        {"aircraft": "G-DGHI", "position": "Engine", "fitted_on": date(2018, 6, 4),
+         "airframe_hours_fitted": Decimal("7734.3"), "hours_at_fitting": Decimal("0.0"),
+         "life_from": date(2018, 6, 4)},
+    ),
+    (
+        {"name": "Emergency Locator Transmitter Battery",
+         "part_number": "[Part Number Battery G-ABCD]", "basis": LimitBasis.DATE,
+         "limit_date": date(2027, 2, 28), "date_label": "Battery Date"},
+        {"aircraft": "G-ABCD", "position": "Emergency Locator Transmitter",
+         "fitted_on": date(2022, 2, 14), "airframe_hours_fitted": Decimal("5890.0"),
+         "hours_at_fitting": Decimal("0.0")},
+    ),
+    (
+        {"name": "Fire Extinguisher", "part_number": "[Part Number Extinguisher G-BXYZ]",
+         "basis": LimitBasis.DATE, "limit_date": date(2027, 3, 31),
+         "date_label": "Label Inspection Date"},
+        {"aircraft": "G-BXYZ", "position": "Cabin", "fitted_on": date(2022, 4, 1),
+         "airframe_hours_fitted": Decimal("2950.0"), "hours_at_fitting": Decimal("0.0")},
+    ),
+    (
+        {"name": "Engine, Lycoming O-360", "serial_number": "[Serial Number Engine G-CDEF]",
+         "basis": _RECOMMENDED, "limit_hours": Decimal("2000"),
+         "source": "[Engine Manufacturer's Service Instruction]"},
+        {"aircraft": "G-CDEF", "position": "Engine", "fitted_on": date(2019, 3, 12),
+         "airframe_hours_fitted": Decimal("5951.5"), "hours_at_fitting": Decimal("0.0"),
+         "life_from": date(2019, 3, 12)},
+    ),
+    (
+        {"name": "Vacuum Pump", "part_number": "[Part Number Vacuum Pump G-ABCD]",
+         "basis": _RECOMMENDED, "limit_hours": Decimal("500"),
+         "source": "[Vacuum Pump Manufacturer's Service Information]"},
+        {"aircraft": "G-ABCD", "position": "Engine", "fitted_on": date(2026, 4, 6),
+         "airframe_hours_fitted": Decimal("6230.6"), "hours_at_fitting": Decimal("0.0"),
+         "life_from": date(2026, 4, 6)},
+    ),
+)  # fmt: skip
+
+OWN_PROPELLER = "[Serial Number Propeller G-CDEF]"
+
+
+def add_components(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> list[Component]:
+    """Add the components of SampleData.md, each with its fitting, as Planning and Records.
+
+    G-CDEF's own propeller was removed at its 6-year limit on 2 November 2026
+    and is at [Propeller Organisation], due back 25 November 2026; the
+    aircraft flies on a loan propeller fitted on 4 November.
+    """
+    added = []
+    with working_for(ours.id, by.id):
+        for component, fitting in COMPONENTS:
+            one = component_services.add_component(ours, **component)  # type: ignore[arg-type]
+            values = dict(fitting)
+            aircraft = Aircraft.objects.get(pk=fleet[str(values.pop("aircraft"))].pk)
+            fitted = component_services.fit_component(one, aircraft, **values)  # type: ignore[arg-type]
+            if one.serial_number == OWN_PROPELLER:
+                component_services.remove_component(
+                    fitted,
+                    removed_on=date(2026, 11, 2),
+                    airframe_hours_removed=Decimal("7715.0"),
+                    removal_reason="Removed at 6-Year Limit",
+                    sent_to="[Propeller Organisation]",
+                    due_back_on=date(2026, 11, 25),
+                )
+            added.append(one)
     return added
