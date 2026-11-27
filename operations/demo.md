@@ -39,10 +39,10 @@ About 10 minutes. Sign in as Lucy Grant unless a step says otherwise.
 ### The Dashboard
 
 1. Sign in. The Dashboard opens.
-2. Point to the four panels: Continuing Airworthiness, People, Documentation, Organisation.
-3. Point to G-DGHI at the top: Unserviceable, in red.
-4. Open a row with the arrow. The detail gives the rule and its reference.
-5. Follow the link in the Page column. It goes to the page that holds the item.
+2. Find G-DGHI in Aircraft Restrictions. Read the recorded reason and open its supporting record.
+3. Find the next deferred-defect limit in Due and Overdue when it is within the lead time. Open the defect.
+4. In Needs Assessment, find an aircraft with no maintenance programme set up and open the programme.
+5. Choose Full Register to see Continuing Airworthiness, Planning, People, Documentation and Organisation. Search the Continuing Airworthiness table for G-DGHI and open a row’s details.
 
 Say: the Dashboard works nothing out. It reads the same figures as the pages.
 
