@@ -699,7 +699,7 @@ def test_the_database_holds_the_bounds_of_a_defect(
         ),
         (
             {"found_on": date(2026, 11, 17)},
-            "deferral limit must use the date first identified",
+            "Deferral limit must use the date first identified",
         ),
         ({"basis": Basis.CERTIFYING_STAFF}, "defect_certifying_staff_are_named"),
         ({"closed_on": TODAY}, "defect_closed_has_a_rectification_and_a_day"),
