@@ -210,6 +210,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "defects_repeataction": ["INSERT", "SELECT"],
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
+        "people_maintenanceauthorisation": ["INSERT", "SELECT"],
         # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
         "configuration_transfer": ["INSERT", "SELECT"],
         "configuration_baseline": ["INSERT", "SELECT"],
@@ -242,7 +243,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "contracts_workorder": {"workorder_rules"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
         "releases_release": {"release_rules"},
-        "programme_workdone": {"release_entry_fixed"},
+        "programme_workdone": {"release_entry_fixed", "work_performer"},
         # A fitting keeps what it said, and its removal is added once (REQ-235).
         "components_installation": {"installation_rules"},
         # A decision on a service bulletin, and a change or repair, are fixed (REQ-250, REQ-252).

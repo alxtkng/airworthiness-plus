@@ -17,8 +17,8 @@ from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.accounts.user_views import code_page
 from airworthiness_plus.people import services
-from airworthiness_plus.people.forms import PersonForm
-from airworthiness_plus.people.models import Person
+from airworthiness_plus.people.forms import MaintenanceAuthorisationForm, PersonForm
+from airworthiness_plus.people.models import Person, StaffGroup
 
 
 def _user(request: HttpRequest) -> User:
@@ -39,8 +39,12 @@ def staff_page(request: HttpRequest) -> HttpResponse:
 @requires(Action.VIEW_RECORDS)
 def organisation_chart(request: HttpRequest) -> HttpResponse:
     """Show current reporting lines and management personnel (REQ-295)."""
-    roots, managers = services.organisation_chart(_user(request).organisation)
-    return render(request, "people/chart.html", {"roots": roots, "managers": managers})
+    roots, managers, unresolved = services.organisation_chart(_user(request).organisation)
+    return render(
+        request,
+        "people/chart.html",
+        {"roots": roots, "managers": managers, "unresolved": unresolved},
+    )
 
 
 def _shown_to(request: HttpRequest) -> dict[str, bool]:
@@ -79,6 +83,7 @@ def _person_page(request: HttpRequest, person: Person, form: PersonForm) -> Http
         {
             "person": person,
             "reports": person.reports.filter(left_on__isnull=True),
+            "certifying_staff": person.staff_group == StaffGroup.CERTIFYING,
             "form": form,
             **_shown_to(request),
         },
@@ -140,3 +145,22 @@ def change_person(request: HttpRequest, person_id: uuid.UUID) -> HttpResponse:
             return redirect("person", person_id=person.id)
     person.refresh_from_db()
     return _person_page(request, person, form)
+
+
+@never_cache
+@requires(Action.ADD_OR_CHANGE_PERSON)
+@require_http_methods(["GET", "POST"])
+def add_maintenance_authorisation(request: HttpRequest, person_id: uuid.UUID) -> HttpResponse:
+    """Record an existing maintenance authorisation for a person (REQ-297)."""
+    person = get_object_or_404(Person, pk=person_id, staff_group=StaffGroup.CERTIFYING)
+    form = MaintenanceAuthorisationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.record_maintenance_authorisation(person, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("review_staff")
+    return render(
+        request, "people/maintenance_authorisation.html", {"person": person, "form": form}
+    )

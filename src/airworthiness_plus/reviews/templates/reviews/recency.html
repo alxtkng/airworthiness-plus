@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Recency{% endblock %}
+{% block content %}
+<h1>Recency</h1>
+<h2>Certifying Staff</h2>
+{% if certifying_staff %}
+<table>
+<thead><tr><th>Name</th><th>Licence</th><th>Maintenance Experience</th></tr></thead>
+<tbody>
+{% for person, last_work in certifying_staff %}
+<tr><td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td><td>{{ person.licence }}</td><td>{% if last_work %}Last Recorded Work {{ last_work|long_date }}, Qualifying Experience Not Assessed{% else %}Maintenance Experience Not Recorded{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Current Certifying Staff Recorded</p>
+{% endif %}
+<h2>Airworthiness Review Staff</h2>
+{% if review_lines %}
+<table>
+<thead><tr><th>Name</th><th>Last Review</th><th>Continuing Airworthiness Experience</th><th>Recency Lapses</th><th>Status</th><th data-detail>How It Was Worked Out</th></tr></thead>
+<tbody>
+{% for line in review_lines %}
+<tr>
+<td>{{ line.staff.user.full_name }}</td>
+<td>{{ line.last_review|long_date }}</td>
+<td>{{ line.basis }}</td>
+<td>{% if line.lapses %}After {{ line.lapses|long_date }}{% endif %}</td>
+<td>{{ line.state }}</td>
+<td>{% with item=line.working %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endwith %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Current Airworthiness Review Staff Recorded</p>
+{% endif %}
+{% endblock %}

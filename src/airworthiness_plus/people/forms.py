@@ -42,3 +42,12 @@ class PersonForm(Form):
         if "employment" in data:
             data["employment"] = Employment(data["employment"])
         return data
+
+
+class MaintenanceAuthorisationForm(Form):
+    """Record the reference and conditions on an existing authorisation."""
+
+    reference = forms.CharField(label="Authorisation Reference", max_length=80)
+    scope = forms.CharField(label="Scope and Limitations", max_length=400, widget=forms.Textarea)
+    valid_from = forms.DateField(label="Valid From")
+    valid_to = forms.DateField(label="Valid To", required=False)

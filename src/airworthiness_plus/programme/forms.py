@@ -6,6 +6,7 @@ from django import forms
 
 from airworthiness_plus.aircraft.models import Counter
 from airworthiness_plus.interface.forms import Form
+from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme.models import TASK_KINDS, Basis, InspectionCategory, Task
 from airworthiness_rules.intervals import TaskKind
 
@@ -75,6 +76,12 @@ class WorkForm(Form):
     dated = forms.DateField(label="Completed")
     hours = forms.DecimalField(label="Hours", max_digits=8, decimal_places=1, min_value=0)
     cycles = forms.IntegerField(label="Cycles", min_value=0)
+    performed_by = forms.ModelChoiceField(
+        label="Performed By",
+        queryset=Person.objects.all(),
+        required=False,
+        empty_label="Not Recorded",
+    )
     by_pilot_owner = forms.BooleanField(label="Pilot-Owner Maintenance", required=False)
     pilot_owner_told_on = forms.DateField(label="Organisation Told", required=False)
 

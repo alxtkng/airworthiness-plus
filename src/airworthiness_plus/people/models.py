@@ -79,3 +79,33 @@ class Person(Record):
 
     def __str__(self) -> str:
         return self.full_name
+
+
+class MaintenanceAuthorisation(Record):
+    """A record of an organisation's existing authorisation for certifying staff (REQ-297)."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    person = models.ForeignKey(
+        Person, on_delete=models.PROTECT, related_name="maintenance_authorisations"
+    )
+    reference = models.CharField("Authorisation Reference", max_length=80)
+    scope = models.CharField("Scope and Limitations", max_length=400)
+    valid_from = models.DateField("Valid From")
+    valid_to = models.DateField("Valid To", null=True, blank=True)
+
+    class Meta:
+        ordering = ["person__full_name", "-valid_from", "reference", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(reference="") & ~Q(scope=""),
+                name="maintenance_authorisation_has_reference_and_scope",
+            ),
+            models.CheckConstraint(
+                condition=Q(valid_to__isnull=True) | Q(valid_to__gte=F("valid_from")),
+                name="maintenance_authorisation_dates_in_order",
+            ),
+            models.UniqueConstraint(
+                fields=["person", "reference", "valid_from"],
+                name="maintenance_authorisation_recorded_once",
+            ),
+        ]

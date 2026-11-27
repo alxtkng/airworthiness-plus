@@ -24,6 +24,8 @@ from airworthiness_plus.exports.registry import REGISTRY
 from airworthiness_plus.exports.verify import MANIFEST
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.people.models import Person
+from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_rules.dates import utc_now
 
@@ -178,6 +180,14 @@ def build(organisation: Organisation, *, by: User, aircraft: Aircraft | None = N
                 "users": [
                     {"id": str(user.pk), "full_name": user.full_name}
                     for user in User.objects.order_by("pk")
+                ],
+                "work_performers": [
+                    {"id": str(person.pk), "full_name": person.full_name}
+                    for person in Person.objects.filter(
+                        pk__in=WorkDone.objects.filter(aircraft=aircraft)
+                        .exclude(performed_by_id=None)
+                        .values("performed_by_id")
+                    ).order_by("pk")
                 ],
                 "review_staff": [
                     {

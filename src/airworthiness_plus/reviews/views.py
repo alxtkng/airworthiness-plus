@@ -11,6 +11,7 @@ from functools import wraps
 from typing import Any
 
 from django.db import DatabaseError, transaction
+from django.db.models import Max
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
@@ -23,6 +24,8 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.organisations import approvals
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
+from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.reviews import services
 from airworthiness_plus.reviews.forms import (
     CertificateForm,
@@ -213,6 +216,11 @@ def _staff_page(request: HttpRequest, form: ReviewStaffForm, message: str = "") 
                 )
                 for line in lines
             ],
+            "maintenance_authorisations": MaintenanceAuthorisation.objects.select_related("person"),
+            "may_change_person": _user(request).may(Action.ADD_OR_CHANGE_PERSON),
+            "certifying_people": Person.objects.filter(
+                staff_group=StaffGroup.CERTIFYING, left_on__isnull=True
+            ),
             "form": form,
             "message": message,
             "refusal": _refusal(request),
@@ -225,6 +233,34 @@ def _staff_page(request: HttpRequest, form: ReviewStaffForm, message: str = "") 
 def staff_page(request: HttpRequest) -> HttpResponse:
     """Airworthiness review staff and whether each has recent experience (REQ-113)."""
     return _staff_page(request, ReviewStaffForm())
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def recency_page(request: HttpRequest) -> HttpResponse:
+    """Show airworthiness review and maintenance experience separately (REQ-296)."""
+    today = aircraft_services.today()
+    review_staff = ReviewStaff.objects.filter(left_on__isnull=True).select_related(
+        "user", "organisation"
+    )
+    certifying_people = Person.objects.filter(
+        staff_group=StaffGroup.CERTIFYING, left_on__isnull=True
+    )
+    dates = {
+        row["performed_by_id"]: row["last_work"]
+        for row in WorkDone.objects.filter(performed_by__in=certifying_people, dated__lte=today)
+        .order_by()
+        .values("performed_by_id")
+        .annotate(last_work=Max("dated"))
+    }
+    return render(
+        request,
+        "reviews/recency.html",
+        {
+            "review_lines": [services.staff_line(staff, today) for staff in review_staff],
+            "certifying_staff": [(person, dates.get(person.pk)) for person in certifying_people],
+        },
+    )
 
 
 @requires(Action.MANAGE_USERS_AND_ROLES)

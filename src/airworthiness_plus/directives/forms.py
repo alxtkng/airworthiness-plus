@@ -7,6 +7,7 @@ from django import forms
 from airworthiness_plus.aircraft.models import Counter
 from airworthiness_plus.directives.models import Decision, Directive
 from airworthiness_plus.interface.forms import Form
+from airworthiness_plus.people.models import Person
 
 
 class DirectiveForm(Form):
@@ -68,6 +69,12 @@ class ComplianceForm(Form):
     dated = forms.DateField(label="Completed")
     hours = forms.DecimalField(label="Hours", max_digits=8, decimal_places=1, min_value=0)
     cycles = forms.IntegerField(label="Cycles", min_value=0)
+    performed_by = forms.ModelChoiceField(
+        label="Performed By",
+        queryset=Person.objects.all(),
+        required=False,
+        empty_label="Not Recorded",
+    )
 
 
 class TerminationForm(Form):

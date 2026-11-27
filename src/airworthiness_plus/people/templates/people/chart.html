@@ -7,8 +7,14 @@
 <ul>
 {% include "people/reporting_lines.html" with lines=roots only %}
 </ul>
-{% else %}
+{% elif not unresolved %}
 <p>No Current Staff Recorded</p>
+{% endif %}
+{% if unresolved %}
+<h3>Reporting Lines to Check</h3>
+<ul>{% for person in unresolved %}
+<li><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></li>
+{% endfor %}</ul>
 {% endif %}
 <h2>Management Personnel</h2>
 {% if managers %}
@@ -19,7 +25,7 @@
 <tr>
 <td><a href="{% url 'person' manager.id %}">{{ manager.full_name }}</a></td>
 <td>{{ manager.role }}</td>
-<td>{% if manager.reports_to %}{{ manager.reports_to.full_name }}{% endif %}</td>
+<td>{% if manager.reports_to and not manager.reports_to.left_on %}{{ manager.reports_to.full_name }}{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>

@@ -264,8 +264,15 @@ BOARD: tuple[Group, ...] = (
             Item(
                 "Authorisations",
                 "review_staff",
-                tabs=(Tab("Authorisations", "review_staff"), Tab("Recency")),
-                inside=frozenset({"add_review_staff", "update_involvement", "record_restoration"}),
+                tabs=(Tab("Authorisations", "review_staff"), Tab("Recency", "staff_recency")),
+                inside=frozenset(
+                    {
+                        "add_review_staff",
+                        "update_involvement",
+                        "record_restoration",
+                        "add_maintenance_authorisation",
+                    }
+                ),
             ),
         ),
     ),

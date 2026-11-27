@@ -871,7 +871,8 @@ def test_organisation_chart_shows_current_reporting_lines_for_its_own_organisati
             employment=Employment.CONTRACTED,
         )
         services.add_person(organisation=sample.ours, full_name="Former Engineer", left_on=TODAY)
-        roots, managers = services.organisation_chart(sample.ours)
+        roots, managers, unresolved = services.organisation_chart(sample.ours)
+        assert not unresolved
         branch = next(root for root in roots if root.person == manager)
         assert [line.person for line in branch.reports] == [engineer]
         assert manager in managers
@@ -885,3 +886,48 @@ def test_organisation_chart_shows_current_reporting_lines_for_its_own_organisati
     assert "Chart Manager" in body
     assert "Former Engineer" not in body
     assert "Chart Engineer" not in page(signed_in(sample.stranger), chart)
+
+
+def test_recency_tab_uses_review_records_and_identifies_missing_maintenance_evidence(
+    sample: Sample,
+) -> None:
+    with working_for(sample.ours.id, sample.administrator.id):
+        services.add_person(
+            organisation=sample.ours,
+            full_name="Certifying Engineer",
+            staff_group=StaffGroup.CERTIFYING,
+            licence="Part-66 B1.2",
+        )
+    reader = signed_in(sample.reader)
+    path = "/review-staff/recency/"
+    assert f'href="{path}"' in page(reader, "/review-staff/")
+    body = page(reader, path)
+    assert "Certifying Engineer" in body
+    assert "Maintenance Experience Not Recorded" in body
+    assert "Airworthiness Review Staff" in body
+    assert "Certifying Engineer" not in page(signed_in(sample.stranger), path)
+
+
+def test_administrator_records_a_maintenance_authorisation_with_scope_and_dates(
+    sample: Sample,
+) -> None:
+    with working_for(sample.ours.id, sample.administrator.id):
+        engineer = services.add_person(
+            organisation=sample.ours,
+            full_name="Authorised Engineer",
+            staff_group=StaffGroup.CERTIFYING,
+            licence="Part-66 B1.2",
+        )
+    path = f"/staff/{engineer.id}/maintenance-authorisation/"
+    fields = {
+        "reference": "CA-42",
+        "scope": "Piper PA-28 Airframe",
+        "valid_from": "2026-11-18",
+        "valid_to": "2026-12-01",
+    }
+    assert post(signed_in(sample.reader), path, **fields).status_code == 403
+    assert post(signed_in(sample.administrator), path, **fields).status_code == 302
+    body = page(signed_in(sample.reader), "/review-staff/")
+    assert "CA-42" in body and "Piper PA-28 Airframe" in body
+    assert "CA-42" not in page(signed_in(sample.stranger), "/review-staff/")
+    assert post(signed_in(sample.administrator), path, **fields).status_code == 200

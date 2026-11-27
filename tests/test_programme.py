@@ -793,3 +793,33 @@ def test_programme_pages_need_sign_in_and_refuse_forged_writes(
     for method, path, _ in pages:
         if method == "POST":
             assert post(forged, path).status_code == 403, path
+
+
+def test_record_work_keeps_the_person_who_performed_it(
+    sample: Sample,
+    fleet: dict[str, Aircraft],
+) -> None:
+    from airworthiness_plus.people import services as people_services
+    from airworthiness_plus.people.models import StaffGroup
+
+    with working_for(sample.ours.id, sample.lucy.id):
+        mechanic = people_services.add_person(
+            organisation=sample.ours, full_name="Sample Mechanic", staff_group=StaffGroup.CERTIFYING
+        )
+    aircraft = fleet["G-ABCD"]
+    response = post(
+        signed_in(sample.planner),
+        f"/aircraft/{aircraft.id}/work/add/",
+        description="Attribution Check",
+        dated="2026-11-18",
+        hours="6412.6",
+        cycles="0",
+        performed_by=str(mechanic.id),
+    )
+    assert response.status_code == 302
+    with working_for(sample.ours.id, sample.reader.id):
+        work = WorkDone.objects.get(description="Attribution Check")
+        assert work.performed_by == mechanic
+        assert work.performed_by_name == "Sample Mechanic"
+    recency = page(signed_in(sample.reader), "/review-staff/recency/")
+    assert "Last Recorded Work 18 November 2026, Qualifying Experience Not Assessed" in recency

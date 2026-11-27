@@ -17,6 +17,7 @@
 <dt>Reporting to {{ person.full_name }}</dt><dd>{% for one in reports %}<a href="{% url 'person' one.id %}">{{ one.full_name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
 </dl>
 {% if may_change %}
+{% if certifying_staff %}<p><a href="{% url 'add_maintenance_authorisation' person.id %}">Record Maintenance Authorisation</a></p>{% endif %}
 <h2>Change the Record of {{ person.full_name }}</h2>
 <form method="post" action="{% url 'change_person' person.id %}">
 {% csrf_token %}

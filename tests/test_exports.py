@@ -85,6 +85,21 @@ def baseline_for_the_export(sample: Sample, fleet: dict[str, Aircraft]) -> None:
 @pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     """The sample fleet with at least one record of every type."""
+    from airworthiness_plus.people import services as people_services
+    from airworthiness_plus.people.models import StaffGroup
+
+    with working_for(sample.ours.id, sample.administrator.id):
+        engineer = people_services.add_person(
+            organisation=sample.ours,
+            full_name="Sample Certifying Engineer",
+            staff_group=StaffGroup.CERTIFYING,
+        )
+        people_services.record_maintenance_authorisation(
+            engineer,
+            reference="Sample Authorisation",
+            scope="Sample Aircraft",
+            valid_from=TODAY,
+        )
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     reviews = add_sample_reviews(sample, fleet)
