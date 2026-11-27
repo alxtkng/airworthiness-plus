@@ -868,6 +868,8 @@ def test_aircraft_configuration_is_in_the_sidebar_with_directives_as_its_view(
         assert re.findall(r">([^<]+)</a>", tabs) == [
             "Components and Life Limits",
             "Airworthiness Directives",
+            "Modifications and Repairs",
+            "Weight and Balance",
         ]
     fleet_tabs = page(client, "/").split('<nav class="tabs" aria-label="Views">', 1)[1]
     assert re.findall(r">([^<]+)</a>", fleet_tabs.split("</nav>", 1)[0]) == [

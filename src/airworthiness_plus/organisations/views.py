@@ -25,6 +25,7 @@ from airworthiness_plus.organisations.forms import (
     DetailsForm,
     EndApprovalForm,
     LeadTimesForm,
+    ReweighThresholdForm,
 )
 from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation
 from airworthiness_plus.programme import due
@@ -78,6 +79,10 @@ def _page(request: HttpRequest, status: int = 200, **forms: Any) -> HttpResponse
                 "review_alert": organisation.review_alert_days is not None,
                 "review_alert_days": organisation.review_alert_days,
             }
+        ),
+        "reweigh_threshold": organisation.reweigh_threshold_kilograms,
+        "reweigh_form": ReweighThresholdForm(
+            initial={"threshold": organisation.reweigh_threshold_kilograms}
         ),
         "deferral_form": DeferralLimitsForm(
             initial={
@@ -169,6 +174,22 @@ def set_lead_times(request: HttpRequest) -> HttpResponse:
         else:
             return redirect("settings")
     return _page(request, lead_form=form)
+
+
+@never_cache
+@requires(Action.CHANGE_ORGANISATION_RECORD)
+@require_POST
+def set_reweigh_threshold(request: HttpRequest) -> HttpResponse:
+    """Set the net mass change over which an aircraft is marked for a reweigh (REQ-257)."""
+    form = ReweighThresholdForm(request.POST)
+    if form.is_valid():
+        try:
+            configuration.set_reweigh_threshold(_organisation(request), **form.cleaned_data)
+        except configuration.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("settings")
+    return _page(request, reweigh_form=form)
 
 
 @never_cache

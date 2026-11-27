@@ -56,6 +56,11 @@ class Organisation(Record):
     # An earlier alert for airworthiness review certificates, in days before
     # expiry, where the organisation has turned one on (REQ-213).
     review_alert_days = models.PositiveSmallIntegerField(null=True, blank=True)
+    # The net mass change since the last weighing over which an aircraft is marked
+    # for a reweigh (REQ-257). Ours: no rule read gives one, so there is no default.
+    reweigh_threshold_kilograms = models.DecimalField(
+        max_digits=4, decimal_places=1, null=True, blank=True
+    )
     # The organisation's own default limits, in days, for a deferred defect
     # (REQ-214). ML.A.403(b) says who may defer; the regulation gives no number.
     deferral_days_non_required = models.PositiveSmallIntegerField(db_default=30)
@@ -114,6 +119,14 @@ class Organisation(Record):
                 & Q(deferral_days_with_agreement__lte=365)
                 & Q(deferral_days_certifying_staff__lte=365),
                 name="organisation_settings_are_within_their_bounds",
+            ),
+            models.CheckConstraint(
+                condition=Q(reweigh_threshold_kilograms__isnull=True)
+                | Q(
+                    reweigh_threshold_kilograms__gt=0,
+                    reweigh_threshold_kilograms__lte=Decimal("999.9"),
+                ),
+                name="organisation_reweigh_threshold_above_zero_and_within_bounds",
             ),
             models.CheckConstraint(
                 condition=Q(deferral_days_non_required__gte=1)

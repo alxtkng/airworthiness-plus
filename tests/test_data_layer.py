@@ -210,6 +210,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "defects_repeataction": ["INSERT", "SELECT"],
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
+        # A weighing and an issue of the weight schedule are added and never changed (REQ-254).
+        "modifications_weighing": ["INSERT", "SELECT"],
+        "modifications_weightschedule": ["INSERT", "SELECT"],
     }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
@@ -233,6 +236,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "releases_release": {"release_rules"},
         # A fitting keeps what it said, and its removal is added once (REQ-235).
         "components_installation": {"installation_rules"},
+        # A decision on a service bulletin, and a change or repair, are fixed (REQ-250, REQ-252).
+        "modifications_bulletin": {"bulletin_rules"},
+        "modifications_change": {"change_rules"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
         "reviews_certificate": {"certificate_serial", "certificate_fixed"},

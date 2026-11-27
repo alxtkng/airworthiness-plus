@@ -22,6 +22,7 @@ from airworthiness_plus.defects.models import Defect, RepeatAction
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
+from airworthiness_plus.modifications.models import Bulletin, Change, Weighing, WeightSchedule
 from airworthiness_plus.organisations.models import Approval, Organisation
 from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme.models import Programme, Task, WorkDone
@@ -92,6 +93,10 @@ REGISTRY: tuple[Exported, ...] = (
     # Every component that has ever been fitted to the aircraft, and where each has been.
     Exported(Component, lambda aircraft: Q(installations__aircraft=aircraft)),
     Exported(Installation, lambda aircraft: Q(component__installations__aircraft=aircraft)),
+    Exported(Bulletin, _by("aircraft")),
+    Exported(Change, _by("aircraft")),
+    Exported(Weighing, _by("aircraft")),
+    Exported(WeightSchedule, _by("aircraft")),
     Exported(Directive, _every),
     Exported(Applicability, _by("aircraft")),
     Exported(Compliance, _by("applicability__aircraft")),

@@ -100,7 +100,9 @@ def test_settings_stands_outside_the_groups_and_shows_what_is_set(sample: Sample
     # Only the Administrator is offered the forms.
     assert "<form" not in body.split("<main", 1)[1]
     assert body.count("<form") == 1  # signing out
-    assert page(signed_in(sample.administrator), "/settings/").count("<form") == 5
+    # Signing out, the details, an approval, the deferral limits, the lead times and,
+    # from 27 November 2026, the reweigh threshold (REQ-257).
+    assert page(signed_in(sample.administrator), "/settings/").count("<form") == 6
 
 
 def test_the_defaults_are_those_of_the_record(sample: Sample) -> None:

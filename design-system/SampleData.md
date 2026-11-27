@@ -162,6 +162,43 @@ Added on 27 November 2026 for the Components board (Phase 1 of the canvas build)
 - Counts: 7 tracked, 1 off-wing, 1 on condition, 3 due in 6 months (the G-DGHI engine, which has no planning utilisation to place it by, the battery and the fire extinguisher). The board's 38 Tracked and its 3 Months and 4 Months are not taken: day counts are exact.
 - The board writes the limits of the battery and the fire extinguisher as February 2027 and March 2027; the last day of each month is taken.
 
+## Modifications and Repairs
+
+Added on 27 November 2026 for the Modifications board (Phase 1 of the canvas build). The days marked Made Up, the days sent and the data of ML.A.304 are made up for the sample and are to be confirmed by Alex King.
+
+| Aircraft Registration | Bulletin | Classification | Sent to the Owner | Owner Decision | Recorded |
+|---|---|---|---|---|---|
+| G-ABCD | Seat Rail and Stop Inspection | Recommended | 16 February 2026 (Made Up) | Accepted, Every 50-Hour Check | 2 March 2026 |
+| G-ABCD | Engine Valve Guide Inspection | Recommended | 16 February 2026 (Made Up) | Accepted, Every 100-Hour Check | 2 March 2026 |
+| G-BXYZ | Alternator Mounting Bracket Inspection | Recommended | 10 November 2026 | Awaiting Owner | Reminder 24 November 2026 |
+| G-EJKL | Seat Belt Replacement | Optional | 20 May 2026 (Made Up) | Declined, Belts On Condition, Annual Check | 6 June 2026 |
+
+| Aircraft Registration | Change or Repair | Approval Route | Data | Mass Effect | Embodied |
+|---|---|---|---|---|---|
+| G-BXYZ | Panel-Mounted Navigator | Standard Change | Requirements of Point 21.A.90B | +1.2 Kilograms | 12 October 2026 (Day Made Up) |
+| G-FMNO | Light-Emitting Diode Landing Light | Minor Change | Approved by a Design Organisation (Made Up) | 0.3 Kilograms Lighter | 14 April 2026 (Day Made Up) |
+| G-DGHI | Left Wingtip Repair, Hangar Damage | Manufacturer's Structural Repair Data | Approved by a Design Organisation (Made Up) | 0.0 Kilograms | 18 July 2025 (Day Made Up) |
+| G-ABCD | Mode S Transponder with Position Output | Standard Change | Requirements of Point 21.A.90B | +0.4 Kilograms | 10 May 2022 (Day Made Up) |
+| G-CDEF | Propeller Overhaul | Maintenance, Same Part Number | | 0.0 Kilograms | In Progress |
+
+## Weight and Balance
+
+Added on 27 November 2026 for the Weighing board. The board gives a year, or a month, for each weighing; the days are made up. Each schedule is taken as issued on the day of the weighing, but for G-FMNO's.
+
+| Aircraft Registration | Last Weighed | Schedule | Changes Since Weighing | Net Change | Weight and Balance |
+|---|---|---|---|---|---|
+| G-BXYZ | 14 June 2019 | Issue 6, 14 June 2019 | Panel-Mounted Navigator | +1.2 Kilograms | Weight Schedule Update |
+| G-DGHI | 9 March 2017 | Issue 9, 9 March 2017 | Left Wingtip Repair, Hangar Damage | 0.0 Kilograms | Current |
+| G-ABCD | 20 May 2022 | Issue 4, 20 May 2022 | None | 0.0 Kilograms | Current |
+| G-CDEF | 3 September 2021 | Issue 3, 3 September 2021 | None | 0.0 Kilograms | Current |
+| G-EJKL | 22 July 2020 | Issue 2, 22 July 2020 | None | 0.0 Kilograms | Current |
+| G-FMNO | 5 April 2018 | Issue 5, 20 April 2026 | Light-Emitting Diode Landing Light | 0.3 Kilograms Lighter | Current |
+
+- Corrected on 27 November 2026. The Weighing board gives G-DGHI 3 Changes, All Scheduled, +4.1 Kilograms and Reweigh, Over [Threshold] Threshold. The Modifications board has one change for G-DGHI, the wingtip repair, with no mass effect. The sample follows the Modifications board: one change, 0.0 Kilograms, Current.
+- No reweigh threshold is set in the sample. It has no source and no default, so the page marks nothing for a reweigh.
+- G-ABCD was weighed after its transponder was fitted, so nothing has changed since, as the board has it. G-CDEF's propeller overhaul is in progress and is not counted; the board lists it with 0 Kilograms.
+- G-FMNO's landing light is in Issue 5 of its schedule, dated after the light was fitted: the board says Landing Light, Scheduled.
+
 ## Management System
 
 - Hazards: 7 open (2026-0001 to 2026-0007); Lucy Grant owns 2026-0004 (from the G-CDEF review on 11 November) and 2026-0005.

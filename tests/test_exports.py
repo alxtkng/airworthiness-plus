@@ -167,6 +167,8 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     phase1.add_releases(sample.ours, sample.planner, fleet)
     # Components and where each has been fitted (REQ-230, REQ-231).
     phase1.add_components(sample.ours, sample.planner, fleet)
+    # Service bulletins, changes, repairs, weighings and weight schedules (REQ-249 to REQ-254).
+    phase1.add_modifications(sample.ours, sample.planner, fleet)
     return fleet
 
 

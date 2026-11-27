@@ -26,6 +26,7 @@ from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.imports import services as import_services
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.maintenance_data import services as data_services
+from airworthiness_plus.modifications import services as modification_services
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme.models import Programme
@@ -428,10 +429,70 @@ def _components(today: date) -> list[Row]:
     return rows
 
 
+def _modifications(organisation: Organisation, today: date) -> list[Row]:
+    """Return what waits in Modifications and Repairs and Weight and Balance (REQ-258).
+
+    A service bulletin awaiting the owner, from its reminder; an aircraft
+    whose weight schedule is to update; and one over the organisation's
+    reweigh threshold.
+    """
+    rows = []
+    page, url = "Aircraft Configuration", reverse("modifications")
+    for bulletin in modification_services.bulletin_lines(organisation, today):
+        one = bulletin.bulletin
+        if not one.awaiting:
+            continue
+        due, remaining, days = NOT_SET, "", NO_DAY
+        if one.reminder_on is not None and bulletin.days is not None:
+            if bulletin.flag is Flag.NONE:
+                continue
+            due = formatting.long_date(one.reminder_on)
+            remaining = _remaining(Unit.CALENDAR, bulletin.days, bulletin.flag)
+            days = bulletin.days
+        rows.append(
+            Row(
+                one.aircraft.registration,
+                f"Service Bulletin Awaiting Owner Decision, {one.title}",
+                f"{one.reference}, {one.classification}, {bulletin.decision_note}",
+                due,
+                remaining,
+                bulletin.status,
+                page,
+                url,
+                days=days,
+            )
+        )
+    weight = reverse("weight_and_balance")
+    for line in modification_services.weight_lines():
+        if not line.status:
+            continue
+        item = (
+            "Reweigh, Net Mass Change Over the Threshold"
+            if line.state == modification_services.REWEIGH
+            else "Weight Schedule to Update"
+        )
+        rows.append(
+            Row(
+                line.aircraft.registration,
+                item,
+                f"{line.changes_text}, {line.net_text}; Threshold {line.threshold_text}",
+                NOT_SET,
+                "",
+                line.status,
+                page,
+                weight,
+            )
+        )
+    return rows
+
+
 def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
     """Return what is due on the aircraft of the organisation (REQ-216, REQ-228, REQ-237)."""
     rows: list[Row] = (
-        _deferred_defects(organisation, today) + _ended_contracts() + _components(today)
+        _deferred_defects(organisation, today)
+        + _ended_contracts()
+        + _components(today)
+        + _modifications(organisation, today)
     )
     for aircraft in Aircraft.objects.all():
         if aircraft.stage == Stage.TRANSFER_IN:

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Weight and Balance{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Weight and Balance</h1>
+{% if may_record %}<p><a href="{% url 'record_weighing' %}">Record a Weighing</a> <a href="{% url 'record_weight_schedule' %}">Record a Weight Schedule Issue</a></p>{% endif %}
+{% if threshold %}
+<p>Reweigh Threshold {{ threshold }} Kilograms, the Organisation's Own</p>
+{% else %}
+<p>No Reweigh Threshold Set. Nothing Is Marked for a Reweigh Until One Is Set in <a href="{% url 'settings' %}">Settings</a></p>
+{% endif %}
+<h2>Fleet</h2>
+{% if lines %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Last Weighed</th><th>Schedule</th><th>Changes Since Weighing</th><th class="number">Net Change</th><th>Weight and Balance</th><th>Status</th><th data-detail>Weighing Report</th><th data-detail>Schedule Issued</th><th data-detail>Reweigh Threshold</th><th data-detail>How the Net Change Was Calculated</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td><a href="{% url 'aircraft' line.aircraft.id %}">{{ line.aircraft.registration }}</a></td>
+<td>{% if line.weighing %}{{ line.weighing.weighed_on|long_date }}{% else %}Not Recorded{% endif %}</td>
+<td>{% if line.schedule %}Issue {{ line.schedule.issue }}{% else %}Not Recorded{% endif %}</td>
+<td>{{ line.changes_text }}</td>
+<td class="number">{{ line.net_text }}</td>
+<td>{{ line.state }}</td>
+<td>{{ line.status|status }}</td>
+<td>{% if line.weighing %}{{ line.weighing.reference }}{% endif %}</td>
+<td>{% if line.schedule %}{{ line.schedule.issued_on|long_date }}{% endif %}</td>
+<td>{{ line.threshold_text }}</td>
+<td>{% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Aircraft in the Fleet</p>
+{% endif %}
+<p>The Records Contain the Current Mass and Balance Report, ML.A.305(d)</p>
+{% endblock %}
