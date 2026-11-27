@@ -101,7 +101,7 @@ About 15 minutes. Sign in as Lucy Grant.
 
 ## Part 3. Continuing Airworthiness, the Rest (Phase 1)
 
-Sign in as Lucy Grant. The sample of this part is on the test site once its database has been remade from the sample (Issue 100).
+Sign in as Lucy Grant. The sample of this part is added to the test site at its next start (REQ-294), but for the two defects and the two certificates that name certifying staff, which arrive once its database has been remade from the sample (Issue 100).
 
 ### The Fleet
 
