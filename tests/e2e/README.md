@@ -34,7 +34,7 @@ and sessions use the current time. Credentials are generated for the run.
 Playwright tracing and recording are off. The loopback server uses HTTP with
 local cookie settings. The existing application tests cover production HTTPS.
 
-## Coverage and known failures
+## Coverage and regressions
 
 The full walk follows the pages available to the five separate sign-in roles
 in both organisations. This includes the sample aircraft and their tabs,

@@ -21,13 +21,22 @@ def test_aircraft_owner_counter_and_serviceability(
 ) -> None:
     with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
         choose_aircraft(page, "G-ABCD")
+        owner = page.get_by_role("button", name="Save the Owner of G-ABCD", exact=True)
+        fill(owner.locator("xpath=ancestor::form[1]"), {"customer": "[Owner Name G-EJKL]"})
+        submit(page, owner)
+        expect(page.get_by_role("alert")).to_contain_text(
+            "End the Current Management Contract Before Changing the Owner"
+        )
+        assert definition(page, "Customer") == "[Owner Name G-ABCD]"
+
+        choose_aircraft(page, "G-EJKL")
         save(
             page,
-            "Save the Owner of G-ABCD",
-            {"customer": "[Owner Name G-EJKL]"},
-            "[Owner Name G-EJKL]",
+            "Save the Owner of G-EJKL",
+            {"customer": "[Owner Name G-ABCD]"},
+            "[Owner Name G-ABCD]",
         )
-        assert definition(page, "Customer") == "[Owner Name G-EJKL]"
+        assert definition(page, "Customer") == "[Owner Name G-ABCD]"
         page.get_by_role("link", name="Add an Engine or Propeller", exact=True).click()
         save(
             page,

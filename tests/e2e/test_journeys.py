@@ -20,7 +20,7 @@ from tests.e2e.conftest import Account
 PRIMARY = "your-organisation"
 SECONDARY = "second-organisation"
 FLEETS = {
-    PRIMARY: ("G-DGHI", "G-EJKL", "G-ABCD", "G-FMNO", "G-BXYZ", "G-CDEF"),
+    PRIMARY: ("G-DGHI", "G-BXYZ", "G-ABCD", "G-EJKL", "G-FMNO", "G-CDEF"),
     SECONDARY: ("G-JNOP", "G-KQRS"),
 }
 
@@ -55,6 +55,8 @@ def fleet(page: Page, organisation: str) -> None:
         for registration, remaining in (
             ("G-EJKL", "18 Days"),
             ("G-ABCD", "12.4 Hours"),
+            ("G-ABCD", "15 Days"),
+            ("G-BXYZ", "9 Days"),
             ("G-FMNO", "78 Days"),
             ("G-CDEF", "220.0 Hours"),
         ):
