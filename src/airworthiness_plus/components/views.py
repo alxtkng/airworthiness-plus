@@ -86,7 +86,7 @@ def _page(request: HttpRequest, component: Component, **forms: Form) -> HttpResp
         "needs_life_from": line.fitted and fitting is not None and fitting.life_from is None,
         "fit_form": FitForm(),
         "remove_form": RemoveForm(),
-        "review_form": ReviewForm(),
+        "review_form": ReviewForm(component=component),
         "life_form": LifeFromForm(),
         "limit_form": LimitForm(initial=initial),
     }
@@ -145,7 +145,7 @@ def remove_component(request: HttpRequest, component_id: uuid.UUID) -> HttpRespo
 def review_component(request: HttpRequest, component_id: uuid.UUID) -> HttpResponse:
     """Record a review of a component kept on condition (REQ-233)."""
     component = get_object_or_404(Component, pk=component_id)
-    form = ReviewForm(request.POST)
+    form = ReviewForm(request.POST, component=component)
     if form.is_valid():
         try:
             services.record_review(component, **form.cleaned_data)

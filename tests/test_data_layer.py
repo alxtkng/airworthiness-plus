@@ -266,7 +266,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         "releases_historicalreleaseevidence": {"historical_release_period"},
         "programme_workdone": {"release_entry_fixed", "work_performer"},
         # A fitting keeps what it said, and its removal is added once (REQ-235).
-        "components_installation": {"installation_rules"},
+        "components_component": {"review_fitting_rules"},
+        "components_installation": {"installation_rules", "fitting_usage_rules"},
         # A decision on a service bulletin, and a change or repair, are fixed (REQ-250, REQ-252).
         "modifications_bulletin": {"bulletin_rules"},
         "modifications_change": {"change_rules"},

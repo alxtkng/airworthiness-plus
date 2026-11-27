@@ -69,6 +69,9 @@ class Component(Record):
         "Airframe Hours at the Last Review", max_digits=8, decimal_places=1, null=True, blank=True
     )
     last_review_on = models.DateField("Last Reviewed", null=True, blank=True)
+    last_review_fitting = models.ForeignKey(
+        "Installation", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         ordering = ["name", "serial_number", "id"]

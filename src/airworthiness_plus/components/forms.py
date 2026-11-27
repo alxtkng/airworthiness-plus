@@ -5,7 +5,7 @@ from typing import Any
 from django import forms
 
 from airworthiness_plus.aircraft.models import Aircraft
-from airworthiness_plus.components.models import Basis
+from airworthiness_plus.components.models import Basis, Component, Installation
 from airworthiness_plus.interface.forms import Form
 from airworthiness_rules.components import (
     MOST_CYCLES,
@@ -96,10 +96,17 @@ class RemoveForm(Form):
 
     removed_on = forms.DateField(label="Removed")
     airframe_hours_removed = _hours("Airframe Hours When Removed")
-    airframe_cycles_removed = _cycles("Airframe Cycles When Removed")
+    airframe_cycles_removed = forms.IntegerField(
+        label="Airframe Cycles When Removed", min_value=0, max_value=MOST_CYCLES
+    )
     removal_reason = forms.CharField(label="Reason for Removal", max_length=200)
     sent_to = forms.CharField(label="Sent To", max_length=200, required=False)
     due_back_on = forms.DateField(label="Due Back", required=False)
+
+
+class FittingChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
+    def label_from_instance(self, obj: Installation) -> str:
+        return f"{obj.aircraft_registration}, {obj.position}, Fitted {obj.fitted_on:%d %B %Y}"
 
 
 class ReviewForm(Form):
@@ -107,6 +114,16 @@ class ReviewForm(Form):
 
     airframe_hours = _hours("Airframe Hours at the Review")
     reviewed_on = forms.DateField(label="Reviewed")
+    installation = FittingChoice(
+        label="Fitting Used for the Airframe Hours",
+        queryset=Installation.objects.none(),
+        required=False,
+        help_text="Choose the fitting if more than one matches the date and hours",
+    )
+
+    def __init__(self, *args: Any, component: Component, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["installation"].queryset = component.installations.all()  # type: ignore[attr-defined]
 
 
 class LifeFromForm(Form):

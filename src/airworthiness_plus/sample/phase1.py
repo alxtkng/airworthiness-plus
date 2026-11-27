@@ -301,6 +301,7 @@ OWN_PROPELLER = "[Serial Number Propeller G-CDEF]"
 OWN_PROPELLER_REMOVAL: dict[str, object] = {
     "removed_on": date(2026, 11, 2),
     "airframe_hours_removed": Decimal("7715.0"),
+    "airframe_cycles_removed": 0,
     "removal_reason": "Removed at 6-Year Limit",
     "sent_to": "[Propeller Organisation]",
     "due_back_on": date(2026, 11, 25),

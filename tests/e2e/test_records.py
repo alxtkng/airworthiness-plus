@@ -91,6 +91,7 @@ def test_component_fit_limit_and_removal(
             {
                 "removed_on": "2026-11-18",
                 "airframe_hours_removed": "6412.6",
+                "airframe_cycles_removed": "0",
                 "removal_reason": "Test inspection",
                 "sent_to": "Test workshop",
                 "due_back_on": "2026-11-28",

@@ -621,6 +621,7 @@ def test_a_removed_propeller_cannot_be_signed_as_fitted(sample: Sample, hklm: Ai
             fitting,
             removed_on=TODAY,
             airframe_hours_removed=D("3410.0"),
+            airframe_cycles_removed=0,
             removal_reason="Removed for Maintenance",
         )
         with pytest.raises(services.RefusedError, match="Component No Longer Fitted"):
