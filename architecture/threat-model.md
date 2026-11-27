@@ -241,6 +241,8 @@ The canvas build, Phase 1 (`prompts/canvas-build.md`): Continuing Airworthiness,
 
 | Work package and card transitions | TH-008, TH-020, TH-021, TH-025 | Role checks and form forgery protection guard each write. Row scope, same-organisation references, aircraft checks, fixed issued evidence and hashed history are enforced in the database. The release uses existing authorisation validation within the same transaction. |
 
+| Staffing plans, reviews, absence and shortfall reports | TH-008, TH-020, TH-021 | Form writes follow the role matrix. PostgreSQL scopes records and related approvals and people. The report and review records are insert-only. Organisation exports retain the underlying hours and reports. |
+
 ## Not Yet Covered
 
 - Email (password reset, notifications): no email flow is designed yet. It is modelled when it is added.

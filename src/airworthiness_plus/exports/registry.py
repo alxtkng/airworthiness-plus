@@ -50,6 +50,8 @@ from airworthiness_plus.reviews.models import (
     ReviewStaff,
 )
 from airworthiness_plus.sample.models import Added
+from airworthiness_plus.staffing.models import Absence, Demand, Report
+from airworthiness_plus.staffing.models import Review as StaffingReview
 
 
 @dataclass(frozen=True)
@@ -154,4 +156,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(ValueCheck, None),
     # That a part of the sample was added. Only a sample organisation has any.
     Exported(Added, None),
+    Exported(Demand, None),
+    Exported(StaffingReview, None),
+    Exported(Report, None),
+    Exported(Absence, None),
 )

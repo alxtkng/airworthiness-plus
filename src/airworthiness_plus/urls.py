@@ -23,9 +23,19 @@ from airworthiness_plus.planning import views as planning
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
+from airworthiness_plus.staffing import views as staffing
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
+    path("staffing/", staffing.staffing_plan, name="staffing_plan"),
+    path("staffing/hours/", staffing.record_staffing_hours, name="record_staffing_hours"),
+    path("staffing/review/", staffing.review_staffing_plan, name="review_staffing_plan"),
+    path("staffing/absence/", staffing.record_staff_absence, name="record_staff_absence"),
+    path(
+        "staffing/<uuid:demand_id>/shortfall/",
+        staffing.record_staffing_shortfall,
+        name="record_staffing_shortfall",
+    ),
     path("work-packages/", planning.work_packages, name="work_packages"),
     path("work-packages/build/", planning.build_work_package, name="build_work_package"),
     path("work-packages/<uuid:package_id>/", planning.work_package, name="work_package"),

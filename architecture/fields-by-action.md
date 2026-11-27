@@ -20,6 +20,10 @@ Each line is an address that changes something: the action it needs, the roles t
 
 | Action | Roles | Address | What It Does | Values It May Set |
 |---|---|---|---|---|
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/hours/` | Set the hours needed and available for a function and month | Approval; Month Beginning; Function; Hours Needed; Employed Hours; Contracted Hours; Work and Availability Basis |
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/review/` | Record a review of the plan under its approval | Approval; Reviewed; Review Outcome |
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/absence/` | Record an absence for a person and a range of days | Person; Absence; From; To |
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/<uuid:demand_id>/shortfall/` | Record a reported Part-145 shortfall and retain its figures | Reported; Reported To; Action Taken |
 | Plan Work Package | Continuing Airworthiness Manager, Planning and Records | `/work-packages/build/` | Build a draft work package | Aircraft Registration; Reference; Work; Location; Planned Start; Planned End; Defect |
 | Plan Work Package | Continuing Airworthiness Manager, Planning and Records | `/work-packages/<uuid:package_id>/order/` | Link an open work order to the draft package | Work Order |
 | Plan Work Package | Continuing Airworthiness Manager, Planning and Records | `/work-packages/<uuid:package_id>/cards/` | Plan a task and identify its maintenance data | Task; Maintenance Data; Instruction Reference; Planned Hours; Critical Task; Planned Inspection Hours; Programme Task; Airworthiness Directive |

@@ -48,6 +48,7 @@ from airworthiness_plus.imports.layouts import CERTIFICATES
 from airworthiness_plus.imports.models import LoadKind
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
+from airworthiness_plus.organisations.models import Approval, ApprovalType
 from airworthiness_plus.people.models import Person
 from airworthiness_plus.planning import services as planning_services
 from airworthiness_plus.programme import services as programme_services
@@ -55,6 +56,8 @@ from airworthiness_plus.programme.models import Basis
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.sample import phase1
+from airworthiness_plus.staffing import services as staffing_services
+from airworthiness_plus.staffing.models import AbsenceType, Function
 from airworthiness_rules.intervals import Interval, Reading
 from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import (
@@ -252,6 +255,42 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             instruction="Maintenance Manual Chapter 27",
             planned_hours=Decimal("4.0"),
             critical=True,
+        )
+    with working_for(sample.ours.id, sample.administrator.id):
+        from airworthiness_plus.organisations import approvals
+
+        approvals.record(
+            sample.ours,
+            approval=ApprovalType.PART_145,
+            reference="[Part-145 Reference]",
+        )
+        approval = Approval.objects.get(approval=ApprovalType.PART_145)
+        demand = staffing_services.record_demand(
+            actor=sample.planner,
+            approval=approval,
+            month=date(2026, 12, 1),
+            function=Function.CERTIFYING,
+            needed=D("290"),
+            employed=D("192"),
+            contracted=D("0"),
+            basis="Certifying work and holiday cover",
+        )
+        staffing_services.record_report(
+            demand,
+            actor=sample.planner,
+            reported_on=TODAY,
+            reported_to="[Compliance Monitoring Manager] and [Accountable Manager]",
+            action="Contracted cover booked",
+        )
+        staffing_services.review_plan(
+            actor=sample.planner, approval=approval, reviewed_on=TODAY, outcome="Reviewed"
+        )
+        staffing_services.record_absence(
+            actor=sample.planner,
+            person=Person.objects.get(full_name="Sam Patel"),
+            kind=AbsenceType.HOLIDAY,
+            starts_on=date(2026, 12, 7),
+            ends_on=date(2026, 12, 18),
         )
     baseline_for_the_export(sample, fleet)
     return fleet

@@ -350,3 +350,6 @@ Reading the standard led to changes made before this record was written: the Con
 ## Work package routes
 
 The package and card forms use the existing role checks, CSRF controls and the generated fields-by-action inventory (8.1.2). PostgreSQL applies organisation scope and cross-record validation. Work card evidence and issue and release history are retained (16.2.2 and 16.4.2). The browser scenario covers the form sequence. The database suite verifies row scope and reference protection.
+
+
+Staffing Plan routes use the generated action and field inventory (8.1.2). The hourly plan and absence inputs have date and numeric validation. Reviews and reports are insert-only with tenant scoping and hashed history (16.2.2 and 16.4.2).

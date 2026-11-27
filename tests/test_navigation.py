@@ -47,7 +47,7 @@ BOARD: list[tuple[str, list[tuple[str, set[str]]]]] = [
             ("Actions", EVERY),
         ],
     ),
-    ("Planning", [("Work Packages", MAINTAINS), ("Manhours and Capacity", MAINTAINS)]),
+    ("Planning", [("Work Packages", MAINTAINS), ("Staffing and Capacity", EVERY)]),
     (
         "Logistics",
         [
@@ -101,7 +101,7 @@ TABS = {
     ],
     "Goods In": ["Receiving Inspection"],
     "Stores": ["Stock", "Quarantine and Scrap"],
-    "Manhours and Capacity": ["Manhour Plan", "Load and Capacity", "Staff Roster"],
+    "Staffing and Capacity": ["Staffing Plan", "Load and Capacity", "Staff Roster"],
     "Tools and Equipment": [
         "Register",
         "Service Providers",
@@ -165,7 +165,6 @@ def labels(groups: list[tuple[str, list[navigation.Item]]]) -> list[tuple[str, l
             {
                 "Release to Service",
                 "Work Packages",
-                "Manhours and Capacity",
                 "Goods In",
                 "Stores",
                 "Tools and Equipment",
@@ -178,8 +177,8 @@ def labels(groups: list[tuple[str, list[navigation.Item]]]) -> list[tuple[str, l
 def test_an_item_is_shown_for_an_approval_held(held: set[str], hidden: set[str]) -> None:
     """REQ-201. Worked by hand from the board for each set of approvals.
 
-    A Part-CAMO alone has no maintenance: no Release to Service, Planning
-    or Logistics. Every other set of approvals of this build sees the lot.
+    A Part-CAMO alone has staffing planning and no maintenance work packages,
+    Release to Service or Logistics. Every other set of approvals of this build sees the lot.
     """
     shown = navigation.shown(of_the_board(), approvals=held, may=lambda action: True)
     expected = [
@@ -190,7 +189,7 @@ def test_an_item_is_shown_for_an_approval_held(held: set[str], hidden: set[str])
     assert labels(shown) == expected
     if held == {CAMO}:
         # A group with no item left is not shown.
-        assert "Planning" not in dict(expected)
+        assert dict(expected)["Planning"] == ["Staffing and Capacity"]
         assert "Logistics" not in dict(expected)
 
 

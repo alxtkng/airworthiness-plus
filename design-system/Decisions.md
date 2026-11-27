@@ -364,6 +364,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Record Defect | No | Yes | No | Yes | No |
 | Record Repeat Defect Action | No | Yes | No | No | No |
 | Draw Up or End Contract | No | Yes | No | No | No |
+| Record Staffing Plan | No | Yes | No | Yes | No |
 | Plan Work Package | No | Yes | No | Yes | No |
 | Record Work Card Evidence | No | Yes | No | Yes | No |
 | Record Work Order | No | Yes | No | Yes | No |
@@ -444,7 +445,7 @@ Confirmed against the UK text in the Civil Aviation Authority Regulatory Library
 | Basic examinations | Part-147 organisation or the Civil Aviation Authority; pass 75%; valid 10 years; retake after 90 days (30 with retraining); 3 attempts in 12 months | 66.A.25, Appendix II to Part-66 |
 | Type training | Theory and practical completed within 3 years before application; pass 75% | Appendix III to Part-66 |
 | On the job training | First type rating in first category; within 3 years; 50% of tasks after theory; mentor 1 year in category; assessor 3 years and not the mentor | 66.A.45(c), Appendix III Section 6 |
-| Manhour plan | Reviewed at least every 3 months; shortfall over 25% in a month reported; at least half of each shift employed | AMC 145.A.30(d); Part-CAO needs enough staff, CAO.A.035(d) |
+| Staffing Plan | All three approval types require sufficient appropriately qualified staff. For Part-145, the plan is reviewed at least every three months and a shortfall exceeding 25% in a calendar month for a specified function is reported. The employed share is assessed on each maintenance area and shift | [CAO.A.035(d)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/2%20Regs/05740_CAOA035_Personnel_requirements.htm), [CAMO.A.305(d)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05c%20CAMO/2%20Regs/04870_CAMOA305_Personnel_requirements.htm), [AMC1 145.A.30(d)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/3%20AMC/AMC1%20145%20A%2030%20d%20Personnel%20requirements.htm) |
 | Work package issue and data | Agree the written order and use the applicable current instructions. The issued card records the selected revision | [CAO.A.055](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/2%20Regs/05860_CAOA055_Maintenance_data_and_work_orders.htm), [AMC1 CAO.A.055](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/3%20AMC/AMC1%20CAO%20A%20055%20Maintenance.htm), 145.A.45(e) |
 | Work card inspection and verification | Error capture after critical maintenance and general verification after completion. Independent inspection records qualified people and evidence | [CAO.A.060](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/2%20Regs/05890_CAOA060_Maintenance_standards.htm), AMC2 CAO.A.060(h), [AMC4 145.A.48(c)(2)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/3%20AMC/AMC4%20145%20A%2048%20c%202%20Performance.htm) |
 

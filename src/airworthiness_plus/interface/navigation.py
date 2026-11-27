@@ -244,9 +244,20 @@ BOARD: tuple[Group, ...] = (
                 ),
             ),
             Item(
-                "Manhours and Capacity",
-                shown_for=MAINTAINS,
-                tabs=_tabs("Manhour Plan", "Load and Capacity", "Staff Roster"),
+                "Staffing and Capacity",
+                "staffing_plan",
+                tabs=(
+                    Tab("Staffing Plan", "staffing_plan"),
+                    *_tabs("Load and Capacity", "Staff Roster"),
+                ),
+                inside=frozenset(
+                    {
+                        "record_staffing_hours",
+                        "review_staffing_plan",
+                        "record_staffing_shortfall",
+                        "record_staff_absence",
+                    }
+                ),
             ),
         ),
     ),
