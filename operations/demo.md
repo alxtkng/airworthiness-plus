@@ -116,6 +116,13 @@ Sign in as Lucy Grant. The sample of this part is on the test site once its data
 
 Say: the limit is the organisation's own number of days; the regulation gives none. The rule is ML.A.403.
 
+### Contracts
+
+1. Open Contracts. Five contracts: four for every task, and G-ABCD's for the programme review and the airworthiness review. G-HKLM's says Records Transfer.
+2. Open G-DGHI's contract. It shows what Appendix I to Part-ML has a contract contain, as it stood when signed.
+3. Go back. Three work orders. G-FMNO's says No Contract, Work Order Only, in its detail.
+4. Choose Record a Work Order. Choose G-BXYZ, type the work, Owner, a day. It appears under G-BXYZ's contract.
+
 ## What Cannot Be Shown Yet
 
 The rest of Phase 1 and Phases 2 to 9 of `prompts/canvas-build.md`: components, release to service, contracts, work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

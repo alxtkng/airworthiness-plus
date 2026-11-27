@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Contract, {{ contract.registration }}{% endblock %}
+{% block content %}
+<h1>Contract, {{ contract.registration }}</h1>
+<p>Continuing Airworthiness Management Contract, Appendix I to Part-ML</p>
+<dl>
+<dt>Aircraft Registration</dt><dd><a href="{% url 'aircraft' contract.aircraft.id %}">{{ contract.registration }}</a></dd>
+<dt>Type Rating</dt><dd>{{ contract.type_rating }}</dd>
+<dt>Serial Number</dt><dd>{{ contract.serial_number }}</dd>
+<dt>Owner</dt><dd>{{ contract.owner_name }}</dd>
+<dt>Owner&#8217;s Address</dt><dd>{{ contract.owner_address }}</dd>
+<dt>Organisation</dt><dd>{{ contract.organisation_name }}</dd>
+<dt>Organisation&#8217;s Address</dt><dd>{{ contract.organisation_address }}</dd>
+<dt>Approval Reference</dt><dd>{{ contract.organisation_approval_reference }}</dd>
+<dt>Type of Operation</dt><dd>{{ contract.type_of_operation }}</dd>
+<dt>Tasks Contracted</dt><dd>{{ contract.tasks_text }}</dd>
+<dt>Signed</dt><dd>{{ contract.signed_on|long_date }}</dd>
+<dt>Status</dt><dd>{{ line.status }}{% if line.status_note %}, {{ line.status_note }}{% endif %}</dd>
+{% if contract.ended_on %}
+<dt>Civil Aviation Authority Told by the Organisation</dt><dd>{% if line.to_tell %}{{ "To Assess"|status }}{% else %}{{ contract.authority_told_on|long_date }}{% endif %}</dd>
+{% if line.owner_deadline %}<dt>Owner Tells the Civil Aviation Authority By</dt><dd>{{ line.owner_deadline|long_date }}</dd>{% endif %}
+{% endif %}
+</dl>
+{% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}
+{% if refused.non_field_errors %}<p role="alert">{{ refused.non_field_errors|join:", " }}</p>{% endif %}
+{% if refused.errors %}{% for field in refused %}{% if field.errors %}<p role="alert">{{ field.label }}, {{ field.errors|join:", " }}</p>{% endif %}{% endfor %}{% endif %}
+<h2>Work Orders Under the Contract</h2>
+{% if orders %}
+<table>
+<thead><tr><th>Work Ordered</th><th>Ordered By</th><th>Agreed</th><th>Outcome</th></tr></thead>
+<tbody>
+{% for order in orders %}
+<tr><td>{{ order.work }}</td><td>{{ order.ordered_by_text }}</td><td>{{ order.agreed_on|long_date }}</td><td>{% if order.outcome %}{{ order.outcome }}{% else %}Open{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Work Orders Under the Contract</p>
+{% endif %}
+{% if may_change and not contract.ended_on %}
+<h2>End the Contract</h2>
+<form method="post" action="{% url 'end_contract' contract.id %}">
+{% csrf_token %}
+{% for field in end_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}<p><button type="submit">End the Contract</button></p>
+</form>
+{% endif %}
+{% if may_change and line.to_tell %}
+<h2>Civil Aviation Authority Told</h2>
+<form method="post" action="{% url 'contract_authority_told' contract.id %}">
+{% csrf_token %}
+{% for field in told_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}<p><button type="submit">Record the Day</button></p>
+</form>
+{% endif %}
+{% endblock %}

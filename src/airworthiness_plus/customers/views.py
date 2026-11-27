@@ -49,12 +49,16 @@ def _may_change(request: HttpRequest) -> bool:
 
 
 def _customer_page(request: HttpRequest, customer: Customer, form: CustomerForm) -> HttpResponse:
+    # Contracts are built on customers, so they are looked up here and not at the top.
+    from airworthiness_plus.contracts.models import Contract
+
     return render(
         request,
         "customers/customer.html",
         {
             "customer": customer,
             "aircraft": customer.aircraft.all(),
+            "contracts": Contract.objects.filter(customer=customer),
             "form": form,
             "may_change": _may_change(request),
         },

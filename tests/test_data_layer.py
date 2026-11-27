@@ -224,6 +224,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "aircraft_aircraft": {"open_defect_guard"},
         # A defect keeps its decision and who made it (REQ-225).
         "defects_defect": {"defect_rules"},
+        # A contract and a work order keep what they said when recorded (REQ-241).
+        "contracts_contract": {"contract_rules"},
+        "contracts_workorder": {"workorder_rules"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
         "reviews_certificate": {"certificate_serial", "certificate_fixed"},

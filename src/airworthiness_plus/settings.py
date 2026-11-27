@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "airworthiness_plus.exports",
     "airworthiness_plus.acceptance",
     "airworthiness_plus.imports",
+    "airworthiness_plus.contracts",
     "airworthiness_plus.dashboard",
     "airworthiness_plus.sample",
 ]

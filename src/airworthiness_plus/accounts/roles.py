@@ -44,6 +44,8 @@ class Action(Enum):
     RECORD_ACCOMPLISHMENT = "Record Accomplishment"
     RECORD_DEFECT = "Record Defect"
     RECORD_REPEAT_DEFECT_ACTION = "Record Repeat Defect Action"
+    DRAW_UP_OR_END_CONTRACT = "Draw Up or End Contract"
+    RECORD_WORK_ORDER = "Record Work Order"
     RECORD_AIRWORTHINESS_DIRECTIVE = "Record Airworthiness Directive"
     DECIDE_DIRECTIVE_APPLICABILITY = "Decide Directive Applicability"
     RECORD_DIRECTIVE_COMPLIANCE = "Record Directive Compliance"
@@ -78,6 +80,8 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.RECORD_ACCOMPLISHMENT: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_DEFECT: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_REPEAT_DEFECT_ACTION: frozenset({_MANAGER}),
+    Action.DRAW_UP_OR_END_CONTRACT: frozenset({_MANAGER}),
+    Action.RECORD_WORK_ORDER: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_AIRWORTHINESS_DIRECTIVE: frozenset({_MANAGER, _RECORDS}),
     Action.DECIDE_DIRECTIVE_APPLICABILITY: frozenset({_MANAGER}),
     Action.RECORD_DIRECTIVE_COMPLIANCE: frozenset({_MANAGER, _RECORDS}),

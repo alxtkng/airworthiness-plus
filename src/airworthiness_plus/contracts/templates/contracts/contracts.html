@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Contracts{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Contracts</h1>
+{% if may_draw_up or may_order %}<p>{% if may_draw_up %}<a href="{% url 'draw_up_contract' %}">Draw Up a Contract</a> {% endif %}{% if may_order %}<a href="{% url 'add_work_order' %}">Record a Work Order</a>{% endif %}</p>{% endif %}
+<h2>Continuing Airworthiness Management Contracts</h2>
+<p>Appendix I to Part-ML, Owner Tells the Civil Aviation Authority Within 2 Weeks if a Contract Ends Through Non-Conformity</p>
+{% if lines %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Owner</th><th>Tasks Contracted</th><th>Signed</th><th>Status</th><th data-detail>Status Detail</th><th data-detail>Type Rating</th><th data-detail>Type of Operation</th><th data-detail>Civil Aviation Authority Told</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td><a href="{% url 'contract' line.contract.id %}">{{ line.contract.registration }}</a></td>
+<td>{{ line.contract.owner_name }}</td>
+<td>{{ line.contract.tasks_text }}</td>
+<td>{{ line.contract.signed_on|long_date }}</td>
+<td>{{ line.status }}</td>
+<td>{{ line.status_note }}</td>
+<td>{{ line.contract.type_rating }}</td>
+<td>{{ line.contract.type_of_operation }}</td>
+<td>{% if line.to_tell %}{{ "To Assess"|status }}{% else %}{{ line.contract.authority_told_on|long_date }}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Contracts Recorded</p>
+{% endif %}
+<h2>Maintenance Work Orders</h2>
+{% if orders %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Work Ordered</th><th>Ordered By</th><th>Agreed</th><th>Outcome</th><th data-detail>Under Contract</th><th data-detail>Closed</th><th data-detail>Work Done</th>{% if may_order %}<th data-detail>Close</th>{% endif %}</tr>
+</thead>
+<tbody>
+{% for order in orders %}
+<tr>
+<td><a href="{% url 'aircraft' order.aircraft.id %}">{{ order.aircraft.registration }}</a></td>
+<td>{{ order.work }}</td>
+<td>{{ order.ordered_by_text }}</td>
+<td>{{ order.agreed_on|long_date }}</td>
+<td>{% if order.outcome %}{{ order.outcome }}{% else %}Open{% endif %}</td>
+<td>{% if order.contract %}<a href="{% url 'contract' order.contract.id %}">Signed {{ order.contract.signed_on|long_date }}</a>{% else %}No Contract, Work Order Only{% endif %}</td>
+<td>{{ order.closed_on|long_date }}</td>
+<td>{{ order.work_done.description }}</td>
+{% if may_order %}<td>{% if not order.closed_on %}<a href="{% url 'close_work_order' order.id %}">Close the Work Order, {{ order.aircraft.registration }}, {{ order.work }}</a>{% endif %}</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Work Orders Recorded</p>
+{% endif %}
+{% endblock %}

@@ -18,6 +18,7 @@ from airworthiness_plus.acceptance import forms as acceptance
 from airworthiness_plus.accounts import user_forms as accounts
 from airworthiness_plus.accounts.roles import MATRIX, Action, Role
 from airworthiness_plus.aircraft import forms as aircraft
+from airworthiness_plus.contracts import forms as contracts
 from airworthiness_plus.customers import forms as customers
 from airworthiness_plus.defects import forms as defects
 from airworthiness_plus.directives import forms as directives
@@ -38,6 +39,11 @@ WRITES: dict[str, Sets] = {
     "change_owner": (aircraft.OwnerForm,),
     "add_customer": (customers.CustomerForm,),
     "change_customer": (customers.CustomerForm,),
+    "draw_up_contract": (contracts.ContractForm,),
+    "end_contract": (contracts.EndContractForm,),
+    "contract_authority_told": (contracts.AuthorityToldForm,),
+    "add_work_order": (contracts.WorkOrderForm,),
+    "close_work_order": (contracts.CloseWorkOrderForm,),
     "record_defect": (defects.DefectForm,),
     "close_defect": (defects.CloseForm,),
     "record_repeat_action": (defects.RepeatActionForm,),
@@ -118,6 +124,8 @@ READS = frozenset(
         "home",
         "dashboard",
         "transfers",
+        "contracts",
+        "contract",
         "defects",
         "defect",
         "repeat_defects",

@@ -166,6 +166,8 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     # Defects, and what was done about a repeat (REQ-220, REQ-227).
     phase1.add_defects(sample.ours, sample.planner, fleet)
     phase1.add_repeat_actions(sample.ours, sample.lucy)
+    # Contracts and the work orders under them (REQ-240, REQ-244).
+    phase1.add_contracts(sample.ours, sample.lucy, fleet)
     return fleet
 
 

@@ -99,6 +99,28 @@ Added on 27 November 2026 for the Defects and Repeat Defects boards (Phase 1 of 
 - Contradictions between boards, corrected here: the Repeat Defects board leaves out G-BXYZ's step and G-ABCD's tyre, which the Defects board shows; by the rule they are one each (Cessna 172, Chapter 53; Piper PA-28, Chapter 32) and the page shows them. The Defects board gives G-EJKL's socket, at 24 days, no amber dot while the Home board gives it one: with a lead time of 30 days it is Due Soon. The Repeat Defects board dates the spinner crack November; the Components board says 2 November 2026.
 - The work package beside each defect on the board (WP-2026-046, WP-2026-047, Not Planned, With Airworthiness Review) is not recorded until work packages are built (Phase 3).
 
+## Contracts
+
+Added on 27 November 2026 for the Contracts board (Phase 1 of the canvas build).
+
+| Aircraft Registration | Owner | Tasks Contracted | Signed | Status |
+|---|---|---|---|---|
+| G-BXYZ | [Syndicate Name G-BXYZ] | All Continuing Airworthiness Management Tasks | 15 January 2025 | Active |
+| G-CDEF | [Syndicate Name G-CDEF] | All Continuing Airworthiness Management Tasks | 8 April 2024 | Active |
+| G-DGHI | [Flying Club Name] | All Continuing Airworthiness Management Tasks | 4 March 2025 | Active |
+| G-HKLM | [Owner Name G-HKLM] | All Continuing Airworthiness Management Tasks | 9 November 2026 | Records Transfer, 14 of 18 Received |
+| G-ABCD | [Owner Name G-ABCD] | Maintenance Programme Review and Airworthiness Review | 2 March 2026 | Active |
+
+| Aircraft Registration | Work Ordered | Ordered By | Agreed |
+|---|---|---|---|
+| G-ABCD | Landing Light Replacement | [Owner Name G-ABCD] | 12 November 2026 |
+| G-DGHI | Stabilator Trim Cable Rectification | Continuing Airworthiness Manager | 14 November 2026 |
+| G-FMNO | 50-Hour Check | [Owner Name G-FMNO] | 16 November 2026 |
+
+- G-EJKL and G-FMNO have no contract: work orders only. The board writes [Owner Name] and [Syndicate Name] for several owners; the customers are those named apart on 24 November 2026.
+- Appendix I to Part-ML has a contract state the type of operation and the owner's address. The board shows neither: the sample writes [Type of Operation] and [Owner Address G-BXYZ] and so on.
+- The work package beside each work order on the board is not recorded until work packages are built (Phase 3).
+
 ## Management System
 
 - Hazards: 7 open (2026-0001 to 2026-0007); Lucy Grant owns 2026-0004 (from the G-CDEF review on 11 November) and 2026-0005.

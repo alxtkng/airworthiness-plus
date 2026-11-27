@@ -9,6 +9,8 @@ from datetime import date
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.contracts import services as contract_services
+from airworthiness_plus.contracts.models import Contract, OrderedBy, Scope
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.defects.models import Basis, Decision, Defect
 from airworthiness_plus.history.session import working_for
@@ -126,3 +128,49 @@ def add_repeat_actions(ours: Organisation, by: User) -> None:
             defect_services.record_repeat_action(
                 ours, type_rating=type_rating, chapter=chapter, action=action
             )
+
+
+# SampleData.md, Commercial, and the Contracts board: Aircraft Registration,
+# the limited tasks (none for every task) and the day signed.
+CONTRACTS: tuple[tuple[str, str, date], ...] = (
+    ("G-BXYZ", "", date(2025, 1, 15)),
+    ("G-CDEF", "", date(2024, 4, 8)),
+    ("G-DGHI", "", date(2025, 3, 4)),
+    ("G-HKLM", "", date(2026, 11, 9)),
+    ("G-ABCD", "Maintenance Programme Review and Airworthiness Review", date(2026, 3, 2)),
+)
+
+# The Contracts board, Maintenance Work Orders. G-FMNO has no contract: a work order only.
+WORK_ORDERS: tuple[tuple[str, str, OrderedBy, date], ...] = (
+    ("G-ABCD", "Landing Light Replacement", OrderedBy.OWNER, date(2026, 11, 12)),
+    ("G-DGHI", "Stabilator Trim Cable Rectification", OrderedBy.MANAGER, date(2026, 11, 14)),
+    ("G-FMNO", "50-Hour Check", OrderedBy.OWNER, date(2026, 11, 16)),
+)
+
+
+def add_contracts(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> list[Contract]:
+    """Add the contracts and work orders of SampleData.md.
+
+    ``by`` is the Continuing Airworthiness Manager.
+    """
+    added = []
+    with working_for(ours.id, by.id):
+        for registration, tasks, signed_on in CONTRACTS:
+            added.append(
+                contract_services.draw_up_contract(
+                    Aircraft.objects.get(pk=fleet[registration].pk),
+                    scope=Scope.LIMITED if tasks else Scope.ALL,
+                    tasks=tasks,
+                    type_of_operation="[Type of Operation]",
+                    owner_address=f"[Owner Address {registration}]",
+                    signed_on=signed_on,
+                )
+            )
+        for registration, work, ordered_by, agreed_on in WORK_ORDERS:
+            contract_services.add_work_order(
+                Aircraft.objects.get(pk=fleet[registration].pk),
+                work=work,
+                ordered_by=ordered_by,
+                agreed_on=agreed_on,
+            )
+    return added

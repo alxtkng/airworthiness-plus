@@ -6,6 +6,7 @@ from airworthiness_plus.acceptance import views as acceptance
 from airworthiness_plus.accounts import user_views as users
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
+from airworthiness_plus.contracts import views as contracts
 from airworthiness_plus.customers import views as customers
 from airworthiness_plus.dashboard import views as dashboard
 from airworthiness_plus.defects import views as defects
@@ -22,6 +23,21 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
     path("dashboard/", dashboard.dashboard_page, name="dashboard"),
     path("transfers/", aircraft.transfers, name="transfers"),
+    path("contracts/", contracts.contracts_page, name="contracts"),
+    path("contracts/draw-up/", contracts.draw_up_contract, name="draw_up_contract"),
+    path("contracts/work-orders/add/", contracts.add_work_order, name="add_work_order"),
+    path(
+        "contracts/work-orders/<uuid:order_id>/close/",
+        contracts.close_work_order,
+        name="close_work_order",
+    ),
+    path("contracts/<uuid:contract_id>/", contracts.contract_page, name="contract"),
+    path("contracts/<uuid:contract_id>/end/", contracts.end_contract, name="end_contract"),
+    path(
+        "contracts/<uuid:contract_id>/authority-told/",
+        contracts.contract_authority_told,
+        name="contract_authority_told",
+    ),
     path("defects/", defects.defects_page, name="defects"),
     path("defects/record/", defects.record_defect, name="record_defect"),
     path("defects/repeat/", defects.repeat_defects, name="repeat_defects"),
