@@ -22,6 +22,24 @@
 {% endfor %}
 </tbody>
 </table>
+<h2>Contracts with {{ customer.name }}</h2>
+{% if contracts %}
+<table>
+<thead><tr><th>Aircraft Registration</th><th>Tasks Contracted</th><th>Signed</th><th>Ended</th></tr></thead>
+<tbody>
+{% for contract in contracts %}
+<tr>
+<td><a href="{% url 'contract' contract.id %}">{{ contract.registration }}</a></td>
+<td>{{ contract.tasks_text }}</td>
+<td>{{ contract.signed_on|long_date }}</td>
+<td>{{ contract.ended_on|long_date }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Contracts Recorded</p>
+{% endif %}
 {% if may_change %}
 <h2>Change the Record of {{ customer.name }}</h2>
 <form method="post" action="{% url 'change_customer' customer.id %}">

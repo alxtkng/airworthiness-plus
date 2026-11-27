@@ -158,7 +158,20 @@ BOARD: tuple[Group, ...] = (
                 ),
             ),
             Item("Release to Service", shown_for=MAINTAINS),
-            Item("Contracts"),
+            Item(
+                "Contracts",
+                "contracts",
+                inside=frozenset(
+                    {
+                        "draw_up_contract",
+                        "contract",
+                        "end_contract",
+                        "contract_authority_told",
+                        "add_work_order",
+                        "close_work_order",
+                    }
+                ),
+            ),
         ),
     ),
     Group(

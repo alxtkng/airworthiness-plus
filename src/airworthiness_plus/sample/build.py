@@ -618,6 +618,7 @@ def build(ours: Organisation, administrator: User) -> Staff:
     # Continuing Airworthiness, the Rest (Phase 1 of the canvas build).
     phase1.add_defects(ours, people.planner, fleet)
     phase1.add_repeat_actions(ours, people.lucy)
+    phase1.add_contracts(ours, people.lucy, fleet)
     add_reviews(people, fleet)
     add_directives(people, fleet)
     add_maintenance_data(people)

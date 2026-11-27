@@ -19,6 +19,7 @@ from django.urls import reverse
 
 from airworthiness_plus.acceptance import services as acceptance_services
 from airworthiness_plus.aircraft.models import Aircraft, Regime, Stage, Status
+from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.imports import services as import_services
@@ -343,9 +344,31 @@ def _deferred_defects(organisation: Organisation, today: date) -> list[Row]:
     return rows
 
 
+def _ended_contracts() -> list[Row]:
+    """Return each ended contract of which the authority is still to be told (REQ-247).
+
+    Appendix I to Part-ML gives the organisation no period, so there is no
+    day to count to: the row stays until the day is recorded.
+    """
+    return [
+        Row(
+            line.contract.registration,
+            "Contract Ended, Civil Aviation Authority to Be Told",
+            f"{line.status_note}, Appendix I to Part-ML",
+            NOT_SET,
+            "",
+            "To Assess",
+            "Contracts",
+            reverse("contract", args=[line.contract.id]),
+        )
+        for line in contract_services.contract_lines()
+        if line.to_tell
+    ]
+
+
 def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
     """Return what is due on the aircraft of the organisation (REQ-216, REQ-228)."""
-    rows: list[Row] = _deferred_defects(organisation, today)
+    rows: list[Row] = _deferred_defects(organisation, today) + _ended_contracts()
     for aircraft in Aircraft.objects.all():
         if aircraft.stage == Stage.TRANSFER_IN:
             rows.append(

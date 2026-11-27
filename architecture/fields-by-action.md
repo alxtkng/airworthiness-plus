@@ -20,6 +20,11 @@ Each line is an address that changes something: the action it needs, the roles t
 
 | Action | Roles | Address | What It Does | Values It May Set |
 |---|---|---|---|---|
+| Draw Up or End Contract | Continuing Airworthiness Manager | `/contracts/draw-up/` | Record a contract signed with the owner of an aircraft (REQ-240) | Aircraft Registration; Tasks Contracted; Limited Tasks; Type of Operation; Owner’s Address; Signed |
+| Record Work Order | Continuing Airworthiness Manager, Planning and Records | `/contracts/work-orders/add/` | Record a written request for maintenance (REQ-244) | Aircraft Registration; Work Ordered; Ordered By; Agreed |
+| Record Work Order | Continuing Airworthiness Manager, Planning and Records | `/contracts/work-orders/<uuid:order_id>/close/` | Record that a work order is completed or withdrawn (REQ-245) | Closed; Outcome; Work Done |
+| Draw Up or End Contract | Continuing Airworthiness Manager | `/contracts/<uuid:contract_id>/end/` | Record that a contract has ended, and why (REQ-242) | Ended; Reason |
+| Draw Up or End Contract | Continuing Airworthiness Manager | `/contracts/<uuid:contract_id>/authority-told/` | Record the day the Civil Aviation Authority was told a contract ended (REQ-243) | Civil Aviation Authority Told |
 | Record Defect | Continuing Airworthiness Manager, Planning and Records | `/defects/record/` | Record a defect and what was decided of it (REQ-220 to REQ-222) | Aircraft Registration; Defect; Note; Found; Chapter; System; Decision; Deferred By; Decided; Certifying Staff; Limit in the Maintenance Data or the Minimum Equipment List; Rectification, If Already Rectified; Closed, If Already Rectified |
 | Record Repeat Defect Action | Continuing Airworthiness Manager | `/defects/repeat/action/` | Record what was done about a repeat defect (REQ-227) | Type Rating; Chapter; Action |
 | Record Defect | Continuing Airworthiness Manager, Planning and Records | `/defects/<uuid:defect_id>/close/` | Record that a defect is rectified (REQ-224) | Rectification; Closed; Work Done |
