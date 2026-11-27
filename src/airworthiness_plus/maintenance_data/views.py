@@ -6,6 +6,8 @@ found (REQ-003).
 """
 
 import uuid
+from collections.abc import Callable
+from typing import Any
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -17,6 +19,7 @@ from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.maintenance_data import services
 from airworthiness_plus.maintenance_data.forms import (
     CheckForm,
@@ -46,7 +49,12 @@ def data_page(request: HttpRequest) -> HttpResponse:
 @requires(Action.VIEW_RECORDS)
 def data_set_page(request: HttpRequest, data_set_id: uuid.UUID) -> HttpResponse:
     """One set of data: every revision and every amendment check."""
-    data_set = get_object_or_404(DataSet, pk=data_set_id)
+    return _data_set_page(request, get_object_or_404(DataSet, pk=data_set_id))
+
+
+def _data_set_page(
+    request: HttpRequest, data_set: DataSet, submitted: Form | None = None
+) -> HttpResponse:
     return render(
         request,
         "maintenance_data/data_set.html",
@@ -54,10 +62,12 @@ def data_set_page(request: HttpRequest, data_set_id: uuid.UUID) -> HttpResponse:
             "data_set": data_set,
             "revisions": data_set.revisions.all(),
             "checks": data_set.checks.select_related("checked_by"),
-            "revision_form": RevisionForm(),
-            "check_form": CheckForm(),
-            "customer_form": CustomerStatusForm(),
-            "end_form": EndHoldingForm(),
+            "revision_form": submitted if isinstance(submitted, RevisionForm) else RevisionForm(),
+            "check_form": submitted if isinstance(submitted, CheckForm) else CheckForm(),
+            "customer_form": submitted
+            if isinstance(submitted, CustomerStatusForm)
+            else CustomerStatusForm(),
+            "end_form": submitted if isinstance(submitted, EndHoldingForm) else EndHoldingForm(),
         },
     )
 
@@ -91,17 +101,22 @@ def add_data(request: HttpRequest) -> HttpResponse:
 
 
 def _act(
-    request: HttpRequest, data_set_id: uuid.UUID, form_class: type, act: object
+    request: HttpRequest,
+    data_set_id: uuid.UUID,
+    form_class: type[Form],
+    act: Callable[[DataSet, dict[str, Any]], object],
 ) -> HttpResponse:
     """Run one change to a set of data from a small form on its page."""
     data_set = get_object_or_404(DataSet, pk=data_set_id)
     form = form_class(request.POST)
     if form.is_valid():
         try:
-            act(data_set, form.cleaned_data)  # type: ignore[operator]
-        except services.RefusedError:
-            pass
-    return redirect("data_set", data_set_id=data_set.id)
+            act(data_set, form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("data_set", data_set_id=data_set.id)
+    return _data_set_page(request, data_set, form)
 
 
 @requires(Action.RECORD_MAINTENANCE_DATA)

@@ -24,8 +24,8 @@
 </table>
 <form method="post" action="{% url 'add_revision' data_set.id %}">
 {% csrf_token %}
-{% for field in revision_form %}<p>{{ field.label_tag }} {{ field }}</p>
-{% endfor %}<p><button type="submit">Record New Revision</button></p>
+{% include "maintenance_data/form_fields.html" with form=revision_form only %}
+<p><button type="submit">Record New Revision</button></p>
 </form>
 <h2>Amendment Checks</h2>
 <table>
@@ -38,23 +38,23 @@
 </table>
 <form method="post" action="{% url 'record_check' data_set.id %}">
 {% csrf_token %}
-{% for field in check_form %}<p>{{ field.label_tag }} {{ field }}</p>
-{% endfor %}<p><button type="submit">Record Amendment Check</button></p>
+{% include "maintenance_data/form_fields.html" with form=check_form only %}
+<p><button type="submit">Record Amendment Check</button></p>
 </form>
-{% if data_set.customer_provided %}
+{% if data_set.customer_provided or customer_form.is_bound %}
 <h2>Customer Amendment Status</h2>
 <form method="post" action="{% url 'customer_status' data_set.id %}">
 {% csrf_token %}
-{% for field in customer_form %}<p>{{ field.label_tag }} {{ field }}</p>
-{% endfor %}<p><button type="submit">Record Amendment Status</button></p>
+{% include "maintenance_data/form_fields.html" with form=customer_form only %}
+<p><button type="submit">Record Amendment Status</button></p>
 </form>
 {% endif %}
-{% if data_set.holding == "Held" %}
+{% if data_set.holding == "Held" or end_form.is_bound %}
 <h2>No Longer Held</h2>
 <form method="post" action="{% url 'end_holding' data_set.id %}">
 {% csrf_token %}
-{% for field in end_form %}<p>{{ field.label_tag }} {{ field }}</p>
-{% endfor %}<p><button type="submit">Record as No Longer Held</button></p>
+{% include "maintenance_data/form_fields.html" with form=end_form only %}
+<p><button type="submit">Record as No Longer Held</button></p>
 </form>
 {% endif %}
 {% endblock %}

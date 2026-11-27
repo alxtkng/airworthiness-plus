@@ -77,6 +77,34 @@ def lines(sample: Sample, today: date = TODAY) -> dict[str, services.DataLine]:
 # What is held
 
 
+@pytest.mark.parametrize(
+    ("result", "next_due", "message"),
+    [
+        ("", "2026-12-01", "This field is required"),
+        ("Checked Today", "2026-11-18", "The Next Check Is After This One"),
+    ],
+)
+def test_rejected_check_shows_its_error(
+    sample: Sample, data: dict[str, DataSet], result: str, next_due: str, message: str
+) -> None:
+    manual = data["grob"]
+    response = post(
+        signed_in(sample.planner),
+        f"/maintenance-data/{manual.id}/checks/",
+        checked_on="2026-11-18",
+        result=result,
+        next_due=next_due,
+    )
+    assert response.status_code == 200
+    body = response.content.decode()
+    assert message in body
+    assert f'value="{next_due}"' in body
+    with working_for(sample.ours.id, sample.planner.id):
+        manual.refresh_from_db()
+        assert manual.checks.count() == 1
+        assert manual.check_due == date(2026, 11, 20)
+
+
 def test_each_set_shows_its_author_revision_and_last_check(
     sample: Sample, data: dict[str, DataSet]
 ) -> None:
@@ -180,6 +208,20 @@ def test_a_new_revision_supersedes_the_old_which_stays_marked(
         ):
             with pytest.raises(services.RefusedError, match=message):
                 services.add_revision(grob, revision=revision, revision_date=revision_date)
+
+
+def test_rejected_revision_shows_its_error(sample: Sample, data: dict[str, DataSet]) -> None:
+    manual = data["grob"]
+    response = post(
+        signed_in(sample.planner),
+        f"/maintenance-data/{manual.id}/revisions/",
+        revision="[Revision]",
+        revision_date="2026-11-15",
+    )
+    assert response.status_code == 200
+    assert "This Revision Is Already Recorded" in response.content.decode()
+    with working_for(sample.ours.id, sample.planner.id):
+        assert list(manual.revisions.values_list("revision", "current")) == [("[Revision]", True)]
 
 
 def test_a_superseded_revision_is_never_made_current_again(
