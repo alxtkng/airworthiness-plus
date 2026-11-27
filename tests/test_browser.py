@@ -266,11 +266,17 @@ def test_a_plain_table_and_a_page_without_the_script_show_everything(
 ) -> None:
     """REQ-194. A table marked plain is left alone. With no script, every cell
     of every table is shown: nothing depends on the script to be read."""
+    from airworthiness_plus.imports.models import LoadKind
+    from tests.test_imports import FLEET_FILE, load
+
     lucy = signed_in(sample.lucy)
-    pages = {"/": made(lucy, "/"), "/imports/": made(lucy, "/imports/")}
+    records = FLEET_FILE.replace(b"G-ABCD", b"G-ZABC").replace(b"G-EJKL", b"G-ZEJK")
+    loaded = load(sample, LoadKind.AIRCRAFT, records)
+    report = f"/imports/{loaded.id}/"
+    pages = {"/": made(lucy, "/"), report: made(lucy, report)}
 
     def plain(page: Page) -> None:
-        page.goto(f"{ORIGIN}/imports/")
+        page.goto(ORIGIN + report)
         assert page.locator("main table[data-plain]").count() == 1
         assert page.locator("main table[data-plain].compact").count() == 0
         assert page.locator("main table[data-plain] .disclosure").count() == 0
@@ -624,3 +630,30 @@ def test_the_search_works_on_a_real_page_under_its_content_security_policy(
         assert count.text_content() == "5 of 16 Shown"  # the survey, points (c)(1) to (5)
 
     in_browser(pages, check)
+
+
+def test_aircraft_tabs_and_import_guidance_fit_a_phone(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    manager = signed_in(sample.lucy)
+    aircraft = f"/aircraft/{fleet['G-CDEF'].id}/"
+    imports = "/imports/"
+
+    def check(page: Page) -> None:
+        page.goto(ORIGIN + aircraft)
+        assert page.locator(".tabs a").last.bounding_box() is not None
+        assert (
+            page.locator(".tabs a").last.evaluate("(link) => link.getBoundingClientRect().right")
+            <= 390
+        )
+        assert page.evaluate("document.documentElement.scrollWidth") == 390
+
+        page.goto(ORIGIN + imports)
+        guidance = page.locator("main table").last
+        assert guidance.get_by_role("button", name="Show Details").count() == 3
+        guidance.get_by_role("button", name="Show Details").first.press("Enter")
+        assert guidance.get_by_role("row").filter(has_text="Column Headings").count() >= 1
+
+    in_browser(
+        {aircraft: made(manager, aircraft), imports: made(manager, imports)}, check, width=390
+    )

@@ -49,15 +49,16 @@ INSTRUCTIONS = "Design Approval Holder\N{RIGHT SINGLE QUOTATION MARK}s Instructi
 LISTED = [
     # From 27 November 2026 the list also has how many departures are in force, after
     # the tasks, and a review in progress, last (REQ-284, REQ-286): none of either here.
-    ["G-ABCD", INSTRUCTIONS, "[Programme Reference]", "1", "0", "Not Recorded", "", "", "", ""],
+    ["G-ABCD", INSTRUCTIONS, "[Programme Reference]", "1", "0",
+     "Not Recorded", "", "", "To Assess", ""],
     ["G-BXYZ", "Minimum Inspection Programme", "[Programme Reference]", "1", "0",
-     "Not Recorded", "", "", "", ""],
+     "Not Recorded", "", "", "To Assess", ""],
     ["G-CDEF", INSTRUCTIONS, "[Programme Reference]", "1", "0", "11 November 2026",
      "11 November 2027", "358 Days", "", ""],
     ["G-DGHI", "No Maintenance Programme Set Up", "", "", "", "", "", "", "", ""],
     ["G-EJKL", "No Maintenance Programme Set Up", "", "", "", "", "", "", "", ""],
     ["G-FMNO", "Minimum Inspection Programme", "[Programme Reference]", "1", "0",
-     "Not Recorded", "", "", "", ""],
+     "Not Recorded", "", "", "To Assess", ""],
 ]  # fmt: skip
 
 

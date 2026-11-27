@@ -139,7 +139,7 @@ def test_the_release_to_service_page_of_the_sample_on_18_november_2026(
     listed, who = tables(body)
     assert [row[:11] for row in listed] == LISTED
     assert (
-        "<p>3 Issued, Last 30 Days, 1 Not Yet in Records, 0 Incomplete Maintenance, "
+        "<p>2 Issued, Last 30 Days, 1 Not Yet in Records, 0 Incomplete Maintenance, "
         "0 Pilot-Owner Notice Overdue</p>" in body
     )
     assert "<p>In Records Within 30 Days of Completion, ML.A.305(a)</p>" in body

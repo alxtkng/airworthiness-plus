@@ -32,6 +32,10 @@ class NotServiceableError(ValueError):
     """Something recorded stops the aircraft being made Serviceable (REQ-221)."""
 
 
+class OwnerChangeRefusedError(ValueError):
+    """An active contract still names the current owner."""
+
+
 class TransferNotCompleteError(Exception):
     """Records are still outstanding, so the aircraft stays out of the Fleet (REQ-027)."""
 
@@ -154,8 +158,18 @@ def record_details(
     aircraft.save(update_fields=["serial_number", "manufacturer", "designation"])
 
 
+@transaction.atomic
 def change_owner(aircraft: Aircraft, customer: Customer) -> None:
     """Record another customer as the owner. The history keeps who it was (REQ-208)."""
+    from airworthiness_plus.contracts.models import Contract
+
+    saved = Aircraft.objects.select_for_update().get(pk=aircraft.pk)
+    if saved.customer_id == customer.pk:
+        return
+    if Contract.objects.filter(aircraft=saved, ended_on__isnull=True).exists():
+        raise OwnerChangeRefusedError(
+            "End the Current Management Contract Before Changing the Owner"
+        )
     aircraft.customer = customer
     aircraft.save(update_fields=["customer"])
 
@@ -182,6 +196,7 @@ def make_unserviceable(aircraft: Aircraft, reason: str, since: date) -> None:
     aircraft.save(update_fields=["status", "unserviceable_reason", "unserviceable_since"])
 
 
+@transaction.atomic
 def make_serviceable(aircraft: Aircraft) -> None:
     """Record the aircraft as Serviceable (REQ-023). The history keeps the earlier status.
 
@@ -192,6 +207,7 @@ def make_serviceable(aircraft: Aircraft) -> None:
     # Defects are built on aircraft, so they are looked up here and not at the top.
     from airworthiness_plus.defects.models import Decision, Defect
 
+    Aircraft.objects.select_for_update().get(pk=aircraft.pk)
     stops = Defect.objects.filter(
         aircraft=aircraft, decision=Decision.NOT_DEFERRABLE, closed_on__isnull=True
     ).first()

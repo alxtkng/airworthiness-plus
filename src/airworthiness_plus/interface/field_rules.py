@@ -85,7 +85,7 @@ WRITES: dict[str, Sets] = {
     "complete_annual_review": (programme.CompleteReviewForm,),
     "record_work": (programme.WorkForm,),
     "retire_task": (),
-    "record_release": (programme.ReleaseForm,),
+    "record_release": (),
     "add_directive": (directives.DirectiveForm,),
     "add_directive_source": (directives.SourceForm,),
     "check_directive_source": (directives.SourceCheckForm,),

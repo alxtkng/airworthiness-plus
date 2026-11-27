@@ -287,7 +287,13 @@ def test_a_contract_keeps_what_it_said_when_it_was_recorded(
             club, name="[Renamed Club]", kind=club.kind, members=None, customer_since=None
         )
         other = Customer.objects.get(name="[Owner Name G-EJKL]")
-        aircraft_services.change_owner(Aircraft.objects.get(pk=fleet["G-DGHI"].pk), other)
+        aircraft = Aircraft.objects.get(pk=fleet["G-DGHI"].pk)
+        with pytest.raises(
+            aircraft_services.OwnerChangeRefusedError, match="Current Management Contract"
+        ):
+            aircraft_services.change_owner(aircraft, other)
+        services.end_contract(contract, ended_on=TODAY, end_reason=EndReason.OTHER)
+        aircraft_services.change_owner(aircraft, other)
         aircraft_services.record_details(
             Aircraft.objects.get(pk=fleet["G-DGHI"].pk),
             serial_number="[New Serial]",

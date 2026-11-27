@@ -129,6 +129,20 @@ class ItemForm(Form):
     evidence = forms.CharField(label="Evidence Sampled", max_length=300)
     finding = forms.CharField(label="Finding", max_length=300, required=False)
 
+    def __init__(self, *args: object, may_not_apply: bool = True, **kwargs: object) -> None:
+        super().__init__(*args, **kwargs)
+        if not may_not_apply:
+            result = self.fields["result"]
+            assert isinstance(result, forms.ChoiceField)  # noqa: S101  declared above
+            result.choices = [
+                ("", "Choose"),
+                *(
+                    (value, label)
+                    for value, label in Result.choices
+                    if value != Result.NOT_APPLICABLE
+                ),
+            ]
+
 
 class ClosureForm(Form):
     """Record how a finding was closed."""

@@ -102,6 +102,16 @@ class Certificate(Record):
         "Approval Reference", max_length=40, blank=True
     )
     review_staff_name = models.CharField("Airworthiness Review Staff", max_length=200, blank=True)
+    review_staff_authorisation = models.CharField(
+        "Authorisation Reference", max_length=60, blank=True
+    )
+    aircraft_registration = models.CharField("Aircraft Registration", max_length=10, blank=True)
+    aircraft_type_rating = models.CharField("Aircraft Type Rating", max_length=200, blank=True)
+    aircraft_manufacturer = models.CharField("Aircraft Manufacturer", max_length=100, blank=True)
+    aircraft_designation = models.CharField(
+        "Manufacturer's Designation", max_length=100, blank=True
+    )
+    aircraft_serial_number = models.CharField("Aircraft Serial Number", max_length=60, blank=True)
     # Issued by the organisation's own review staff before these records.
     from_before_records = models.BooleanField("Recorded From Before These Records", default=False)
     airframe_hours = models.DecimalField(

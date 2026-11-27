@@ -328,6 +328,18 @@ def test_an_action_done_once_is_finished_when_complied_with(
         release_reference="[Release Reference 5]",
     )
     assert done.status_code == 302
+    with working_for(sample.ours.id, sample.planner.id):
+        work = made.compliance.get().work
+        assert not work.release_reference
+    release = post(
+        client,
+        f"/release-to-service/{work.id}/record/",
+        reference="[Release Reference 5]",
+        kind="Independent Certifying Staff",
+        issuer_name="[Certifying Staff]",
+        issued_on="2026-11-18",
+    )
+    assert release.status_code == 302
     body = page(client, f"/aircraft/{abcd.id}/directives/")
     assert "<td>Complied With</td>" in body
     assert "Placard Installed, 18 November 2026 at 6,412.6 Hours, [Release Reference 5]" in body

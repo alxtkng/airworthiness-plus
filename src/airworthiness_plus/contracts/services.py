@@ -22,6 +22,8 @@ from airworthiness_plus.contracts.models import (
 )
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.working import Working
+from airworthiness_plus.organisations import approvals
+from airworthiness_plus.organisations.models import ApprovalType, Privilege
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_rules import contracts as rules
 
@@ -63,6 +65,13 @@ def draw_up_contract(
     if signed_on > aircraft_services.today():
         raise RefusedError("A Contract Is Not Signed After Today")
     aircraft = Aircraft.objects.select_for_update().get(pk=aircraft.pk)
+    if not approvals.may_act_on(
+        aircraft.organisation,
+        signed_on,
+        ApprovalType.PART_CAMO,
+        Privilege.CONTINUING_AIRWORTHINESS_MANAGEMENT,
+    ):
+        raise RefusedError("A Contract Requires Part-CAMO or Part-CAO with Management Privileges")
     if Contract.objects.filter(aircraft=aircraft, ended_on__isnull=True).exists():
         raise RefusedError("This Aircraft Already Has a Contract in Force")
     latest = Contract.objects.filter(aircraft=aircraft).order_by("ended_on").last()
@@ -109,6 +118,8 @@ def record_authority_told(contract: Contract, told_on: date) -> Contract:
     contract = Contract.objects.select_for_update().get(pk=contract.pk)
     if contract.ended_on is None:
         raise RefusedError("This Contract Has Not Ended")
+    if contract.end_reason == EndReason.OTHER:
+        raise RefusedError("Record the Notice for Non-Conformity or Denunciation")
     if contract.authority_told_on is not None:
         raise RefusedError("The Day the Civil Aviation Authority Was Told Is Already Recorded")
     if told_on > aircraft_services.today():
@@ -122,7 +133,9 @@ def record_authority_told(contract: Contract, told_on: date) -> Contract:
 
 def in_force_on(aircraft: Aircraft, day: date) -> Contract | None:
     """Return the contract in force for the aircraft on ``day``, if there was one."""
-    for contract in Contract.objects.filter(aircraft=aircraft).order_by("-signed_on"):
+    for contract in Contract.objects.filter(aircraft=aircraft).order_by(
+        "-signed_on", "-ended_on", "-id"
+    ):
         if rules.in_force(contract.signed_on, contract.ended_on, day):
             return contract
     return None
@@ -231,10 +244,14 @@ def add_work_order(
         aircraft=aircraft, work=work, agreed_on=agreed_on, closed_on__isnull=True
     ).exists():
         raise RefusedError("This Work Order Is Already Recorded and Open")
+    contract = in_force_on(aircraft, agreed_on)
+    if contract is not None and contract.ended_on == agreed_on:
+        if contract.customer_id != aircraft.customer_id:
+            contract = None
     order = WorkOrder.objects.create(
         organisation_id=aircraft.organisation_id,
         aircraft=aircraft,
-        contract=in_force_on(aircraft, agreed_on),
+        contract=contract,
         work=work,
         ordered_by=ordered_by,
         agreed_on=agreed_on,

@@ -7,21 +7,21 @@
 <table>
 <thead><tr><th>Raised</th><th>Problem</th><th>Status</th><th>Action, Solution and Notes</th><th>Add</th></tr></thead>
 <tbody>
-{% for line in lines %}
+{% for line, note_form in lines %}
 <tr>
 <td>{{ line.problem.raised_on|long_date }}, {{ line.problem.raised_by.full_name }}</td>
 <td>{{ line.problem.problem }}</td>
 <td>{{ line.status }}</td>
 <td>{% for note in line.notes %}<p>{{ note.kind }}, {{ note.noted_on|long_date }}, {{ note.noted_by.full_name }}: {{ note.text }}</p>{% endfor %}</td>
-<td><form method="post" action="{% url 'add_problem_note' line.problem.id %}">{% csrf_token %}{% for field in note_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Add to This Entry</button></form></td>
+<td>{% if may_add %}<form method="post" action="{% url 'add_problem_note' line.problem.id %}">{% csrf_token %}{% for field in note_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Add to This Entry</button></form>{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
-<h2>Add an Entry</h2>
+{% if may_add %}<h2>Add an Entry</h2>
 <form method="post" action="{% url 'add_problem' %}">
 {% csrf_token %}
 {% for field in problem_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
 {% endfor %}<p><button type="submit">Add Entry</button></p>
-</form>
+</form>{% endif %}
 {% endblock %}

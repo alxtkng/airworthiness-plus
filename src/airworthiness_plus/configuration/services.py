@@ -369,7 +369,7 @@ def set_up(aircraft: Aircraft, today: date) -> SetUp:
     for position in positions:
         if position.tracked and not position.recorded:
             open_items.append(f"{position.name}, Not Recorded")
-        elif position.needs_change and position.change_id is None:
+        elif position.status == "Needs a Recorded Change":
             open_items.append(f"{position.name}, Needs a Recorded Change")
         if position.major:
             problem = _major_problem(position, today)

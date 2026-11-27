@@ -156,6 +156,15 @@ Phase 1, Continuing Airworthiness, the Rest, decided as ours while building from
 
 Not decided here, and so not built until Alex King says: the per-flight technical log (Issue 7), and choosing the type from the SRG1782 list, which needs the Civil Aviation Authority's list as data (REQ-021).
 
+### Phase 1 review corrections
+
+- **Issued certificates and completed airworthiness reviews** show the aircraft identity and authorisation saved with the certificate. The upgrade gives existing certificates the values available on the day it runs. The backfill is in their history.
+- **Recording a release** uses the Release to Service form. Recording work or directive compliance creates the work entry. Its release reference and entry date are recorded together and retained. The release board counts certificates by their issue date.
+- **Management contracts and releases** keep the approval that covers the activity. Where two held approvals qualify, the organisation's original approval takes precedence if it qualifies. Approval records have an end date. An approval whose start is unknown is treated as held up to that end date, as for record retention.
+- **An aircraft owner changes after its current management contract is ended.** Ending the contract preserves the signed record and lets the organisation record the change of owner separately. The recorded end day remains inclusive for historical lookup. A replacement signed on that day takes precedence when work is linked.
+- **Programme reviews** keep the latest review date. A future date or an older submitted date is refused with the reason. A completed annual review retains its point-by-point evidence on the programme page.
+- **Configuration baselines** keep a dependency open while its linked modification or repair is in progress. A transfer checklist's tick is checked against the live evidence when the aircraft moves to the Fleet.
+
 ## Navigation
 
 - The sidebar follows 1321/2014. See Sections in the README.
