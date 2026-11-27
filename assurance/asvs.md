@@ -81,7 +81,7 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 | 2.1.3 | 2 | Met | Decisions.md: sign-in lock, import of 1 megabyte and 2,000 rows, forms of 1 megabyte |
 | 2.2.1 | 1 | Met | Forms, then the services, then database constraints |
 | 2.2.2 | 1 | Met | All validation is on the server, in the services and the database. None is in the browser |
-| 2.2.3 | 2 | Met | `airworthiness_rules.utilisation`; database constraints on records that go together |
+| 2.2.3 | 2 | Met | `airworthiness_rules.utilisation`; database constraints on records that go together. For REQ-301, access is checked on each evidence entry and withdrawal, with organisation scope at both parent links |
 | 2.3.1 | 1 | Met | Password before code (`test_sign_in: the_code_pages_need_an_accepted_password`); first password changed before any page; certificate only from a completed review |
 | 2.3.2 | 2 | Met | As documented: lock after 5 failures; size limits |
 | 2.3.3 | 2 | Met | Each request is one transaction (REQ-138); an import loads whole or not at all |

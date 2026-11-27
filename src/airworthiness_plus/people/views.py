@@ -10,19 +10,28 @@ import uuid
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.accounts.user_views import code_page
+from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.people import services
 from airworthiness_plus.people.forms import (
+    ExperienceEvidenceForm,
+    ExperienceWithdrawalForm,
     MaintenanceAuthorisationForm,
     PersonForm,
     RecurrentTrainingForm,
 )
-from airworthiness_plus.people.models import Person, StaffGroup
+from airworthiness_plus.people.models import (
+    ExperienceEvidence,
+    MaintenanceAuthorisation,
+    Person,
+    StaffGroup,
+)
+from airworthiness_rules.maintenance_experience import window_start
 
 
 def _user(request: HttpRequest) -> User:
@@ -195,3 +204,85 @@ def add_recurrent_training(request: HttpRequest, person_id: uuid.UUID) -> HttpRe
         else:
             return redirect("person", person_id=person.id)
     return render(request, "people/recurrent_training.html", {"person": person, "form": form})
+
+
+def _experience_page(
+    request: HttpRequest,
+    authorisation: MaintenanceAuthorisation,
+    form: ExperienceEvidenceForm,
+    *,
+    withdrawal_message: str = "",
+) -> HttpResponse:
+    evidence = list(authorisation.experience_evidence.select_related("withdrawal", "replacement"))
+    today = aircraft_services.today()
+    return render(
+        request,
+        "people/experience_evidence.html",
+        {
+            "authorisation": authorisation,
+            "evidence": evidence,
+            "withdrawal_message": withdrawal_message,
+            "result": services.assessed_experience(evidence, today),
+            "start": window_start(today),
+            "assessment_on": today,
+            "form": form if _user(request).may(Action.ADD_OR_CHANGE_PERSON) else None,
+        },
+    )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+@require_GET
+def experience_evidence(request: HttpRequest, authorisation_id: uuid.UUID) -> HttpResponse:
+    """Read assessed experience for one authorisation (REQ-301)."""
+    authorisation = get_object_or_404(
+        MaintenanceAuthorisation.objects.select_related("person"), pk=authorisation_id
+    )
+    return _experience_page(request, authorisation, ExperienceEvidenceForm())
+
+
+@never_cache
+@requires(Action.ADD_OR_CHANGE_PERSON)
+@require_POST
+def record_experience_evidence(request: HttpRequest, authorisation_id: uuid.UUID) -> HttpResponse:
+    """Record an assessment of maintenance experience evidence (REQ-301)."""
+    authorisation = get_object_or_404(
+        MaintenanceAuthorisation.objects.select_related("person"), pk=authorisation_id
+    )
+    form = ExperienceEvidenceForm(request.POST)
+    if form.is_valid():
+        try:
+            services.record_experience_evidence(authorisation, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("maintenance_experience", authorisation_id=authorisation.id)
+    return _experience_page(request, authorisation, form)
+
+
+@never_cache
+@requires(Action.ADD_OR_CHANGE_PERSON)
+@require_POST
+def withdraw_experience_evidence(
+    request: HttpRequest, authorisation_id: uuid.UUID, evidence_id: uuid.UUID
+) -> HttpResponse:
+    """Withdraw experience evidence with a reason (REQ-301)."""
+    evidence = get_object_or_404(
+        ExperienceEvidence.objects.select_related("authorisation", "authorisation__person"),
+        pk=evidence_id,
+        authorisation_id=authorisation_id,
+    )
+    form = ExperienceWithdrawalForm(request.POST)
+    message = ""
+    if form.is_valid():
+        try:
+            services.withdraw_experience_evidence(evidence, **form.cleaned_data)
+        except services.RefusedError as error:
+            message = str(error)
+        else:
+            return redirect("maintenance_experience", authorisation_id=authorisation_id)
+    else:
+        message = str(form.errors["reason"][0])
+    return _experience_page(
+        request, evidence.authorisation, ExperienceEvidenceForm(), withdrawal_message=message
+    )

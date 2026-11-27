@@ -6,15 +6,35 @@
 <h2>Certifying Staff</h2>
 {% if certifying_staff %}
 <table>
-<thead><tr><th>Name</th><th>Licence</th><th>Maintenance Experience</th></tr></thead>
+<thead><tr><th>Name</th><th>Licence</th><th>Last Attributed Work</th></tr></thead>
 <tbody>
-{% for person, last_work in certifying_staff %}
-<tr><td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td><td>{{ person.licence }}</td><td>{% if last_work %}Last Recorded Work {{ last_work|long_date }}, Qualifying Experience Not Assessed{% else %}Maintenance Experience Not Recorded{% endif %}</td></tr>
+{% for person, last_work, outside_employment in certifying_staff %}
+<tr><td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td><td>{{ person.licence }}</td><td>{% if last_work %}Last Recorded Work {{ last_work|long_date }}{% else %}No Attributed Work Within Recorded Employment{% endif %}{% if outside_employment %}. {{ outside_employment }} Outside Recorded Employment{% endif %}</td></tr>
 {% endfor %}
 </tbody>
 </table>
 {% else %}
 <p>No Current Certifying Staff Recorded</p>
+{% endif %}
+{% if assessments %}
+<h2>Assessed Maintenance Experience</h2>
+<table>
+<thead><tr><th>Name</th><th>Authorisation</th><th>Recorded Term</th><th data-detail>Scope and Limitations</th><th>Days Credited</th><th>Complete Months</th><th>Standard Duration</th></tr></thead>
+<tbody>
+{% for authorisation, term, result in assessments %}
+<tr>
+<td>{{ authorisation.person.full_name }}</td>
+<td><a href="{% url 'maintenance_experience' authorisation.id %}">{{ authorisation.reference }}</a></td>
+<td>{{ term }}, From {{ authorisation.valid_from|long_date }}{% if authorisation.valid_to %} to {{ authorisation.valid_to|long_date }}{% else %}, No End Date Recorded{% endif %}</td>
+<td>{{ authorisation.scope }}</td>
+{% if result %}
+<td>{{ result.days }} Days</td><td>{{ result.full_months }} Complete Months</td>
+<td>{% if result.meets_standard_duration %}Duration Met{% else %}Further Evidence Needed{% endif %}</td>
+{% else %}<td></td><td></td><td>No Assessed Evidence Recorded</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
 {% endif %}
 <h2>Airworthiness Review Staff</h2>
 {% if review_lines %}

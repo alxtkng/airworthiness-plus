@@ -11,7 +11,7 @@
 {% for authorisation in maintenance_authorisations %}
 <tr>
 <td><a href="{% url 'person' authorisation.person_id %}">{{ authorisation.person.full_name }}</a></td>
-<td>{{ authorisation.reference }}</td><td>{{ authorisation.scope }}</td>
+<td><a href="{% url 'maintenance_experience' authorisation.id %}">{{ authorisation.reference }}</a></td><td>{{ authorisation.scope }}</td>
 <td>{{ authorisation.valid_from|long_date }}</td><td>{{ authorisation.valid_to|long_date }}</td>
 </tr>
 {% endfor %}

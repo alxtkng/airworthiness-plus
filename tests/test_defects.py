@@ -1032,3 +1032,19 @@ def test_the_export_of_an_aircraft_holds_its_defects_and_the_actions_for_its_typ
         "Right Headset Socket Crackle"
     ]
     assert read(ejkl, "defects_repeataction") == []
+
+
+def test_certifying_staff_cannot_defer_outside_their_known_authorisation_dates(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    certifier = person(sample, "Sam Patel")
+    with working_for(sample.ours.id, sample.administrator.id):
+        people_services.record_maintenance_authorisation(
+            certifier,
+            reference="TEST-OLD",
+            scope="Part-ML aircraft",
+            valid_from=date(2026, 1, 1),
+            valid_to=date(2026, 11, 17),
+        )
+    with pytest.raises(services.RefusedError, match="No Recorded Maintenance Authorisation Covers"):
+        record(sample, fleet["G-BXYZ"], basis=Basis.CERTIFYING_STAFF, decided_by=certifier)

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Assessed Maintenance Experience{% endblock %}
+{% block content %}
+<p><a href="{% url 'staff_recency' %}">Recency</a></p>
+<h1>Assessed Maintenance Experience</h1>
+<p>{{ authorisation.person.full_name }}, {{ authorisation.reference }}</p>
+<dl>
+<dt>Scope and Limitations</dt><dd>{{ authorisation.scope }}</dd>
+<dt>Assessment Window</dt><dd>{{ start|long_date }} to Before {{ assessment_on|long_date }}</dd>
+<dt>Days Credited</dt><dd>{{ result.days }}, Including {{ result.substitute_days }} Substitute Days</dd>
+<dt>Complete Months</dt><dd>{{ result.full_months }}</dd>
+</dl>
+<p>The standard Part-66 routes are six months or 100 days. Each date counts for at most one day. Up to 20 substitute days count. Split employment blocks contribute their complete months.</p>
+<p>Source. AMC 66.A.20(b)(2). The organisation assesses scope and the evidence for each activity.</p>
+{% if withdrawal_message %}<p role="alert">{{ withdrawal_message }}</p>{% endif %}
+<table>
+<thead><tr><th>Reference</th><th>Date or First Day</th><th>Last Day</th><th>Evidence</th><th>Day Credit</th><th data-detail>Basis for Counting the Experience</th><th data-detail>Aircraft</th><th data-detail>Licence Category</th><th data-detail>Withdrawal</th></tr></thead>
+<tbody>
+{% for item in evidence %}
+<tr><td>{{ item.evidence_reference }}</td><td>{{ item.starts_on|long_date }}</td><td>{{ item.ends_on|long_date }}</td><td>{{ item.get_kind_display }}</td><td>{{ item.days|default_if_none:"" }}</td><td>{{ item.qualification_basis }}</td><td>{{ item.aircraft_type }} {{ item.aircraft_registration }}</td><td>{{ item.licence_subcategory }}</td><td>
+{% if item.withdrawal %}Withdrawn, {{ item.withdrawal.reason }}{% if item.replacement %}. Corrected in a Later Entry{% endif %}
+{% elif form %}<form method="post" action="{% url 'withdraw_maintenance_experience' authorisation.id item.id %}">
+{% csrf_token %}
+<label for="withdraw-{{ item.id }}">Reason</label>
+<input type="text" id="withdraw-{{ item.id }}" name="reason" maxlength="400" required>
+<button type="submit">Withdraw Evidence</button>
+</form>{% endif %}
+</td></tr>
+{% empty %}<tr><td colspan="9">No Assessed Evidence Recorded</td></tr>{% endfor %}
+</tbody>
+</table>
+{% if form %}
+<h2>Record Assessed Evidence</h2>
+<form method="post" action="{% url 'record_maintenance_experience' authorisation.id %}">
+{% csrf_token %}
+{{ form.as_p }}
+<button type="submit">Save Evidence</button>
+</form>
+{% endif %}
+{% endblock %}

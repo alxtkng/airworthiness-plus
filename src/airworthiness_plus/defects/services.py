@@ -18,6 +18,7 @@ from airworthiness_plus.defects.models import Basis, Decision, Defect, RepeatAct
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.people import services as people_services
 from airworthiness_plus.people.models import Person, StaffGroup
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_rules import defects as rules
@@ -104,6 +105,8 @@ def record_defect(
             if decided_by is None:
                 raise RefusedError("Certifying Staff Who Defer a Defect Are Named, ML.A.403(b)(4)")
             _check_certifying(decided_by, decided_on)
+            if people_services.contradicts_known_maintenance_term(decided_by, decided_on):
+                raise RefusedError("No Recorded Maintenance Authorisation Covers the Decision Date")
         elif decided_by is not None:
             raise RefusedError("A Pilot-in-Command Is Not Chosen From the Staff")
         days = default_days(aircraft.organisation, basis)

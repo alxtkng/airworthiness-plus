@@ -107,6 +107,8 @@ def fill(form: Locator, fields: Mapping[str, str]) -> None:
         field = form.locator(f'[name="{name}"]').first
         if field.evaluate("element => element.tagName") == "SELECT":
             field.select_option(label=value)
+        elif field.get_attribute("type") == "checkbox":
+            field.set_checked(value == "on")
         else:
             field.fill(value)
 

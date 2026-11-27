@@ -19,6 +19,7 @@ from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.defects.models import Decision, Defect
 from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import ApprovalType, Organisation, Privilege
+from airworthiness_plus.people import services as people_services
 from airworthiness_plus.people.models import Person, StaffGroup
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
@@ -123,6 +124,8 @@ def record_certificate(
             raise RefusedError("The Person Named Had Left by the Day of Issue")
         if issuer_name or licence:
             raise RefusedError("The Name and Licence of Certifying Staff Come From Their Record")
+        if people_services.contradicts_known_maintenance_term(issued_by, issued_on):
+            raise RefusedError("No Recorded Maintenance Authorisation Covers the Issue Date")
     else:
         if issued_by is not None:
             raise RefusedError(

@@ -28,6 +28,8 @@ def test_review_staff_authorisation_and_restoration(
                 "user": person,
                 "authorisation_reference": "TEST-AR-018",
                 "accepted_on": "2023-04-12",
+                "authorisation_scope": "Part-ML aircraft",
+                "no_stated_end": "on",
                 "months_involved": "2",
                 "last_review_before_records": "2025-08-01",
             },

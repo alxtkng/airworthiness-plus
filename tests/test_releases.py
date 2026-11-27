@@ -618,3 +618,30 @@ def test_the_dashboard_links_a_release_not_yet_in_the_records_to_this_page(
         == 302
     )
     assert row not in page(reader, "/dashboard/")
+
+
+def test_cannot_record_staff_release_outside_their_known_authorisation_dates(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    certifier = person(sample, "Sam Patel")
+    work = work_on(sample, fleet["G-EJKL"])
+    with working_for(sample.ours.id, sample.administrator.id):
+        first = date(2026, 1, 1)
+        people_services.record_maintenance_authorisation(
+            certifier,
+            scope="Part-ML aircraft",
+            valid_from=first,
+            reference="TEST-OLD",
+            valid_to=date(2026, 11, 9),
+        )
+    with pytest.raises(services.RefusedError, match="No Recorded Maintenance Authorisation Covers"):
+        record(sample, work, kind=IssuedBy.ORGANISATION, issuer_name="", issued_by=certifier)
+    with working_for(sample.ours.id, sample.administrator.id):
+        people_services.record_maintenance_authorisation(
+            certifier,
+            scope="Part-ML aircraft",
+            valid_from=first,
+            reference="TEST-NEW",
+            valid_to=work.dated,
+        )
+    assert record(sample, work, kind=IssuedBy.ORGANISATION, issuer_name="", issued_by=certifier)

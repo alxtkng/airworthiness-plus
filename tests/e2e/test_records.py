@@ -537,6 +537,31 @@ def test_administrator_records_maintenance_authorisation(
         row = page.get_by_role("row").filter(has_text="TEST-CA-42")
         expect(row).to_contain_text("Chris Moore")
         expect(row).to_contain_text("1 December 2026")
+        row.get_by_role("link", name="TEST-CA-42").click()
+        save(
+            page,
+            "Save Evidence",
+            {
+                "kind": "Approved Maintenance Employment",
+                "evidence_reference": "TEST-EMP-1",
+                "qualification_basis": "Approved maintenance employment within this scope",
+                "starts_on": "2025-01-01",
+                "ends_on": "2025-06-30",
+            },
+            "TEST-EMP-1",
+        )
+        page.get_by_role("link", name="Recency", exact=True).click()
+        assessed = page.get_by_role("row").filter(has_text="TEST-CA-42")
+        expect(assessed).to_contain_text("6 Complete Months")
+        expect(assessed).to_contain_text("Duration Met")
+        assessed.get_by_role("link", name="TEST-CA-42").click()
+        evidence = page.locator("main tbody tr:not(.detail)").filter(has_text="TEST-EMP-1")
+        button = reveal(evidence).get_by_role("button", name="Withdraw Evidence")
+        fill(button.locator("xpath=ancestor::form[1]"), {"reason": "Wrong employment dates"})
+        submit(page, button)
+        expect(reveal(evidence)).to_contain_text("Wrong employment dates")
+        page.get_by_role("link", name="Recency", exact=True).click()
+        expect(assessed).to_contain_text("Further Evidence Needed")
 
 
 def test_administrator_records_recurrent_training(

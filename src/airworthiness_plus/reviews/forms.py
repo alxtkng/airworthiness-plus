@@ -1,5 +1,7 @@
 """Forms for airworthiness review records. Labels follow design-system/Writing.md."""
 
+from typing import Any
+
 from django import forms
 
 from airworthiness_plus.accounts.models import User
@@ -73,6 +75,11 @@ class ReviewStaffForm(Form):
     user = forms.ModelChoiceField(label="Person", queryset=User.objects.none())
     authorisation_reference = forms.CharField(label="Authorisation Reference", max_length=60)
     accepted_on = forms.DateField(label="Accepted")
+    authorisation_scope = forms.CharField(
+        label="Scope and Limitations", max_length=400, widget=forms.Textarea
+    )
+    authorisation_valid_to = forms.DateField(label="Authorisation Valid To", required=False)
+    no_stated_end = forms.BooleanField(label="Authorisation Has No Stated End Date", required=False)
     part_66_qualified = forms.BooleanField(label="Qualified Under Part-66", required=False)
     months_involved = forms.IntegerField(
         label="Months of Continuing Airworthiness Management in the 2-Year Period",
@@ -89,6 +96,15 @@ class ReviewStaffForm(Form):
         self.fields["user"].queryset = User.objects.filter(  # type: ignore[attr-defined]
             is_active=True, review_staff__isnull=True
         )
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean() or {}
+        no_stated_end = data.pop("no_stated_end", False)
+        if (data.get("authorisation_valid_to") is None) != no_stated_end:
+            self.add_error(
+                None, "Give the End Date or Confirm the Authorisation Has No Stated End Date"
+            )
+        return data
 
 
 class ReviewAuthorisationForm(Form):

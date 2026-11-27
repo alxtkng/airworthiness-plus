@@ -211,6 +211,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
         "people_maintenanceauthorisation": ["INSERT", "SELECT"],
+        "people_experienceevidence": ["INSERT", "SELECT"],
+        "people_experiencewithdrawal": ["INSERT", "SELECT"],
         "people_recurrenttraining": ["INSERT", "SELECT"],
         # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
         "configuration_transfer": ["INSERT", "SELECT"],
@@ -263,6 +265,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         },
         # An extension keeps what it showed when it was made (REQ-110).
         "reviews_extension": {"extension_keeps", "extension_fixed"},
+        "people_experienceevidence": {"experience_replacement"},
         "reviews_reviewstaff": {"reviewstaff_fixed"},
         "reviews_review": {"review_fixed"},
         "reviews_reviewitem": {"reviewitem_fixed"},

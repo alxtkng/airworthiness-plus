@@ -6,6 +6,8 @@ that record. Not everyone signs in: certifying staff, mentors, assessors,
 contracted engineers and auditors are people of the organisation too.
 """
 
+from datetime import date
+
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Lower
@@ -111,6 +113,14 @@ class MaintenanceAuthorisation(Record):
             ),
         ]
 
+    def term_on(self, on: date) -> str:
+        """Distinguish the terms of the evidence from assessed experience."""
+        if on < self.valid_from:
+            return "Not Yet In Force"
+        if self.valid_to is not None and self.valid_to < on:
+            return "Ended"
+        return "Within Recorded Dates"
+
 
 class RecurrentTraining(Record):
     """Documented completion and the renewal date set by the organisation (REQ-299)."""
@@ -139,4 +149,88 @@ class RecurrentTraining(Record):
                 F("completed_on"),
                 name="recurrent_training_completion_recorded_once",
             ),
+        ]
+
+
+class ExperienceKind(models.TextChoices):
+    MAINTENANCE = "Maintenance", "Maintenance"
+    SUBSTITUTE = "Substitute", "Permitted Substitute Activity"
+    EMPLOYMENT = "Employment", "Approved Maintenance Employment"
+
+
+class ExperienceEvidence(Record):
+    """Assessed maintenance experience for the stated authorisation scope (REQ-301)."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    authorisation = models.ForeignKey(
+        MaintenanceAuthorisation, on_delete=models.PROTECT, related_name="experience_evidence"
+    )
+    supersedes = models.OneToOneField(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="replacement"
+    )
+    kind = models.CharField("Evidence Type", max_length=20, choices=ExperienceKind.choices)
+    evidence_reference = models.CharField("Evidence Reference", max_length=160)
+    qualification_basis = models.CharField("Basis for Counting the Experience", max_length=500)
+    starts_on = models.DateField("Work Date or First Day of Employment")
+    ends_on = models.DateField("Last Day of Employment", null=True, blank=True)
+    days = models.DecimalField(
+        "Days Credited", max_digits=3, decimal_places=2, null=True, blank=True
+    )
+    aircraft_type = models.CharField("Aircraft Type", max_length=150, blank=True)
+    aircraft_registration = models.CharField("Aircraft Registration", max_length=16, blank=True)
+    licence_subcategory = models.CharField(
+        "Licence Category or Subcategory", max_length=30, blank=True
+    )
+
+    class Meta:
+        ordering = ["-starts_on", "evidence_reference", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["authorisation", "evidence_reference"],
+                condition=Q(supersedes__isnull=True),
+                name="experience_evidence_reference_starts_one_chain",
+            ),
+            models.CheckConstraint(
+                condition=~Q(evidence_reference="") & ~Q(qualification_basis=""),
+                name="experience_evidence_has_reference_and_basis",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        kind=ExperienceKind.EMPLOYMENT,
+                        ends_on__gte=F("starts_on"),
+                        ends_on__isnull=False,
+                        days__isnull=True,
+                    )
+                    & Q(aircraft_type="", aircraft_registration="", licence_subcategory="")
+                )
+                | (
+                    Q(
+                        kind__in=[ExperienceKind.MAINTENANCE, ExperienceKind.SUBSTITUTE],
+                        ends_on__isnull=True,
+                        days__isnull=False,
+                        days__gt=0,
+                        days__lte=1,
+                    )
+                    & ~Q(aircraft_type="")
+                    & (Q(kind=ExperienceKind.SUBSTITUTE) | ~Q(aircraft_registration=""))
+                    & ~Q(licence_subcategory="")
+                ),
+                name="experience_evidence_matches_its_type",
+            ),
+        ]
+
+
+class ExperienceWithdrawal(Record):
+    """A withdrawal removes an assessment from duration while retaining its evidence."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    evidence = models.OneToOneField(
+        ExperienceEvidence, on_delete=models.PROTECT, related_name="withdrawal"
+    )
+    reason = models.CharField("Reason", max_length=400)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=~Q(reason=""), name="experience_withdrawal_has_reason")
         ]

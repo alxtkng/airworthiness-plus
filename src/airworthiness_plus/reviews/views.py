@@ -11,7 +11,7 @@ from functools import wraps
 from typing import Any
 
 from django.db import DatabaseError, transaction
-from django.db.models import Max
+from django.db.models import Count, F, Max, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
@@ -24,6 +24,7 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.organisations import approvals
+from airworthiness_plus.people import services as people_services
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.reviews import services
@@ -246,21 +247,41 @@ def recency_page(request: HttpRequest) -> HttpResponse:
         "user", "organisation"
     )
     certifying_people = Person.objects.filter(
-        staff_group=StaffGroup.CERTIFYING, left_on__isnull=True
+        Q(staff_group=StaffGroup.CERTIFYING) | Q(maintenance_authorisations__isnull=False),
+        left_on__isnull=True,
+    ).distinct()
+    within_employment = Q(performed_by__joined_on__isnull=True) | Q(
+        dated__gte=F("performed_by__joined_on")
     )
     dates = {
-        row["performed_by_id"]: row["last_work"]
+        row["performed_by_id"]: (row["last_work"], row["outside_employment"])
         for row in WorkDone.objects.filter(performed_by__in=certifying_people, dated__lte=today)
         .order_by()
         .values("performed_by_id")
-        .annotate(last_work=Max("dated"))
+        .annotate(
+            last_work=Max("dated", filter=within_employment),
+            outside_employment=Count("pk", filter=~within_employment),
+        )
     }
+    authorisations = (
+        MaintenanceAuthorisation.objects.filter(person__in=certifying_people)
+        .select_related("person")
+        .prefetch_related("experience_evidence__withdrawal")
+    )
+    assessments = []
+    for authorisation in authorisations:
+        evidence = list(authorisation.experience_evidence.all())
+        result = people_services.assessed_experience(evidence, today) if evidence else None
+        assessments.append((authorisation, authorisation.term_on(today), result))
     return render(
         request,
         "reviews/recency.html",
         {
             "review_lines": [services.staff_line(staff, today) for staff in review_staff],
-            "certifying_staff": [(person, dates.get(person.pk)) for person in certifying_people],
+            "assessments": assessments,
+            "certifying_staff": [
+                (person, *dates.get(person.pk, (None, 0))) for person in certifying_people
+            ],
         },
     )
 

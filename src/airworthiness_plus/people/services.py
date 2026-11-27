@@ -1,8 +1,10 @@
 """What can be done with person records. Views check the role first."""
 
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
+from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Value
@@ -18,12 +20,21 @@ from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people.models import (
     Employment,
+    ExperienceEvidence,
+    ExperienceKind,
+    ExperienceWithdrawal,
     MaintenanceAuthorisation,
     Person,
     RecurrentTraining,
     StaffGroup,
 )
 from airworthiness_plus.reviews.models import ReviewStaff
+from airworthiness_rules.dates import add_days
+from airworthiness_rules.maintenance_experience import (
+    DaysOfExperience,
+    ExperienceDuration,
+    duration,
+)
 from airworthiness_rules.personnel import Retention, record_kept_until
 
 
@@ -265,7 +276,11 @@ def staff(organisation: Organisation) -> Staff:
     it holds today: an approval given up afterwards does not shorten it.
     """
     every = approvals.every(organisation)
-    people = list(Person.objects.select_related("reports_to", "user"))
+    people = list(
+        Person.objects.select_related("reports_to", "user__review_staff").prefetch_related(
+            "maintenance_authorisations"
+        )
+    )
     gone = [person for person in people if person.left_on is not None]
     ever = _ever_review_staff(gone)
     former = []
@@ -397,3 +412,111 @@ def current_recurrent_training(
             seen.add(key)
             by_person.setdefault(course.person_id, []).append(course)
     return by_person
+
+
+@transaction.atomic
+def record_experience_evidence(
+    authorisation: MaintenanceAuthorisation,
+    *,
+    kind: str,
+    evidence_reference: str,
+    qualification_basis: str,
+    starts_on: date,
+    ends_on: date | None,
+    days: Decimal | None,
+    aircraft_type: str,
+    aircraft_registration: str,
+    licence_subcategory: str,
+) -> ExperienceEvidence:
+    """Keep the organisation's evidence assessment for one authorisation."""
+    authorisation = MaintenanceAuthorisation.objects.get(pk=authorisation.pk)
+    Person.objects.select_for_update().get(pk=authorisation.person_id)
+    evidence_reference, qualification_basis = (
+        evidence_reference.strip(),
+        qualification_basis.strip(),
+    )
+    if not evidence_reference or not qualification_basis:
+        raise RefusedError("Give the Evidence Reference and the Basis for Counting It")
+    fields = (aircraft_type, aircraft_registration, licence_subcategory)
+    today = aircraft_services.today()
+    if starts_on > today or (ends_on is not None and ends_on > today):
+        raise RefusedError("Experience Cannot Be After Today")
+    if kind == ExperienceKind.EMPLOYMENT:
+        if ends_on is None or ends_on < starts_on:
+            raise RefusedError("Give the First and Last Days of the Employment Block")
+        if days is not None or any(fields):
+            raise RefusedError("Leave the Day Credit and Aircraft Fields Blank for Employment")
+    elif kind in {ExperienceKind.MAINTENANCE, ExperienceKind.SUBSTITUTE}:
+        if ends_on is not None:
+            raise RefusedError("A Day of Experience Has One Date")
+        if days is None or not days.is_finite() or not 0 < days <= 1:
+            raise RefusedError("Give a Day Credit Greater Than Zero and at Most One")
+        if not aircraft_type or not licence_subcategory:
+            raise RefusedError("Give the Aircraft Type and Licence Category")
+        if kind == ExperienceKind.MAINTENANCE and not aircraft_registration:
+            raise RefusedError("Give the Aircraft Registration for Direct Maintenance")
+    else:
+        raise RefusedError("Choose the Evidence Type")
+    previous = (
+        ExperienceEvidence.objects.filter(
+            authorisation=authorisation,
+            evidence_reference=evidence_reference,
+            replacement__isnull=True,
+        )
+        .select_related("withdrawal")
+        .first()
+    )
+    if previous is not None and not hasattr(previous, "withdrawal"):
+        raise RefusedError("This Evidence Reference Is Already Recorded")
+    return ExperienceEvidence.objects.create(
+        organisation_id=authorisation.organisation_id,
+        authorisation=authorisation,
+        kind=kind,
+        evidence_reference=evidence_reference,
+        qualification_basis=qualification_basis,
+        supersedes=previous,
+        starts_on=starts_on,
+        ends_on=ends_on,
+        days=days,
+        aircraft_type=aircraft_type,
+        aircraft_registration=aircraft_registration,
+        licence_subcategory=licence_subcategory,
+    )
+
+
+def assessed_experience(evidence: Iterable[ExperienceEvidence], today: date) -> ExperienceDuration:
+    """Calculate duration using only the evidence assessed for one authorisation."""
+    days = []
+    employment = []
+    for item in evidence:
+        if hasattr(item, "withdrawal"):
+            continue
+        if item.kind == ExperienceKind.EMPLOYMENT and item.ends_on is not None:
+            employment.append((item.starts_on, add_days(item.ends_on, 1)))
+        elif item.days is not None:
+            days.append(
+                DaysOfExperience(item.starts_on, item.days, item.kind == ExperienceKind.SUBSTITUTE)
+            )
+    return duration(today, days=days, employment=employment)
+
+
+@transaction.atomic
+def withdraw_experience_evidence(evidence: ExperienceEvidence, *, reason: str) -> None:
+    """Withdraw one experience entry from the calculation while keeping its evidence."""
+    Person.objects.select_for_update().get(pk=evidence.authorisation.person_id)
+    if ExperienceWithdrawal.objects.filter(evidence=evidence).exists():
+        raise RefusedError("This Evidence Is Already Withdrawn")
+    reason = reason.strip()
+    if not reason:
+        raise RefusedError("Give a Reason for Withdrawing the Evidence")
+    ExperienceWithdrawal.objects.create(
+        organisation_id=evidence.organisation_id, evidence=evidence, reason=reason
+    )
+
+
+def contradicts_known_maintenance_term(person: Person, on: date) -> bool:
+    """Return whether recorded maintenance terms rule out the supplied date."""
+    terms = list(person.maintenance_authorisations.order_by().values_list("valid_from", "valid_to"))
+    return bool(terms) and not any(
+        first <= on and (last is None or on <= last) for first, last in terms
+    )
