@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Configuration Baseline, {{ baseline.aircraft_registration }}{% endblock %}
+{% block content %}
+<h1>Configuration Baseline, {{ baseline.aircraft_registration }}</h1>
+<p>{{ baseline.type_rating }}</p>
+<dl>
+<dt>Aircraft Registration</dt><dd>{{ baseline.aircraft_registration }}</dd>
+<dt>Type Rating</dt><dd>{{ baseline.type_rating }}</dd>
+<dt>Serial Number</dt><dd>{{ baseline.serial_number }}</dd>
+<dt>Organisation</dt><dd>{{ baseline.organisation_name }}</dd>
+<dt>Baseline Date</dt><dd>{{ baseline.signed_on|long_date }}</dd>
+<dt>Signed By</dt><dd>{{ baseline.signed_by_name }}, Continuing Airworthiness Manager</dd>
+</dl>
+<h2>Positions</h2>
+<table>
+<thead><tr><th>Product</th><th class="number">Chapter</th><th>Position</th><th>Part Number</th><th>Serial Number</th><th>Source</th><th data-detail>Change or Repair</th></tr></thead>
+<tbody>
+{% for position in positions %}
+<tr><td>{{ position.product }}</td><td class="number">{{ position.chapter }}</td><td>{{ position.name }}</td><td>{{ position.part_number }}</td><td>{{ position.serial_number }}</td><td>{{ position.source }}</td><td>{{ position.change }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<h2>Modifications and Repairs Embodied</h2>
+{% if changes %}
+<table>
+<thead><tr><th>Change or Repair</th><th>Approval Route</th><th>Reference</th><th>Embodied</th></tr></thead>
+<tbody>
+{% for change in changes %}
+<tr><td>{{ change.title }}</td><td>{{ change.route }}</td><td>{{ change.reference }}</td><td>{{ change.embodied_on }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Changes or Repairs Recorded</p>
+{% endif %}
+<p>Shown as It Stood on the Day It Was Signed</p>
+{% endblock %}

@@ -16,6 +16,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, UtilisationEntry
 from airworthiness_plus.components.models import Component, Installation
+from airworthiness_plus.configuration.models import Baseline, Position, Transfer, TransferItem
 from airworthiness_plus.contracts.models import Contract, WorkOrder
 from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.defects.models import Defect, RepeatAction
@@ -105,6 +106,10 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Change, _by("aircraft")),
     Exported(Weighing, _by("aircraft")),
     Exported(WeightSchedule, _by("aircraft")),
+    Exported(Transfer, _by("aircraft")),
+    Exported(TransferItem, _by("transfer__aircraft")),
+    Exported(Position, _by("aircraft")),
+    Exported(Baseline, _by("aircraft")),
     Exported(Directive, _every),
     # The sources checked for directives are checked for every aircraft.
     Exported(Source, _every),

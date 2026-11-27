@@ -109,6 +109,16 @@ Sign in as Lucy Grant. The sample of this part is on the test site once its data
 2. Choose Due in 30 Days: three aircraft. Choose Unserviceable: G-DGHI alone.
 3. Type a registration in the search above the table.
 
+### Transfers and Set Up Configuration
+
+1. Open Aircraft, then the tab Transfers. G-HKLM's transfer started on 9 November 2026 and is 4 of 10 complete.
+2. Read down its checklist. Beside Records Received and Checked the records say 14 of 18 Received. Try to record it as Complete: it is refused.
+3. Choose Set Up Configuration. Read the six steps down the page: the aircraft, the product structure, the major items, the 12 tracked positions, the changes embodied, and the review.
+4. Step 6 lists 6 open items, and there is no button to sign. Record the Right Magneto in step 4: 5 remain.
+5. Go back to Transfers. Transfer Out and Record Export leads to the export of an aircraft's complete record.
+
+Say: a baseline is not signed with items still open, and an aircraft does not move to the Fleet with an item of its checklist open. Both rules are ours.
+
 ### Maintenance Programmes
 
 1. Open Maintenance Programmes. Every aircraft of the Fleet is listed with its programme and when its annual review is due.
@@ -170,4 +180,4 @@ Say: the system records a certificate that was issued. It does not issue one.
 
 ## What Cannot Be Shown Yet
 
-The rest of Phase 1 (set up configuration, the transfer checklist, and the tabs of the aircraft record) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The rest of Phase 1 (the tabs of the aircraft record) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

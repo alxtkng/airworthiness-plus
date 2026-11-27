@@ -13,6 +13,8 @@ from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.components import services as component_services
 from airworthiness_plus.components.models import Basis as LimitBasis
 from airworthiness_plus.components.models import Component
+from airworthiness_plus.configuration import services as configuration_services
+from airworthiness_plus.configuration.models import ItemState, Product
 from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.contracts.models import Contract, OrderedBy, Scope
 from airworthiness_plus.defects import services as defect_services
@@ -501,3 +503,126 @@ def add_sources(ours: Organisation, by: User) -> None:
             directive_services.record_source_check(
                 source, checked_on=checked_on, next_check_on=next_check_on, next_check_note=words
             )
+
+
+# The Transfers board: the ten items of G-HKLM's transfer in, started 9 November
+# 2026, 4 of 10 complete. The state of each and its note.
+HKLM_ITEMS: tuple[tuple[ItemState, str], ...] = (
+    (ItemState.COMPLETE, "Piper PA-38 Series (Lycoming)"),
+    (ItemState.COMPLETE, "Signed 9 November 2026, [Owner Name G-HKLM]"),
+    (ItemState.NOT_APPLICABLE, "United Kingdom Register"),
+    (ItemState.COMPLETE, "[Previous Organisation], Sent 12 November 2026"),
+    (ItemState.IN_PROGRESS, "Engine Logbook Volume 1 Requested 13 November 2026"),
+    (ItemState.IN_PROGRESS, "Lucy Grant"),
+    (ItemState.OPEN, ""),
+    (ItemState.OPEN, ""),
+    (ItemState.OPEN, ""),
+    (ItemState.OPEN, ""),
+)
+
+_AIRFRAME, _ENGINE, _PROPELLER = Product.AIRFRAME, Product.ENGINE, Product.PROPELLER
+_PART = "[Part Number]"
+# The Set Up Configuration board, Tracked Positions: product, chapter, position,
+# whether it is a major item, the part number, the serial number, the source and
+# whether it is recorded. 8 of the 12 are recorded.
+HKLM_POSITIONS: tuple[tuple[Product, int, str, bool, str, str, str, bool], ...] = (
+    (_ENGINE, 72, "Engine, Lycoming O-235", True, _PART, "[Serial Number Engine G-HKLM]",
+     "Engine Logbook", True),
+    (_PROPELLER, 61, "Propeller, Fixed Pitch", True, _PART, "[Serial Number Propeller G-HKLM]",
+     "Propeller Logbook", True),
+    (_ENGINE, 74, "Left Magneto", False, _PART, "[Serial Number Left Magneto]", "Engine Logbook",
+     True),
+    (_ENGINE, 74, "Right Magneto", False, _PART, "", "Engine Logbook, Volume 1 Requested", False),
+    (_ENGINE, 73, "Carburettor", False, _PART, "[Serial Number Carburettor]", "Engine Logbook",
+     True),
+    (_AIRFRAME, 37, "Vacuum Pump", False, _PART, "", "Not in Records Received", False),
+    (_AIRFRAME, 25, "Emergency Locator Transmitter", False, _PART,
+     "[Serial Number Emergency Locator Transmitter]", "Airframe Logbook", True),
+    (_AIRFRAME, 25, "Emergency Locator Transmitter Battery", False, _PART, "",
+     "Airframe Logbook, Expiry [Date]", False),
+    (_AIRFRAME, 34, "Mode S Transponder", False, _PART, "[Serial Number Transponder]",
+     "Standard Change Record", True),
+    (_AIRFRAME, 23, "Very High Frequency Radio, 8.33 Kilohertz", False, _PART,
+     "[Serial Number Radio]", "Airframe Logbook", True),
+    (_AIRFRAME, 33, "Landing Light", False, _PART, "", "Physical Survey, 12 November 2026", True),
+    (_AIRFRAME, 25, "Fire Extinguisher", False, "", "", "Not in Records Received", False),
+)  # fmt: skip
+
+# Step 5 of the board: the changes embodied, and the position each changed.
+HKLM_CHANGES = (
+    ("Mode S Transponder", "[Standard Change Reference 3]", date(2021, 6, 8),
+     "Mode S Transponder"),
+    ("8.33 Kilohertz Radio", "[Standard Change Reference 4]", date(2018, 9, 3),
+     "Very High Frequency Radio, 8.33 Kilohertz"),
+)  # fmt: skip
+
+
+def add_set_up(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None:
+    """Add G-HKLM's transfer checklist and the set-up of its configuration.
+
+    As the Continuing Airworthiness Manager. The contract of 9 November
+    2026 is already recorded. The baseline is not signed: four positions
+    are not recorded, the landing light needs a recorded change, and the
+    propeller's overhaul date is missing, as the board has it.
+    """
+    with working_for(ours.id, by.id):
+        hklm = Aircraft.objects.get(pk=fleet["G-HKLM"].pk)
+        transfer = configuration_services.start_transfer(hklm, started_on=date(2026, 11, 9))
+        for item, (state, note) in zip(transfer.items.all(), HKLM_ITEMS, strict=True):
+            if state != ItemState.OPEN:
+                configuration_services.set_item(item, state=state, note=note)
+
+        fitted = {}
+        for name, serial, values in (
+            ("Engine, Lycoming O-235-L2C", "[Serial Number Engine G-HKLM]",
+             {"basis": LimitBasis.NONE}),
+            ("Propeller, Fixed Pitch", "[Serial Number Propeller G-HKLM]",
+             {"basis": _RECOMMENDED, "limit_hours": Decimal("2000"), "limit_months": 72}),
+        ):  # fmt: skip
+            component = component_services.add_component(
+                ours,
+                name=name,
+                serial_number=serial,
+                **values,
+            )
+            component_services.fit_component(
+                component,
+                hklm,
+                position="Propeller" if "Propeller" in name else "Engine",
+                fitted_on=date(2019, 5, 2),
+                airframe_hours_fitted=Decimal("2150.0"),
+                hours_at_fitting=Decimal("0.0"),
+            )
+            fitted[serial] = component
+
+        changes = {}
+        for title, reference, embodied_on, changed in HKLM_CHANGES:
+            changes[changed] = modification_services.record_change(
+                hklm,
+                title=title,
+                route=Route.STANDARD_CHANGE,
+                reference=reference,
+                mass_effect=Decimal("0.0"),
+                embodied_on=embodied_on,
+            )
+        for product, chapter, name, major, part, serial, source, recorded in HKLM_POSITIONS:
+            position = configuration_services.add_position(
+                hklm,
+                product=product,
+                chapter=chapter,
+                name=name,
+                tracked=True,
+                major=major,
+                part_number=part,
+                source=source,
+            )
+            if recorded:
+                configuration_services.record_position(
+                    position,
+                    source=source,
+                    part_number=part,
+                    serial_number=serial,
+                    needs_change=name == "Landing Light",
+                    change=changes.get(name),
+                    component=fitted.get(serial),
+                )

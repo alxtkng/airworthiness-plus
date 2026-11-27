@@ -20,6 +20,11 @@ Each line is an address that changes something: the action it needs, the roles t
 
 | Action | Roles | Address | What It Does | Values It May Set |
 |---|---|---|---|---|
+| Add or Change Aircraft | Continuing Airworthiness Manager, Planning and Records | `/transfers/<uuid:aircraft_id>/start/` | Start the checklist of a transfer in (REQ-267) | None |
+| Add or Change Aircraft | Continuing Airworthiness Manager, Planning and Records | `/transfers/items/<uuid:item_id>/` | Record where an item of a transfer in stands (REQ-268) | State; Note |
+| Record Aircraft Configuration | Continuing Airworthiness Manager, Planning and Records | `/aircraft/<uuid:aircraft_id>/set-up-configuration/positions/add/` | Add a position to the configuration of an aircraft (REQ-270) | Product; Chapter; Position; Required Equipment; Tracked by Serial Number; Major Item; Part Number; Source |
+| Record Aircraft Configuration | Continuing Airworthiness Manager, Planning and Records | `/configuration/positions/<uuid:position_id>/record/` | Record what is fitted at a position, and where that was read (REQ-271) | Part Number; Serial Number; Source; Needs a Recorded Change; Change or Repair; Component |
+| Sign Configuration Baseline | Continuing Airworthiness Manager | `/aircraft/<uuid:aircraft_id>/set-up-configuration/sign/` | Sign the configuration baseline of an aircraft (REQ-273) | None |
 | Draw Up or End Contract | Continuing Airworthiness Manager | `/contracts/draw-up/` | Record a contract signed with the owner of an aircraft (REQ-240) | Aircraft Registration; Tasks Contracted; Limited Tasks; Type of Operation; Owner’s Address; Signed |
 | Record Work Order | Continuing Airworthiness Manager, Planning and Records | `/contracts/work-orders/add/` | Record a written request for maintenance (REQ-244) | Aircraft Registration; Work Ordered; Ordered By; Agreed |
 | Record Work Order | Continuing Airworthiness Manager, Planning and Records | `/contracts/work-orders/<uuid:order_id>/close/` | Record that a work order is completed or withdrawn (REQ-245) | Closed; Outcome; Work Done |
