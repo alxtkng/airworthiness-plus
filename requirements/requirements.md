@@ -296,6 +296,15 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-301 | Record assessed maintenance evidence against a named authorisation. Show days and complete calendar months in the preceding two years with their inputs. Withdrawn evidence is retained and excluded. Duration does not grant certification privileges. Keep unassessed work separate | Canvas Build, Phase 2 People; CAO.A.040(a); 66.A.20(b); AMC 66.A.20(b)(2) | Must | Test |
 | REQ-302 | An organisation release or certifying-staff deferral records the authorisation that covers the person, aircraft, activity and date. Signed legacy records with unavailable authorisation evidence can be retained explicitly unverified. Withdrawal prevents later use of a grant and preserves its history. Releases remain accessible from Work Done and their evidence is included in aircraft exports | Canvas Build, Phase 2 People; ML.A.403, ML.A.801, CAO.A.040, 145.A.35 | Must | Test |
 
+## Canvas Build, Phase 3 Planning
+
+| ID | Requirement | Source | Priority | Verification |
+|---|---|---|---|---|
+| REQ-320 | Plan maintenance in dated work packages and attach an agreed written work order for the same aircraft before issue | Work Packages board, CAO.A.055, 145.A.50(a) | Must | Test |
+| REQ-321 | Each work card identifies the instructions. Issue requires applicable data held with a current, checked revision. Preserve the issue revision through later supersessions | AMC1 CAO.A.055, CAO.A.060(c), 145.A.45(e) | Must | Test |
+| REQ-322 | Record who performed and, where applicable, supervised the work. Capture an independent inspector, qualification evidence, date and satisfactory findings for critical cards. Before recording release, check completed cards, applicable inspections, general verification, defect closure and certifying authorisation. Closing records the work against the linked programme tasks and directives with one release | Work Packages board, CAO.A.060(g) to (j), AMC2 CAO.A.060(h), 145.A.48(c), AMC4 145.A.48(c)(2), ML.A.801 | Must | Test |
+| REQ-323 | Export work packages and cards with the aircraft and their evidence. Give the test site the draft package once without changing existing records | Work Packages board, CAO.A.090, ML.A.305, Canvas Build test site sample | Must | Test |
+
 ## Open Points
 
 These block verification of the requirements named, not the start of building.

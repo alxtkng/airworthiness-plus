@@ -239,6 +239,8 @@ The canvas build, Phase 1 (`prompts/canvas-build.md`): Continuing Airworthiness,
 | The transfer checklist, the positions of an aircraft's configuration and its signed baseline | TH-008, TH-020, TH-021 | Records like any other: row-level security, history, no delete, each referring only to records of its own organisation, by trigger. Every change is a POST with the forgery token, checked against the role matrix on the server (Add or Change Aircraft, Record Aircraft Configuration, Sign Configuration Baseline). The database refuses a move to the Fleet with an item open and a baseline with a tracked position not recorded, writes what a baseline shows itself, and gives the application no right to change one, so a signed-in user cannot sign over missing records or alter what was signed (`tests/test_configuration.py`) |
 | The start of the test site adding the Phase 1 sample to a database already seeded | TH-021, TH-022 | It adds records through the services the pages use and changes none that exists; each part is one piece of work, recorded once; nobody is looked up by name, so a renamed person or a reused registration is not written to; a fault is said by its kind alone, with nothing of the records or of what the start was given (`tests/test_top_up_phase1.py`) |
 
+| Work package and card transitions | TH-008, TH-020, TH-021, TH-025 | Role checks and form forgery protection guard each write. Row scope, same-organisation references, aircraft checks, fixed issued evidence and hashed history are enforced in the database. The release uses existing authorisation validation within the same transaction. |
+
 ## Not Yet Covered
 
 - Email (password reset, notifications): no email flow is designed yet. It is modelled when it is added.

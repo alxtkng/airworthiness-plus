@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ package.reference }}{% endblock %}
+{% block content %}
+<header class="page-heading">
+<h1>{{ package.reference }}</h1>
+<p><a href="{% url 'work_packages' %}">Work Packages</a></p>
+</header>
+<dl>
+<dt>Aircraft Registration</dt><dd><a href="{% url 'aircraft' package.aircraft_id %}">{{ package.aircraft.registration }}</a></dd>
+<dt>Work</dt><dd>{{ package.title }}</dd>
+<dt>Location</dt><dd>{{ package.location }}</dd>
+<dt>Planned Start</dt><dd>{{ package.starts_on|date:"j F Y" }}</dd>
+<dt>Planned End</dt><dd>{{ package.ends_on|date:"j F Y" }}</dd>
+<dt>Work Order</dt>
+<dd>{% if package.order %}<a href="{% url 'contracts' %}">{{ package.order.work }}</a>, {{ package.order.ordered_by_text }}, {{ package.order.agreed_on|date:"j F Y" }}{% else %}Not Received{% endif %}</dd>
+<dt>Status</dt><dd>{{ package.status }}</dd>
+{% if package.issued_on %}<dt>Issued</dt><dd>{{ package.issued_on|date:"j F Y" }}</dd>{% endif %}
+{% if package.released_on %}<dt>Released</dt><dd>{{ package.released_on|date:"j F Y" }}</dd>{% endif %}
+</dl>
+{% if may_plan and not package.issued_on %}
+<p><a class="button" href="{% url 'link_package_order' package.id %}">Link Work Order</a>
+<a class="button" href="{% url 'add_work_card' package.id %}">Add Work Card</a>
+<a class="button" href="{% url 'issue_work_package' package.id %}">Issue Work Package</a></p>
+{% endif %}
+<h2>Work Cards</h2>
+<p>{{ signed }} of {{ cards|length }} Signed, {{ planned }} Planned Hours, {{ inspection }} Planned Inspection Hours</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Task</th><th>Maintenance Data</th><th>Critical Task</th><th>Performed By</th><th>Independent Inspection</th><th>Planned Hours</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody>
+{% for card in cards %}
+<tr>
+<td><a href="#card-{{ card.id }}">{{ card.title }}</a></td>
+<td><a href="{% url 'data_set' card.data_set_id %}">{{ card.data_set }}</a>{% if card.revision %}, Revision {{ card.revision }}{% endif %}</td>
+<td>{{ card.critical|yesno:"Yes,No" }}</td>
+<td>{{ card.performed_by|default_if_none:"—" }}</td>
+<td>{% if card.inspector %}{{ card.inspector }}{% elif card.critical %}Pending{% else %}Not Required{% endif %}</td>
+<td>{{ card.planned_hours }}</td>
+<td>{% if card.signed %}Signed{% elif card.completed_on %}Awaiting Inspection{% else %}Open{% endif %}</td>
+<td>
+{% if card.work %}<a href="{% url 'release_certificate' package.release_id %}">Release Certificate</a>
+{% elif may_record and package.issued_on and not package.released_on %}
+{% if not card.completed_on %}<a href="{% url 'complete_work_card' package.id card.id %}">Record Signed Work</a>
+{% elif card.critical and not card.inspector %}<a href="{% url 'inspect_work_card' package.id card.id %}">Record Independent Inspection</a>{% endif %}
+{% endif %}
+</td>
+</tr>
+{% empty %}<tr><td colspan="8">No Work Cards</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+{% for card in cards %}
+<details id="card-{{ card.id }}">
+<summary>{{ card.title }}</summary>
+<dl>
+<dt>Instruction Reference</dt><dd>{{ card.instruction }}</dd>
+{% if card.completed_on %}
+<dt>Completed</dt><dd>{{ card.completed_on|date:"j F Y" }}</dd>
+<dt>Revision Used</dt><dd>{{ card.performed_revision }}</dd>
+{% if card.supervised_by %}<dt>Supervised By</dt><dd>{{ card.supervised_by }}</dd>{% endif %}
+<dt>Signed Work Evidence</dt><dd>{{ card.sign_off_reference }}</dd>
+<dt>Counter Hours</dt><dd>{{ card.hours }}</dd>
+<dt>Counter Cycles</dt><dd>{{ card.cycles }}</dd>
+{% endif %}
+{% if card.inspector %}
+<dt>Inspected</dt><dd>{{ card.inspected_on|date:"j F Y" }}</dd>
+<dt>Inspector Qualification Evidence</dt><dd>{{ card.qualification }}</dd>
+<dt>Satisfactory Inspection Evidence</dt><dd>{{ card.inspection_evidence }}</dd>
+{% endif %}
+</dl>
+</details>
+{% endfor %}
+<h2>Release to Service</h2>
+<ul>
+<li>Signed Work Cards, {{ signed }} of {{ cards|length }}</li>
+<li>Independent Inspections{% if missing_inspections %}, {{ missing_inspections }} Outstanding{% else %}, None Outstanding{% endif %}</li>
+<li>General Verification, {{ package.verification|default:"Awaiting Evidence" }}</li>
+{% if package.defect %}
+<li>Defect <a href="{% url 'defect' package.defect_id %}">{{ package.defect }}</a>, {% if package.defect.closed_on %}Closed{% else %}Open{% endif %}</li>
+{% endif %}
+<li>Certifying Staff Authorisation, {% if package.released_on %}Recorded in the Release Certificates{% else %}Checked at Release{% endif %}</li>
+</ul>
+{% if may_release and package.issued_on and not package.released_on %}
+<p><a class="button" href="{% url 'release_work_package' package.id %}">Record Package Release</a></p>
+{% endif %}
+{% endblock %}

@@ -30,7 +30,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.sample import build, second, top_up
+from airworthiness_plus.sample import build, planning, second, top_up
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
     seed,
@@ -125,6 +125,19 @@ def bring_phase_1(administrator: User) -> list[str]:
             return top_up.add_phase_1(ours, administrator)
     except Exception as error:
         return [f"Phase 1 of the Sample Not Brought Up to Date: {type(error).__name__}"]
+
+
+def bring_work_packages(administrator: User) -> str:
+    """Add the draft planning sample to earlier test-site databases."""
+    try:
+        with working_for(administrator.organisation_id, administrator.id):
+            ours = Organisation.objects.get(pk=administrator.organisation_id)
+            aircraft = top_up.aircraft_of_the_sample().get("G-EJKL")
+            if aircraft is not None and planning.add_work_packages(ours, administrator, aircraft):
+                return "Work Packages of the Sample Added, 1 Work Package"
+    except Exception as error:
+        return f"Sample Work Package Not Added: {type(error).__name__}"
+    return ""
 
 
 def second_organisation() -> str:
@@ -228,6 +241,9 @@ class Command(BaseCommand):
                 self.stdout.write(f"People of the Sample Brought Up to Date, {added} Added")
             for line in bring_phase_1(first):
                 self.stdout.write(line)
+            work_packages = bring_work_packages(first)
+            if work_packages:
+                self.stdout.write(work_packages)
         else:
             seed(administrator)
             self.stdout.write("Sample Organisation Set Up")

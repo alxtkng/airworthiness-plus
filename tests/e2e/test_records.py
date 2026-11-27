@@ -815,3 +815,122 @@ def test_certifying_staff_evidence_is_retained_with_release_and_deferral(
         page.goto("/release-to-service/")
         expect(reveal(row)).to_contain_text("TEST-CA-81, Scope Confirmed")
         expect(page.locator("main")).to_contain_text("Unverified Historical Evidence")
+
+
+def test_work_package_from_draft_to_release(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][0]) as page:
+        page.goto("/staff/")
+        page.get_by_role("link", name="Sam Patel", exact=True).click()
+        page.get_by_role("link", name="Record Maintenance Authorisation").click()
+        save(
+            page,
+            "Save Authorisation",
+            {
+                "reference": "TEST-PACKAGE-AUTH",
+                "scope": "Piper PA-28 aircraft maintenance release",
+                "valid_from": "2026-11-16",
+            },
+            "TEST-PACKAGE-AUTH",
+        )
+
+    with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
+        page.goto("/maintenance-data/add/")
+        save(
+            page,
+            "Record Maintenance Data",
+            {
+                "title": "Test Piper Maintenance Instructions",
+                "author": "Piper",
+                "kind": (
+                    "Instructions for Continued Airworthiness, From a Type or "
+                    "Supplementary Type Certificate Holder"
+                ),
+                "held": "on",
+                "revision": "1",
+                "revision_date": "2026-11-16",
+                "check_due": "2026-11-30",
+            },
+            "Test Piper Maintenance Instructions",
+        )
+        page.goto("/work-packages/")
+        page.get_by_role("link", name="Build a Work Package").click()
+        save(
+            page,
+            "Build a Work Package",
+            {
+                "aircraft": "G-ABCD",
+                "reference": "WP-2026-TEST",
+                "title": "Test Landing Light",
+                "location": "Bay 2",
+                "starts_on": "2026-11-18",
+                "ends_on": "2026-11-19",
+            },
+            "WP-2026-TEST",
+        )
+        page.get_by_role("link", name="Link Work Order").click()
+        save(
+            page,
+            "Link Work Order",
+            {"order": "Landing Light Replacement (12 November 2026)"},
+            "Landing Light Replacement",
+        )
+        page.get_by_role("link", name="Add Work Card").click()
+        save(
+            page,
+            "Add Work Card",
+            {
+                "title": "Test Landing Light Card",
+                "data_set": "Test Piper Maintenance Instructions",
+                "instruction": "Chapter 33",
+                "planned_hours": "2.0",
+                "critical": "on",
+                "inspection_hours": "0.5",
+            },
+            "Test Landing Light Card",
+        )
+        page.get_by_role("link", name="Issue Work Package").click()
+        save(page, "Issue Work Package", {}, "Revision 1")
+        page.get_by_role("link", name="Record Signed Work").click()
+        save(
+            page,
+            "Record Signed Work",
+            {
+                "performed_by": "Sam Patel",
+                "revision": "1",
+                "completed_on": "2026-11-18",
+                "sign_off_reference": "Signed test card",
+                "hours": "6412.6",
+                "cycles": "0",
+            },
+            "Awaiting Inspection",
+        )
+        page.get_by_role("link", name="Record Independent Inspection").click()
+        save(
+            page,
+            "Record Independent Inspection",
+            {
+                "inspector": "Chris Moore",
+                "inspected_on": "2026-11-18",
+                "qualification": "Test inspection authorisation",
+                "evidence": "Function checked",
+            },
+            "1 of 1 Signed",
+        )
+        page.get_by_role("link", name="Record Package Release").click()
+        save(
+            page,
+            "Record Package Release",
+            {
+                "reference": "TEST-PACKAGE-CRS",
+                "issued_by": "Sam Patel",
+                "issued_on": "2026-11-18",
+                "maintenance_authorisation": "Sam Patel (TEST-PACKAGE-AUTH)",
+                "scope_confirmed": "on",
+                "verification": "Tools accounted for and panels refitted",
+            },
+            "Released",
+        )
+        page.get_by_role("link", name="Release Certificate", exact=True).click()
+        expect(page.get_by_role("heading", name="TEST-PACKAGE-CRS")).to_be_visible()

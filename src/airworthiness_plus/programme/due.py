@@ -507,7 +507,7 @@ def work_lines(aircraft: Aircraft, today: date) -> list[WorkLine]:
     lines = []
     for work in (
         WorkDone.objects.filter(aircraft=aircraft)
-        .select_related("certificate")
+        .select_related("certificate", "work_card__package__release")
         .order_by("-dated", "-hours")
     ):
         deadline = release_record_deadline(work.dated)

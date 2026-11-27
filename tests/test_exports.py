@@ -49,6 +49,7 @@ from airworthiness_plus.imports.models import LoadKind
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
 from airworthiness_plus.people.models import Person
+from airworthiness_plus.planning import services as planning_services
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis
 from airworthiness_plus.releases.models import IssuedBy
@@ -224,6 +225,34 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     phase1.add_sources(sample.ours, sample.planner)
     # The transfer in of G-HKLM, its positions and a signed baseline (REQ-267 to REQ-274).
     phase1.add_set_up(sample.ours, sample.lucy, fleet)
+    with working_for(sample.ours.id, sample.planner.id):
+        aircraft = fleet["G-DGHI"]
+        package = planning_services.build_package(
+            aircraft,
+            reference="WP-2026-046",
+            title="Stabilator Trim Cable Rectification",
+            location="Bay 1",
+            starts_on=TODAY,
+            ends_on=date(2026, 11, 19),
+        )
+        data_set = data_services.record_data(
+            organisation=sample.ours,
+            title="Piper Trim Maintenance Instructions",
+            author="Piper",
+            kind=Kind.INSTRUCTIONS,
+            applies_to=[aircraft.type_rating],
+            revision="1",
+            revision_date=TODAY,
+            check_due=TODAY,
+        )
+        planning_services.add_card(
+            package,
+            title="Install New Stabilator Trim Cable",
+            data_set=data_set,
+            instruction="Maintenance Manual Chapter 27",
+            planned_hours=Decimal("4.0"),
+            critical=True,
+        )
     baseline_for_the_export(sample, fleet)
     return fleet
 
