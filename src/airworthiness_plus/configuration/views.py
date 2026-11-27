@@ -99,15 +99,7 @@ def set_up_configuration(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpRe
     user = _user(request)
     today = aircraft_services.today()
     found = services.set_up(aircraft, today)
-    major = [
-        (
-            position,
-            component_services.component_line(position.component, today)
-            if position.component is not None
-            else None,
-        )
-        for position in found.major
-    ]
+    major = [(position, services.fitted_component(position, today)) for position in found.major]
     return render(
         request,
         "configuration/set_up.html",

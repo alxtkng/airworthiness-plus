@@ -209,18 +209,22 @@ def record_received(aircraft: Aircraft, received: int) -> None:
     aircraft.save(update_fields=["records_received"])
 
 
+@transaction.atomic
 def complete_transfer(aircraft: Aircraft) -> None:
     """Move a Transfer In to the Fleet, once every record is received (REQ-027)."""
-    if (
-        aircraft.stage != Stage.TRANSFER_IN
-        or aircraft.records_received != aircraft.records_expected
-    ):
-        raise TransferNotCompleteError
+    aircraft = Aircraft.objects.select_for_update().get(pk=aircraft.pk)
+    if aircraft.stage != Stage.TRANSFER_IN:
+        raise TransferNotCompleteError("Only an Aircraft Being Transferred In Can Be Moved")
+    if aircraft.records_received != aircraft.records_expected:
+        raise TransferNotCompleteError(
+            f"Records Received, {aircraft.records_received} of {aircraft.records_expected}"
+        )
     # The checklist is built on aircraft, so it is looked up here and not at the top.
     from airworthiness_plus.configuration import services as configuration_services
 
-    if configuration_services.stops_the_fleet(aircraft):
-        raise TransferNotCompleteError
+    outstanding = configuration_services.stops_the_fleet(aircraft)
+    if outstanding:
+        raise TransferNotCompleteError("Items Still Open: " + "; ".join(outstanding))
     aircraft.stage = Stage.FLEET
     aircraft.records_received = None
     aircraft.records_expected = None

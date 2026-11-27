@@ -13,6 +13,7 @@ from django.urls import reverse
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.components import services as component_services
 from airworthiness_plus.components.models import Basis
+from airworthiness_plus.configuration import services
 from airworthiness_plus.configuration.models import Position
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.interface import formatting
@@ -52,7 +53,9 @@ class ForecastLine:
 
 
 def _days(limits: tuple[due.ExplainedLimit, ...]) -> int | None:
-    """Return the days to the soonest of some limits, if every one of them can be placed."""
+    """Return whole days to the first limit, including one already reached."""
+    if any(limit.limit.remaining <= 0 for limit in limits):
+        return 0
     found = []
     for limit in limits:
         days = int(limit.limit.remaining) if limit.limit.unit is Unit.CALENDAR else limit.projected
@@ -110,7 +113,12 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
                 component.problem or component.limit_text,
                 component.due_text,
                 component.remaining_text,
-                rules.forecast_date(today, component.days),
+                rules.forecast_date(
+                    today,
+                    0
+                    if any(limit.remaining <= 0 for limit in component.limits)
+                    else component.days,
+                ),
                 component.status,
                 "Aircraft Configuration",
                 url,
@@ -126,7 +134,7 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
                 defect.defect.point,
                 formatting.long_date(defect.defect.limit_on),
                 defect.remaining_text,
-                defect.defect.limit_on,
+                rules.forecast_date(today, defect.days_left),
                 defect.status,
                 "Defects",
                 reverse("defect", args=[defect.defect.id]),
@@ -140,7 +148,7 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
                 "ML.A.901(a)",
                 formatting.long_date(schedule.valid_to),
                 formatting.amount(Unit.CALENDAR, schedule.days),
-                schedule.valid_to,
+                rules.forecast_date(today, schedule.days),
                 schedule.flag.value,
                 "Airworthiness Review",
                 reverse("aircraft_review", args=[aircraft.id]),
@@ -159,7 +167,7 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
                     formatting.amount(Unit.CALENDAR, days)
                     if days >= 0
                     else f"{formatting.amount(Unit.CALENDAR, -days)} Overdue",
-                    annual.due,
+                    rules.forecast_date(today, days),
                     annual.flag.value,
                     "Maintenance Programme",
                     programme_url,
@@ -205,12 +213,19 @@ class PositionLine:
         return self.component is not None and self.component.component.basis != Basis.NONE
 
     @property
+    def status(self) -> str:
+        """Show a stale fitting separately from the recorded position details."""
+        if self.position.component_id is not None and self.component is None:
+            return "Component No Longer Fitted"
+        return self.position.status
+
+    @property
     def needs_attention(self) -> bool:
         """Return whether something of the position waits: not recorded, or a limit near."""
         position = self.position
         if position.tracked and not position.recorded:
             return True
-        if position.status == "Needs a Recorded Change":
+        if self.status in ("Needs a Recorded Change", "Component No Longer Fitted"):
             return True
         found = self.component
         return found is not None and bool(found.problem or found.flag is not Flag.NONE)
@@ -245,12 +260,7 @@ def position_lines(aircraft: Aircraft, today: date) -> list[PositionLine]:
     for position in Position.objects.filter(aircraft=aircraft).select_related(
         "component", "change"
     ):
-        component = (
-            component_services.component_line(position.component, today)
-            if position.component is not None
-            else None
-        )
-        lines.append(PositionLine(position, component))
+        lines.append(PositionLine(position, services.fitted_component(position, today)))
     return sorted(
         lines, key=lambda line: (line.position.product, line.position.chapter, line.position.name)
     )

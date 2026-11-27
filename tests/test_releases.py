@@ -526,6 +526,31 @@ def test_a_certificate_sent_twice_is_recorded_once(
     )
 
 
+def test_a_later_date_cannot_override_when_a_release_already_entered_the_records(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    work = work_on(
+        sample,
+        fleet["G-EJKL"],
+        release_reference="[Earlier Reference]",
+        release_recorded_on=date(2026, 11, 11),
+    )
+    with pytest.raises(services.RefusedError, match="Already Entered in the Records"):
+        record(
+            sample,
+            work,
+            reference="[Earlier Reference]",
+            issued_on=date(2026, 11, 13),
+            recorded_on=date(2026, 11, 14),
+        )
+    with pytest.raises(services.RefusedError, match="On or After the Day It Was Issued"):
+        record(sample, work, reference="[Earlier Reference]", issued_on=date(2026, 11, 13))
+    with working_for(sample.ours.id, sample.reader.id):
+        assert not Release.objects.filter(work=work).exists()
+        work.refresh_from_db()
+        assert work.release_recorded_on == date(2026, 11, 11)
+
+
 # Who may
 
 

@@ -93,7 +93,12 @@ def record_certificate(
         raise RefusedError("A Certificate Is Not Issued After Today")
     if issued_on < work.dated:
         raise RefusedError("A Certificate Is Not Issued Before the Work Was Completed")
-    recorded_on = recorded_on or work.release_recorded_on or today
+    if work.release_recorded_on is not None:
+        if recorded_on is not None and recorded_on != work.release_recorded_on:
+            raise RefusedError("Use the Day the Release Was Already Entered in the Records")
+        recorded_on = work.release_recorded_on
+    else:
+        recorded_on = recorded_on or today
     if not issued_on <= recorded_on <= today:
         raise RefusedError(
             "A Certificate Is Entered in the Records On or After the Day It Was Issued, "

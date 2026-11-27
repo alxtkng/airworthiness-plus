@@ -87,6 +87,7 @@ def draw_up_contract(
 @transaction.atomic
 def end_contract(contract: Contract, *, ended_on: date, end_reason: EndReason | str) -> Contract:
     """Record that a contract has ended, and why (REQ-242). Recorded once."""
+    Aircraft.objects.select_for_update().get(pk=contract.aircraft_id)
     contract = Contract.objects.select_for_update().get(pk=contract.pk)
     if contract.ended_on is not None:
         raise RefusedError("This Contract Has Already Ended")

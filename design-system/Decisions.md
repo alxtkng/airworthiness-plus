@@ -84,6 +84,8 @@ Corrections after the independent review of 24 November 2026 (`assurance/indepen
 - **A form sent twice** (finding 14). Recording an approval and naming a new customer take the organisation's row first, so the second waits for the first: it is refused with the reason, or given the customer already made. Changing an owner with a choice that is not valid shows the reason on the aircraft's page
 - **The most a setting may be** (the recompute; REQ-212 to REQ-214) is held by the service and by the database as well as the form: 365 days, 999.9 hours, 9,999 cycles
 
+- **The latest amendment check sets the next check deadline** (REQ-083, pull request 132). A check dated before the latest stays in the history. If the dates are equal, the last entry sets the next deadline.
+
 Phase 1, Continuing Airworthiness, the Rest, decided as ours while building from 27 November 2026 (REQ-220 onward). Each can be changed by Alex King:
 
 - **A defect is recorded with its decision** (REQ-220). Not Deferrable or Deferred, with who decided and the day. The decision is not changed afterwards: if a deferred defect can no longer be deferred, it is closed or a new defect is recorded. A defect already rectified is recorded with its rectification and changes nothing of the aircraft

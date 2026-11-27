@@ -33,4 +33,4 @@ def within_window(today: date, forecast: date | None, window: int = WINDOW_DAYS)
     """
     if window < 0:
         raise ValueError("A window is not below zero days")
-    return forecast is not None and days_between(today, forecast) <= window
+    return forecast is not None and 0 <= days_between(today, forecast) <= window

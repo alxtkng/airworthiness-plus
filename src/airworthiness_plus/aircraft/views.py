@@ -388,7 +388,9 @@ def add_counter(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
 @require_POST
 def records_received(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """Update the count of records received, and move a complete transfer to the Fleet."""
-    aircraft = get_object_or_404(Aircraft, pk=aircraft_id, stage=Stage.TRANSFER_IN)
+    aircraft = get_object_or_404(
+        Aircraft.objects.select_for_update(), pk=aircraft_id, stage=Stage.TRANSFER_IN
+    )
     form = RecordsReceivedForm(request.POST)
     expected = aircraft.records_expected or 0
     if form.is_valid() and form.cleaned_data["received"] <= expected:
@@ -396,7 +398,12 @@ def records_received(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpRespon
         if request.POST.get("complete") == "Yes":
             try:
                 services.complete_transfer(aircraft)
-            except services.TransferNotCompleteError:
-                return redirect("transfers")
+            except services.TransferNotCompleteError as error:
+                return render(
+                    request,
+                    "configuration/refused.html",
+                    {"reason": str(error), "back": "transfers", "arguments": ()},
+                    status=409,
+                )
             return redirect("aircraft", aircraft_id=aircraft.id)
     return redirect("transfers")
