@@ -391,7 +391,7 @@ def test_a_fitting_requires_both_cycle_readings(sample: Sample, fleet: dict[str,
         assert response.status_code == 200
         assert "This field is required." in response.content.decode()
         with working_for(sample.ours.id, sample.planner.id):
-            readings = {"airframe_cycles_fitted": 0, "cycles_at_fitting": 0}
+            readings: dict[str, Any] = {"airframe_cycles_fitted": 0, "cycles_at_fitting": 0}
             del readings[field]
             with pytest.raises(services.RefusedError, match=r"Give the .*Cycles .*When Fitted"):
                 services.fit_component(
