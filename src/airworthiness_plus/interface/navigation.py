@@ -147,7 +147,7 @@ BOARD: tuple[Group, ...] = (
                     {"record_defect", "defect", "close_defect", "record_repeat_action"}
                 ),
             ),
-            Item("Maintenance Programmes"),
+            Item("Maintenance Programmes", "programmes"),
             Item(
                 "Aircraft Configuration",
                 tabs=_tabs(

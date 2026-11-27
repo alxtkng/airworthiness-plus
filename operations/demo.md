@@ -109,6 +109,11 @@ Sign in as Lucy Grant. The sample of this part is on the test site once its data
 2. Choose Due in 30 Days: three aircraft. Choose Unserviceable: G-DGHI alone.
 3. Type a registration in the search above the table.
 
+### Maintenance Programmes
+
+1. Open Maintenance Programmes. Every aircraft of the Fleet is listed with its programme and when its annual review is due.
+2. G-DGHI and G-EJKL say No Maintenance Programme Set Up. Open one: the programme is set up on the aircraft's own page.
+
 ### Defects
 
 1. Open Defects, under Continuing Airworthiness. Four are open. G-DGHI comes first: Not Deferrable, Grounded.
@@ -141,4 +146,4 @@ Say: the system records a certificate that was issued. It does not issue one.
 
 ## What Cannot Be Shown Yet
 
-The rest of Phase 1 and Phases 2 to 9 of `prompts/canvas-build.md`: components, release to service, contracts, work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The rest of Phase 1 (components and life limits, modifications and repairs, weight and balance, set up configuration, the transfer checklist, the tabs of the aircraft record, departures and the annual review checklist of a programme, and the sources of directives) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

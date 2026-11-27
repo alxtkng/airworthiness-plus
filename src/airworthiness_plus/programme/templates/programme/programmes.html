@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Maintenance Programmes{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Maintenance Programmes</h1>
+<p>Minimum Inspection Programme: Annual or 100 Hours, Whichever First, Tolerance 1 Month or 10 Hours, ML.A.302(d)(1)</p>
+<p>Reviewed at Least Annually, ML.A.302(c)(9)</p>
+{% if lines %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Programme</th><th>Programme Reference</th><th class="number">Tasks</th><th>Last Reviewed</th><th>Annual Review Due</th><th class="number">Remaining</th><th>Status</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td><a href="{% url 'programme' line.aircraft.id %}">{{ line.aircraft.registration }}</a></td>
+<td>{% if line.programme %}{{ line.programme.basis }}{% else %}No Maintenance Programme Set Up{% endif %}</td>
+<td>{{ line.programme.reference }}</td>
+<td class="number">{% if line.programme %}{{ line.tasks }}{% endif %}</td>
+<td>{% if line.programme %}{% if line.review.last_reviewed %}{{ line.review.last_reviewed|long_date }}{% else %}Not Recorded{% endif %}{% endif %}</td>
+<td>{{ line.review.due|long_date }}</td>
+<td class="number">{{ line.remaining }}</td>
+<td>{{ line.review.flag.value|status }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Aircraft in the Fleet</p>
+{% endif %}
+{% endblock %}

@@ -221,3 +221,11 @@ def record_release(request: HttpRequest, work_id: uuid.UUID) -> HttpResponse:
     if form.is_valid():
         services.record_release(work, form.cleaned_data["release_reference"])
     return redirect("programme", aircraft_id=work.aircraft_id)
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def programmes_page(request: HttpRequest) -> HttpResponse:
+    """The maintenance programme of every aircraft of the Fleet (REQ-283)."""
+    lines = due.programme_lines(aircraft_services.today())
+    return render(request, "programme/programmes.html", {"lines": lines})

@@ -237,6 +237,8 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-281 | The Fleet is filtered by All, Due in 30 Days and Unserviceable, each with how many aircraft it holds. Due in 30 Days holds an Unserviceable aircraft, an aircraft whose next due is within 30 days, and an aircraft with something that cannot be calculated. It works with no script | Fleet board, filter. What Due in 30 Days holds is ours (D) | Must | Golden, Test |
 | REQ-282 | The search is shown above the Fleet however few aircraft there are. A link to add an aircraft is shown only to a role that may | Fleet board, Search; REQ-196; REQ-006 | Must | Test, Browser |
 
+| REQ-283 | The Maintenance Programmes page lists every aircraft of the Fleet by Aircraft Registration with what its programme is based on, its reference, how many tasks it has, when it was last reviewed, when the annual review is due and what remains, marked Due Soon from the calendar lead time, Due on the day and Overdue after it. An aircraft with no programme set up is listed and says so. It is an item of the sidebar under Continuing Airworthiness, and every role reads it | Maintenance Programmes board, Programmes; ML.A.302(c)(9) and (d)(1) (R, confirmed 18 November 2026); REQ-040, REQ-053 | Must | Golden |
+
 ## Open Points
 
 These block verification of the requirements named, not the start of building.
