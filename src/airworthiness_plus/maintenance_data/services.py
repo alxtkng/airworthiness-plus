@@ -124,6 +124,8 @@ def record_check(
         raise RefusedError("A Check Cannot Be Dated After Today")
     if next_due <= checked_on:
         raise RefusedError("The Next Check Is After This One")
+    # Serialise checks on the same set before deciding which date governs.
+    DataSet.objects.select_for_update().only("pk").get(pk=data_set.pk)
     check = AmendmentCheck.objects.create(
         organisation_id=data_set.organisation_id,
         data_set=data_set,
@@ -131,8 +133,9 @@ def record_check(
         checked_by=checked_by,
         result=result,
     )
-    data_set.check_due = next_due
-    data_set.save(update_fields=["check_due"])
+    if not data_set.checks.filter(checked_on__gt=checked_on).exists():
+        data_set.check_due = next_due
+        data_set.save(update_fields=["check_due"])
     return check
 
 
