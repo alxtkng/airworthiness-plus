@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="user",
             name="passkeys",
-            field=models.JSONField(blank=True, default=dict),
+            field=models.JSONField(blank=True, db_default={}, default=dict),
         ),
         migrations.AlterField(
             model_name="accessentry",

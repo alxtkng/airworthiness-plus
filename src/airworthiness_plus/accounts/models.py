@@ -72,7 +72,7 @@ class User(Record, AbstractBaseUser):
     second_factor_confirmed = models.BooleanField(default=False)
     # Credential identifiers and public keys are kept out of history and exports.
     passkeys: models.JSONField[dict[str, Passkey], dict[str, Passkey]] = models.JSONField(
-        default=dict, blank=True
+        default=dict, db_default={}, blank=True
     )
     # A password given by an Administrator is changed by the user before anything else.
     password_must_change = models.BooleanField(default=False)
