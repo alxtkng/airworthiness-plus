@@ -261,6 +261,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "releases_release": {
             "release_rules",
             "release_certification_evidence",
+            "release_grounding_guard",
             "release_work_package_snapshot",
         },
         "releases_historicalreleaseevidence": {"historical_release_period"},

@@ -157,9 +157,10 @@ def test_grounded_release_can_only_be_retained_as_historical_evidence(
         expect(page.locator("main")).to_contain_text("Test grounding defect")
 
         page.goto("/release-to-service/")
-        row = page.locator("main table.compact tbody tr:not(.detail)").filter(
-            has_text="Right Main Tyre Replaced"
+        certificates = page.get_by_role("table").filter(
+            has=page.get_by_role("columnheader", name="In Records")
         )
+        row = certificates.get_by_role("row").filter(has_text="Right Main Tyre Replaced")
         reveal(row).get_by_role("link", name="Record the Certificate, G-ABCD").click()
         page.get_by_role("link", name="Retain Unverified Historical Evidence").click()
         evidence = form_with(page, "source")

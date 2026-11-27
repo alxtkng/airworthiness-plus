@@ -11,6 +11,12 @@ INSTALL = """
 CREATE FUNCTION historical_release_period() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
+    IF NEW.reference !~ '[^[:space:]]' OR NEW.issuer_name !~ '[^[:space:]]'
+        OR NEW.source !~ '[^[:space:]]'
+    THEN
+        RAISE EXCEPTION 'The signed historical evidence needs a reference, issuer and source'
+            USING ERRCODE = 'check_violation';
+    END IF;
     IF NEW.issued_on >= (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/London')::date
         OR NOT EXISTS (
             SELECT 1 FROM programme_workdone AS work
@@ -30,9 +36,36 @@ END
 $$;
 CREATE TRIGGER historical_release_period BEFORE INSERT ON releases_historicalreleaseevidence
     FOR EACH ROW EXECUTE FUNCTION historical_release_period();
+
+CREATE FUNCTION release_grounding_guard() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    work_aircraft_id uuid;
+BEGIN
+    SELECT work.aircraft_id INTO work_aircraft_id
+      FROM programme_workdone AS work
+     WHERE work.id = NEW.work_id;
+    PERFORM id FROM aircraft_aircraft WHERE id = work_aircraft_id FOR UPDATE;
+    IF EXISTS (
+        SELECT 1 FROM defects_defect AS defect
+         WHERE defect.aircraft_id = work_aircraft_id
+           AND defect.decision = 'Not Deferrable'
+           AND defect.found_on <= NEW.issued_on
+           AND (defect.closed_on IS NULL OR defect.closed_on > NEW.issued_on)
+    )
+    THEN
+        RAISE EXCEPTION 'A release is refused during a grounding period'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+CREATE TRIGGER release_grounding_guard BEFORE INSERT ON releases_release
+    FOR EACH ROW EXECUTE FUNCTION release_grounding_guard();
 """
 
 UNINSTALL = """
+DROP TRIGGER release_grounding_guard ON releases_release;
+DROP FUNCTION release_grounding_guard();
 DROP TRIGGER historical_release_period ON releases_historicalreleaseevidence;
 DROP FUNCTION historical_release_period();
 """

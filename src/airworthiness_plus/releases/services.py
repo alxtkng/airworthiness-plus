@@ -80,7 +80,7 @@ def retain_historical_evidence(
     if not reference or not issuer_name or not source:
         raise RefusedError("Enter the Signed Release Reference, Issuer and Evidence Reference")
     Aircraft.objects.select_for_update().get(pk=work.aircraft_id)
-    grounding = _grounding_defects(work.aircraft, issued_on).first()
+    grounding = _grounding_defects(work.aircraft, issued_on).select_for_update().first()
     if grounding is None:
         raise RefusedError("No Grounding Defect Was Open on the Date Given")
     if work.historical_releases.filter(reference=reference, issued_on=issued_on).exists():

@@ -684,7 +684,7 @@ def test_a_grounded_period_release_can_be_retained_as_unverified_evidence(
 
     work = tyre(sample)
     with working_for(sample.ours.id, sample.planner.id):
-        defect_services.record_defect(
+        grounding = defect_services.record_defect(
             fleet["G-ABCD"],
             title="Grounding defect before issue",
             chapter=71,
@@ -693,6 +693,38 @@ def test_a_grounded_period_release_can_be_retained_as_unverified_evidence(
             decided_on=work.dated,
             decision=Decision.NOT_DEFERRABLE,
         )
+        defect_services.close_defect(
+            grounding, rectification="Grounding defect resolved", closed_on=date(2026, 10, 25)
+        )
+        with pytest.raises(IntegrityError, match="grounding period"), transaction.atomic():
+            HistoricalReleaseEvidence.objects.create(
+                organisation=sample.ours,
+                work=work,
+                grounding_defect=grounding,
+                reference="After closure",
+                issuer_name="Recorded certifier",
+                issued_on=date(2026, 10, 25),
+                source="Signed logbook entry",
+            )
+        with pytest.raises(services.RefusedError, match="Open Defect That Is Not Deferrable"):
+            services.record_certificate(
+                work,
+                reference="Original release",
+                kind=IssuedBy.PILOT_OWNER,
+                issuer_name="Recorded certifier",
+                licence="PPL-123",
+                issued_on=work.dated,
+            )
+        with pytest.raises(IntegrityError, match="grounding period"), transaction.atomic():
+            Release.objects.create(
+                organisation=sample.ours,
+                work=work,
+                reference="Original release",
+                kind=IssuedBy.PILOT_OWNER,
+                issuer_name="Recorded certifier",
+                licence="PPL-123",
+                issued_on=work.dated,
+            )
     response = post(
         signed_in(sample.planner),
         f"/release-to-service/{work.pk}/historical-evidence/",
@@ -705,6 +737,7 @@ def test_a_grounded_period_release_can_be_retained_as_unverified_evidence(
     with working_for(sample.ours.id, sample.reader.id):
         evidence = HistoricalReleaseEvidence.objects.get(work=work)
         assert evidence.reference == "Original release"
+        assert evidence.grounding_defect_id == grounding.pk
         work.refresh_from_db()
         assert work.release_recorded_on is None
     body = page(signed_in(sample.reader), "/release-to-service/")
