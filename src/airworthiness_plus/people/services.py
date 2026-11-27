@@ -1,7 +1,7 @@
 """What can be done with person records. Views check the role first."""
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 from django.db import transaction
@@ -272,3 +272,32 @@ def staff(organisation: Organisation) -> Staff:
             )
         )
     return Staff([person for person in people if person.left_on is None], former)
+
+
+@dataclass
+class ReportingLine:
+    """A current staff member and their direct reports in the organisation chart."""
+
+    person: Person
+    reports: list["ReportingLine"] = field(default_factory=list)
+
+
+def organisation_chart(organisation: Organisation) -> tuple[list[ReportingLine], list[Person]]:
+    """Build the chart from the organisation's current reporting relationships (REQ-295)."""
+    people = Person.objects.filter(organisation=organisation, left_on__isnull=True).select_related(
+        "reports_to"
+    )
+    lines = {person.pk: ReportingLine(person) for person in people}
+    roots = []
+    managers = []
+    for line in lines.values():
+        person = line.person
+        if person.staff_group == StaffGroup.MANAGEMENT:
+            managers.append(person)
+        parent = lines.get(person.reports_to_id) if person.reports_to_id is not None else None
+        if parent is None:
+            roots.append(line)
+        else:
+            parent.reports.append(line)
+    roots.sort(key=lambda line: line.person.role != "Accountable Manager")
+    return roots, managers

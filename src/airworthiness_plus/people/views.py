@@ -35,6 +35,14 @@ def staff_page(request: HttpRequest) -> HttpResponse:
     return render(request, "people/staff.html", {"staff": staff, **_shown_to(request)})
 
 
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def organisation_chart(request: HttpRequest) -> HttpResponse:
+    """Show current reporting lines and management personnel (REQ-295)."""
+    roots, managers = services.organisation_chart(_user(request).organisation)
+    return render(request, "people/chart.html", {"roots": roots, "managers": managers})
+
+
 def _shown_to(request: HttpRequest) -> dict[str, bool]:
     """Return what the roles of the user let the Staff pages show them.
 

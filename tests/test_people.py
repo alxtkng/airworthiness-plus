@@ -852,3 +852,36 @@ def test_a_sign_in_from_before_person_records_is_given_its_person(sample: Sample
         count = Person.objects.count()
         assert build.add_person_records(sample.ours, sample.administrator) == 0
         assert Person.objects.count() == count
+
+
+def test_organisation_chart_shows_current_reporting_lines_for_its_own_organisation(
+    sample: Sample,
+) -> None:
+    with working_for(sample.ours.id, sample.administrator.id):
+        manager = services.add_person(
+            organisation=sample.ours,
+            full_name="Chart Manager",
+            role="Maintenance Manager",
+            staff_group=StaffGroup.MANAGEMENT,
+        )
+        engineer = services.add_person(
+            organisation=sample.ours,
+            full_name="Chart Engineer",
+            reports_to=manager,
+            employment=Employment.CONTRACTED,
+        )
+        services.add_person(organisation=sample.ours, full_name="Former Engineer", left_on=TODAY)
+        roots, managers = services.organisation_chart(sample.ours)
+        branch = next(root for root in roots if root.person == manager)
+        assert [line.person for line in branch.reports] == [engineer]
+        assert manager in managers
+
+    chart = "/staff/organisation-chart/"
+    reader = signed_in(sample.reader)
+    assert 'href="/staff/organisation-chart/"' in page(reader, "/staff/")
+    body = page(reader, chart)
+    assert f'href="/staff/{engineer.id}/">Chart Engineer</a>, Contracted' in body
+    assert "<h2>Management Personnel</h2>" in body
+    assert "Chart Manager" in body
+    assert "Former Engineer" not in body
+    assert "Chart Engineer" not in page(signed_in(sample.stranger), chart)

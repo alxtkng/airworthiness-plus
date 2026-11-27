@@ -283,6 +283,12 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-293 | The views of an aircraft's record are Record, Maintenance Programme, Maintenance Forecast, Airworthiness Directives, Configuration, Maintenance Data and Airworthiness Review. Every role reads the two new views, which change nothing. Another organisation's aircraft is not found | Aircraft board, tabs; REQ-003, REQ-196 | Must | Test |
 | REQ-294 | At each start the test site gives a sample seeded before Phase 1 of the canvas build the Phase 1 records it lacks, part by part: defects and the actions on repeats; contracts and work orders; components; modifications and weighings; departures and the annual review; the sources of directives; and the transfer and configuration of G-HKLM. A part is added only where the organisation holds no record of its kind, and is otherwise taken as done. Only records are added: nothing that exists gains a history entry, an aircraft is not grounded, and a programme that is there is not reviewed. That a part has been dealt with is recorded once, whatever came of it, and no later start touches it. An aircraft is known by its registration and the type rating the sample gave it; no person is looked up, and what the sample records against a named member of certifying staff is left out. A row the records refuse is left out; a part that fails is undone whole and said in one line that names no record; the start carries on | Decisions.md, Canvas Build, corrections of 24 November 2026, finding 3 (D); REQ-218; `operations/test-site.md` | Must | Golden, Test |
 
+## Canvas Build, Phase 2 People
+
+| Identifier | Requirement | Source | Priority | Verification |
+|---|---|---|---|---|
+| REQ-295 | The Organisation Chart tab of Staff shows the organisation's current reporting chains and lists its current management personnel. Each person links to their Staff record. A person without a current manager is visible at the top level. Every role that can read Staff can read the chart for its own organisation | Organisation Chart board; REQ-003, REQ-006, REQ-203, REQ-205 | Must | Test |
+
 ## Open Points
 
 These block verification of the requirements named, not the start of building.

@@ -258,7 +258,7 @@ BOARD: tuple[Group, ...] = (
             Item(
                 "Staff",
                 "staff",
-                tabs=(Tab("All Staff", "staff"), Tab("Organisation Chart")),
+                tabs=(Tab("All Staff", "staff"), Tab("Organisation Chart", "organisation_chart")),
                 inside=frozenset({"add_person", "person", "change_person"}),
             ),
             Item(

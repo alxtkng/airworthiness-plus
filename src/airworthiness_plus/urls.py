@@ -317,6 +317,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="change_customer",
     ),
     path("staff/", people.staff_page, name="staff"),
+    path("staff/organisation-chart/", people.organisation_chart, name="organisation_chart"),
     path("staff/add/", people.add_person, name="add_person"),
     path("staff/<uuid:person_id>/", people.person_page, name="person"),
     path("staff/<uuid:person_id>/change/", people.change_person, name="change_person"),
