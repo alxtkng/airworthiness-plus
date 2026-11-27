@@ -77,6 +77,16 @@ jobs:
         # Runs against the PostgreSQL service above.
         run: uv run pytest
 
+      - name: Install Locked Playwright Chromium
+        run: uv run playwright install --with-deps chromium
+
+      - name: Live Playwright Journeys
+        env:
+          AIRWORTHINESS_E2E: "1"
+          AIRWORTHINESS_E2E_POSTGRES: host=127.0.0.1 dbname=postgres user=postgres port=5432
+          AIRWORTHINESS_E2E_FULL: ${{ github.event_name != 'pull_request' && '1' || '' }}
+        run: uv run pytest tests/e2e -rx
+
       - name: Dependency Vulnerability Scan
         run: |
           uv export --locked --no-emit-project --format requirements.txt -o requirements-audit.txt
