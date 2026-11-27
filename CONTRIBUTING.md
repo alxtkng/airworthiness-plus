@@ -52,6 +52,9 @@ AIRWORTHINESS_DATABASE_OWNER_WORK=true uv run python manage.py migrate
 
 `AIRWORTHINESS_DATABASE_PASSWORD`, `AIRWORTHINESS_DATABASE_HOST` and `AIRWORTHINESS_DATABASE_PORT` are read when set. Never put these values in a file in the repository.
 
+The [live Playwright checks](tests/e2e/README.md) run separately against a disposable
+PostgreSQL cluster. They use the same locked dependencies.
+
 The pipeline also scans dependencies for known vulnerabilities, scans for committed secrets, and produces a software bill of materials (a list of every component in the build). A dependency is added or updated only by changing `pyproject.toml`, running `uv lock`, and committing both files in a pull request of its own.
 
 ## Licence and Outside Contributions
