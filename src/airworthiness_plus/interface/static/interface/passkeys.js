@@ -57,9 +57,10 @@
 
     for (const button of document.querySelectorAll("[data-passkey]")) {
         button.hidden = false;
-        button.addEventListener("click", async () => {
-            const form = button.form;
-            const kind = button.dataset.passkey;
+        const form = button.form;
+        const kind = button.dataset.passkey;
+        const activate = async (event) => {
+            event.preventDefault();
             const name = form.elements.namedItem(kind === "register" ? "name" : "username");
             const message = form.querySelector("[data-passkey-message]");
             if (name && !name.reportValidity()) return;
@@ -94,6 +95,8 @@
             } finally {
                 button.disabled = false;
             }
-        });
+        };
+        if (kind === "register") form.addEventListener("submit", activate);
+        else button.addEventListener("click", activate);
     }
 })();

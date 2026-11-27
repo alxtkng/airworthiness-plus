@@ -124,8 +124,9 @@ def test_passkey_enrolment_sign_in_and_revocation(
             },
         )
         page.get_by_role("link", name="Passkeys", exact=True).click()
-        page.get_by_label("Passkey Name").fill("Workshop Security Key")
-        page.get_by_role("button", name="Add Passkey", exact=True).click()
+        name = page.get_by_label("Passkey Name")
+        name.fill("Workshop Security Key")
+        name.press("Enter")
         remove = page.get_by_role("button", name="Remove Workshop Security Key")
         expect(remove).to_be_visible()
 

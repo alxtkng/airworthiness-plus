@@ -21,11 +21,11 @@
 <button type="submit">Verify Your Identity to Add a Passkey</button>
 </form>
 {% else %}
-<form>
+<form method="post" action="{% url 'passkey_settings' %}">
 {% csrf_token %}
 <p><label for="passkey-name">Passkey Name</label><br>
 <input id="passkey-name" name="name" type="text" placeholder="For example, Work Security Key" autocomplete="off" maxlength="80" required></p>
-<p><button type="button" class="primary" data-passkey="register" data-url="{% url 'add_passkey' %}" hidden>Add Passkey</button></p>
+<p><button type="submit" class="primary" data-passkey="register" data-url="{% url 'add_passkey' %}" hidden>Add Passkey</button></p>
 <p data-passkey-message role="alert" hidden></p>
 </form>
 {% endif %}
