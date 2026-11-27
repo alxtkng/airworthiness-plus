@@ -47,14 +47,6 @@ def default_days(organisation: Organisation, basis: Basis) -> int | None:
     }[basis]
 
 
-def certifying_staff(on: date | None = None) -> list[Person]:
-    """Return the certifying staff of the organisation who had not left by ``on``."""
-    staff = Person.objects.filter(staff_group=StaffGroup.CERTIFYING)
-    if on is not None:
-        staff = staff.exclude(left_on__lt=on)
-    return list(staff)
-
-
 @transaction.atomic
 def record_defect(
     aircraft: Aircraft,
@@ -218,13 +210,6 @@ def close_defect(
     defect.work_done = work_done
     defect.save(update_fields=["rectification", "closed_on", "work_done"])
     return defect
-
-
-def stops_serviceable(aircraft: Aircraft) -> Defect | None:
-    """Return an open defect that is Not Deferrable, if the aircraft has one (REQ-221)."""
-    return Defect.objects.filter(
-        aircraft=aircraft, decision=Decision.NOT_DEFERRABLE, closed_on__isnull=True
-    ).first()
 
 
 @dataclass(frozen=True)
