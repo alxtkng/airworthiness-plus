@@ -539,6 +539,34 @@ def test_administrator_records_maintenance_authorisation(
         expect(row).to_contain_text("1 December 2026")
 
 
+def test_administrator_records_recurrent_training(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][0]) as page:
+        page.goto("/staff/")
+        page.get_by_role("link", name="Chris Moore", exact=True).click()
+        page.get_by_role("link", name="Record Recurrent Training").click()
+        save(
+            page,
+            "Save Training",
+            {
+                "subject": "Human Factors",
+                "evidence_reference": "TEST-TR-65",
+                "completed_on": "2025-11-15",
+                "due_on": "2027-11-15",
+            },
+            "TEST-TR-65",
+        )
+        page.reload()
+        row = page.get_by_role("row").filter(has_text="TEST-TR-65")
+        expect(row).to_contain_text("Human Factors")
+        expect(row).to_contain_text("15 November 2027")
+        page.goto("/staff/")
+        expect(page.get_by_role("row").filter(has_text="Chris Moore")).to_contain_text(
+            "Human Factors, Completed 15 November 2025, Due 15 November 2027"
+        )
+
+
 def test_administrator_records_staff_approvals_and_limits(
     chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
 ) -> None:
