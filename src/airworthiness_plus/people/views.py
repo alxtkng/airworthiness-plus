@@ -15,6 +15,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
+from airworthiness_plus.accounts.user_views import code_page
 from airworthiness_plus.people import services
 from airworthiness_plus.people.forms import PersonForm
 from airworthiness_plus.people.models import Person
@@ -93,8 +94,21 @@ def change_person(request: HttpRequest, person_id: uuid.UUID) -> HttpResponse:
     person = get_object_or_404(Person.objects.select_related("reports_to", "user"), pk=person_id)
     form = PersonForm(request.POST, person=person)
     if form.is_valid():
+        if person.user_id is not None and form.cleaned_data["full_name"] != person.full_name:
+            # The name of a person with a sign-in is the name of the sign-in, which
+            # later entries of the history record as who acted. So it is changed as
+            # a change on the Users page is: within 5 minutes of signing in, or with
+            # a code (OWASP ASVS 5.0, 7.5.1; finding 2 of 24 November 2026).
+            asked = code_page(
+                request,
+                f"Change the Name of {person.full_name}",
+                "a Change of Name",
+                ("staff", "Back to Staff"),
+            )
+            if asked is not None:
+                return asked
         try:
-            services.change_person(person, **form.cleaned_data)
+            services.change_person(person, by=_user(request), **form.cleaned_data)
         except services.RefusedError as error:
             form.add_error(None, str(error))
         else:

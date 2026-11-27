@@ -17,7 +17,7 @@ Do this once, the day before.
 5. Do the same for `planning@your-organisation.example` and `reader@your-organisation.example`.
 6. Sign out. Sign in as each of them once, set up the authenticator and choose a password.
 
-For the second organisation, do the same with its Administrator, `accountable.manager@second-organisation.example`. Its first password is the same value in Render. It works for 7 days from the day the second organisation was made.
+For the second organisation, do the same with its Administrator, `accountable.manager@second-organisation.example`. Its first password is its own value in Render, `AIRWORTHINESS_TEST_SITE_SECOND_ADMINISTRATOR_PASSWORD`, never the first Administrator's. It works for 7 days from the day the second organisation was made.
 
 ## The Sample Users
 

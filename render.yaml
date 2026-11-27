@@ -66,3 +66,7 @@ services:
       # The sample Administrator's first password, read from Render's dashboard.
       - key: AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD
         generateValue: true
+      # The first password of the second sample organisation's Administrator: its
+      # own, never the first's. Read from Render's dashboard in the same way.
+      - key: AIRWORTHINESS_TEST_SITE_SECOND_ADMINISTRATOR_PASSWORD
+        generateValue: true

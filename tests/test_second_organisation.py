@@ -47,6 +47,7 @@ pytestmark = pytest.mark.django_db
 
 # Made up for these tests.
 PASSWORD = "correct horse battery staple 2026"  # noqa: S105  # pragma: allowlist secret
+SECOND_PASSWORD = "another horse battery staple 2026"  # noqa: S105  # pragma: allowlist secret
 ROLE = "airworthiness_second_test"
 SERVICE = "a service password for the tests"  # pragma: allowlist secret
 
@@ -214,6 +215,7 @@ def given(monkeypatch: pytest.MonkeyPatch, settings: Any) -> None:
     monkeypatch.setenv(test_site.SERVICE_USER, ROLE)
     monkeypatch.setenv(test_site.SERVICE_PASSWORD, SERVICE)
     monkeypatch.setenv(test_site.ADMINISTRATOR_PASSWORD, PASSWORD)
+    monkeypatch.setenv(test_site.SECOND_ADMINISTRATOR_PASSWORD, SECOND_PASSWORD)
 
 
 def mark_the_database() -> None:
@@ -302,8 +304,12 @@ def test_a_test_site_seeded_before_the_canvas_build_is_given_what_is_missing(
             assert User.objects.filter(organisation=ours).count() == 5
             assert chain.problems(list(Event.objects.all())) == []
         assert Organisation.objects.count() == 2
+        # A first password of its own, never the first organisation's (finding 9
+        # of the independent review of 24 November 2026).
         theirs = user_named(second.ADMINISTRATOR)
-        assert theirs.check_password(PASSWORD) and theirs.password_must_change
+        assert theirs.check_password(SECOND_PASSWORD) and theirs.password_must_change
+        assert not theirs.check_password(PASSWORD)
+        assert not user_named(ADMINISTRATOR).check_password(SECOND_PASSWORD)
 
         entries = Event.objects.count()
         assert prepare() == [

@@ -22,8 +22,9 @@ from django.core.management.base import CommandError
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 
-from airworthiness_plus.accounts import sign_in
+from airworthiness_plus.accounts import sign_in, users
 from airworthiness_plus.accounts.models import User
+from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.sample import second, test_site
 from airworthiness_plus.sample.management.commands import prepare_test_site
@@ -34,6 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ROLE = "airworthiness_test_site_check"
 PASSWORD = secrets.token_urlsafe(24)
 FIRST_PASSWORD = secrets.token_urlsafe(24)
+SECOND_PASSWORD = secrets.token_urlsafe(24)
 OWNERS, SERVICES, FIRST = (secrets.token_urlsafe(12) for _ in range(3))
 
 HOSTED = {
@@ -180,6 +182,7 @@ def given(monkeypatch: pytest.MonkeyPatch, settings: Any) -> None:
     monkeypatch.setenv(test_site.SERVICE_USER, ROLE)
     monkeypatch.setenv(test_site.SERVICE_PASSWORD, PASSWORD)
     monkeypatch.setenv(test_site.ADMINISTRATOR_PASSWORD, FIRST_PASSWORD)
+    monkeypatch.setenv(test_site.SECOND_ADMINISTRATOR_PASSWORD, SECOND_PASSWORD)
 
 
 def prepare() -> str:
@@ -272,6 +275,7 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
         assert "SCRAM-SHA-256$" in statements
         assert PASSWORD not in statements and FIRST_PASSWORD not in statements
         assert PASSWORD not in first and FIRST_PASSWORD not in first
+        assert SECOND_PASSWORD not in statements and SECOND_PASSWORD not in first
 
         assert prepare_test_site.sample_is_set_up()
         again = prepare()
@@ -291,6 +295,80 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
             # sign-in and good for 7 days (review of 20 November 2026, finding 8).
             assert administrator.password_must_change
             assert administrator.first_password_set_on == sign_in.today()
+
+
+def second_administrator() -> User | None:
+    return prepare_test_site.administrator_named(second.ADMINISTRATOR)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("value", ["", FIRST_PASSWORD])
+def test_the_second_organisation_is_not_set_up_without_a_first_password_of_its_own(
+    given: None, monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    """Independent review of 24 November 2026, finding 9. With no value, or with the first
+    Administrator's, the start sets up nothing for the second organisation, says so,
+    and carries on. Given one later, the next start sets it up."""
+    monkeypatch.setenv(test_site.SECOND_ADMINISTRATOR_PASSWORD, value)
+    reason = (
+        f"{test_site.SECOND_ADMINISTRATOR_PASSWORD} Is Not Set in the Environment"
+        if not value
+        else "Its Administrator Has a First Password of Its Own"
+    )
+    with as_owner():
+        mark_the_database()
+        first = prepare()
+        assert first.splitlines() == [
+            "Service Role Made",
+            "Sample Organisation Set Up",
+            f"Administrator {ADMINISTRATOR}",
+            f"Second Sample Organisation Not Set Up: {reason}",
+        ]
+        assert FIRST_PASSWORD not in first
+        assert second_administrator() is None
+        assert one("SELECT count(*) FROM organisations_organisation") == 1
+        assert prepare().splitlines()[-1] == f"Second Sample Organisation Not Set Up: {reason}"
+        monkeypatch.setenv(test_site.SECOND_ADMINISTRATOR_PASSWORD, SECOND_PASSWORD)
+        assert prepare().splitlines()[-2:] == [
+            "Second Sample Organisation Set Up",
+            f"Administrator {second.ADMINISTRATOR}",
+        ]
+        theirs = second_administrator()
+        assert theirs is not None
+        assert theirs.check_password(SECOND_PASSWORD) and not theirs.check_password(FIRST_PASSWORD)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("taken", second.USERNAMES)
+def test_a_start_never_fails_because_a_user_name_of_the_second_sample_is_taken(
+    given: None, monkeypatch: pytest.MonkeyPatch, taken: str
+) -> None:
+    """Finding 9. Any Administrator of the first organisation can add a user under a name
+    the second sample would use. The start then says so and carries on, at every
+    start, and makes nothing of the second organisation."""
+    with as_owner():
+        mark_the_database()
+        monkeypatch.delenv(test_site.SECOND_ADMINISTRATOR_PASSWORD)
+        prepare()
+        monkeypatch.setenv(test_site.SECOND_ADMINISTRATOR_PASSWORD, SECOND_PASSWORD)
+        first = prepare_test_site.administrator_named(ADMINISTRATOR)
+        assert first is not None
+        with working_for(first.organisation_id, first.id):
+            users.add_user(
+                organisation=first.organisation,
+                username=taken,
+                full_name="[Taken Name]",
+                roles=[],
+                password=users.new_first_password(),
+            )
+        for _ in range(2):
+            assert prepare().splitlines() == [
+                "Service Role Password Set Again",
+                "Sample Organisation Already Set Up",
+                "Second Sample Organisation Not Set Up: One of Its User Names Is Already Taken",
+            ]
+        assert one("SELECT count(*) FROM organisations_organisation") == 1
+        assert one("SELECT count(*) FROM people_person") == 16
 
 
 @pytest.mark.django_db
@@ -365,8 +443,12 @@ def test_the_set_up_file_gives_every_value_the_start_needs_and_holds_no_secret()
         test_site.OWNER_USER,
         test_site.OWNER_PASSWORD,
         test_site.ADMINISTRATOR_PASSWORD,
+        test_site.SECOND_ADMINISTRATOR_PASSWORD,
     ):
         assert name in values, name
+    # Each Administrator's first password is a value of its own (finding 9 of 24 November 2026).
+    for name in (test_site.ADMINISTRATOR_PASSWORD, test_site.SECOND_ADMINISTRATOR_PASSWORD):
+        assert "generateValue: true" in values[name], name
     for name, body in values.items():
         if "PASSWORD" in name or "SECRET" in name:
             assert "generateValue: true" in body or "fromDatabase:" in body, name

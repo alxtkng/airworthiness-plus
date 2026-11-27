@@ -20,6 +20,7 @@ from airworthiness_plus.accounts.roles import Action, Role, permitted
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.interface.formatting import long_date
+from airworthiness_plus.people.models import Person
 from airworthiness_rules.dates import uk_today
 from tests.conftest import as_owner
 from tests.support import Sample, make_sample, signed_in
@@ -616,6 +617,66 @@ def test_every_change_on_the_users_page_needs_a_code_unless_just_signed_in(
         person = User.objects.get(pk=new_user.pk)
         assert (person.is_active, person.roles) == (False, ["Administrator"])
     assert "Sessions Ended" in [kind for kind, _ in log_of(new_user)]
+
+
+def test_the_name_of_a_person_with_a_sign_in_changes_only_with_a_code(
+    sample: Sample, new_user: User, clock: Clock
+) -> None:
+    """OWASP ASVS 5.0, 7.5.1; independent review of 24 November 2026, finding 2. The
+    name of a person with a sign-in is the sign-in's name, which the history
+    records as who acted. Changed on the Staff page more than 5 minutes after
+    signing in, it asks for the code as every change on the Users page does."""
+    administrator, _, name = stale_administrator(sample, clock)
+    with working_for(sample.ours.id, sample.administrator.id):
+        person = Person.objects.get(user=new_user)
+        chris = Person.objects.get(full_name="Chris Moore")
+    values = {
+        "full_name": "[Another Name]",
+        "role": "Planning and Records",
+        "staff_group": "Other Staff",
+        "employment": "Employed",
+    }
+    asked = post(administrator, f"/staff/{person.id}/change/", **values)
+    assert asked.status_code == 200
+    body = asked.content.decode()
+    assert "<h1>Change the Name of [New Person]</h1>" in body
+    assert '<a href="/staff/">Back to Staff</a>' in body
+    for field, value in values.items():
+        assert f'<input type="hidden" name="{field}" value="{value}">' in body, field
+    # Nothing was changed: not the name, and nothing else that was sent with it.
+    with as_owner():
+        assert User.objects.get(pk=new_user.pk).full_name == "[New Person]"
+        unchanged = Person.objects.get(pk=person.pk)
+        assert (unchanged.full_name, unchanged.role) == ("[New Person]", "")
+    # A wrong code changes nothing and is entered in the access log.
+    clock.advance(seconds=31)
+    wrong = post(administrator, f"/staff/{person.id}/change/", **values, code="000000")
+    assert "The Code From Your Authenticator Application Is Not Right" in wrong.content.decode()
+    with as_owner():
+        assert User.objects.get(pk=new_user.pk).full_name == "[New Person]"
+    # What is not the name needs no code, for a person with a sign-in or without.
+    same = post(
+        administrator, f"/staff/{person.id}/change/", **{**values, "full_name": "[New Person]"}
+    )
+    assert same.status_code == 302
+    renamed = post(
+        administrator,
+        f"/staff/{chris.id}/change/",
+        full_name="[Chris Moore Renamed]",
+        staff_group="Certifying Staff",
+        employment="Employed",
+    )
+    assert renamed.status_code == 302
+    with as_owner():
+        assert Person.objects.get(pk=person.pk).role == "Planning and Records"
+        assert Person.objects.get(pk=chris.pk).full_name == "[Chris Moore Renamed]"
+    # With the code, and what was sent, the name is changed on both.
+    clock.advance(seconds=31)
+    done = post(administrator, f"/staff/{person.id}/change/", **values, code=code_now(name, clock))
+    assert done.status_code == 302
+    with as_owner():
+        assert User.objects.get(pk=new_user.pk).full_name == "[Another Name]"
+        assert Person.objects.get(pk=person.pk).full_name == "[Another Name]"
 
 
 def test_guesses_at_the_code_are_locked_like_guesses_at_sign_in(

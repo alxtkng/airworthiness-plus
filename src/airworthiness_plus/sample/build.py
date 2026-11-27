@@ -33,6 +33,7 @@ from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis, InspectionCategory, Task
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import Certificate, ReviewStaff
+from airworthiness_plus.sample.models import Added, Part
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 
 TODAY = date(2026, 11, 18)
@@ -154,7 +155,8 @@ def add_people(ours: Organisation, administrator: User) -> Staff:
 
 # SampleData.md, People, and the Staff board: name, role, staff group, who they
 # report to, employment, licence, the day they joined and the day they left.
-# The first five have a sign-in, named by their place in ``Staff``.
+# Each person is listed after the person they report to. Five have a sign-in,
+# named in ``SIGN_INS``.
 _M, _C, _R, _O = (
     StaffGroup.MANAGEMENT,
     StaffGroup.CERTIFYING,
@@ -199,38 +201,98 @@ PEOPLE: tuple[
 )  # fmt: skip
 
 
-def add_person_records(ours: Organisation, administrator: User) -> dict[str, Person]:
-    """Give each person of SampleData.md their record, as the Administrator.
+DOMAIN = "your-organisation.example"
+# The sign-ins of the sample, by the name of the person each belongs to. A
+# sign-in of the sample is known by its user name, which the sample gave it and
+# which is used once across every organisation. Nobody is found by their name:
+# two people may share one (independent review of 24 November 2026, finding 4).
+SIGN_INS = {
+    "[Accountable Manager]": f"accountable.manager@{DOMAIN}",
+    "Lucy Grant": f"lucy.grant@{DOMAIN}",
+    "[Planning and Records Name]": f"planning@{DOMAIN}",
+    "[Review Name]": f"review@{DOMAIN}",
+    "[Read Only Name]": f"reader@{DOMAIN}",
+}
 
-    A person with a sign-in has a record already, made with the sign-in.
-    A person whose record says more than their name is left as they are, so
-    this can be run again, and on a sample that was seeded before person
-    records (``operations/test-site.md``).
+
+def _says_only_a_name(person: Person) -> bool:
+    """Return whether the record is as it was made with its sign-in: a name and no more."""
+    return (
+        not person.role
+        and not person.licence
+        and person.staff_group == StaffGroup.OTHER
+        and person.employment == Employment.EMPLOYED
+        and person.reports_to_id is None
+        and person.joined_on is None
+        and person.left_on is None
+    )
+
+
+def add_person_records(ours: Organisation, administrator: User) -> int:
+    """Add the people of SampleData.md to the organisation, once. Return how many were added.
+
+    Run when the sample is built, and by the test site at every start for a
+    sample seeded before person records (``operations/test-site.md``). It
+    adds what is missing and changes nothing that anyone has recorded
+    (REQ-218; independent review of 24 November 2026, finding 3):
+
+    - once it has run for an organisation it does nothing more, ever. A
+      record says that it has, so a person renamed since is not added again;
+    - a sample given its people before that record was kept has people with
+      no sign-in already. It is taken as done, and nothing is added;
+    - otherwise each person with no sign-in is added, and the record of each
+      sample sign-in, known by its user name, is completed if it still says
+      only a name. Nobody is found by name, and no person who already has a
+      record is given a reporting line.
+
+    Every record is made or changed through the services the pages use, so
+    every check applies.
     """
-    found: dict[str, Person] = {}
     with working_for(ours.id, administrator.id):
-        for name, role, group, _, employment, licence, joined, left in PEOPLE:
-            person = Person.objects.filter(full_name=name).first()
-            if person is None:
-                person = people_services.add_person(
-                    organisation=ours, full_name=name, joined_on=joined, left_on=left
+        if Added.objects.filter(part=Part.PEOPLE).exists():
+            return 0
+        if Person.objects.filter(user__isnull=True).exists():
+            Added.objects.create(organisation=ours, part=Part.PEOPLE)
+            return 0
+        sign_ins = {
+            user.username: user for user in User.objects.filter(username__in=SIGN_INS.values())
+        }
+        found: dict[str, Person] = {}
+        added = 0
+        for name, role, group, above, employment, licence, joined, left in PEOPLE:
+            reports_to = found.get(above) if above else None
+            user = sign_ins.get(SIGN_INS.get(name, ""))
+            if user is None:
+                found[name] = people_services.add_person(
+                    organisation=ours,
+                    full_name=name,
+                    role=role,
+                    staff_group=group,
+                    reports_to=reports_to,
+                    employment=employment,
+                    licence=licence,
+                    joined_on=joined,
+                    left_on=left,
                 )
-            elif person.role or person.reports_to_id is not None:
-                found[name] = person
+                added += 1
                 continue
-            person.role = role
-            person.staff_group = group
-            person.employment = employment
-            person.licence = licence
-            person.joined_on = joined
-            person.save()
+            person = Person.objects.get(user=user)
+            if _says_only_a_name(person):
+                people_services.change_person(
+                    person,
+                    full_name=person.full_name,
+                    role=role,
+                    staff_group=group,
+                    reports_to=reports_to,
+                    employment=employment,
+                    licence=licence,
+                    joined_on=joined,
+                    left_on=None,
+                    by=administrator,
+                )
             found[name] = person
-        for name, _, _, above, *_ in PEOPLE:
-            person = found[name]
-            if above and person.reports_to_id is None and person.left_on is None:
-                person.reports_to = found[above]
-                person.save(update_fields=["reports_to"])
-    return found
+        Added.objects.create(organisation=ours, part=Part.PEOPLE)
+    return added
 
 
 def add_fleet(people: People) -> dict[str, Aircraft]:

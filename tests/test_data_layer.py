@@ -204,6 +204,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         "imports_load": ["INSERT", "SELECT"],
         "imports_loadedvalue": ["INSERT", "SELECT"],
         "imports_valuecheck": ["INSERT", "SELECT"],
+        # That a part of the sample was added is recorded once and never changed (REQ-218).
+        "sample_added": ["INSERT", "SELECT"],
     }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}

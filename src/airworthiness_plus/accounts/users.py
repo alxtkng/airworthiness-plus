@@ -7,6 +7,7 @@ nobody could manage its users.
 
 import secrets
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
@@ -17,6 +18,9 @@ from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import AccessKind, User
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.organisations.models import Organisation
+
+if TYPE_CHECKING:
+    from airworthiness_plus.people.models import Person
 
 
 class RefusedError(Exception):
@@ -64,13 +68,23 @@ def add_user(
     full_name: str,
     roles: Sequence[str],
     password: str,
+    person: "Person | None" = None,
 ) -> User:
     """Add a user, with a first password that must be changed at first sign-in.
 
     The first password reaches the person by a route that is not the
     system. A user name is used once across every organisation; the
     message does not say whether a name is taken elsewhere.
+
+    The sign-in is given a new person record, unless ``person`` is chosen:
+    a person of the organisation already recorded, who has no sign-in. The
+    sign-in then takes that person's name. Nobody is found by name
+    (REQ-204; independent review of 24 November 2026, finding 4).
     """
+    from airworthiness_plus.people.services import RefusedError as PersonRefusedError
+
+    if person is not None:
+        full_name = person.full_name
     username, full_name = username.strip(), full_name.strip()
     if not username or not full_name:
         raise RefusedError("A User Has a User Name and a Full Name")
@@ -86,7 +100,10 @@ def add_user(
                 password=password,
                 password_must_change=True,
                 first_password_set_on=sign_in.today(),
+                person=person,
             )
+    except PersonRefusedError as error:
+        raise RefusedError(str(error)) from error
     except IntegrityError as error:
         raise RefusedError("This User Name Cannot Be Used") from error
 
@@ -101,10 +118,20 @@ def set_roles(user: User, roles: Sequence[str]) -> None:
     user.save(update_fields=["roles"])
 
 
-def set_active(user: User, *, active: bool, by: User) -> None:
-    """Make a user inactive, or active again. An inactive user's sessions end (REQ-010)."""
-    if not active and user.pk == by.pk:
+def set_active(user: User, *, active: bool, by: User | None) -> None:
+    """Make a user inactive, or active again. An inactive user's sessions end (REQ-010).
+
+    ``by`` is the user doing it, or nobody when it is the owner's work. A
+    user whose person is recorded as having left is not made active: the
+    day they left is taken off the person's record first (REQ-205;
+    independent review of 24 November 2026, finding 5).
+    """
+    from airworthiness_plus.people.models import Person
+
+    if not active and by is not None and user.pk == by.pk:
         raise RefusedError("A User Does Not Make Themselves Inactive")
+    if active and Person.objects.filter(user=user, left_on__isnull=False).exists():
+        raise RefusedError("A Person Recorded as Having Left Is Not Made Active")
     if not active and Role.ADMINISTRATOR in user.roles and not _another_administrator(user):
         raise RefusedError("An Organisation Always Has an Active Administrator")
     user.is_active = active

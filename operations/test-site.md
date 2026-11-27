@@ -43,7 +43,8 @@ None is in the repository, none is typed by anyone, and none is given to an assi
 | `AIRWORTHINESS_SECRET_KEY` | The application's signing key | Render: 256 random bits, 44 characters. The server's rule of 50 characters stands for the server | Whoever can sign in to the Render account |
 | `AIRWORTHINESS_DATABASE_PASSWORD` | The service's role | Render | As above |
 | `AIRWORTHINESS_TEST_SITE_OWNER_PASSWORD` | The owner of the tables | Render, with the database | As above. Never in the running service |
-| `AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD` | The sample Administrator's first password | Render | As above. Never in the running service. It is the password at the first sign-in only, and must be used within 7 days of the database being made. The Administrator chooses a new one at that sign-in. Changing it in Render afterwards changes nothing |
+| `AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD` | The sample Administrator's first password | Render | As above. Never in the running service. It is the password at the first sign-in only, and must be used within 7 days of the database being made. The Administrator chooses a new one at that sign-in. Changing it in Render after the sample organisation is set up changes nothing for that organisation |
+| `AIRWORTHINESS_TEST_SITE_SECOND_ADMINISTRATOR_PASSWORD` | The first password of the second sample organisation's Administrator. Its own value, never the one above | Render | As above. Never in the running service. Read at the start that sets the second organisation up, and not after. If it is not set, or is the same as the value above, the second organisation is not set up: the start says so in its log and carries on |
 
 ## Making It
 
@@ -63,6 +64,7 @@ Done once by Alex King. Nothing is installed on his computer.
 3. Set up an authenticator application when asked. Every user has two factors, here as on the server.
 4. Choose a new password when asked. The value in Render no longer works after this.
 5. The other sample users have no password. The Administrator gives each a first password on the Users page (`user-administration.md`).
+6. For the second organisation, sign in as `accountable.manager@second-organisation.example` with the value of `AIRWORTHINESS_TEST_SITE_SECOND_ADMINISTRATOR_PASSWORD`, and do the same.
 
 Do this within 7 days of the database being made. After 7 days the first password is refused, as every first password is, and the database has to be made again (see When the Database Is Deleted).
 
@@ -87,9 +89,13 @@ Added 24 November 2026. The database live on that day was seeded before the canv
 | The second organisation | Set up at the next start: [Second Organisation], Part-CAMO and Part-145, with 5 people, 2 customers and 2 aircraft | The same |
 | Customers | One customer for each different text that was typed as Owned By: 5 customers for the 7 aircraft. The three aircraft typed as Pilot-Owner share one customer, named Pilot-Owner, until each is given its own on the aircraft's page | The 7 customers of `SampleData.md`, one for each aircraft |
 
-The second organisation's Administrator is `accountable.manager@second-organisation.example`. Its first password is the value of `AIRWORTHINESS_TEST_SITE_ADMINISTRATOR_PASSWORD` in Render on the day it is set up. It is changed at the first sign-in and works for 7 days from that day. After 7 days nobody can sign in to the second organisation until the database is remade.
+The second organisation's Administrator is `accountable.manager@second-organisation.example`. Its first password is the value of `AIRWORTHINESS_TEST_SITE_SECOND_ADMINISTRATOR_PASSWORD` in Render on the day it is set up. It is changed at the first sign-in and works for 7 days from that day. After 7 days nobody can sign in to the second organisation until the database is remade.
 
-What a start writes to its log, one line each: Service Role Made or Service Role Password Set Again; Sample Organisation Set Up or Already Set Up; People of the Sample Brought Up to Date, with how many were added, when any were; Second Sample Organisation Set Up or Already Set Up. No password is written.
+Corrected 27 November 2026, after the independent review of 24 November 2026 (finding 9). Until then the second organisation was set up with the first Administrator's value, so one value opened both organisations. A second organisation set up before the correction keeps the password it was given: sign in to it and choose a new one, or remake the database. The start never changes a password that is there.
+
+What a start writes to its log, one line each: Service Role Made or Service Role Password Set Again; Sample Organisation Set Up or Already Set Up; People of the Sample Brought Up to Date, with how many were added, when any were; Second Sample Organisation Set Up or Already Set Up, or Second Sample Organisation Not Set Up with the reason. The reasons are that its first password is not set, that it is the first Administrator's, or that one of its three user names is already taken. None of them stops the start. No password is written.
+
+The people of the sample are added once. A record says that they have been, and after that a start adds and changes nobody, whatever has been renamed or edited since. Nobody is found by name. A sign-in joined to the wrong person before 27 November 2026 cannot be unlinked on a page: make that sign-in inactive on the Users page and add a new one, choosing the right person or a new one.
 
 Not yet seen on the test site itself: the build session may not reach it. It was rehearsed on 24 November 2026 on a database seeded from `main` before the canvas build, with an owner of the tables that is not a superuser, as Render's is. Every migration applied, 10 people were added and then none, the second organisation was set up, and the records agreed with their history. `demo.md` says what to show.
 
