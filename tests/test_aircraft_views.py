@@ -102,6 +102,8 @@ def test_fleet_puts_the_fitted_component_limit_beside_the_programme(
             fitted_on=TODAY,
             airframe_hours_fitted=Decimal("4950.2"),
             hours_at_fitting=Decimal("0"),
+            airframe_cycles_fitted=0,
+            cycles_at_fitting=0,
         )
     row = row_of(seeded_rows(signed_in(sample.reader), "/?show=due"), "G-FMNO")
     assert row[4:6] == ["Emergency Locator Transmitter Battery", "5 Days"]
@@ -216,6 +218,8 @@ def test_forecast_keeps_the_calendar_limit_when_hours_cannot_be_projected(
             fitted_on=TODAY,
             airframe_hours_fitted=Decimal("9874.3"),
             hours_at_fitting=Decimal("0"),
+            airframe_cycles_fitted=0,
+            cycles_at_fitting=0,
             life_from=date(2021, 12, 1),
         )
     body = page(signed_in(sample.reader), f"/aircraft/{aircraft.id}/forecast/")
