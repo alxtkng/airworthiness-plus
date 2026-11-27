@@ -37,7 +37,7 @@ from tests.support import TODAY, Sample, add_sample_fleet, get, post, signed_in
 
 pytestmark = pytest.mark.django_db
 
-SIGN_IN_PAGES = {"sign_in", "code", "set_up"}
+SIGN_IN_PAGES = {"sign_in", "code", "set_up", "passkey_sign_in"}
 
 
 def routes() -> list[tuple[str, str]]:
@@ -63,7 +63,8 @@ def test_no_address_answers_without_sign_in() -> None:
             response = getattr(anonymous, method)(path, secure=True)
             if name in SIGN_IN_PAGES:
                 # The sign-in pages answer, or send back to the first step, or refuse the method.
-                assert response.status_code in (200, 302, 405), f"{method} {path}"
+                expected = (400, 405) if name == "passkey_sign_in" else (200, 302, 405)
+                assert response.status_code in expected, f"{method} {path}"
             elif name == "sign_out":
                 assert response.status_code in (302, 405), f"{method} {path}"
                 assert method == "get" or response["Location"] == "/sign-in/"

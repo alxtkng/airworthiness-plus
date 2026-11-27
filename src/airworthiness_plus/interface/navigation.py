@@ -477,6 +477,11 @@ GROUPS: tuple[Group, ...] = _built(BOARD)
 OUTSIDE = frozenset(
     {
         "sign_in",
+        "passkey_sign_in",
+        "passkey_settings",
+        "add_passkey",
+        "remove_passkey",
+        "verify_passkey",
         "code",
         "set_up",
         "sign_out",

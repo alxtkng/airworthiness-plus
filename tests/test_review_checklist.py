@@ -48,6 +48,7 @@ from tests.support import (
     post,
     signed_in,
 )
+from tests.test_passkeys import set_times
 
 pytestmark = pytest.mark.django_db
 D = Decimal
@@ -308,6 +309,13 @@ def test_g_ejkl_certificate_is_issued_from_the_completed_review(
 ) -> None:
     """REQ-102, REQ-109, REQ-110, REQ-111, REQ-112. The working is at the top of this file."""
     complete(sample, review)
+    client = signed_in(sample.reviewer)
+    set_times(client)
+    challenge = post(client, f"/reviews/{review.id}/issue/")
+    assert b"Your Current Password" in challenge.content
+    with working_for(sample.ours.id, sample.reviewer.id):
+        review.refresh_from_db()
+        assert review.certificate is None
     client = signed_in(sample.reviewer)
     response = post(client, f"/reviews/{review.id}/issue/")
     assert response.status_code == 302

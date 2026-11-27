@@ -21,6 +21,7 @@ from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import ActionRefusedError, address_of, requires
 from airworthiness_plus.accounts.roles import Action
+from airworthiness_plus.accounts.user_views import code_page
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.organisations import approvals
@@ -170,6 +171,15 @@ def extend(request: HttpRequest, certificate_id: uuid.UUID) -> HttpResponse:
     form = ExtensionForm(request.POST)
     message = ""
     if form.is_valid():
+        asked = code_page(
+            request,
+            "Extend an Airworthiness Review Certificate",
+            "an Airworthiness Review Certificate Extension",
+            ("review_schedule", "Back to Review Schedule"),
+            full=True,
+        )
+        if asked is not None:
+            return asked
         try:
             services.extend_certificate(
                 certificate, extended_by=_user(request), **form.cleaned_data
@@ -525,6 +535,15 @@ def issue(request: HttpRequest, review_id: uuid.UUID) -> HttpResponse:
     """
     review = get_object_or_404(Review, pk=review_id)
     _own_review(request, review, Action.ISSUE_AIRWORTHINESS_REVIEW_CERTIFICATE)
+    asked = code_page(
+        request,
+        "Issue an Airworthiness Review Certificate",
+        "Issuing an Airworthiness Review Certificate",
+        ("review_schedule", "Back to Review Schedule"),
+        full=True,
+    )
+    if asked is not None:
+        return asked
     services.note_lapse(review.staff, aircraft_services.today())
     try:
         certificate = services.issue_from_review(review)

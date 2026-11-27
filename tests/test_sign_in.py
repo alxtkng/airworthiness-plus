@@ -170,6 +170,15 @@ def test_first_sign_in_sets_up_the_second_factor(people: People, clock: Clock) -
     ]
 
 
+def test_second_factor_reset_cancels_a_pending_password_step(people: People) -> None:
+    client = Client()
+    assert give_password(client).status_code == 302
+    with working_for(people.ours.id, people.lucy.pk):
+        users.reset_second_factor(people.lucy, by=people.lucy)
+    assert get(client, "/sign-in/set-up/")["Location"] == "/sign-in/code/"
+    assert secret_of(LUCY) == ""
+
+
 def test_a_password_alone_signs_nobody_in(people: People, clock: Clock) -> None:
     """REQ-008, threat TH-001, planned test T-SEC-001."""
     client = Client()

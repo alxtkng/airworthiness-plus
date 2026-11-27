@@ -20,6 +20,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.db import connection, transaction
 from django.db.models import Max
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 
 from airworthiness_plus.accounts import totp
 from airworthiness_plus.accounts.models import AccessEntry, AccessKind, User
@@ -180,20 +181,26 @@ def check_password_for(username: str, password: str, address: str | None = None)
         return user
 
 
-def secret_to_set_up(username: str) -> str | None:
-    """Return the secret for a user who has not yet confirmed a second factor.
+def _password_still_valid(user: User, proof: str | None) -> bool:
+    return user.is_active and (
+        proof is None or constant_time_compare(proof, user.get_session_auth_hash())
+    )
 
-    Makes one if there is none. Returns None once a second factor is
-    confirmed: it is never shown again.
-    """
+
+def secret_to_set_up(username: str, *, proof: str | None = None) -> str | None:
+    """Return or create the unconfirmed secret for a still-valid password step."""
     with _checking(username):
         user = _find(username, active_only=True)
-    if user is None or user.second_factor_confirmed:
-        return None
-    if not user.second_factor_secret:
+        if user is None:
+            return None
         with working_for(user.organisation_id, user.id):
-            user.second_factor_secret = totp.new_secret()
-            user.save(update_fields=["second_factor_secret"])
+            locked: User = User.objects.select_for_update().get(pk=user.pk)
+            user = locked
+            if not _password_still_valid(user, proof) or user.second_factor_confirmed:
+                return None
+            if not user.second_factor_secret:
+                user.second_factor_secret = totp.new_secret()
+                user.save(update_fields=["second_factor_secret"])
     return user.second_factor_secret
 
 
@@ -204,7 +211,9 @@ def _last_counter(user_id: uuid.UUID) -> int | None:
     return last
 
 
-def check_code_for(username: str, code: str, address: str | None = None) -> User | None:
+def check_code_for(
+    username: str, code: str, address: str | None = None, *, proof: str | None = None
+) -> User | None:
     """Second step. Return the user if the code is right, or None.
 
     Called only after ``check_password_for`` has returned this user. A
@@ -216,24 +225,39 @@ def check_code_for(username: str, code: str, address: str | None = None) -> User
         if _refuse_if_locked(username, address):
             return None
         user = _find(username, active_only=True)
-        if user is None or not user.second_factor_secret:
-            _log(AccessKind.SIGN_IN_FAILED, username, user=user, detail="No Code", address=address)
+        if user is None:
+            _log(AccessKind.SIGN_IN_FAILED, username, detail="No Code", address=address)
             return None
-        counter = totp.matching_counter(
-            user.second_factor_secret, code, current_time(), after=_last_counter(user.id)
-        )
-        if counter is None:
-            _log(
-                AccessKind.SIGN_IN_FAILED, username, user=user, detail="Wrong Code", address=address
+        with working_for(user.organisation_id, user.id):
+            locked: User = User.objects.select_for_update().get(pk=user.pk)
+            user = locked
+            if not _password_still_valid(user, proof) or not user.second_factor_secret:
+                _log(
+                    AccessKind.SIGN_IN_FAILED,
+                    username,
+                    user=user,
+                    detail="No Code",
+                    address=address,
+                )
+                return None
+            counter = totp.matching_counter(
+                user.second_factor_secret, code, current_time(), after=_last_counter(user.id)
             )
-            return None
-        if not user.second_factor_confirmed:
-            with working_for(user.organisation_id, user.id):
+            if counter is None:
+                _log(
+                    AccessKind.SIGN_IN_FAILED,
+                    username,
+                    user=user,
+                    detail="Wrong Code",
+                    address=address,
+                )
+                return None
+            if not user.second_factor_confirmed:
                 user.second_factor_confirmed = True
                 user.save(update_fields=["second_factor_confirmed"])
-            _log(AccessKind.SECOND_FACTOR_SET_UP, username, user=user, address=address)
-        _log(AccessKind.SIGNED_IN, username, user=user, counter=counter, address=address)
-        return user
+                _log(AccessKind.SECOND_FACTOR_SET_UP, username, user=user, address=address)
+            _log(AccessKind.SIGNED_IN, username, user=user, counter=counter, address=address)
+            return user
 
 
 def log_signed_out(user: User, address: str | None = None) -> None:

@@ -186,9 +186,9 @@ LOGGING = {
 }
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
-# A session ends when the browser closes, 30 minutes after its last request,
-# and 12 hours after sign-in whatever happens. The two time limits are kept
-# by ``airworthiness_plus.accounts.middleware``.
+# A session ends when the browser closes or after 12 hours overall.
+# Only deployments restricted to managed, single-user devices may use 60 minutes idle.
+SESSION_IDLE_MINUTES = 60 if flag("AIRWORTHINESS_MANAGED_DEVICES_ONLY") else 30
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 12 * 60 * 60
 CSRF_COOKIE_SAMESITE = "Lax"

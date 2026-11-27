@@ -14,7 +14,7 @@ from tests.e2e.browser import (
     submit,
     wait_for_next_code,
 )
-from tests.e2e.conftest import Account
+from tests.e2e.conftest import Account, RunningSite
 
 
 def first_password(page: Page) -> str:
@@ -99,3 +99,58 @@ def test_user_can_close_one_session_and_sign_out_everywhere_else(
         second.goto("/dashboard/")
         expect(second.get_by_role("heading", name="Sign In", exact=True)).to_be_visible()
         expect(third.get_by_text("This Session", exact=True)).to_be_visible()
+
+
+def test_passkey_enrolment_sign_in_and_revocation(
+    chromium: Browser, running_site: RunningSite, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    account = personas["your-organisation"][4]
+    site = running_site.address.replace("127.0.0.1", "localhost")
+    with browser_page(chromium, site) as page:
+        authenticator = sign_in(page, account)
+        cdp = page.context.new_cdp_session(page)
+        cdp.send("WebAuthn.enable")
+        cdp.send(
+            "WebAuthn.addVirtualAuthenticator",
+            {
+                "options": {
+                    "protocol": "ctap2",
+                    "transport": "usb",
+                    "hasResidentKey": True,
+                    "hasUserVerification": True,
+                    "isUserVerified": True,
+                    "automaticPresenceSimulation": True,
+                }
+            },
+        )
+        page.get_by_role("link", name="Passkeys", exact=True).click()
+        name = page.get_by_label("Passkey Name")
+        name.fill("Workshop Security Key")
+        name.press("Enter")
+        remove = page.get_by_role("button", name="Remove Workshop Security Key")
+        expect(remove).to_be_visible()
+
+        submit(page, page.get_by_role("button", name="Sign Out"))
+        page.get_by_label("User Name").fill(account.username)
+        submit(page, page.get_by_role("button", name="Sign in with a Passkey"))
+        expect(page.locator("aside .roles")).to_have_text(str(account.role))
+        page.reload()
+        expect(page.locator("aside .roles")).to_have_text(str(account.role))
+        tab = page.context.new_page()
+        tab.goto("/sign-in/")
+        expect(tab).to_have_url(site + "/dashboard/")
+        tab.close()
+
+        cookie = next(cookie for cookie in page.context.cookies() if cookie["name"] == "sessionid")
+        running_site.advance_verification_age(cookie["value"])
+        page.get_by_role("link", name="Passkeys", exact=True).click()
+        submit(page, page.get_by_role("button", name="Verify Your Identity to Add a Passkey"))
+        submit(page, page.get_by_role("button", name="Verify with a Passkey"))
+        expect(page.get_by_role("button", name="Add Passkey", exact=True)).to_be_visible()
+        submit(page, remove)
+        expect(remove).to_have_count(0)
+        submit(page, page.get_by_role("button", name="Sign Out"))
+        page.get_by_label("User Name").fill(account.username)
+        page.get_by_role("button", name="Sign in with a Passkey").click()
+        expect(page.get_by_role("alert")).to_have_text("Passkey Not Accepted")
+        sign_in_again(page, account, authenticator)

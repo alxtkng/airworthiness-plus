@@ -6,6 +6,7 @@
 <title>{% block title %}Airworthiness+{% endblock %}</title>
 <link rel="stylesheet" href="{% static 'interface/app.css' %}">
 <script src="{% static 'interface/app.js' %}" defer></script>
+{% block scripts %}{% endblock %}
 </head>
 <body>
 {% if request.user.is_authenticated %}
@@ -25,6 +26,7 @@
 <p>{{ request.user.full_name }}</p>
 <p class="roles">{{ request.user.roles|join:", " }}</p>
 <p><a href="{% url 'change_password' %}">Change Password</a></p>
+<p><a href="{% url 'passkey_settings' %}">Passkeys</a></p>
 <form method="post" action="{% url 'sign_out' %}">
 {% csrf_token %}
 <button type="submit">Sign Out</button>

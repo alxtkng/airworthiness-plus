@@ -1,11 +1,16 @@
 {% extends "base.html" %}
+{% load static %}
+{% block scripts %}<script src="{% static 'interface/passkeys.js' %}" defer></script>{% endblock %}
 {% block title %}{{ what }}{% endblock %}
 {% block content %}
 <h1>{{ what }}</h1>
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
-<p>You signed in more than 5 minutes ago, so a code is asked for again.</p>
+<p>Verify your identity to continue.</p>
 <form method="post" action="{{ action }}">
 {% csrf_token %}
+{% if passkey_available %}<p><button type="button" class="primary" data-passkey="verify-submit" data-url="{% url 'verify_passkey' %}" hidden>Verify with a Passkey</button></p>
+<p data-passkey-message role="alert" hidden></p>{% endif %}
+{% if full_verification %}<p><label for="verification-password">Your Current Password</label><br><input id="verification-password" name="verification_password" type="password" autocomplete="current-password" required></p>{% endif %}
 {% for name, value in carried %}<input type="hidden" name="{{ name }}" value="{{ value }}">
 {% endfor %}<p><label for="code">Code From Your Authenticator Application</label><br><input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required></p>
 <p><button type="submit">{{ what }}</button></p>

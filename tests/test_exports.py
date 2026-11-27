@@ -433,7 +433,9 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
     assert manifest["exported_by"] == "Lucy Grant"
     for one in REGISTRY:
         column = "id" if one.table == "organisations_organisation" else "organisation_id"
-        omitted = ["password", "second_factor_secret"] if one.table == "accounts_user" else []
+        omitted = (
+            ["password", "second_factor_secret", "passkeys"] if one.table == "accounts_user" else []
+        )
         held = rows(one.table, column, sample.ours.id, omitted)
         assert held, one.table  # the sample has at least one record of every type
         assert files[f"records/{one.table}.json"] == held, one.table

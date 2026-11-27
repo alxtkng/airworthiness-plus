@@ -1,6 +1,8 @@
 """The user record and the access log (REQ-005 to REQ-010)."""
 
-from typing import Any, ClassVar, NoReturn
+from __future__ import annotations
+
+from typing import Any, ClassVar, NoReturn, TypedDict
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.postgres.fields import ArrayField
@@ -25,7 +27,7 @@ class UserManager(BaseUserManager.from_queryset(RecordQuerySet)):  # type: ignor
         password: str | None = None,
         person: Any = None,
         **fields: Any,
-    ) -> "User":
+    ) -> User:
         """Create a named account in ``organisation``. With no password it cannot sign in.
 
         The account is a person's, so it is given its person record with it
@@ -45,6 +47,13 @@ class UserManager(BaseUserManager.from_queryset(RecordQuerySet)):  # type: ignor
         return user
 
 
+class Passkey(TypedDict):
+    name: str
+    rp_id: str
+    public_key: str
+    sign_count: int
+
+
 class User(Record, AbstractBaseUser):
     """One named person in one organisation.
 
@@ -61,6 +70,10 @@ class User(Record, AbstractBaseUser):
     # out of the history. A user signs in only once it is confirmed (REQ-008).
     second_factor_secret = models.CharField(max_length=64, blank=True)
     second_factor_confirmed = models.BooleanField(default=False)
+    # Credential identifiers and public keys are kept out of history and exports.
+    passkeys: models.JSONField[dict[str, Passkey], dict[str, Passkey]] = models.JSONField(
+        default=dict, db_default={}, blank=True
+    )
     # A password given by an Administrator is changed by the user before anything else.
     password_must_change = models.BooleanField(default=False)
     # The day a first password was given. It stops working after 7 days if it
@@ -127,6 +140,9 @@ class AccessKind(models.TextChoices):
     SECOND_FACTOR_RESET = "Second Factor Reset", "Second Factor Reset"
     SESSIONS_ENDED = "Sessions Ended", "Sessions Ended"
     CODE_ACCEPTED = "Code Accepted", "Code Accepted"
+    PASSKEY_ADDED = "Passkey Added", "Passkey Added"
+    PASSKEY_REMOVED = "Passkey Removed", "Passkey Removed"
+    IDENTITY_VERIFIED = "Identity Verified", "Identity Verified"
 
 
 class AccessEntry(models.Model):

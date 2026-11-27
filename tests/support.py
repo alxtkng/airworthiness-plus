@@ -8,8 +8,8 @@ from dataclasses import dataclass
 
 from django.http import HttpResponse
 from django.test import Client
-from django.utils import timezone
 
+from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.aircraft.models import Aircraft
@@ -103,7 +103,7 @@ def signed_in(user: User) -> Client:
     client = Client()
     client.force_login(user, backend=BACKEND)
     session = client.session
-    now = timezone.now().isoformat()
+    now = sign_in.current_time().isoformat()
     session["organisation"] = str(user.organisation_id)
     session["signed_in_at"] = now
     session["last_seen"] = now

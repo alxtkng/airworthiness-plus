@@ -369,6 +369,10 @@ dd {
   border-radius: var(--material-base);
 }
 
+[data-passkey-message][hidden] {
+  display: none;
+}
+
 [role="alert"]::before {
   content: "";
   flex: none;
