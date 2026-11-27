@@ -30,8 +30,6 @@ from typing import Any
 
 import pytest
 from django.db import IntegrityError, connection, transaction
-from django.http import HttpResponse
-from django.test import Client
 
 from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import AccessEntry
@@ -48,7 +46,7 @@ from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.sample import build, phase1
 from airworthiness_rules.intervals import Reading
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, dot, make_sample, signed_in
+from tests.support import TODAY, Sample, dot, get, make_sample, page, post, signed_in
 
 pytestmark = pytest.mark.django_db
 D = Decimal
@@ -85,20 +83,6 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 def components(sample: Sample, fleet: dict[str, Aircraft]) -> dict[str, Component]:
     added = phase1.add_components(sample.ours, sample.planner, fleet)
     return {f"{one.name} {one.serial_number or one.part_number}": one for one in added}
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def rows(body: str, table: int = 0) -> list[list[str]]:

@@ -39,8 +39,6 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.http import HttpResponse
-from django.test import Client
 
 from airworthiness_plus.acceptance import services as acceptance_services
 from airworthiness_plus.acceptance.models import NoteKind
@@ -63,7 +61,7 @@ from airworthiness_plus.programme.models import Programme
 from airworthiness_plus.sample import build
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, dot, make_sample, signed_in
+from tests.support import TODAY, Sample, dot, get, make_sample, page, signed_in
 from tests.test_imports import csv_of
 
 pytestmark = pytest.mark.django_db
@@ -95,16 +93,6 @@ def sample(day: Day) -> Sample:
     build.add_directives(sample, fleet)
     build.add_maintenance_data(sample)
     return sample
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def panels(body: str) -> dict[str, list[list[str]]]:

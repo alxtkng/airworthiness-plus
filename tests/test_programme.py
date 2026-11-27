@@ -9,7 +9,6 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.http import HttpResponse
 from django.test import Client
 
 from airworthiness_plus.accounts.models import AccessEntry
@@ -34,8 +33,10 @@ from tests.support import (
     Sample,
     add_sample_fleet,
     add_sample_programmes,
+    call,
     dot,
-    make_sample,
+    page,
+    post,
     signed_in,
 )
 
@@ -62,11 +63,6 @@ def day(monkeypatch: pytest.MonkeyPatch) -> Day:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     return add_sample_fleet(sample)
 
@@ -74,20 +70,6 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 @pytest.fixture
 def tasks(sample: Sample, fleet: dict[str, Aircraft]) -> dict[str, Task]:
     return add_sample_programmes(sample, fleet)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **data: str) -> HttpResponse:
-    return client.post(path, data, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def row_for(body: str, registration: str) -> str:
@@ -708,10 +690,6 @@ def addresses(aircraft: Aircraft, task: Task, work: WorkDone) -> list[tuple[str,
     pages.append(("POST", f"/tasks/{task.id}/retire/", Action.CHANGE_MAINTENANCE_PROGRAMME))
     pages.append(("POST", f"/work/{work.id}/release/", Action.RECORD_ACCOMPLISHMENT))
     return pages
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def one_work(sample: Sample, task: Task) -> WorkDone:

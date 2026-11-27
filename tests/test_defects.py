@@ -33,8 +33,6 @@ from typing import Any
 import pytest
 from django.db import IntegrityError, connection, transaction
 from django.db.utils import DatabaseError
-from django.http import HttpResponse
-from django.test import Client
 from django.test.utils import CaptureQueriesContext
 
 from airworthiness_plus.accounts import sign_in
@@ -54,7 +52,7 @@ from airworthiness_plus.people import services as people_services
 from airworthiness_plus.people.models import Employment, Person, StaffGroup
 from airworthiness_plus.sample import build, phase1
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, dot, make_sample, signed_in
+from tests.support import TODAY, Sample, dot, get, make_sample, page, post, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -91,20 +89,6 @@ def defects(sample: Sample, fleet: dict[str, Aircraft]) -> dict[str, Defect]:
     added = phase1.add_defects(sample.ours, sample.planner, fleet)
     phase1.add_repeat_actions(sample.ours, sample.lucy)
     return {defect.title: defect for defect in added}
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def tables(body: str) -> list[list[list[str]]]:

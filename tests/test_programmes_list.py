@@ -20,8 +20,8 @@ import pytest
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.sample import build
-from tests.support import Sample, dot, make_sample, signed_in
-from tests.test_defects import Day, page, tables
+from tests.support import Sample, dot, make_sample, page, signed_in
+from tests.test_defects import Day, tables
 
 pytestmark = pytest.mark.django_db
 

@@ -7,7 +7,6 @@ from datetime import date
 
 import pytest
 from django.db import DatabaseError, connection, transaction
-from django.http import HttpResponse
 from django.test import Client
 
 from airworthiness_plus.acceptance import services
@@ -19,7 +18,7 @@ from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.organisations.models import Organisation
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, make_sample, signed_in
+from tests.support import TODAY, Sample, call, page, post, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -40,30 +39,11 @@ def day(monkeypatch: pytest.MonkeyPatch) -> Day:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def problem(sample: Sample) -> Problem:
     with working_for(sample.ours.id, sample.planner.id):
         return services.add_problem(
             organisation=sample.ours, raised_by=sample.planner, problem="[Problem Found]"
         )
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 # The problem log
@@ -233,10 +213,6 @@ def addresses(problem: Problem):  # type: ignore[no-untyped-def]
         ("POST", "/organisation/approval/", Action.CHANGE_ORGANISATION_RECORD),
         ("POST", "/organisation/parallel-run/", Action.CHANGE_ORGANISATION_RECORD),
     ]
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def test_another_organisations_problem_log_and_record_are_not_shown_or_changed(

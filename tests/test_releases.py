@@ -43,8 +43,8 @@ from airworthiness_plus.releases import services
 from airworthiness_plus.releases.models import IssuedBy, Release
 from airworthiness_plus.sample import build, phase1
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, dot, make_sample, signed_in
-from tests.test_defects import Day, get, page, post, tables
+from tests.support import TODAY, Sample, dot, get, make_sample, page, post, signed_in
+from tests.test_defects import Day, tables
 
 pytestmark = pytest.mark.django_db
 

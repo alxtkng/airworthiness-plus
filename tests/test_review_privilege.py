@@ -15,8 +15,6 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.http import HttpResponse
-from django.test import Client
 
 from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.accounts.roles import Role
@@ -40,7 +38,9 @@ from tests.support import (
     TODAY,
     add_sample_fleet,
     add_sample_reviews,
+    get,
     make_sample,
+    post,
     signed_in,
 )
 
@@ -96,14 +96,6 @@ CAO_WITHOUT_REVIEW: Kind = (
     [Privilege.CONTINUING_AIRWORTHINESS_MANAGEMENT],
     [],
 )
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
 
 
 def test_review_is_open_to_a_part_cao_with_the_privilege_and_to_no_other() -> None:

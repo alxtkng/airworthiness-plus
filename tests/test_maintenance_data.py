@@ -8,7 +8,6 @@ from datetime import date
 
 import pytest
 from django.db import DatabaseError, IntegrityError, connection, transaction
-from django.http import HttpResponse
 from django.test import Client
 
 from airworthiness_plus.accounts.models import AccessEntry
@@ -29,7 +28,15 @@ from airworthiness_plus.maintenance_data.models import (
 from airworthiness_plus.sample import build
 from airworthiness_rules.programme import Flag
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, add_sample_fleet, make_sample, signed_in
+from tests.support import (
+    TODAY,
+    Sample,
+    add_sample_fleet,
+    call,
+    page,
+    post,
+    signed_in,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -52,11 +59,6 @@ def day(monkeypatch: pytest.MonkeyPatch) -> Day:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     return add_sample_fleet(sample)
 
@@ -65,20 +67,6 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 def data(sample: Sample, fleet: dict[str, Aircraft]) -> dict[str, DataSet]:
     """SampleData.md, Documentation, Maintenance data."""
     return build.add_maintenance_data(sample)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def lines(sample: Sample, today: date = TODAY) -> dict[str, services.DataLine]:
@@ -403,10 +391,6 @@ def addresses(data_set: DataSet, aircraft: Aircraft) -> list[tuple[str, str, Act
         ("POST", f"{base}/customer-status/", Action.RECORD_MAINTENANCE_DATA),
         ("POST", f"{base}/no-longer-held/", Action.RECORD_MAINTENANCE_DATA),
     ]
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def test_another_organisations_data_is_not_found_or_shown(

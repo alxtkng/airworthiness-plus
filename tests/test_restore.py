@@ -29,7 +29,6 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
-    make_sample,
 )
 
 pytestmark = pytest.mark.django_db
@@ -38,11 +37,6 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture(autouse=True)
 def day(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 @pytest.fixture

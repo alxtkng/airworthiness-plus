@@ -8,13 +8,23 @@ application role, as it does in service.
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from django.conf import settings
 from django.db import connection
 
 from airworthiness_plus.history.sql import APPLICATION_ROLE
+
+if TYPE_CHECKING:
+    from tests.support import Sample
+
+
+@pytest.fixture
+def sample() -> "Sample":
+    from tests.support import make_sample
+
+    return make_sample()
 
 
 @pytest.fixture(scope="session")

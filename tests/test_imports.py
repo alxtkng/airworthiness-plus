@@ -27,7 +27,7 @@ from airworthiness_plus.imports.models import Load, LoadedValue, LoadKind, Value
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import Certificate
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, make_sample, signed_in
+from tests.support import TODAY, Sample, get, page, signed_in
 
 pytestmark = pytest.mark.django_db
 D = Decimal
@@ -36,11 +36,6 @@ D = Decimal
 @pytest.fixture(autouse=True)
 def day(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 def csv_of(columns: tuple[str, ...], *rows: tuple[str, ...]) -> bytes:
@@ -136,18 +131,8 @@ def fleet_load(sample: Sample) -> Load:
     return load(sample, LoadKind.AIRCRAFT, FLEET_FILE)
 
 
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
 def post(client: Client, path: str, **values: object) -> HttpResponse:
     return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 # Loading

@@ -14,8 +14,6 @@ from datetime import date
 
 import pytest
 from django.db import DatabaseError, connection, transaction
-from django.http import HttpResponse
-from django.test import Client
 
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
@@ -37,7 +35,7 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
-    make_sample,
+    page,
     signed_in,
 )
 
@@ -50,11 +48,6 @@ def sample_day(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
@@ -64,12 +57,6 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 @pytest.fixture
 def reviews(sample: Sample, fleet: dict[str, Aircraft]) -> SampleReviews:
     return add_sample_reviews(sample, fleet)
-
-
-def page(client: Client, path: str) -> str:
-    response: HttpResponse = client.get(path, secure=True)  # type: ignore[assignment]
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def form_15c(body: str) -> str:
