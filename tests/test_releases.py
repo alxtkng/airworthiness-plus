@@ -626,14 +626,22 @@ def test_cannot_record_staff_release_outside_their_known_authorisation_dates(
     certifier = person(sample, "Sam Patel")
     work = work_on(sample, fleet["G-EJKL"])
     with working_for(sample.ours.id, sample.administrator.id):
-        granter = dict(person=certifier, scope="Part-ML aircraft", valid_from=date(2026, 1, 1))
+        first = date(2026, 1, 1)
         people_services.record_maintenance_authorisation(
-            **granter, reference="TEST-OLD", valid_to=date(2026, 11, 9)
+            certifier,
+            scope="Part-ML aircraft",
+            valid_from=first,
+            reference="TEST-OLD",
+            valid_to=date(2026, 11, 9),
         )
     with pytest.raises(services.RefusedError, match="No Recorded Maintenance Authorisation Covers"):
         record(sample, work, kind=IssuedBy.ORGANISATION, issuer_name="", issued_by=certifier)
     with working_for(sample.ours.id, sample.administrator.id):
         people_services.record_maintenance_authorisation(
-            **granter, reference="TEST-NEW", valid_to=work.dated
+            certifier,
+            scope="Part-ML aircraft",
+            valid_from=first,
+            reference="TEST-NEW",
+            valid_to=work.dated,
         )
     assert record(sample, work, kind=IssuedBy.ORGANISATION, issuer_name="", issued_by=certifier)
