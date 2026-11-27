@@ -8,7 +8,7 @@
 <p>Verify your identity to continue.</p>
 <form method="post" action="{{ action }}">
 {% csrf_token %}
-{% if passkey_available %}<p><button type="button" class="primary" data-passkey="verify-submit" data-url="{% url 'verify_passkey' %}" hidden>Verify With a Passkey</button></p>
+{% if passkey_available %}<p><button type="button" class="primary" data-passkey="verify-submit" data-url="{% url 'verify_passkey' %}" hidden>Verify with a Passkey</button></p>
 <p data-passkey-message role="alert" hidden></p>{% endif %}
 {% if full_verification %}<p><label for="verification-password">Your Current Password</label><br><input id="verification-password" name="verification_password" type="password" autocomplete="current-password" required></p>{% endif %}
 {% for name, value in carried %}<input type="hidden" name="{{ name }}" value="{{ value }}">
