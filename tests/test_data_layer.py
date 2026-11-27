@@ -215,6 +215,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "people_experienceevidence": ["INSERT", "SELECT"],
         "people_experiencewithdrawal": ["INSERT", "SELECT"],
         "people_recurrenttraining": ["INSERT", "SELECT"],
+        "staffing_review": ["INSERT", "SELECT"],
+        "staffing_report": ["INSERT", "SELECT"],
+        "staffing_absence": ["INSERT", "SELECT"],
         # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
         "configuration_transfer": ["INSERT", "SELECT"],
         "configuration_baseline": ["INSERT", "SELECT"],

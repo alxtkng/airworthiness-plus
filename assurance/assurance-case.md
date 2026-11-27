@@ -133,6 +133,12 @@ Hazards answered: H-005.
 
 | C7.6 Work package release is supported by traceable maintenance and inspection evidence | The work package release uses the existing certificate authorisation checks. Required cards and general verification precede release. Work records, directive compliance and the certificate commit together (REQ-322) | `tests/test_work_packages.py` and browser scenario | Available |
 
+## C8. Staffing Plan
+
+| Sub-claim | Argument | Evidence | Status |
+|---|---|---|---|
+| C8.1 A staffing shortfall can be identified and traced by approval and function | Required and available hours are compared. The Part-145 reporting threshold uses the exact ratio. The report retains its figures after cover changes the plan | `tests/test_golden_staffing.py` and the staffing browser journey | Available |
+
 ## Maintaining This Case
 
 - A pull request that adds evidence changes the Status here in the same pull request.

@@ -33,12 +33,17 @@ from airworthiness_plus.planning import forms as planning
 from airworthiness_plus.programme import forms as programme
 from airworthiness_plus.releases import forms as releases
 from airworthiness_plus.reviews import forms as reviews
+from airworthiness_plus.staffing import forms as staffing
 
 Sets = tuple[type[forms.Form] | str, ...]
 
 # Every address that changes something, by its name, with what it may set: the
 # fields of a form, or a value named in words where the address takes it itself.
 WRITES: dict[str, Sets] = {
+    "record_staffing_hours": (staffing.DemandForm,),
+    "review_staffing_plan": (staffing.ReviewForm,),
+    "record_staffing_shortfall": (staffing.ReportForm,),
+    "record_staff_absence": (staffing.AbsenceForm,),
     "build_work_package": (planning.BuildPackageForm,),
     "link_package_order": (planning.LinkOrderForm,),
     "add_work_card": (planning.WorkCardForm,),
@@ -167,6 +172,7 @@ WRITES: dict[str, Sets] = {
 READS = frozenset(
     {
         "home",
+        "staffing_plan",
         "work_packages",
         "work_package",
         "dashboard",

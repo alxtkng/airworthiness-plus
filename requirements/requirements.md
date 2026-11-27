@@ -304,6 +304,10 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-321 | Each work card identifies the instructions. Issue requires applicable data held with a current, checked revision. Preserve the issue revision through later supersessions | AMC1 CAO.A.055, CAO.A.060(c), 145.A.45(e) | Must | Test |
 | REQ-322 | Record who performed and, where applicable, supervised the work. Capture an independent inspector, qualification evidence, date and satisfactory findings for critical cards. Before recording release, check completed cards, applicable inspections, general verification, defect closure and certifying authorisation. Closing records the work against the linked programme tasks and directives with one release | Work Packages board, CAO.A.060(g) to (j), AMC2 CAO.A.060(h), 145.A.48(c), AMC4 145.A.48(c)(2), ML.A.801 | Must | Test |
 | REQ-323 | Export work packages and cards with the aircraft and their evidence. Give the test site the draft package once without changing existing records | Work Packages board, CAO.A.090, ML.A.305, Canvas Build test site sample | Must | Test |
+| REQ-324 | Record the staffing required and hours available by approval, function and calendar month. Show any shortfall, even below the Part-145 reporting threshold | Plan board, CAO.A.035(d), CAMO.A.305(d), 145.A.30(d) | Must | Test |
+| REQ-325 | A Part-145 monthly shortfall over 25 percent is listed for reporting. Preserve the hours, date, recipients and action once reported | AMC1 145.A.30(d) | Must | Test |
+| REQ-326 | Record reviews by approval and show the Part-145 next review date three calendar months after the last review | Plan board, AMC1 145.A.30(d) | Must | Test |
+| REQ-327 | Record a staff member's absence and its dates for planning availability | Plan and Roster boards | Must | Test |
 
 ## Open Points
 

@@ -195,3 +195,8 @@ The per-flight technical log (Issue 7), choosing the type from the SRG1782 list 
 ## Work Packages
 
 Sign in as Planning and Records and open **Planning → Work Packages → WP-2026-048**. The draft shows the annual check and right headset socket for G-EJKL and its 32.0 planned hours. Issue requires an agreed order and current maintenance data. Open a package to see the work cards, revision references and release checklist.
+
+
+## Staffing Plan
+
+Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staffing Plan**. Each approval uses its own plan. In the Part-145 sample organisation, enter December certifying staff demand of 290 hours and availability of 192 hours to see the report needed at 34%. Record the report, then add 88 contracted hours to show the remaining 3% shortfall.

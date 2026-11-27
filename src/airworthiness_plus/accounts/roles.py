@@ -45,6 +45,7 @@ class Action(Enum):
     RECORD_DEFECT = "Record Defect"
     RECORD_REPEAT_DEFECT_ACTION = "Record Repeat Defect Action"
     DRAW_UP_OR_END_CONTRACT = "Draw Up or End Contract"
+    RECORD_STAFFING_PLAN = "Record Staffing Plan"
     PLAN_WORK_PACKAGE = "Plan Work Package"
     RECORD_WORK_CARD = "Record Work Card Evidence"
     RECORD_WORK_ORDER = "Record Work Order"
@@ -86,6 +87,7 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.RECORD_DEFECT: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_REPEAT_DEFECT_ACTION: frozenset({_MANAGER}),
     Action.DRAW_UP_OR_END_CONTRACT: frozenset({_MANAGER}),
+    Action.RECORD_STAFFING_PLAN: frozenset({_MANAGER, _RECORDS}),
     Action.PLAN_WORK_PACKAGE: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_WORK_CARD: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_WORK_ORDER: frozenset({_MANAGER, _RECORDS}),

@@ -934,3 +934,56 @@ def test_work_package_from_draft_to_release(
         )
         page.get_by_role("link", name="Release Certificate", exact=True).click()
         expect(page.get_by_role("heading", name="TEST-PACKAGE-CRS")).to_be_visible()
+
+
+def test_staffing_plan_records_part_145_shortfall_and_cover(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["second-organisation"][3]) as page:
+        page.goto("/staffing/")
+        page.get_by_role("link", name="Record Staffing Hours").click()
+        values = {
+            "approval": "Part-145, UK.145.[Number]",
+            "month": "2026-12-01",
+            "function": "Certifying Staff",
+            "needed": "290",
+            "employed": "192",
+            "contracted": "0",
+            "basis": "Required maintenance and time available before cover",
+        }
+        save(page, "Record Staffing Hours", values, "34%")
+        open_row_action(page, "Certifying Staff", "Record a Shortfall Report")
+        save(
+            page,
+            "Record a Shortfall Report",
+            {"reported_on": "2026-11-16", "action": "Book extra qualified cover"},
+            "Book extra qualified cover",
+        )
+        page.get_by_role("link", name="Record Staffing Hours").click()
+        save(page, "Record Staffing Hours", {**values, "contracted": "88"}, "3%")
+        page.get_by_role("link", name="Review the Plan", exact=True).click()
+        save(
+            page,
+            "Review the Plan",
+            {
+                "approval": "Part-145, UK.145.[Number]",
+                "reviewed_on": "2026-09-02",
+                "outcome": "Reviewed for December",
+            },
+            "2 December 2026",
+        )
+
+    with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
+        page.goto("/staffing/")
+        page.get_by_role("link", name="Record an Absence").click()
+        save(
+            page,
+            "Record an Absence",
+            {
+                "person": "Sam Patel",
+                "kind": "Holiday",
+                "starts_on": "2026-12-07",
+                "ends_on": "2026-12-18",
+            },
+            "18 December 2026",
+        )
