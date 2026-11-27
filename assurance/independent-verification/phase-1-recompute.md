@@ -403,3 +403,15 @@ No calculation disagrees. Five differences printed by my own script were its fau
 ## What Is Done About the Findings
 
 None of the findings is a disagreement in a calculation. Findings 1 to 4 and 6 are taken into the fixes after the Phase 1 independent review, each test first. Finding 5, and where the default limit of a deferral is counted from, are for Alex King. Finding 7 is a comment, corrected with the fixes. Finding 8 is recorded as ours unless Alex King says otherwise.
+
+## Follow-up Verification
+
+| Finding | Result |
+|---|---|
+| 1 | The full seeded sample regression verifies 9 tracked components, 4 due in six months and 32 days to the G-DGHI engine review at the sample date. |
+| 2–3 | Fleet tests cover items that cannot be placed by a day, fitted component limits and annual programme reviews. |
+| 4 | The existing `defect_rules` database trigger rejects day 366. The application-role test checks both the refusal and acceptance on day 365. |
+| 5 | Alex King chose the date first identified for new default allowances. For the 1 November example, 1 November plus 30 days is 1 December. An earlier maintenance-data limit still takes precedence. A populated owner upgrade confirmed that an existing decision-based limit of 9 November stayed unchanged. |
+| 6 | A component review while off-wing must match the last removal reading. A refit carries the review and accrued hours across airframes. |
+| 7 | The test comment now explains that the unrecorded tyre release is excluded from the certificate count throughout. |
+| 8 | Repeat groups use the aircraft’s currently recorded type rating. A later occurrence within the group reopens assessment. |
