@@ -394,7 +394,7 @@ class RepeatLine:
 
     @property
     def status(self) -> str:
-        """Return the word of the status mark: a repeat with no action recorded is to assess."""
+        """Mark a repeat for assessment when the latest occurrence has no covering action."""
         covered = self.action is not None and self.defects[-1].found_on <= self.action.recorded_on
         return "To Assess" if self.state == "Repeat" and not covered else ""
 

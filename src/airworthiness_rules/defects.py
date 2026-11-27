@@ -1,21 +1,19 @@
 """Deferred defects and repeat defects (REQ-220 to REQ-229).
 
 UK Regulation (EU) No 1321/2014, ML.A.403, read in the Civil Aviation
-Authority Regulatory Library on 24 November 2026:
+Authority Regulatory Library on 27 November 2026:
 
 - (a) a defect that seriously endangers flight safety is rectified before
   further flight;
 - (b)(1) to (4) say who may defer any other defect;
-- (c) a deferred defect is rectified as soon as practicable and within the
-  limits specified in the maintenance data.
+- (c) a deferred defect is rectified as soon as practicable from first
+  identification, within the maintenance-data limits.
 
-The regulation gives no number of days. Ours, not the regulation's
-(design-system/Decisions.md, Canvas Build): the organisation keeps a
-default limit in days for points (b)(1), (b)(3) and (b)(4), counted from
-the day of the decision; a limit given in the maintenance data, or in the
-minimum equipment list for point (b)(2), applies when it is the earlier.
-What counts as a repeat defect is ours as well: the Repeat Defects board
-says 3 of the same defect on one type in 12 months.
+The organisation sets a default for (b)(1), (b)(3) and (b)(4), starting
+on the date first identified for new deferrals. An earlier maintenance-data
+limit takes precedence. Under (b)(2) the minimum equipment list gives
+the limit. The Repeat Defects board uses three occurrences of the same
+defect on one type in 12 months (design-system/Decisions.md).
 """
 
 from datetime import date
