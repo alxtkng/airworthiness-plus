@@ -21,10 +21,12 @@ from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import for_each_organisation
 from airworthiness_plus.organisations import approvals
-from airworthiness_plus.organisations.models import ApprovalType
+from airworthiness_plus.organisations.models import Approval, ApprovalType
 from airworthiness_plus.people import services
 from airworthiness_plus.people.models import Employment, Person, StaffGroup
 from airworthiness_plus.people.sql import PERSON_FOR_EACH_USER
+from airworthiness_plus.reviews import services as review_services
+from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_plus.sample import build
 from tests.conftest import as_owner
 from tests.support import TODAY, Sample, make_sample, signed_in
@@ -181,42 +183,100 @@ def test_the_database_refuses_a_sign_in_with_no_person(sample: Sample) -> None:
         assert not User.objects.filter(username="nobody@your-organisation.example").exists()
 
 
-def test_a_sign_in_is_linked_to_the_person_of_the_same_name(sample: Sample) -> None:
-    """REQ-204. Chris Moore is recorded and has no sign-in. One added in his name is his."""
+def test_a_new_sign_in_is_never_joined_to_a_person_by_name(sample: Sample) -> None:
+    """REQ-204; independent review of 24 November 2026, finding 4. Chris Moore is
+    recorded and has no sign-in. A sign-in added in the same name is another
+    person's: it is given a record of its own, and nothing of Chris Moore's."""
     before = person(sample, "Chris Moore")
     assert before.user is None
     with working_for(sample.ours.id, sample.administrator.id):
-        chris = users.add_user(
+        namesake = users.add_user(
             organisation=sample.ours,
             username="chris.moore@your-organisation.example",
             full_name="Chris Moore",
             roles=[Role.READ_ONLY],
             password=users.new_first_password(),
         )
-        assert Person.objects.filter(full_name="Chris Moore").count() == 1
-        linked = Person.objects.get(user=chris)
-        assert linked.pk == before.pk
+        assert Person.objects.filter(full_name="Chris Moore").count() == 2
+        made = Person.objects.get(user=namesake)
+        assert made.pk != before.pk
+        assert (made.role, made.licence, made.staff_group) == ("", "", "Other Staff")
+        assert made.reports_to is None
+        unchanged = Person.objects.get(pk=before.pk)
+        assert unchanged.user is None
+        assert (unchanged.role, unchanged.licence) == ("Certifying Staff", "Part-66 B1.2")
+        assert Event.of(unchanged).count() == 1
+
+
+def test_a_sign_in_is_given_to_a_person_already_recorded_only_when_chosen(sample: Sample) -> None:
+    """REQ-204, finding 4. On Add a User the Administrator chooses Sam Patel, who is
+    recorded and has no sign-in. The sign-in is Sam Patel's and takes that name."""
+    administrator = signed_in(sample.administrator)
+    sam, chris = person(sample, "Sam Patel"), person(sample, "Chris Moore")
+    former = person(sample, "[Former Review Name]")
+    lucy = person(sample, "Lucy Grant")
+    body = page(administrator, "/users/")
+    assert f'<option value="{sam.id}">Sam Patel</option>' in body
+    assert '<option value="" selected>A New Person</option>' in body
+    # Nobody who has a sign-in, and nobody who has left, is offered.
+    assert f'value="{lucy.id}"' not in body and f'value="{former.id}"' not in body
+    added = post(
+        administrator,
+        "/users/add/",
+        person=str(sam.id),
+        full_name="[Any Other Name]",
+        username="sam.patel@your-organisation.example",
+        roles="Read Only",
+    )
+    assert "First Password for Sam Patel, Shown Once" in added.content.decode()
+    with working_for(sample.ours.id, sample.reader.id):
+        user = User.objects.get(username="sam.patel@your-organisation.example")
+        assert user.full_name == "Sam Patel"
+        linked = Person.objects.get(user=user)
+        assert linked.pk == sam.pk
         assert (linked.role, linked.licence) == ("Certifying Staff", "Part-66 B1.2")
-        # A name nobody is recorded under makes a person record.
-        new = users.add_user(
-            organisation=sample.ours,
-            username="new.starter@your-organisation.example",
-            full_name="[New Starter]",
-            roles=[],
-            password=users.new_first_password(),
+        assert Person.objects.filter(full_name="Sam Patel").count() == 1
+        assert Person.objects.count() == 15
+    # Chosen once: a person with a sign-in is not offered or taken again.
+    for chosen in (sam, lucy, former):
+        refused = post(
+            administrator,
+            "/users/add/",
+            person=str(chosen.id),
+            username="second@your-organisation.example",
         )
-        made = Person.objects.get(user=new)
-        assert (made.full_name, made.role, made.staff_group) == ("[New Starter]", "", "Other Staff")
-        # A person who has left is not taken to be the person signing in.
-        again = users.add_user(
-            organisation=sample.ours,
-            username="former@your-organisation.example",
-            full_name="[Former Review Name]",
-            roles=[],
-            password=users.new_first_password(),
-        )
-        assert Person.objects.filter(full_name="[Former Review Name]").count() == 2
-        assert Person.objects.get(user=again).left_on is None
+        assert "Shown Once" not in refused.content.decode()
+    with working_for(sample.ours.id, sample.administrator.id):
+        assert not User.objects.filter(username="second@your-organisation.example").exists()
+        # Below the page, the same: the reason is given.
+        for chosen, reason in (
+            (sam, "The Person Chosen Already Has a Sign-In"),
+            (former, "A Person Recorded as Having Left Is Not Given a Sign-In"),
+        ):
+            with pytest.raises(users.RefusedError, match=reason):
+                users.add_user(
+                    organisation=sample.ours,
+                    username="second@your-organisation.example",
+                    full_name="",
+                    roles=[],
+                    password=users.new_first_password(),
+                    person=chosen,
+                )
+        assert Person.objects.get(pk=chris.pk).user is None
+    # A person of another organisation cannot be chosen.
+    with working_for(sample.other.id, sample.stranger.id):
+        with pytest.raises(users.RefusedError, match="Person of the Same Organisation"):
+            users.add_user(
+                organisation=sample.other,
+                username="second@other-organisation.example",
+                full_name="",
+                roles=[],
+                password=users.new_first_password(),
+                person=chris,
+            )
+    # With neither a name nor a person, nobody is added.
+    neither = post(administrator, "/users/add/", username="third@your-organisation.example")
+    assert "Give a Full Name" in neither.content.decode()
 
 
 # The Staff page
@@ -382,7 +442,7 @@ def test_a_change_of_name_is_the_sign_ins_change_of_name(sample: Sample) -> None
 
 def test_what_cannot_be_true_of_a_person_is_refused_with_the_reason(sample: Sample) -> None:
     """REQ-203. Reporting in a circle, leaving before joining, dates after today,
-    and leaving while the sign-in is still active (REQ-010)."""
+    and recording oneself as having left (REQ-010)."""
     administrator = signed_in(sample.administrator)
     accountable = person(sample, "[Accountable Manager]")
     maintenance = person(sample, "[Maintenance Manager]")
@@ -411,7 +471,9 @@ def test_what_cannot_be_true_of_a_person_is_refused_with_the_reason(sample: Samp
     )
     assert "Left Is Not After Today" in change(chris, left_on="2026-11-19")
     assert "Joined Is Not After Today" in change(chris, joined_on="2026-11-19")
-    assert "A Person with an Active Sign-In Has Not Left" in change(lucy, left_on="2026-11-18")
+    # Nobody records themselves as having left: it would make their own sign-in inactive.
+    assert "A User Does Not Make Themselves Inactive" in change(accountable, left_on="2026-11-18")
+    del lucy
     for name in ("[Accountable Manager]", "Chris Moore", "Lucy Grant"):
         unchanged = person(sample, name)
         assert (unchanged.left_on, unchanged.joined_on) == (None, None)
@@ -456,6 +518,187 @@ def test_a_person_whose_sign_in_is_inactive_can_be_recorded_as_having_left(
         "17 November 2026",
         "17 November 2028, 2 Years After Leaving",
     ] in [row[:4] for row in former]
+
+
+def test_recording_that_a_person_left_makes_their_sign_in_inactive_at_once(
+    sample: Sample,
+) -> None:
+    """REQ-010, REQ-205; independent review of 24 November 2026, findings 5 and 6.
+    Lucy Grant is recorded as having left on 17 November 2026. Her sign-in is
+    inactive from that moment, her sessions end, and her review staff record
+    carries the day. She cannot be made active while she is recorded as left."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        staff = review_services.add_review_staff(
+            user=sample.lucy,
+            authorisation_reference="[Authorisation Reference 1]",
+            accepted_on=date(2023, 6, 9),
+        )
+    hers = signed_in(sample.lucy)
+    assert get(hers, "/staff/").status_code == 200
+    administrator = signed_in(sample.administrator)
+    lucy = person(sample, "Lucy Grant")
+    generation = sample.lucy.session_generation
+    left = post(
+        administrator,
+        f"/staff/{lucy.id}/change/",
+        full_name="Lucy Grant",
+        role="Airworthiness Review Staff",
+        staff_group="Airworthiness Review Staff",
+        employment="Employed",
+        left_on="2026-11-17",
+    )
+    assert left.status_code == 302
+    with working_for(sample.ours.id, sample.reader.id):
+        user = User.objects.get(pk=sample.lucy.pk)
+        assert (user.is_active, user.session_generation) == (False, generation + 1)
+        assert ReviewStaff.objects.get(pk=staff.pk).left_on == date(2026, 11, 17)
+    # Her session has ended.
+    ended = get(hers, "/staff/")
+    assert (ended.status_code, ended["Location"][:9]) == (302, "/sign-in/")
+    # She is not made active while recorded as having left: on the page, and below it.
+    refused = post(administrator, f"/users/{sample.lucy.id}/active/", active="yes")
+    assert "A Person Recorded as Having Left Is Not Made Active" in refused.content.decode()
+    with working_for(sample.ours.id, sample.administrator.id):
+        with pytest.raises(users.RefusedError, match="Recorded as Having Left"):
+            users.set_active(
+                User.objects.get(pk=sample.lucy.pk), active=True, by=sample.administrator
+            )
+        assert not User.objects.get(pk=sample.lucy.pk).is_active
+    # The day taken off her record, she can be made active again.
+    back = post(
+        administrator,
+        f"/staff/{lucy.id}/change/",
+        full_name="Lucy Grant",
+        role="Airworthiness Review Staff",
+        staff_group="Airworthiness Review Staff",
+        employment="Employed",
+    )
+    assert back.status_code == 302
+    assert post(administrator, f"/users/{sample.lucy.id}/active/", active="yes").status_code == 302
+    with working_for(sample.ours.id, sample.reader.id):
+        assert User.objects.get(pk=sample.lucy.pk).is_active
+        # The day on the review staff record is a record of its own and stays.
+        assert ReviewStaff.objects.get(pk=staff.pk).left_on == date(2026, 11, 17)
+
+
+def test_the_last_administrator_is_not_recorded_as_having_left(sample: Sample) -> None:
+    """REQ-005, REQ-205. It would leave the organisation with nobody to manage its users."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        second = users.add_user(
+            organisation=sample.ours,
+            username="second.administrator@your-organisation.example",
+            full_name="[Second Administrator]",
+            roles=[Role.ADMINISTRATOR],
+            password=users.new_first_password(),
+        )
+        users.set_roles(User.objects.get(pk=sample.administrator.pk), [Role.READ_ONLY])
+        only = Person.objects.get(user=second)
+        with pytest.raises(services.RefusedError, match="Always Has an Active Administrator"):
+            services.change_person(
+                only,
+                full_name=only.full_name,
+                role="",
+                staff_group=StaffGroup.OTHER,
+                reports_to=None,
+                employment=Employment.EMPLOYED,
+                licence="",
+                joined_on=None,
+                left_on=TODAY,
+                by=User.objects.get(pk=sample.administrator.pk),
+            )
+        assert Person.objects.get(pk=only.pk).left_on is None
+        assert User.objects.get(pk=second.pk).is_active
+
+
+def former_row(sample: Sample, name: str) -> list[str]:
+    body = page(signed_in(sample.reader), "/staff/")
+    former = rows(body, "Name</th><th>Role</th><th>Left")
+    return next(row for row in former if row[0] == name)
+
+
+def leave(sample: Sample, name: str, on: date, group: StaffGroup | None = None) -> Person:
+    """Record, as the Administrator, that a person left, in the group given or their own."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        one = Person.objects.get(full_name=name)
+        services.change_person(
+            one,
+            full_name=one.full_name,
+            role=one.role,
+            staff_group=group or StaffGroup(one.staff_group),
+            reports_to=None,
+            employment=Employment(one.employment),
+            licence=one.licence,
+            joined_on=one.joined_on,
+            left_on=on,
+            by=sample.administrator,
+        )
+        return one
+
+
+def test_record_kept_until_uses_the_approvals_held_on_the_day_the_person_left(
+    sample: Sample,
+) -> None:
+    """REQ-206, finding 6. [Former Review Name] left on 30 June 2025. With Part-145
+    held then, the record is kept 3 years, to 30 June 2028 (145.A.55, Personnel
+    Records). Giving Part-145 up afterwards does not shorten it. Had Part-145
+    ended on or before the day the person left, it would give nothing."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        held = approvals.record(
+            sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]"
+        )
+    assert former_row(sample, "[Former Review Name]")[3] == "30 June 2028, 3 Years After Leaving"
+    with working_for(sample.ours.id, sample.administrator.id):
+        approvals.end(held, on=date(2026, 11, 18))
+    row = former_row(sample, "[Former Review Name]")
+    assert row[3] == "30 June 2028, 3 Years After Leaving"
+    body = page(signed_in(sample.reader), "/staff/")
+    assert "<dt>Approvals Held on That Day</dt><dd>Part-CAO, Part-145</dd>" in body
+    assert "<dt>Airworthiness Review Staff</dt><dd>Yes</dd>" in body
+    # A person who leaves after Part-145 ended is not given its 3 years.
+    leave(sample, "[Review Name]", date(2026, 11, 18))
+    assert former_row(sample, "[Review Name]")[3] == "18 November 2028, 2 Years After Leaving"
+    # Held to the day before: no longer held from 30 June 2025 is not held on 30 June 2025.
+    with working_for(sample.ours.id, sample.administrator.id):
+        approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]")
+        approvals.end(Approval.objects.get(pk=held.pk), on=date(2025, 7, 1))
+    assert former_row(sample, "[Former Review Name]")[3] == "30 June 2028, 3 Years After Leaving"
+    with working_for(sample.ours.id, sample.administrator.id):
+        approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]")
+        approvals.end(Approval.objects.get(pk=held.pk), on=date(2025, 6, 30))
+    assert former_row(sample, "[Former Review Name]")[3] == "30 June 2027, 2 Years After Leaving"
+
+
+def test_a_person_who_was_ever_review_staff_keeps_the_2_years(sample: Sample) -> None:
+    """REQ-206, CAO.A.045(e): "all its airworthiness review staff"; finding 6.
+    Lucy Grant has a review staff record. Moved to Management and recorded as
+    having left, her record is still kept 2 years. So is that of a person with
+    no review staff record whose record once said the group and no longer does."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        review_services.add_review_staff(
+            user=sample.lucy,
+            authorisation_reference="[Authorisation Reference 1]",
+            accepted_on=date(2023, 6, 9),
+        )
+    # A person with a review staff record whose record never said the group.
+    with working_for(sample.ours.id, sample.administrator.id):
+        review_services.add_review_staff(
+            user=sample.planner,
+            authorisation_reference="[Authorisation Reference 3]",
+            accepted_on=date(2024, 1, 8),
+        )
+    leave(sample, "Lucy Grant", date(2026, 11, 17), StaffGroup.MANAGEMENT)
+    assert former_row(sample, "Lucy Grant")[3] == "17 November 2028, 2 Years After Leaving"
+    leave(sample, "[Planning and Records Name]", date(2026, 11, 17))
+    assert (
+        former_row(sample, "[Planning and Records Name]")[3]
+        == "17 November 2028, 2 Years After Leaving"
+    )
+    # Regrouped after leaving: the history still says what the person was.
+    leave(sample, "[Former Review Name]", date(2025, 6, 30), StaffGroup.OTHER)
+    assert former_row(sample, "[Former Review Name]")[3] == "30 June 2027, 2 Years After Leaving"
+    # A person who was never review staff has no period in Part-CAO.
+    leave(sample, "Chris Moore", date(2026, 11, 17))
+    assert former_row(sample, "Chris Moore")[3] == "No Period Given in Part-CAO"
 
 
 # Another organisation
@@ -531,5 +774,5 @@ def test_a_sign_in_from_before_person_records_is_given_its_person(sample: Sample
         cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
     with working_for(sample.ours.id, sample.administrator.id):
         count = Person.objects.count()
-        build.add_person_records(sample.ours, sample.administrator)
+        assert build.add_person_records(sample.ours, sample.administrator) == 0
         assert Person.objects.count() == count

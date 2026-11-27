@@ -108,7 +108,7 @@ def add_user(request: HttpRequest) -> HttpResponse:
     form = AddUserForm(request.POST)
     if not form.is_valid():
         return _users(request, "Give a Full Name and a User Name That Is an Email Address")
-    asked = _code_page(request, "Add a User", "Adding a User")
+    asked = code_page(request, "Add a User", "Adding a User")
     if asked is not None:
         return asked
     password = users.new_first_password()
@@ -130,7 +130,7 @@ def set_roles(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     form = RolesForm(request.POST, prefix=str(person.pk))
     if not form.is_valid():
         return _users(request, "A Role Is One of the Five Roles")
-    asked = _code_page(request, f"Save Roles of {person.full_name}", "a Change of Roles")
+    asked = code_page(request, f"Save Roles of {person.full_name}", "a Change of Roles")
     if asked is not None:
         return asked
     try:
@@ -147,7 +147,7 @@ def set_active(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     """Make a user inactive, or active again."""
     person = get_object_or_404(User, pk=user_id)
     active = request.POST.get("active") == "yes"
-    asked = _code_page(
+    asked = code_page(
         request,
         f"Make {person.full_name} {'Active' if active else 'Inactive'}",
         "Making a User Active or Inactive",
@@ -161,10 +161,14 @@ def set_active(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     return redirect("users")
 
 
-def _code_page(
+def code_page(
     request: HttpRequest, what: str, at: str, back: tuple[str, str] = ("users", "Back to Users")
 ) -> HttpResponse | None:
     """Ask for a code before a change to users, to how someone signs in, or to sessions.
+
+    Used by the Staff page too, for a change of the name of a person who
+    has a sign-in: that name is the sign-in's (independent review of
+    24 November 2026, finding 2).
 
     Nothing is asked within 5 minutes of sign-in. After that the change is
     made only with a code from the authenticator application of whoever is
@@ -205,7 +209,7 @@ def _code_page(
 def reset_password(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     """Give a user a new first password, made by the system and shown once."""
     person = get_object_or_404(User, pk=user_id)
-    asked = _code_page(
+    asked = code_page(
         request, f"Give {person.full_name} a New First Password", "a New First Password"
     )
     if asked is not None:
@@ -223,7 +227,7 @@ def reset_password(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
 def reset_second_factor(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     """Clear a user's second factor so that they set one up again."""
     person = get_object_or_404(User, pk=user_id)
-    asked = _code_page(
+    asked = code_page(
         request, f"Reset Second Factor of {person.full_name}", "a Reset of a Second Factor"
     )
     if asked is not None:
@@ -238,7 +242,7 @@ def reset_second_factor(request: HttpRequest, user_id: uuid.UUID) -> HttpRespons
 def end_sessions(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     """End every session of a user, for example when a device is lost."""
     person = get_object_or_404(User, pk=user_id)
-    asked = _code_page(request, f"End Sessions of {person.full_name}", "Ending a User's Sessions")
+    asked = code_page(request, f"End Sessions of {person.full_name}", "Ending a User's Sessions")
     if asked is not None:
         return asked
     users.end_sessions(person, by=_user(request), address=address_of(request))
@@ -257,7 +261,7 @@ OWN = ("change_password", "Back to Change Password")
 def end_other_sessions(request: HttpRequest) -> HttpResponse:
     """End every other session of the signed-in user. This one continues."""
     user = _user(request)
-    asked = _code_page(request, "Sign Out Everywhere Else", "Ending Other Sessions", OWN)
+    asked = code_page(request, "Sign Out Everywhere Else", "Ending Other Sessions", OWN)
     if asked is not None:
         return asked
     users.end_sessions(user, by=user, address=address_of(request))
@@ -274,7 +278,7 @@ def end_session(request: HttpRequest, session_id: uuid.UUID) -> HttpResponse:
     found = sessions.other_session(user, session_id, request.session.session_key)
     if found is None:
         raise Http404
-    asked = _code_page(request, "End a Session", "Ending a Session", OWN)
+    asked = code_page(request, "End a Session", "Ending a Session", OWN)
     if asked is not None:
         return asked
     sessions.end_session(user, found, address_of(request))

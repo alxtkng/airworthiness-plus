@@ -1,5 +1,6 @@
 """The organisation record and the approvals it holds (REQ-001, REQ-200)."""
 
+from datetime import date
 from decimal import Decimal
 
 from django.contrib.postgres.fields import ArrayField
@@ -173,3 +174,13 @@ class Approval(Record):
     def held(self) -> bool:
         """Return whether the approval is held now."""
         return self.no_longer_held_on is None
+
+    def held_on(self, day: date) -> bool:
+        """Return whether the record says the approval was held on ``day``.
+
+        The record carries the day the approval was no longer held from,
+        and no day it was first held: an approval is taken as held on any
+        day before it ended. So one recorded after ``day`` counts as held
+        on it, which errs toward keeping a record longer (REQ-206).
+        """
+        return self.no_longer_held_on is None or self.no_longer_held_on > day

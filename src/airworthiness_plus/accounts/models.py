@@ -23,12 +23,15 @@ class UserManager(BaseUserManager.from_queryset(RecordQuerySet)):  # type: ignor
         username: str,
         full_name: str,
         password: str | None = None,
+        person: Any = None,
         **fields: Any,
     ) -> "User":
         """Create a named account in ``organisation``. With no password it cannot sign in.
 
         The account is a person's, so it is given its person record with it
-        (REQ-204). The database refuses a sign-in that has none.
+        (REQ-204): a new one, or ``person`` where a person already recorded
+        with no sign-in is chosen. Nothing is joined by name. The database
+        refuses a sign-in that has no person.
         """
         from airworthiness_plus.people.services import person_for
 
@@ -38,7 +41,7 @@ class UserManager(BaseUserManager.from_queryset(RecordQuerySet)):  # type: ignor
         user.set_password(password)
         with transaction.atomic():
             user.save(using=self._db)
-            person_for(user)
+            person_for(user, person)
         return user
 
 

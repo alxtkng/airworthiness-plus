@@ -23,14 +23,13 @@ from typing import Any
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
 from psycopg import sql
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.people.models import Person
 from airworthiness_plus.sample import build, second
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
@@ -38,6 +37,7 @@ from airworthiness_plus.sample.management.commands.seed_sample_organisation impo
 )
 from airworthiness_plus.sample.test_site import (
     ADMINISTRATOR_PASSWORD,
+    SECOND_ADMINISTRATOR_PASSWORD,
     SERVICE_PASSWORD,
     SERVICE_USER,
 )
@@ -103,16 +103,50 @@ def sample_is_set_up() -> bool:
 def complete_the_people(administrator: User) -> int:
     """Give a sample seeded before person records the people it lacks (REQ-218).
 
-    The people of SampleData.md who have no sign-in are added, and the
-    record of each who has one is completed. Nobody whose record already
-    says more than their name is changed, and no sign-in is touched. Return
-    how many people were added.
+    Once, and only what is missing: ``build.add_person_records`` says how.
+    Nothing that anyone has recorded is changed, nobody is found by name,
+    and no sign-in is touched. Return how many people were added.
     """
     with working_for(administrator.organisation_id, administrator.id):
         ours = Organisation.objects.get(pk=administrator.organisation_id)
-        before = Person.objects.count()
-        build.add_person_records(ours, administrator)
-        return Person.objects.count() - before
+        return build.add_person_records(ours, administrator)
+
+
+def second_organisation() -> str:
+    """Set up the second sample organisation if it can be, and say what was done.
+
+    Its Administrator has a first password of its own, never the first
+    organisation's (independent review of 24 November 2026, finding 9).
+    With none given, or with a user name of its sample already taken, it
+    is not set up, the start says so and carries on: the test site still
+    starts. Nothing given is written to the output.
+    """
+    found = administrator_named(second.ADMINISTRATOR)
+    if found is not None:
+        # The name alone does not say so: anyone may have been added under it.
+        with working_for(found.organisation_id):
+            theirs = Organisation.objects.get(pk=found.organisation_id)
+        if theirs.approval_reference == second.APPROVAL_REFERENCE:
+            return "Second Sample Organisation Already Set Up"
+        return "Second Sample Organisation Not Set Up: One of Its User Names Is Already Taken"
+    password = os.environ.get(SECOND_ADMINISTRATOR_PASSWORD, "")
+    if not password:
+        return (
+            "Second Sample Organisation Not Set Up: "
+            f"{SECOND_ADMINISTRATOR_PASSWORD} Is Not Set in the Environment"
+        )
+    if password == os.environ.get(ADMINISTRATOR_PASSWORD, ""):
+        return (
+            "Second Sample Organisation Not Set Up: "
+            "Its Administrator Has a First Password of Its Own"
+        )
+    try:
+        second.seed(password)
+    except IntegrityError:
+        # A user name is used once across every organisation, and the database
+        # holds that. Nothing was made: ``seed`` is one piece of work.
+        return "Second Sample Organisation Not Set Up: One of Its User Names Is Already Taken"
+    return f"Second Sample Organisation Set Up\nAdministrator {second.ADMINISTRATOR}"
 
 
 def service_role(name: str, password: str) -> bool:
@@ -182,9 +216,4 @@ class Command(BaseCommand):
             self.stdout.write("Sample Organisation Set Up")
             self.stdout.write(f"Administrator {ADMINISTRATOR}")
         # The second sample organisation holds Part-CAMO and Part-145 (REQ-218).
-        if administrator_named(second.ADMINISTRATOR) is not None:
-            self.stdout.write("Second Sample Organisation Already Set Up")
-        else:
-            second.seed(administrator)
-            self.stdout.write("Second Sample Organisation Set Up")
-            self.stdout.write(f"Administrator {second.ADMINISTRATOR}")
+        self.stdout.write(second_organisation())

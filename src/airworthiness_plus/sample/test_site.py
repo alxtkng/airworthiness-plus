@@ -30,6 +30,9 @@ PREFIX = "AIRWORTHINESS_TEST_SITE_"
 OWNER_USER = PREFIX + "OWNER_USER"
 OWNER_PASSWORD = PREFIX + "OWNER_PASSWORD"
 ADMINISTRATOR_PASSWORD = PREFIX + "ADMINISTRATOR_PASSWORD"
+# The first password of the second sample organisation's Administrator: its
+# own, never the first's. Without it the second organisation is not set up.
+SECOND_ADMINISTRATOR_PASSWORD = PREFIX + "SECOND_ADMINISTRATOR_PASSWORD"
 
 # Passed on to ``prepare_test_site``: the role to make for the service.
 SERVICE_USER = PREFIX + "SERVICE_USER"

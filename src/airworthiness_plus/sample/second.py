@@ -39,6 +39,13 @@ MAINTENANCE_REFERENCE = "UK.145.[Number]"
 SCOPE = "Aeroplanes 2,730 Kilograms Maximum Take-Off Mass or Less"
 ADMINISTRATOR = "accountable.manager@second-organisation.example"
 
+# Every user name of this sample. A user name is used once across every organisation.
+USERNAMES = (
+    ADMINISTRATOR,
+    "manager@second-organisation.example",
+    "reader@second-organisation.example",
+)
+
 ACCOUNTABLE = "[Second Accountable Manager]"
 MANAGER = "[Second Continuing Airworthiness Manager]"
 MAINTENANCE = "[Second Maintenance Manager]"
@@ -77,6 +84,7 @@ def build(organisation: Organisation, administrator: User) -> None:
             licence="",
             joined_on=None,
             left_on=None,
+            by=administrator,
         )
         return person
 
@@ -120,7 +128,8 @@ def seed(password: str) -> Organisation:
     """Set up the second sample organisation, with ``password`` for its Administrator.
 
     A first password, as every other is: changed at the first sign-in and
-    good for 7 days.
+    good for 7 days. It is this Administrator's own, never one given to
+    anyone else.
     """
     try:
         with transaction.atomic():
