@@ -30,7 +30,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.sample import build, planning, second, staffing, top_up
+from airworthiness_plus.sample import build, planning, second, staffing, suppliers, top_up
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
     seed,
@@ -137,6 +137,20 @@ def bring_work_packages(administrator: User) -> str:
                 return "Work Packages of the Sample Added, 1 Work Package"
     except Exception as error:
         return f"Sample Work Package Not Added: {type(error).__name__}"
+    return ""
+
+
+def bring_suppliers(administrator: User) -> str:
+    """Add only the Suppliers board sample to an earlier marked test site."""
+    try:
+        with working_for(administrator.organisation_id, administrator.id):
+            organisation = Organisation.objects.get(pk=administrator.organisation_id)
+            if organisation.approval_reference == build.APPROVAL_REFERENCE:
+                count = suppliers.add(organisation, administrator)
+                if count:
+                    return f"Suppliers of the Sample Added, {count} Suppliers"
+    except Exception as error:
+        return f"Sample Suppliers Not Added: {type(error).__name__}"
     return ""
 
 
@@ -255,6 +269,9 @@ class Command(BaseCommand):
                 self.stdout.write(f"People of the Sample Brought Up to Date, {added} Added")
             for line in bring_phase_1(first):
                 self.stdout.write(line)
+            supplier_result = bring_suppliers(first)
+            if supplier_result:
+                self.stdout.write(supplier_result)
             work_packages = bring_work_packages(first)
             if work_packages:
                 self.stdout.write(work_packages)

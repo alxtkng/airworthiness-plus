@@ -154,6 +154,7 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
     assert re.findall(r"<h2>([^<]+)</h2>", sidebar) == [
         "Continuing Airworthiness",
         "Planning",
+        "Logistics",
         "People",
         "Documentation",
         "Organisation",
@@ -169,6 +170,7 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
         "Contracts",
         "Work Packages",
         "Staffing and Capacity",
+        "Suppliers",
         "Staff",
         "Authorisations",
         "Maintenance Data",

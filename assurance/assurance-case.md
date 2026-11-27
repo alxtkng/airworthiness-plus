@@ -141,6 +141,12 @@ Hazards answered: H-005.
 | C8.2 Weekly load and staffing expose the basis and the organisation's limits | Roster, absences, package hours and settings supply the workload. A rounded display does not control the warning. Date arithmetic uses elapsed time where needed | `tests/test_golden_roster.py` and the roster browser journey | Available |
 | C8.3 Handovers retain acknowledgement evidence | The incoming person acknowledges via their sign-in. The database retains the original and who acknowledged it | Roster browser journey and record rules | Available |
 
+## C9. Supplier evaluations
+
+| Sub-claim | Argument | Evidence | Status |
+|---|---|---|---|
+| C9.1 A supplier decision and its basis can be traced to the relevant approval | A shared supplier identity has approval-specific, dated decisions. The latest decision for the approval is shown while earlier evidence remains accessible. This is one input to the separate checks on a received item (H-034) | REQ-340 to REQ-343, `tests/test_suppliers.py` and the supplier browser journey | Available |
+
 ## Maintaining This Case
 
 - A pull request that adds evidence changes the Status here in the same pull request.

@@ -26,7 +26,8 @@ from airworthiness_plus.accounts import sign_in, users
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
-from airworthiness_plus.sample import second, test_site
+from airworthiness_plus.logistics.models import Supplier
+from airworthiness_plus.sample import second, suppliers, test_site
 from airworthiness_plus.sample.management.commands import prepare_test_site
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import ADMINISTRATOR
 from tests.conftest import as_owner
@@ -295,6 +296,28 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
             # sign-in and good for 7 days (review of 20 November 2026, finding 8).
             assert administrator.password_must_change
             assert administrator.first_password_set_on == sign_in.today()
+
+
+@pytest.mark.django_db
+def test_an_existing_test_site_gets_only_its_missing_sample_suppliers(
+    given: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with as_owner():
+        mark_the_database()
+        with monkeypatch.context() as earlier:
+            earlier.setattr(suppliers, "add", lambda organisation, actor: 0)
+            prepare()
+        administrator = prepare_test_site.administrator_named(ADMINISTRATOR)
+        assert administrator is not None
+        with working_for(administrator.organisation_id, administrator.id):
+            existing = Supplier.objects.create(
+                organisation_id=administrator.organisation_id, name="[Oil Supplier]"
+            )
+        assert "Suppliers of the Sample Added, 4 Suppliers" in prepare()
+        assert "Suppliers of the Sample Added" not in prepare()
+        with working_for(administrator.organisation_id, administrator.id):
+            assert Supplier.objects.count() == 5
+            assert not existing.evaluations.exists()
 
 
 def second_administrator() -> User | None:

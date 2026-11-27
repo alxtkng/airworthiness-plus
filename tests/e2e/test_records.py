@@ -1086,3 +1086,36 @@ def test_planning_policy_records_are_editable(
         )
         page.goto("/staffing/capacity/?week=2026-12-21")
         expect(page.locator("main")).to_contain_text("40.0")
+
+
+def test_supplier_register_and_evaluation_history(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
+        page.goto("/suppliers/")
+        expect(
+            page.get_by_role("link", name="[Propeller Organisation]", exact=True)
+        ).to_be_visible()
+        expect(page.get_by_role("link", name="[Oil Supplier]", exact=True)).to_be_visible()
+        page.get_by_role("link", name="Evaluate a Supplier", exact=True).click()
+        fields = {
+            "name": "Test Browser Supplier",
+            "approval": "Part-CAO",
+            "supplies": "Standard Parts",
+            "release_documents": "Certificate of Conformity",
+            "evaluated_on": "2026-11-18",
+            "next_evaluation_on": "2026-12-18",
+            "status": "Approved",
+            "evidence": "Initial Browser Evaluation",
+        }
+        save(page, "Record Evaluation", fields, "Test Browser Supplier")
+        page.get_by_role("link", name="Record an Evaluation", exact=True).click()
+        fields.pop("name")
+        fields.update(status="Suspended", next_evaluation_on="", evidence="Follow-up Evaluation")
+        save(page, "Record Evaluation", fields, "Test Browser Supplier")
+        history = page.get_by_role("table")
+        expect(history.get_by_text("Approved", exact=True)).to_be_visible()
+        expect(history.get_by_text("Suspended", exact=True)).to_be_visible()
+        page.goto("/suppliers/")
+        row = page.get_by_role("row").filter(has_text="Test Browser Supplier")
+        expect(row.get_by_text("Suspended", exact=True)).to_be_visible()

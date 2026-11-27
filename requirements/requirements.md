@@ -315,6 +315,15 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-332 | Keep the membership of each published roster, identify unpublished changes, and retain the recorded handover overlap. Distinguish an unavailable person or approval when counting staff | Roster and Settings boards; 145.A.47(c) (R) and AMC 145.A.47(c) (R) for the planned shift overlap, AMC1 145.A.30(d) points 1 and 2 (R), read 27 November 2026 | Must | Test |
 | REQ-333 | Retain dated amendment-check evidence and show work awaiting release. Link related aircraft, defect and order records to the package | Work Packages board; CAO.A.055(a) (R), ML.A.305(a) (R), read 27 November 2026. For Part-145 the amendment check is 145.A.45(g) (R) | Must | Test |
 
+### Phase 4 Logistics — Suppliers
+
+| ID | Requirement | Source | Priority | Verification |
+|---|---|---|---|---|
+| REQ-340 | Keep one supplier identity per organisation. Show the current evaluation separately for each maintenance approval and retain the supplier across changes to its approval | Suppliers board; Decision 9 in Decisions.md; CAO.A.095 for the Part-CAO maintenance privilege | Must | Test |
+| REQ-341 | Record the supplies, release-document expectations, date, decision and evidence for an evaluation under an approval held on that date. A recorded approval requires a later next-evaluation date | AMC1 145.A.42(b)(i) and GM3 145.A.42(b)(i), read 27 November 2026; the fields and due-date policy are the organisation's register procedure (D) | Must | Test |
+| REQ-342 | Append new evaluations and retain earlier evidence. Show the latest evaluation for each current approval, flag upcoming and overdue dates using the organisation's lead time, and preserve a suspension separately from its review dates | Suppliers board; Decisions.md (D) | Must | Test |
+| REQ-343 | Restrict evaluation writes to the authorised role. Keep supplier identities, approval references and evaluation histories within their organisation, with audit events and organisation export | Role matrix, ADR-0002, ADR-0007 (D) | Must | Test |
+
 ## Open Points
 
 These block verification of the requirements named, not the start of building.

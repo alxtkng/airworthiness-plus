@@ -245,6 +245,8 @@ The canvas build, Phase 1 (`prompts/canvas-build.md`): Continuing Airworthiness,
 
 | Roster, shift withdrawals and handover acknowledgement | TH-008, TH-020, TH-021 | Records are tenant scoped, with row links and fixed publication and withdrawal evidence. Only the named recipient with the appropriate role can acknowledge. The database checks identity. |
 
+| Supplier identity and evaluation history | TH-008, TH-020, TH-021 | The server checks maintenance eligibility and the role. PostgreSQL holds supplier and approval references within the tenant. Both records are append-only for the runtime role and have audit events. Organisation exports retain the source records. |
+
 ## Not Yet Covered
 
 - Email (password reset, notifications): no email flow is designed yet. It is modelled when it is added.

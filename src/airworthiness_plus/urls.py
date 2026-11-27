@@ -15,6 +15,7 @@ from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
+from airworthiness_plus.logistics import views as logistics
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.modifications import views as modifications
 from airworthiness_plus.organisations import views as settings
@@ -27,6 +28,14 @@ from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
 
 urlpatterns: list[URLPattern | URLResolver] = [
+    path("suppliers/", logistics.suppliers, name="suppliers"),
+    path("suppliers/evaluate/", logistics.add_supplier, name="add_supplier"),
+    path("suppliers/<uuid:supplier_id>/", logistics.supplier, name="supplier"),
+    path(
+        "suppliers/<uuid:supplier_id>/evaluate/",
+        logistics.evaluate_supplier,
+        name="evaluate_supplier",
+    ),
     path("", aircraft.fleet, name="home"),
     path("staffing/capacity/", roster.load_and_capacity, name="load_and_capacity"),
     path("staffing/roster/", roster.staff_roster, name="staff_roster"),
