@@ -36,6 +36,7 @@ from airworthiness_plus.aircraft.models import (
     Stage,
     Status,
 )
+from airworthiness_plus.configuration.views import render_transfers
 from airworthiness_plus.customers import services as customer_services
 from airworthiness_plus.interface import formatting
 from airworthiness_rules.dates import days_between
@@ -417,17 +418,20 @@ def records_received(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpRespon
     )
     form = RecordsReceivedForm(request.POST)
     expected = aircraft.records_expected or 0
-    if form.is_valid() and form.cleaned_data["received"] <= expected:
-        services.record_received(aircraft, form.cleaned_data["received"])
-        if request.POST.get("complete") == "Yes":
-            try:
-                services.complete_transfer(aircraft)
-            except services.TransferNotCompleteError as error:
-                return render(
-                    request,
-                    "configuration/refused.html",
-                    {"reason": str(error), "back": "transfers", "arguments": ()},
-                    status=409,
-                )
-            return redirect("aircraft", aircraft_id=aircraft.id)
+    if form.is_valid() and form.cleaned_data["received"] > expected:
+        form.add_error("received", f"Enter {expected} or Fewer Records")
+    if form.errors:
+        return render_transfers(request, rejected_aircraft=aircraft.id, records_form=form)
+    services.record_received(aircraft, form.cleaned_data["received"])
+    if request.POST.get("complete") == "Yes":
+        try:
+            services.complete_transfer(aircraft)
+        except services.TransferNotCompleteError as error:
+            return render(
+                request,
+                "configuration/refused.html",
+                {"reason": str(error), "back": "transfers", "arguments": ()},
+                status=409,
+            )
+        return redirect("aircraft", aircraft_id=aircraft.id)
     return redirect("transfers")

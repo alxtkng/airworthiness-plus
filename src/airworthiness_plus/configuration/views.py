@@ -16,6 +16,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.aircraft.forms import RecordsReceivedForm
 from airworthiness_plus.aircraft.models import Aircraft, Stage
 from airworthiness_plus.components import services as component_services
 from airworthiness_plus.components.models import Installation
@@ -46,6 +47,16 @@ def _refused(request: HttpRequest, reason: str, back: str, *args: object) -> Htt
 @requires(Action.VIEW_RECORDS)
 def transfers_page(request: HttpRequest) -> HttpResponse:
     """Transfers in, each with its checklist, and transfer out by export (REQ-267, REQ-276)."""
+    return render_transfers(request)
+
+
+def render_transfers(
+    request: HttpRequest,
+    *,
+    rejected_aircraft: uuid.UUID | None = None,
+    records_form: RecordsReceivedForm | None = None,
+) -> HttpResponse:
+    """Show Transfers, keeping a rejected records count beside the aircraft it was for."""
     user = _user(request)
     today = aircraft_services.today()
     coming = [
@@ -60,7 +71,10 @@ def transfers_page(request: HttpRequest) -> HttpResponse:
             "may_change": user.may(Action.ADD_OR_CHANGE_AIRCRAFT),
             "may_export": user.may(Action.EXPORT_RECORDS),
             "item_form": ItemForm(),
+            "rejected_aircraft": rejected_aircraft,
+            "records_form": records_form,
         },
+        status=400 if records_form is not None else 200,
     )
 
 

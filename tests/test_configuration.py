@@ -220,6 +220,36 @@ def test_the_transfer_of_the_sample_on_18_november_2026(sample: Sample, hklm: Ai
     assert not [row for row in panel.rows if row.subject == "G-HKLM" and row.page != "Transfers"]
 
 
+@pytest.mark.parametrize(
+    ("received", "reason"),
+    [
+        ("999", "Enter 18 or Fewer Records"),
+        ("not a number", "Enter a whole number."),
+        ("", "This field is required."),
+    ],
+)
+def test_invalid_records_received_shows_the_reason_and_keeps_the_input(
+    sample: Sample, hklm: Aircraft, received: str, reason: str
+) -> None:
+    """REQ-027. Reject an invalid count without discarding the entered value."""
+    response = post(
+        signed_in(sample.planner),
+        f"/aircraft/{hklm.id}/records-received/",
+        received=received,
+        complete="Yes",
+    )
+    assert response.status_code == 400
+    body = response.content.decode()
+    assert reason in body
+    form_html = re.search(rf'<input[^>]*id="received-{hklm.id}"[^>]*>', body)
+    assert form_html and f'value="{received}"' in form_html[0]
+    assert "Records 14 of 18 Received" in body
+    with working_for(sample.ours.id, sample.reader.id):
+        hklm.refresh_from_db()
+    assert hklm.records_received == 14
+    assert hklm.stage == Stage.TRANSFER_IN
+
+
 def test_an_item_the_records_answer_is_complete_only_when_they_bear_it_out(
     sample: Sample, hklm: Aircraft
 ) -> None:
