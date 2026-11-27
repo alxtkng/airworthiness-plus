@@ -252,7 +252,6 @@ def test_aircraft_programme_and_directive(
                 "dated": "2026-11-17",
                 "hours": "124.0",
                 "cycles": "95",
-                "release_reference": "TEST-CABLE",
             },
         )
         submit(page, form.get_by_role("button"))

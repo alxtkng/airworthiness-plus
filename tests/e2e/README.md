@@ -53,18 +53,17 @@ both archives, run `verify_export` and check the result against the page and
 selected archive contents. The fleet keyboard test operates a row at 390 pixels.
 
 [Form coverage](form-coverage.tsv) maps each form route to a browser scenario.
-The inventory check requires an entry when a route is added. The sole
-exception is `retire_task`. The maintenance programme page has no link or
-form control to retire an inspection, even when changing the programme
-basis requires retirement. The existing Django test
-`test_a_retired_task_leaves_the_programme_and_stays_in_the_record` covers
-that server action. Add a browser journey when a retirement control is available.
+It includes the maintenance programme's retirement control and checks that
+completed work survives retirement. The sole exception is `record_release`.
+It is a legacy redirect with no browser control. The programme links directly
+to the full `record_release_certificate` form. The Django programme tests check
+that the old endpoint redirects to the certificate form without saving a release.
 
-`test_regressions.py` describes the three high-severity independent findings.
-Their strict expected-failure markers recognise only the specified defect.
-Sign-in, navigation, setup and unrelated assertion failures still fail the job.
-When a product fix makes a regression test pass, remove its marker in that
-fix's pull request. The default output names the expected failures.
+`test_regressions.py` checks the three high-severity findings fixed in pull
+request 139. The seed includes one reference-only release entry to represent
+records created before the work form stopped accepting release references.
+The browser test checks both refusal of the contradictory issue date and
+preservation of the original records date.
 
 When adding a journey, browse through the form, check the saved value after a
 reload, and check what survives any refusal. Add or update the scenario in the

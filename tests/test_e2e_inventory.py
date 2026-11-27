@@ -21,8 +21,8 @@ def test_every_form_route_is_in_the_browser_inventory() -> None:
         if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
     }
     for row in rows:
-        notes = row["Scenario or gap"]
-        if row["Route"] == "retire_task":
-            assert notes == "No on-screen retirement control on the maintenance programme page"
+        notes = row["Scenario or reason"]
+        if row["Route"] == "record_release":
+            assert notes == "Legacy redirect without a browser control"
         else:
             assert set(notes.split(", ")) <= scenarios, row

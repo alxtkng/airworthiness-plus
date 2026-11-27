@@ -3,6 +3,7 @@
 import json
 import sys
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -14,12 +15,17 @@ from django.core.management import call_command
 from django.db import connection
 from django.test import override_settings
 
+LEGACY_WORK = "Test inspection with a previously recorded release reference"
+LEGACY_REFERENCE = "TEST-RELEASE-10"
+
 
 def seed() -> None:
     from airworthiness_plus.accounts import users
     from airworthiness_plus.accounts.models import User
+    from airworthiness_plus.aircraft.models import Aircraft
     from airworthiness_plus.history.session import working_for
     from airworthiness_plus.organisations.models import Organisation
+    from airworthiness_plus.programme.services import record_work
 
     accounts = json.load(sys.stdin)
     call_command("migrate", verbosity=0, interactive=False)
@@ -47,6 +53,17 @@ def seed() -> None:
                     )
                 else:
                     users.reset_password(user, password=person["password"], by=actor)
+            if command == "seed_sample_organisation":
+                # The current work form cannot create a legacy reference-only entry.
+                record_work(
+                    Aircraft.objects.get(registration="G-ABCD"),
+                    description=LEGACY_WORK,
+                    dated=date(2026, 11, 10),
+                    hours=Decimal("6400.0"),
+                    cycles=0,
+                    release_reference=LEGACY_REFERENCE,
+                    release_recorded_on=date(2026, 11, 11),
+                )
     connection.close()
 
 

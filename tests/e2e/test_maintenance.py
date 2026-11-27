@@ -54,7 +54,7 @@ def test_aircraft_owner_counter_and_serviceability(
         assert definition(page, "Status") == "Serviceable"
 
 
-def test_programme_review_and_release_reference(
+def test_programme_review_and_recorded_release(
     chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
 ) -> None:
     with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
@@ -75,11 +75,37 @@ def test_programme_review_and_release_reference(
             work,
         )
         row = page.locator("main tr:not(.detail)").filter(has_text=work)
-        control = reveal(row).get_by_role("button", name="Record Release", exact=True)
-        fill(control.locator("xpath=ancestor::form[1]"), {"release_reference": "TEST-WORK-RELEASE"})
-        submit(page, control)
+        reveal(row).get_by_role("link", name="Record Certificate of Release to Service").click()
+        save(
+            page,
+            "Record Certificate",
+            {
+                "reference": "TEST-WORK-RELEASE",
+                "kind": "Independent Certifying Staff",
+                "issuer_name": "Test Engineer",
+                "licence": "TEST-B12",
+                "issued_on": "2026-11-17",
+            },
+            "Test Engineer",
+        )
+        expect(row).to_contain_text("18 November 2026")
+        expect(reveal(row)).to_contain_text("TEST-WORK-RELEASE")
+
+
+def test_retirement_keeps_the_work_done(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
+        choose_aircraft(page, "G-ABCD", "Maintenance Programme")
+        task = page.get_by_role("cell", name="6,425.0 Hours", exact=True)
+        expect(task).to_be_visible()
+        retire = page.get_by_role("button", name="Retire 50-Hour Check", exact=True)
+        submit(page, retire)
         page.reload()
-        expect(row).to_contain_text("TEST-WORK-RELEASE")
+        expect(retire).to_have_count(0)
+        expect(task).to_have_count(0)
+        history = page.locator("main tbody tr:not(.detail)").filter(has_text="50-Hour Check")
+        expect(history).to_contain_text("2 October 2026")
 
 
 def test_repeat_defect_action_survives_reload(
