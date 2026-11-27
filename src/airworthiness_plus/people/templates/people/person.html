@@ -13,9 +13,10 @@
 <dt>Licence</dt><dd>{{ person.licence }}</dd>
 <dt>Joined</dt><dd>{{ person.joined_on|long_date }}</dd>
 <dt>Left</dt><dd>{{ person.left_on|long_date }}</dd>
-<dt>Sign-In</dt><dd>{% if person.user %}{{ person.user.username }}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</dd>
+<dt>Sign-In</dt><dd>{% if person.user %}{% if may_manage_users %}{{ person.user.username }}{% else %}Has a Sign-In{% endif %}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</dd>
 <dt>Reporting to {{ person.full_name }}</dt><dd>{% for one in reports %}<a href="{% url 'person' one.id %}">{{ one.full_name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</dd>
 </dl>
+{% if may_change %}
 <h2>Change the Record of {{ person.full_name }}</h2>
 <form method="post" action="{% url 'change_person' person.id %}">
 {% csrf_token %}
@@ -25,4 +26,5 @@
 {% endfor %}
 <p><button type="submit">Save the Record of {{ person.full_name }}</button></p>
 </form>
+{% endif %}
 {% endblock %}

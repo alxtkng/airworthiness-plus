@@ -3,7 +3,7 @@
 {% block title %}Staff{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Staff</h1>
-<p><a href="{% url 'add_person' %}">Add a Person</a></p>
+{% if may_change %}<p><a href="{% url 'add_person' %}">Add a Person</a></p>{% endif %}
 <table>
 <thead>
 <tr><th>Name</th><th>Role</th><th>Reports To</th><th>Employment</th><th>Licence</th><th data-detail>Staff Group</th><th data-detail>Joined</th><th data-detail>Sign-In</th></tr>
@@ -18,7 +18,7 @@
 <td>{{ person.licence }}</td>
 <td>{{ person.staff_group }}</td>
 <td>{{ person.joined_on|long_date }}</td>
-<td>{% if person.user %}{{ person.user.username }}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</td>
+<td>{% if person.user %}{% if may_manage_users %}{{ person.user.username }}{% else %}Has a Sign-In{% endif %}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>

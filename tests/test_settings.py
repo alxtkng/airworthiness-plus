@@ -12,6 +12,7 @@ maintenance data". It gives no number of days: the 30 days of the Settings
 board are the organisation's own default.
 """
 
+import re
 from datetime import date
 from decimal import Decimal
 
@@ -322,6 +323,45 @@ def test_a_review_certificate_can_be_given_an_earlier_alert(
     assert lead_times(administrator, review_alert_days="60").status_code == 302
     assert ours(sample).review_alert_days is None
     assert flag(date(2027, 1, 13)) == (60, Flag.NONE)
+
+
+def fleet_order(client: Client) -> list[str]:
+    return re.findall(r">(G-[A-Z]{4})</a>", page(client, "/"))
+
+
+def test_the_earlier_alert_reaches_the_fleet_and_the_working_shown(
+    sample: Sample, fleet: dict[str, Aircraft], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """REQ-213, REQ-139; a weak test found by the independent review of 24 November 2026:
+    only the review schedule was tested, so the Fleet and the working shown beside
+    the figure could go back to the calendar lead time unseen.
+
+    By hand, on 18 November 2026. Days to expiry: G-EJKL 18, G-ABCD 116, G-FMNO 160,
+    G-DGHI 182, G-BXYZ 257, G-CDEF 379. Days to the next task, by planning
+    utilisation: G-ABCD 12.4 hours at 0.8 a day, 15; G-FMNO 78 to 4 February 2027;
+    G-BXYZ 41.0 hours at 0.5 a day, 82; G-CDEF 220.0 hours at 0.6 a day, 366.
+    G-DGHI is Unserviceable and comes first.
+
+    With no earlier alert only G-EJKL's certificate is Due Soon, so it comes
+    next, and the others follow by days: G-ABCD, G-FMNO, G-BXYZ, G-CDEF. With an
+    alert at 200 days the certificates of G-ABCD and G-FMNO are Due Soon as well:
+    the three come by days, G-ABCD 15, G-EJKL 18, G-FMNO 78, before G-BXYZ.
+    """
+    monkeypatch.setattr(aircraft_services, "today", lambda: date(2026, 11, 18))
+    administrator = signed_in(sample.administrator)
+    reader = signed_in(sample.reader)
+    assert fleet_order(reader) == ["G-DGHI", "G-EJKL", "G-ABCD", "G-FMNO", "G-BXYZ", "G-CDEF"]
+    review = f"/aircraft/{fleet['G-ABCD'].id}/review/"
+    assert "Due Soon at 30 Days or Fewer, Which This Organisation Has Set" in page(reader, review)
+
+    assert lead_times(administrator, review_alert="on", review_alert_days="200").status_code == 302
+    assert fleet_order(reader) == ["G-DGHI", "G-ABCD", "G-EJKL", "G-FMNO", "G-BXYZ", "G-CDEF"]
+    body = page(reader, review)
+    assert "Due Soon at 200 Days or Fewer, Which This Organisation Has Set" in body
+    assert "Due Soon at 30 Days" not in body
+    # Nothing else takes the earlier lead time: a task's working still says its own.
+    programme = page(reader, f"/aircraft/{fleet['G-ABCD'].id}/programme/")
+    assert "200 Days" not in programme
 
 
 def test_lead_times_that_make_no_sense_are_refused(sample: Sample) -> None:
