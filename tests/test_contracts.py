@@ -420,10 +420,12 @@ def test_a_contract_that_ends_through_non_conformity(
         ):
             with pytest.raises(IntegrityError, match="recorded once"), transaction.atomic():
                 Contract.objects.filter(pk=contract.pk).update(**change)
-        assert [entry.changed for entry in Event.of(kept)] == [
-            [],
-            ["end_reason", "ended_on"],
-            ["authority_told_on"],
+        # The history lists the names in order, and how these two sort depends on
+        # the collation of the database, so each entry is compared as a set.
+        assert [set(entry.changed) for entry in Event.of(kept)] == [
+            set(),
+            {"end_reason", "ended_on"},
+            {"authority_told_on"},
         ]
 
 
