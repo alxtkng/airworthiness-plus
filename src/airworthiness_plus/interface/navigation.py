@@ -248,7 +248,8 @@ BOARD: tuple[Group, ...] = (
                 "staffing_plan",
                 tabs=(
                     Tab("Staffing Plan", "staffing_plan"),
-                    *_tabs("Load and Capacity", "Staff Roster"),
+                    Tab("Load and Capacity", "load_and_capacity"),
+                    Tab("Staff Roster", "staff_roster"),
                 ),
                 inside=frozenset(
                     {
@@ -256,6 +257,11 @@ BOARD: tuple[Group, ...] = (
                         "review_staffing_plan",
                         "record_staffing_shortfall",
                         "record_staff_absence",
+                        "add_roster_shift",
+                        "withdraw_roster_shift",
+                        "publish_roster",
+                        "record_handover",
+                        "acknowledge_handover",
                     }
                 ),
             ),
@@ -422,9 +428,10 @@ BOARD: tuple[Group, ...] = (
             Item(
                 "Settings",
                 "settings",
-                tabs=(Tab("Organisation", "settings"), Tab("Planning")),
+                tabs=(Tab("Organisation", "settings"), Tab("Planning", "planning_settings")),
                 inside=frozenset(
                     {
+                        "change_planning_settings",
                         "change_organisation_details",
                         "record_approval_held",
                         "end_approval_held",

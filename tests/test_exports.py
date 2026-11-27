@@ -11,7 +11,7 @@ import json
 import secrets
 import warnings
 import zipfile
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -56,8 +56,10 @@ from airworthiness_plus.programme.models import Basis
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.sample import phase1
+from airworthiness_plus.staffing import roster
 from airworthiness_plus.staffing import services as staffing_services
 from airworthiness_plus.staffing.models import AbsenceType, Function
+from airworthiness_plus.staffing.roster_models import Settings
 from airworthiness_rules.intervals import Interval, Reading
 from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import (
@@ -291,6 +293,29 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             kind=AbsenceType.HOLIDAY,
             starts_on=date(2026, 12, 7),
             ends_on=date(2026, 12, 18),
+        )
+        Settings.objects.create(organisation=sample.ours)
+        roster.add_shift(
+            actor=sample.planner,
+            approval=approval,
+            person=Person.objects.get(full_name="Chris Moore"),
+            area="Hangar",
+            shift_name="Day Shift",
+            starts_at=datetime(2026, 11, 18, 8, tzinfo=UTC),
+            ends_at=datetime(2026, 11, 18, 16, 30, tzinfo=UTC),
+            break_minutes=30,
+            other_minutes=0,
+            maintenance=True,
+        )
+        roster.publish(actor=sample.planner, week=date(2026, 11, 16), note="Reviewed and Published")
+        roster.record_handover(
+            actor=sample.planner,
+            package=package,
+            outgoing=Person.objects.get(full_name="Sam Patel"),
+            incoming=Person.objects.get(full_name="Chris Moore"),
+            handed_at=datetime(2026, 11, 17, 16, 30, tzinfo=UTC),
+            stage="Cable to Inspect",
+            parts="Cable Checked In",
         )
     baseline_for_the_export(sample, fleet)
     return fleet

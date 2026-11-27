@@ -308,6 +308,10 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-325 | A Part-145 monthly shortfall over 25 percent is listed for reporting. Preserve the hours, date, recipients and action once reported | AMC1 145.A.30(d) | Must | Test |
 | REQ-326 | Record reviews by approval and show the Part-145 next review date three calendar months after the last review | Plan board, AMC1 145.A.30(d) | Must | Test |
 | REQ-327 | Record a staff member's absence and its dates for planning availability | Plan and Roster boards | Must | Test |
+| REQ-328 | Record and publish dated shifts and revisions. Flag fatigue and absences using the organisation's own planning limits. For Part-145, show the employed share of each maintenance crew | Roster board, 145.A.47 and AMC1 145.A.30(d) | Must | Test |
+| REQ-329 | Keep the people, time, open work, parts and warnings for each handover and retain the acknowledgement of the incoming person | Roster board, 145.A.47(c) and AMC 145.A.47(c) | Must | Test |
+| REQ-330 | Show weekly planned package work and other hours against available maintenance roster hours. List unplanned work from the due calculation, deferred defects and open orders | Load and Capacity board, 145.A.47, organisation settings | Must | Test |
+| REQ-331 | Record organisation-specific load, fatigue, publication, break and handover settings with an audit history | Plan Settings board, Canvas Build decision 6 | Must | Test |
 
 ## Open Points
 

@@ -20,6 +20,12 @@ Each line is an address that changes something: the action it needs, the roles t
 
 | Action | Roles | Address | What It Does | Values It May Set |
 |---|---|---|---|---|
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/roster/add/` | Add a shift with roster times, work and fatigue evidence | Approval; Person; Area; Shift; Starts; Ends; Break in Minutes; Other Work in Minutes That Day; Performs Maintenance; Critical Task Time; Risk Assessment or Mitigation; Civil Aviation Authority Permission Reference |
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/roster/publish/` | Record publication or a change of the selected roster week | Week Beginning; Changes and Agreement |
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/roster/<uuid:shift_id>/withdraw/` | Withdraw a shift and keep it in roster history | Reason Withdrawn |
+| Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/handovers/add/` | Record who handed over work and where it stood | Work Package; Handed Over By; Handed Over To; Handed Over; Stage Reached and Open Tasks; Parts, Tools and Warnings |
+| Acknowledge Own Handover | Continuing Airworthiness Manager, Airworthiness Review Staff, Planning and Records | `/staffing/handovers/<uuid:handover_id>/acknowledge/` | Acknowledge a handover addressed to the signed-in person | None |
+| Change Organisation Record | Administrator | `/settings/planning/change/` | Set the organisation's planning, fatigue and roster limits | Load Warning Percentage; Other Hours per Week; Longest Shift in Minutes; Minimum Rest in Minutes; Weekly Limit in Minutes; Critical Tasks in the First Half of a Shift; Publish This Many Days Ahead; Handover Overlap in Minutes; Standard Break in Minutes |
 | Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/hours/` | Set the hours needed and available for a function and month | Approval; Month Beginning; Function; Hours Needed; Employed Hours; Contracted Hours; Work and Availability Basis |
 | Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/review/` | Record a review of the plan under its approval | Approval; Reviewed; Review Outcome |
 | Record Staffing Plan | Continuing Airworthiness Manager, Planning and Records | `/staffing/absence/` | Record an absence for a person and a range of days | Person; Absence; From; To |

@@ -218,6 +218,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "staffing_review": ["INSERT", "SELECT"],
         "staffing_report": ["INSERT", "SELECT"],
         "staffing_absence": ["INSERT", "SELECT"],
+        "staffing_publishedroster": ["INSERT", "SELECT"],
         # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
         "configuration_transfer": ["INSERT", "SELECT"],
         "configuration_baseline": ["INSERT", "SELECT"],
@@ -248,6 +249,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A contract and a work order keep what they said when recorded (REQ-241).
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
+        "staffing_handover": {"handover_rules"},
+        "staffing_shift": {"roster_shift_rules"},
+        "staffing_publishedroster": {"publication_rules"},
         "planning_workpackage": {"work_package_evidence"},
         "planning_workcard": {"work_card_evidence"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).

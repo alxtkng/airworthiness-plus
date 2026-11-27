@@ -987,3 +987,59 @@ def test_staffing_plan_records_part_145_shortfall_and_cover(
             },
             "18 December 2026",
         )
+
+
+def test_roster_records_fatigue_handover_and_publication(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][0]) as page:
+        page.goto("/settings/planning/")
+        page.get_by_role("link", name="Edit Planning Settings").click()
+        save(page, "Save Planning Settings", {"load_margin_percent": "87"}, "87")
+    with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
+        page.goto("/staffing/roster/")
+        page.get_by_role("link", name="Add Shift").click()
+        save(
+            page,
+            "Add Shift",
+            {
+                "approval": "Part-CAO, UK.CAO.[Number]",
+                "person": "Sam Patel",
+                "area": "Hangar",
+                "shift_name": "Day Shift",
+                "maintenance": "on",
+                "starts_at": "2026-11-19T08:00",
+                "ends_at": "2026-11-19T19:00",
+                "break_minutes": "30",
+                "other_minutes": "0",
+                "mitigation": "Additional supervision",
+            },
+            "Long Shift",
+        )
+        page.goto("/staffing/capacity/")
+        expect(page.locator("main")).to_contain_text("10.5")
+        expect(page.locator("main")).to_contain_text("Due and Not Yet Planned")
+        page.goto("/staffing/roster/")
+        page.get_by_role("link", name="Publish Roster").click()
+        save(page, "Publish Roster", {"note": "Duty hours reviewed"}, "Duty hours reviewed")
+        page.get_by_role("link", name="Record Handover").click()
+        save(
+            page,
+            "Record Handover",
+            {
+                "outgoing": "Sam Patel",
+                "incoming": "[Browser Test Continuing Airworthiness Manager]",
+                "handed_at": "2026-11-18T16:30",
+                "stage": "Inspection outstanding",
+                "parts": "Tools checked in",
+            },
+            "Awaiting Acknowledgement",
+        )
+        open_row_action(page, "Long Shift", "Withdraw Shift")
+        save(page, "Withdraw Shift", {"reason": "Shift moved"}, "No Shifts Recorded")
+
+    with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
+        page.goto("/staffing/roster/")
+        open_row_action(page, "Awaiting Acknowledgement", "Acknowledge")
+        save(page, "Acknowledge Handover", {}, "Handovers")
+        expect(page.get_by_text("Awaiting Acknowledgement", exact=True)).to_have_count(0)

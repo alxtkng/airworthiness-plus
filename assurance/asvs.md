@@ -353,3 +353,5 @@ The package and card forms use the existing role checks, CSRF controls and the g
 
 
 Staffing Plan routes use the generated action and field inventory (8.1.2). The hourly plan and absence inputs have date and numeric validation. Reviews and reports are insert-only with tenant scoping and hashed history (16.2.2 and 16.4.2).
+
+Roster and Planning Settings actions are listed in the fields-by-action inventory (8.1.2). Withdrawal, publication and handover evidence is retained. The acknowledgement binds to the sign-in of the named recipient (16.2.2, 16.4.2).

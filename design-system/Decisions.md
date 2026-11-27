@@ -201,6 +201,8 @@ Not decided here, and so not built until Alex King says: the per-flight technica
 - Work Packages use independent inspection as the error-capturing method for critical cards in this workflow. Record a second person's identity, qualification evidence and satisfactory findings. Capture work performed separately from final card status. A combined inspection can cover several cards. Allocate its hours once.
 - Package release records the existing certificate with each signed card and its aircraft work evidence. The certificate for the package is indexed once. A named inspector and qualification reference attest evidence held by the organisation. Recording that evidence grants no privilege.
 - Alex King confirmed on 27 November 2026 that all approval types need adequate staff and asked for current terminology. Use Staffing Plan and Staffing and Capacity in the interface. Apply approval-specific sources and show Part-145 thresholds under Part-145.
+- Organisation planning defaults are 85% inclusive for the load warning and 50.0 other hours per week. The longest shift is 10 working hours, rest is 11 elapsed hours and the weekly allowance is 48 hours including declared other work. Publish 14 days ahead and plan 15 minutes of handover overlap. The normal break is 30 minutes. These are the organisation's settings.
+- Load allocates each package's hours to its planned start week. The roster supplies maintenance capacity and absences. The capacity comparison is a plan and the board keeps the due calculation from the underlying aircraft records.
 - Internal findings live in Compliance Monitoring; findings raised by the Civil Aviation Authority live in Organisation, Oversight. Both use Level 1 and Level 2.
 - Form pages (Report a Safety Issue, Competency Assessment Form) link back to their list in the breadcrumb.
 - References: N- notices, E- enquiries, Q- quotes, INV- invoices, SR- safety reports, OR- occurrence reports, WP- work packages, F- findings.
@@ -364,6 +366,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Record Defect | No | Yes | No | Yes | No |
 | Record Repeat Defect Action | No | Yes | No | No | No |
 | Draw Up or End Contract | No | Yes | No | No | No |
+| Acknowledge Own Handover | No | Yes | Yes | Yes | No |
 | Record Staffing Plan | No | Yes | No | Yes | No |
 | Plan Work Package | No | Yes | No | Yes | No |
 | Record Work Card Evidence | No | Yes | No | Yes | No |
