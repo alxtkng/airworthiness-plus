@@ -33,15 +33,17 @@ No maintenance programme, directive, maintenance data or review certificate is r
 
 ## Fleet
 
-| Aircraft Registration | Type Rating | Owned By | Status | Next Due | Review Certificate Valid To | Airframe Hours |
-|---|---|---|---|---|---|---|
-| G-DGHI | Piper PA-28 Series (Lycoming) | Flying Club | Unserviceable, Stabilator Trim Cable | Rectify Defect | 19 May 2027 | 9,874.3 |
-| G-EJKL | Cessna/Reims-Cessna 152/F152 Series (Lycoming) | Pilot-Owner | Serviceable | Airworthiness Review, 18 Days | 6 December 2026 | 11,206.8 |
-| G-ABCD | Piper PA-28 Series (Lycoming) | Pilot-Owner | Serviceable | 50-Hour Check, 12.4 Hours | 14 March 2027 | 6,412.6 |
-| G-BXYZ | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Syndicate of 6 | Serviceable | 100-Hour or Annual Check, 41.0 Hours | 2 August 2027 | 3,318.0 |
-| G-FMNO | Grob G115/120 Series (Lycoming) | Pilot-Owner | Serviceable | Annual Check, 78 Days | 27 April 2027 | 4,950.2 |
-| G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Engine Overhaul, 220 Hours | 2 December 2027 | 7,731.5 |
-| G-HKLM | Piper PA-38 Series (Lycoming) | Pilot-Owner | Transfer In | Records 14 of 18 Received | | |
+| Aircraft Registration | Type Rating | Owned By | Status | Next Due | Remaining | Review Certificate Valid To | Airframe Hours |
+|---|---|---|---|---|---|---|---|
+| G-DGHI | Piper PA-28 Series (Lycoming) | Flying Club | Unserviceable, Stabilator Trim Cable | Rectify Defect | Grounded | 19 May 2027 | 9,874.3 |
+| G-EJKL | Cessna/Reims-Cessna 152/F152 Series (Lycoming) | Pilot-Owner | Serviceable | Airworthiness Review | 18 Days | 6 December 2026 | 11,206.8 |
+| G-ABCD | Piper PA-28 Series (Lycoming) | Pilot-Owner | Serviceable | 50-Hour Check | 12.4 Hours | 14 March 2027 | 6,412.6 |
+| G-BXYZ | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Syndicate of 6 | Serviceable | 100-Hour or Annual Check | 41.0 Hours | 2 August 2027 | 3,318.0 |
+| G-FMNO | Grob G115/120 Series (Lycoming) | Pilot-Owner | Serviceable | Annual Check | 78 Days | 27 April 2027 | 4,950.2 |
+| G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Engine Overhaul | 220 Hours | 2 December 2027 | 7,731.5 |
+| G-HKLM | Piper PA-38 Series (Lycoming) | Pilot-Owner | Transfer In | Records 14 of 18 Received | | | |
+
+Corrected on 27 November 2026 from the Fleet board: what remains is a column of its own, Remaining, beside Next Due. By the Fleet board's filter, three aircraft are Due in 30 Days on 18 November 2026: G-DGHI, Unserviceable; G-EJKL, 18 days; G-ABCD, 12.4 hours at 0.8 hours a day, 15 days. One is Unserviceable.
 
 ## Maintenance Programme Inputs
 

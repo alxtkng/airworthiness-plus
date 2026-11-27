@@ -155,7 +155,16 @@ class Counter(Record):
         ]
 
     def __str__(self) -> str:
-        return f"{self.kind} {self.position}".strip()
+        """Return the counter by name: Airframe, Engine 1, Propeller Left.
+
+        A position that already says what it is, as Engine 1 does, is not
+        given its kind again.
+        """
+        if not self.position:
+            return str(self.kind)
+        if self.position.casefold().startswith(self.kind.casefold()):
+            return self.position
+        return f"{self.kind} {self.position}"
 
 
 class UtilisationEntry(Record):

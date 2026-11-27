@@ -233,6 +233,10 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-265 | The Dashboard's row for a release not yet in the records links to the Release to Service page | Home board; REQ-216 | Must | Test |
 | REQ-266 | Release to Service is an item of the sidebar under Continuing Airworthiness for an organisation that holds Part-CAO or Part-145. Every role reads it. The Continuing Airworthiness Manager and Planning and Records record a certificate. Another organisation's work and certificates are not shown or found | Sidebar board; Decisions.md, Roles and Permissions (D); REQ-003, REQ-006 | Must | Test |
 
+| REQ-280 | The Fleet shows what is due next and, in a column of its own, what remains to it: days, hours or cycles, or Grounded for an Unserviceable aircraft | Fleet board, Remaining; SampleData.md, Fleet, corrected 27 November 2026; REQ-043, REQ-100 | Must | Golden |
+| REQ-281 | The Fleet is filtered by All, Due in 30 Days and Unserviceable, each with how many aircraft it holds. Due in 30 Days holds an Unserviceable aircraft, an aircraft whose next due is within 30 days, and an aircraft with something that cannot be calculated. It works with no script | Fleet board, filter. What Due in 30 Days holds is ours (D) | Must | Golden, Test |
+| REQ-282 | The search is shown above the Fleet however few aircraft there are. A link to add an aircraft is shown only to a role that may | Fleet board, Search; REQ-196; REQ-006 | Must | Test, Browser |
+
 ## Open Points
 
 These block verification of the requirements named, not the start of building.

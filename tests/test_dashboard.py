@@ -446,7 +446,7 @@ def test_a_task_that_cannot_be_calculated_is_shown_first_and_never_as_not_due(
         "Cannot Be Calculated",
         "",
         "",
-        "No Hours Recorded for Engine Engine 1",
+        "No Hours Recorded for Engine 1",
         "Maintenance Programme",
     ]
     # After the Unserviceable aircraft, which is red, and before anything that has a day.

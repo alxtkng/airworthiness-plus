@@ -913,14 +913,14 @@ def test_the_fleet_sets_the_review_beside_the_programme(
     G-EJKL: Airworthiness Review, 18 Days. G-DGHI: Rectify Defect. G-CDEF: the
     engine overhaul, projected at 366 days, comes before the review at 379."""
     body = page(signed_in(sample.reader), "/")
-    assert "<td>Airworthiness Review, 18 Days</td>" in row_for(body, "G-EJKL")
+    assert "<td>Airworthiness Review</td><td>18 Days</td>" in row_for(body, "G-EJKL")
     assert "<td>6 December 2026</td>" in row_for(body, "G-EJKL")
     assert "<td>Rectify Defect</td>" in row_for(body, "G-DGHI")
     assert "<td>19 May 2027</td>" in row_for(body, "G-DGHI")
-    assert "<td>50-Hour Check, 12.4 Hours</td>" in row_for(body, "G-ABCD")
-    assert "<td>100-Hour or Annual Check, 41.0 Hours</td>" in row_for(body, "G-BXYZ")
-    assert "<td>Annual Check, 78 Days</td>" in row_for(body, "G-FMNO")
-    assert "<td>Engine Overhaul, 220.0 Hours</td>" in row_for(body, "G-CDEF")
+    assert "<td>50-Hour Check</td><td>12.4 Hours</td>" in row_for(body, "G-ABCD")
+    assert "<td>100-Hour or Annual Check</td><td>41.0 Hours</td>" in row_for(body, "G-BXYZ")
+    assert "<td>Annual Check</td><td>78 Days</td>" in row_for(body, "G-FMNO")
+    assert "<td>Engine Overhaul</td><td>220.0 Hours</td>" in row_for(body, "G-CDEF")
     assert "<td>2 December 2027</td>" in row_for(body, "G-CDEF")
 
 

@@ -3,10 +3,11 @@
 {% block title %}All Aircraft{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">All Aircraft</h1>
-<p><a href="{% url 'add_aircraft' %}">Add an Aircraft</a></p>
-<table>
+{% if may_add %}<p><a href="{% url 'add_aircraft' %}">Add an Aircraft</a></p>{% endif %}
+<p class="filter">{% for key, label, count, chosen in filters %}<a href="{% url 'home' %}{% if key %}?show={{ key }}{% endif %}"{% if chosen %} aria-current="true"{% endif %}>{{ label }} {{ count }}</a> {% endfor %}</p>
+<table data-search="always">
 <thead>
-<tr><th>Aircraft Registration</th><th data-detail>Type Rating</th><th>Owned By</th><th>Status</th><th>Next Due</th><th>Review Certificate Valid To</th><th class="number">Airframe Hours</th><th data-detail>Hours Entered For</th></tr>
+<tr><th>Aircraft Registration</th><th data-detail>Type Rating</th><th>Owned By</th><th>Status</th><th>Next Due</th><th>Remaining</th><th>Review Certificate Valid To</th><th class="number">Airframe Hours</th><th data-detail>Hours Entered For</th></tr>
 </thead>
 <tbody>
 {% for row in rows %}
@@ -15,7 +16,7 @@
 <td>{{ row.aircraft.type_rating }}</td>
 <td>{{ row.aircraft.owner }}</td>
 <td>{{ row.aircraft.status|status }}{% if row.aircraft.unserviceable_reason %}, {{ row.aircraft.unserviceable_reason }}{% endif %}</td>
-<td>{{ row.next_due }}</td>
+<td>{{ row.next_due }}</td><td>{{ row.remaining }}</td>
 <td>{{ row.review_valid_to|long_date }}</td>
 <td class="number">{{ row.airframe.hours|hours }}</td>
 <td>{{ row.airframe.on|long_date }}</td>

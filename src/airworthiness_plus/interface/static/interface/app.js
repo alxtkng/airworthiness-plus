@@ -10,8 +10,9 @@
    serious it is with red first, and anything else as text. An empty cell comes
    last either way. A row keeps the rows beneath it that belong to it.
 
-   A table of more than 10 rows has a search above it and, beneath it, how many
-   of its rows are shown. A row is shown when it holds every word typed, in any
+   A table of more than 10 rows, or one that asks for it with data-search="always"
+   as the Fleet does, has a search above it and, beneath it, how many of its rows
+   are shown. A row is shown when it holds every word typed, in any
    column, whatever the case. */
 (function () {
   "use strict";
@@ -192,7 +193,7 @@
 
   /* A search above a long table, and a count of the rows shown beneath it. */
   function searchable(table, rows) {
-    if (rows.length <= SEARCH_ABOVE) {
+    if (rows.length <= SEARCH_ABOVE && table.getAttribute("data-search") !== "always") {
       return;
     }
     searches += 1;

@@ -417,7 +417,17 @@ def test_engines_and_propellers_have_their_own_hours(
         with pytest.raises(IntegrityError), transaction.atomic():
             services.add_counter(cdef, CounterKind.ENGINE)
     page = get(client, f"/aircraft/{cdef.id}/").content.decode()
-    assert "<h2>Engine, Engine 1</h2>" in page
+    assert "<h2>Engine 1</h2>" in page
+    # A counter is named once (the Dashboard wrote Engine Engine 1): the position
+    # alone where it says what it is, the kind before it where it does not.
+    with working_for(sample.ours.id, sample.lucy.id):
+        left = services.add_counter(cdef, CounterKind.ENGINE, "Left")
+        assert (str(engine), str(propeller), str(left)) == (
+            "Engine 1",
+            "Propeller 1",
+            "Engine Left",
+        )
+        assert str(airframe(cdef)) == "Airframe"
     assert "<dd>1,780.0</dd>" in page
 
 

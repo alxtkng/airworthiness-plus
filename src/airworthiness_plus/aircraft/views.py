@@ -51,9 +51,23 @@ class FleetRow:
     aircraft: Aircraft
     airframe: Reading | None
     next_due: str
+    # What remains to what is due next: 18 Days, 12.4 Hours, or Grounded (REQ-280).
+    remaining: str
     review_valid_to: date | None
     # Where the aircraft comes in the Fleet: what needs attention first.
     rank: tuple[int, int, int, str] = (0, 0, 0, "")
+
+    @property
+    def soon(self) -> bool:
+        """Return whether the aircraft is among those Due in 30 Days (REQ-281).
+
+        An Unserviceable aircraft, one whose next due is within 30 days, a
+        limit in hours or cycles being placed by its projected days, and
+        one with something that cannot be calculated, which nobody can
+        place outside the 30 days.
+        """
+        unserviceable, severity, days, _ = self.rank
+        return unserviceable == 0 or -severity >= CANNOT_BE_CALCULATED or days <= DUE_WITHIN_DAYS
 
 
 def _airframe(aircraft: Aircraft) -> Reading | None:
@@ -71,15 +85,17 @@ SEVERITY = {
 }
 CANNOT_BE_CALCULATED = 5
 NOT_KNOWN = 1_000_000
+# The Fleet board's filter: Due in 30 Days. Ours is the board's own number.
+DUE_WITHIN_DAYS = 30
 
 
 def _next_due(
     aircraft: Aircraft, today: date, review_valid_to: date | None
-) -> tuple[str, tuple[int, int, int, str]]:
-    """Return what is due next on the aircraft, and where it comes in the Fleet.
+) -> tuple[str, str, tuple[int, int, int, str]]:
+    """Return what is due next on the aircraft, what remains, and where it comes in the Fleet.
 
-    The first value is as the Fleet shows it (REQ-043, REQ-044, REQ-100).
-    The second puts the Fleet in order: an Unserviceable aircraft, then
+    The first two values are as the Fleet shows them (REQ-043, REQ-044,
+    REQ-100, REQ-280). The third puts the Fleet in order: an Unserviceable aircraft, then
     whatever is marked with the worst mark first, then the soonest due by
     the projected days, then by Aircraft Registration. An aircraft with a
     task that cannot be calculated comes before every mark: nobody knows
@@ -95,10 +111,10 @@ def _next_due(
 
     registration = aircraft.registration
     if aircraft.status == Status.UNSERVICEABLE:
-        return "Rectify Defect", (0, 0, 0, registration)
+        return "Rectify Defect", "Grounded", (0, 0, 0, registration)
     lines = due.due_lines(aircraft, today)
     first, complete = due.next_due(lines)
-    candidates: list[tuple[int, str]] = []
+    candidates: list[tuple[int, str, str]] = []
     unranked = bool(lines) and not first
     severity = max(
         (CANNOT_BE_CALCULATED if line.needs_attention else SEVERITY[line.flag] for line in lines),
@@ -109,12 +125,20 @@ def _next_due(
         projected = [limit.projected for line in first for limit in line.first]
         known = [value for value in projected if value is not None]
         days = -1 if urgent or not known else min(known)
-        text = "; ".join(line.summary for line in first)
-        candidates.append((days, text if complete else f"{text}; Other Tasks Not Ranked"))
+        text = "; ".join(line.task.title for line in first)
+        remaining_text = "; ".join(line.remaining_summary for line in first)
+        candidates.append(
+            (days, text if complete else f"{text}; Other Tasks Not Ranked", remaining_text)
+        )
     if review_valid_to is not None:
         remaining = days_between(today, review_valid_to)
-        review = f"Airworthiness Review, {formatting.amount(Unit.CALENDAR, remaining)}"
-        candidates.append((min(remaining, -1) if remaining <= 0 else remaining, review))
+        candidates.append(
+            (
+                min(remaining, -1) if remaining <= 0 else remaining,
+                "Airworthiness Review",
+                formatting.amount(Unit.CALENDAR, remaining),
+            )
+        )
         expiry = Limit(Unit.CALENDAR, review_valid_to, remaining)
         certificate = due.certificate_thresholds(aircraft.organisation)
         severity = max(severity, SEVERITY[limit_flag(expiry, certificate)])
@@ -124,12 +148,13 @@ def _next_due(
         severity = CANNOT_BE_CALCULATED
     if not candidates:
         text = "Not Ranked, No Planning Utilisation" if unranked else ""
-        return text, (1, -severity, NOT_KNOWN, registration)
-    soonest = min(days for days, _ in candidates)
-    shown = "; ".join(text for days, text in candidates if days == soonest)
+        return text, "", (1, -severity, NOT_KNOWN, registration)
+    soonest = min(days for days, _, _ in candidates)
+    shown = "; ".join(text for days, text, _ in candidates if days == soonest)
+    left = "; ".join(amount for days, _, amount in candidates if days == soonest)
     if unranked:
         shown = f"{shown}; Tasks Not Ranked, No Planning Utilisation"
-    return shown, (1, -severity, soonest, registration)
+    return shown, left, (1, -severity, soonest, registration)
 
 
 def _user(request: HttpRequest) -> User:
@@ -148,11 +173,33 @@ def fleet(request: HttpRequest) -> HttpResponse:
     rows = []
     for aircraft in Aircraft.objects.filter(stage=Stage.FLEET).select_related("customer"):
         valid_to = review_services.current_valid_to(aircraft)
-        next_due, rank = _next_due(aircraft, today, valid_to)
-        rows.append(FleetRow(aircraft, _airframe(aircraft), next_due, valid_to, rank))
+        next_due, remaining, rank = _next_due(aircraft, today, valid_to)
+        rows.append(FleetRow(aircraft, _airframe(aircraft), next_due, remaining, valid_to, rank))
     # What needs attention first (dogfooding D-5). A column heading sorts it another way.
     rows.sort(key=lambda row: row.rank)
-    return render(request, "aircraft/fleet.html", {"rows": rows})
+    # The Fleet board's filter (REQ-281). Anything else asked for shows every aircraft.
+    filters = {
+        "": ("All", rows),
+        "due": ("Due in 30 Days", [row for row in rows if row.soon]),
+        "unserviceable": (
+            "Unserviceable",
+            [row for row in rows if row.aircraft.status == Status.UNSERVICEABLE],
+        ),
+    }
+    show = request.GET.get("show", "")
+    if show not in filters:
+        show = ""
+    return render(
+        request,
+        "aircraft/fleet.html",
+        {
+            "rows": filters[show][1],
+            "filters": [
+                (key, label, len(found), key == show) for key, (label, found) in filters.items()
+            ],
+            "may_add": _user(request).may(Action.ADD_OR_CHANGE_AIRCRAFT),
+        },
+    )
 
 
 @never_cache

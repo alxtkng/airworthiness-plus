@@ -64,7 +64,7 @@
 {% endfor %}<p><button type="submit">Save the Owner of {{ aircraft.registration }}</button></p>
 </form>
 {% for counter, current, entries in counters %}
-<h2>{{ counter.kind }}{% if counter.position %}, {{ counter.position }}{% endif %}</h2>
+<h2>{{ counter }}</h2>
 <dl>
 <dt>Serial Number</dt><dd>{{ counter.serial_number }}</dd>
 <dt>Hours</dt><dd>{{ current.hours|hours }}</dd>

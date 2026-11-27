@@ -106,10 +106,10 @@ def test_the_fleet_shows_what_is_due_next(
     50-Hour Check, 12.4 Hours; G-BXYZ 100-Hour or Annual Check, 41.0 Hours; G-FMNO
     Annual Check, 78 Days; G-CDEF Engine Overhaul, 220.0 Hours."""
     body = page(signed_in(sample.reader), "/")
-    assert "<td>50-Hour Check, 12.4 Hours</td>" in row_for(body, "G-ABCD")
-    assert "<td>100-Hour or Annual Check, 41.0 Hours</td>" in row_for(body, "G-BXYZ")
-    assert "<td>Annual Check, 78 Days</td>" in row_for(body, "G-FMNO")
-    assert "<td>Engine Overhaul, 220.0 Hours</td>" in row_for(body, "G-CDEF")
+    assert "<td>50-Hour Check</td><td>12.4 Hours</td>" in row_for(body, "G-ABCD")
+    assert "<td>100-Hour or Annual Check</td><td>41.0 Hours</td>" in row_for(body, "G-BXYZ")
+    assert "<td>Annual Check</td><td>78 Days</td>" in row_for(body, "G-FMNO")
+    assert "<td>Engine Overhaul</td><td>220.0 Hours</td>" in row_for(body, "G-CDEF")
     assert "<td></td>" in row_for(body, "G-EJKL")  # no programme recorded yet
 
 
@@ -244,7 +244,7 @@ def test_g_cdef_engine_overhaul_runs_against_the_engine_from_its_overhaul(
         '<td class="number">220.0 Hours</td>',
         "<dt>Counted From, Never Yet Done</dt><dd>12 March 2019 at 0.0 Hours</dd>",
         "<dt>First Threshold</dt><dd>2,000.0 Hours</dd>",
-        "<dt>Current, Engine Engine 1</dt><dd>1,780.0 Hours, Entered For 18 November 2026</dd>",
+        "<dt>Current, Engine 1</dt><dd>1,780.0 Hours, Entered For 18 November 2026</dd>",
         "<dt>Last Reviewed</dt><dd>11 November 2026</dd>",
         "<dt>Next Review By</dt><dd>11 November 2027</dd>",
     ):
@@ -288,7 +288,7 @@ def test_flags_as_g_fmno_runs_into_and_past_its_tolerance(
         assert f"<td>{dot(flag)}</td>" in page(client, path), today
     day.today = date(2027, 2, 20)
     body = page(signed_in(sample.reader), "/")
-    assert f"<td>Annual Check, {MINUS}16 Days</td>" in row_for(body, "G-FMNO")
+    assert f"<td>Annual Check</td><td>{MINUS}16 Days</td>" in row_for(body, "G-FMNO")
 
 
 # Ranking
@@ -306,9 +306,8 @@ def test_with_no_planning_utilisation_nothing_is_ranked(
     assert "Projected First" not in body
     assert body.count("<td>Not Ranked</td>") == 2
     assert "No Planning Utilisation Recorded, So Limits Are Not Ranked" in body
-    assert "100-Hour or Annual Check, 41.0 Hours or 254 Days" in row_for(
-        page(client, "/"), "G-BXYZ"
-    )
+    row = row_for(page(client, "/"), "G-BXYZ")
+    assert "<td>100-Hour or Annual Check</td><td>41.0 Hours or 254 Days</td>" in row
 
 
 def test_a_reached_limit_comes_first_whatever_the_planning_figures(
@@ -320,7 +319,9 @@ def test_a_reached_limit_comes_first_whatever_the_planning_figures(
         counter = abcd.counters.get(kind=CounterKind.AIRFRAME)
         aircraft_services.enter_utilisation(counter, Reading(TODAY, D("6425.5"), 0), confirmed=True)
     client = signed_in(sample.reader)
-    assert f"<td>50-Hour Check, {MINUS}0.5 Hours</td>" in row_for(page(client, "/"), "G-ABCD")
+    assert f"<td>50-Hour Check</td><td>{MINUS}0.5 Hours</td>" in row_for(
+        page(client, "/"), "G-ABCD"
+    )
     body = page(client, f"/aircraft/{abcd.id}/programme/")
     assert f"<td>{dot('Overdue')}</td>" in body
 
@@ -347,9 +348,9 @@ def test_a_task_that_cannot_be_calculated_is_shown_first_never_as_not_due(
     # A row of its own, marked so that sorting by Status puts it first.
     assert "<td>Cannot Be Calculated, No Starting Point Recorded</td>" in body
     assert "<td data-attention></td>" in body
-    assert "Fire Extinguisher Weight Check, No Starting Point Recorded" in row_for(
-        page(client, "/"), "G-ABCD"
-    )
+    row = row_for(page(client, "/"), "G-ABCD")
+    assert "Fire Extinguisher Weight Check" in row
+    assert "No Starting Point Recorded</td>" in row
 
 
 def test_nothing_is_calculated_for_a_transfer_in(
