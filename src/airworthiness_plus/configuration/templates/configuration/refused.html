@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Not Recorded{% endblock %}
+{% block content %}
+<h1>Not Recorded</h1>
+<p role="alert">{{ reason }}</p>
+<p>{% if arguments %}<a href="{% url back arguments.0 %}">Go Back</a>{% else %}<a href="{% url back %}">Go Back</a>{% endif %}</p>
+{% endblock %}

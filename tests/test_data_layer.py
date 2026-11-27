@@ -210,6 +210,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "defects_repeataction": ["INSERT", "SELECT"],
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
+        # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
+        "configuration_transfer": ["INSERT", "SELECT"],
+        "configuration_baseline": ["INSERT", "SELECT"],
         # A weighing and an issue of the weight schedule are added and never changed (REQ-254).
         "modifications_weighing": ["INSERT", "SELECT"],
         "modifications_weightschedule": ["INSERT", "SELECT"],
@@ -226,7 +229,12 @@ def test_every_table_is_under_the_record_rules() -> None:
         "accounts_user": {"user_has_a_person"},
         "aircraft_utilisationentry": {"utilisation_fits"},
         # Not made Serviceable while a defect that is Not Deferrable is open (REQ-221).
-        "aircraft_aircraft": {"open_defect_guard"},
+        # Nor moved to the Fleet with an item of its transfer checklist open (REQ-269).
+        "aircraft_aircraft": {"open_defect_guard", "transfer_complete_guard"},
+        # An item keeps its transfer; a position its aircraft; a baseline what it showed.
+        "configuration_transferitem": {"transferitem_rules"},
+        "configuration_position": {"position_rules"},
+        "configuration_baseline": {"baseline_keeps"},
         # A defect keeps its decision and who made it (REQ-225).
         "defects_defect": {"defect_rules"},
         # A contract and a work order keep what they said when recorded (REQ-241).

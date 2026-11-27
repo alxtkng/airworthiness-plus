@@ -20,6 +20,7 @@ from django.urls import reverse
 from airworthiness_plus.acceptance import services as acceptance_services
 from airworthiness_plus.aircraft.models import Aircraft, Regime, Stage, Status
 from airworthiness_plus.components import services as component_services
+from airworthiness_plus.configuration import services as configuration_services
 from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.directives import services as directive_services
@@ -394,6 +395,10 @@ def _components(today: date) -> list[Row]:
         fitting = line.fitting
         if fitting is None:
             continue
+        if line.fitted and fitting.aircraft.stage == Stage.TRANSFER_IN:
+            # No due items until its records are complete (REQ-027): the transfer
+            # itself is shown, with its checklist.
+            continue
         component = line.component
         url = reverse("component", args=[component.id])
         page = "Aircraft Configuration"
@@ -552,12 +557,13 @@ def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
     )
     for aircraft in Aircraft.objects.all():
         if aircraft.stage == Stage.TRANSFER_IN:
+            checklist = configuration_services.transfer_line(aircraft, today)
             rows.append(
                 Row(
                     aircraft.registration,
                     f"Transfer In, Records {aircraft.records_received} of "
                     f"{aircraft.records_expected} Received",
-                    "",
+                    f"Checklist {checklist.progress}" if checklist is not None else "",
                     NOT_SET,
                     "",
                     "",

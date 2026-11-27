@@ -204,14 +204,6 @@ def fleet(request: HttpRequest) -> HttpResponse:
 
 @never_cache
 @requires(Action.VIEW_RECORDS)
-def transfers(request: HttpRequest) -> HttpResponse:
-    """Transfers: aircraft whose records are not yet complete (REQ-027)."""
-    aircraft = Aircraft.objects.filter(stage=Stage.TRANSFER_IN).select_related("customer")
-    return render(request, "aircraft/transfers.html", {"aircraft": aircraft})
-
-
-@never_cache
-@requires(Action.VIEW_RECORDS)
 def aircraft_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """One aircraft: its record, its counters and every entry of hours and cycles."""
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)

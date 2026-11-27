@@ -216,6 +216,11 @@ def complete_transfer(aircraft: Aircraft) -> None:
         or aircraft.records_received != aircraft.records_expected
     ):
         raise TransferNotCompleteError
+    # The checklist is built on aircraft, so it is looked up here and not at the top.
+    from airworthiness_plus.configuration import services as configuration_services
+
+    if configuration_services.stops_the_fleet(aircraft):
+        raise TransferNotCompleteError
     aircraft.stage = Stage.FLEET
     aircraft.records_received = None
     aircraft.records_expected = None

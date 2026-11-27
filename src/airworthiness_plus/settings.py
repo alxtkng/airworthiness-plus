@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "airworthiness_plus.defects",
     "airworthiness_plus.components",
     "airworthiness_plus.modifications",
+    "airworthiness_plus.configuration",
     "airworthiness_plus.aircraft",
     "airworthiness_plus.programme",
     "airworthiness_plus.directives",

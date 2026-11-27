@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Set Up Configuration, {{ aircraft.registration }}{% endblock %}
+{% block content %}
+<h1>Set Up Configuration, {{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+<h2>1 Aircraft</h2>
+<dl>
+<dt>Aircraft Registration</dt><dd><a href="{% url 'aircraft' aircraft.id %}">{{ aircraft.registration }}</a></dd>
+<dt>Type Rating</dt><dd>{{ aircraft.type_rating }}</dd>
+<dt>Serial Number</dt><dd>{% if aircraft.serial_number %}{{ aircraft.serial_number }}{% else %}Not Recorded{% endif %}</dd>
+<dt>Aircraft Manufacturer</dt><dd>{% if aircraft.manufacturer %}{{ aircraft.manufacturer }}{% else %}Not Recorded{% endif %}</dd>
+<dt>Airframe Hours</dt><dd>{% if airframe %}{{ airframe.hours|hours }}{% else %}Not Entered{% endif %}</dd>
+<dt>Maintenance Programme</dt><dd>{% if aircraft.programme %}{{ aircraft.programme.basis }}{% else %}No Maintenance Programme Set Up{% endif %}</dd>
+</dl>
+<h2>2 Product Structure Template</h2>
+{% if set_up.template %}
+<table>
+<thead><tr><th>Product</th><th>Chapters</th><th class="number">Positions</th><th class="number">Required</th><th class="number">Tracked by Serial Number</th></tr></thead>
+<tbody>
+{% for product, chapters, positions, required, tracked in set_up.template %}
+<tr><td>{{ product }}</td><td>{{ chapters }}</td><td class="number">{{ positions }}</td><td class="number">{{ required }}</td><td class="number">{{ tracked }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Positions Recorded</p>
+{% endif %}
+{% if may_record %}
+<form method="post" action="{% url 'add_position' aircraft.id %}">
+{% csrf_token %}
+{% for field in position_form %}
+<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}
+<p><button type="submit">Add a Position</button></p>
+</form>
+{% endif %}
+<h2>3 Major Items</h2>
+{% if major %}
+<table>
+<thead><tr><th>Major Item</th><th>Component</th><th>Serial Number</th><th>Since New or Overhaul</th><th>New or Last Overhauled</th><th>Limit</th><th>Remaining</th></tr></thead>
+<tbody>
+{% for position, line in major %}
+<tr>
+<td>{{ position.name }}</td>
+{% if line %}
+<td><a href="{% url 'component' line.component.id %}">{{ line.component.name }}</a></td>
+<td>{{ line.component.serial_number }}</td>
+<td>{{ line.since_text }}</td>
+<td>{% if line.fitting.life_from %}{{ line.fitting.life_from|long_date }}{% else %}Not Recorded{% endif %}</td>
+<td>{{ line.limit_text }}</td>
+<td>{% if line.problem %}{{ line.problem }}{% else %}{{ line.remaining_text }}{% endif %}</td>
+{% else %}
+<td>No Component Recorded</td><td></td><td></td><td></td><td></td><td></td>
+{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Major Items Recorded</p>
+{% endif %}
+<h2>4 Tracked Positions</h2>
+{% if set_up.tracked %}
+<table>
+<thead><tr><th>Position</th><th>Part Number</th><th>Serial Number</th><th>Source</th><th>Recorded</th><th data-detail>Product and Chapter</th><th data-detail>Change or Repair</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr></thead>
+<tbody>
+{% for position in set_up.tracked %}
+<tr>
+<td>{{ position.name }}</td>
+<td>{{ position.part_number }}</td>
+<td>{{ position.serial_number }}</td>
+<td>{{ position.source }}</td>
+<td>{{ position.status }}</td>
+<td>{{ position.path }}</td>
+<td>{% if position.change %}{{ position.change.title }}{% endif %}</td>
+{% if may_record %}<td>
+<form method="post" action="{% url 'record_position' position.id %}">
+{% csrf_token %}
+<label for="part-{{ position.id }}">Part Number</label> <input id="part-{{ position.id }}" name="part_number" type="text" maxlength="60" value="{{ position.part_number }}">
+<label for="serial-{{ position.id }}">Serial Number</label> <input id="serial-{{ position.id }}" name="serial_number" type="text" maxlength="60" value="{{ position.serial_number }}">
+<label for="source-{{ position.id }}">Source</label> <input id="source-{{ position.id }}" name="source" type="text" maxlength="200" value="{{ position.source }}" required>
+<label for="needs-{{ position.id }}">Needs a Recorded Change</label> <input id="needs-{{ position.id }}" name="needs_change" type="checkbox"{% if position.needs_change %} checked{% endif %}>
+<label for="change-{{ position.id }}">Change or Repair</label> <select id="change-{{ position.id }}" name="change">{% for value, label in record_form.fields.change.choices %}<option value="{{ value }}"{% if value.value == position.change_id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+<label for="component-{{ position.id }}">Component</label> <select id="component-{{ position.id }}" name="component">{% for value, label in record_form.fields.component.choices %}<option value="{{ value }}"{% if value.value == position.component_id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+<button type="submit">Record {{ position.name }}</button>
+</form>
+</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Tracked Positions Recorded</p>
+{% endif %}
+<h2>5 Modifications and Repairs Embodied</h2>
+{% if set_up.changes %}
+<table>
+<thead><tr><th>Change or Repair</th><th>Approval Route</th><th>Positions Changed</th><th>Embodied</th></tr></thead>
+<tbody>
+{% for change in set_up.changes %}
+<tr><td>{{ change.title }}</td><td>{{ change.route_text }}</td><td>{% for position in change.positions.all %}{{ position.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td><td>{{ change.embodied_on|long_date }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Changes or Repairs Recorded</p>
+{% endif %}
+{% if may_record %}<p><a href="{% url 'record_change' %}">Add a Change or Repair</a></p>{% endif %}
+<h2>6 Review the Configuration Baseline</h2>
+<dl>
+<dt>Positions Recorded</dt><dd>{{ set_up.recorded_text }}</dd>
+<dt>Changes and Repairs</dt><dd>{{ set_up.changes|length }}</dd>
+<dt>Open Items</dt><dd>{{ set_up.open_items|length }}</dd>
+<dt>Baseline Date</dt><dd>{{ today|long_date }}</dd>
+</dl>
+{% if set_up.open_items %}
+<ul>
+{% for text in set_up.open_items %}<li>{{ text }}</li>
+{% endfor %}
+</ul>
+<p>A Configuration Baseline Is Not Signed With Items Still Open</p>
+{% elif may_sign %}
+<form method="post" action="{% url 'sign_baseline' aircraft.id %}">{% csrf_token %}<button type="submit">Sign Configuration Baseline</button></form>
+{% endif %}
+{% for baseline in baselines %}
+<p><a href="{% url 'baseline' baseline.id %}">Baseline Signed by {{ baseline.signed_by_name }}, {{ baseline.signed_on|long_date }}</a></p>
+{% endfor %}
+{% endblock %}

@@ -19,6 +19,7 @@ from airworthiness_plus.accounts import user_forms as accounts
 from airworthiness_plus.accounts.roles import MATRIX, Action, Role
 from airworthiness_plus.aircraft import forms as aircraft
 from airworthiness_plus.components import forms as components
+from airworthiness_plus.configuration import forms as configuration
 from airworthiness_plus.contracts import forms as contracts
 from airworthiness_plus.customers import forms as customers
 from airworthiness_plus.defects import forms as defects
@@ -68,6 +69,11 @@ WRITES: dict[str, Sets] = {
     "make_serviceable": (),
     "add_counter": (aircraft.CounterForm,),
     "records_received": (aircraft.RecordsReceivedForm, "Whether the Transfer Is Complete"),
+    "start_transfer": (),
+    "set_transfer_item": (configuration.ItemForm,),
+    "add_position": (configuration.PositionForm,),
+    "record_position": (configuration.RecordPositionForm,),
+    "sign_baseline": (),
     "set_up_programme": (programme.ProgrammeForm,),
     "add_task": (programme.TaskForm,),
     "record_review": (programme.ReviewForm,),
@@ -149,6 +155,8 @@ READS = frozenset(
         "home",
         "dashboard",
         "transfers",
+        "set_up_configuration",
+        "baseline",
         "contracts",
         "contract",
         "release_to_service",

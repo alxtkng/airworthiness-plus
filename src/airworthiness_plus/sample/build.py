@@ -625,6 +625,7 @@ def build(ours: Organisation, administrator: User) -> Staff:
     phase1.add_modifications(ours, people.planner, fleet)
     phase1.add_programme_records(ours, people.lucy, fleet)
     phase1.add_sources(ours, people.planner)
+    phase1.add_set_up(ours, people.lucy, fleet)
     add_reviews(people, fleet)
     add_directives(people, fleet)
     add_maintenance_data(people)

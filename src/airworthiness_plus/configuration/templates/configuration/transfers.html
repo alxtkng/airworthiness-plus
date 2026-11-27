@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Transfers{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Transfers</h1>
+<h2>Transfer In</h2>
+{% if coming %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th data-detail>Type Rating</th><th>Owned By</th><th>Records</th><th>Checklist</th><th>Update</th></tr>
+</thead>
+<tbody>
+{% for item, line in coming %}
+<tr>
+<td><a href="{% url 'aircraft' item.id %}">{{ item.registration }}</a></td>
+<td>{{ item.type_rating }}</td>
+<td>{{ item.owner }}</td>
+<td>Records {{ item.records_received }} of {{ item.records_expected }} Received</td>
+<td>{% if line %}Started {{ line.transfer.started_on|long_date }}, {{ line.progress }}{% else %}Not Started{% endif %}</td>
+<td>
+{% if may_change %}
+<form method="post" action="{% url 'records_received' item.id %}">
+{% csrf_token %}
+<label for="received-{{ item.id }}">Records Received</label>
+<input id="received-{{ item.id }}" name="received" type="number" min="0" max="{{ item.records_expected }}" value="{{ item.records_received }}" required>
+<button type="submit">Save</button>
+<button type="submit" name="complete" value="Yes">Save and Move to Fleet</button>
+</form>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>None in Progress</p>
+{% endif %}
+{% for item, line in coming %}
+<h2>Transfer In, {{ item.registration }}</h2>
+<p><a href="{% url 'set_up_configuration' item.id %}">Set Up Configuration</a></p>
+{% if line %}
+<p>Started {{ line.transfer.started_on|long_date }}, {{ line.progress }}</p>
+<table>
+<thead>
+<tr><th class="number">Item</th><th>Checklist</th><th>State</th><th>Note</th><th>Status</th><th data-detail>Holds</th><th data-detail>Records</th>{% if may_change %}<th data-detail>Record</th>{% endif %}</tr>
+</thead>
+<tbody>
+{% for entry in line.items %}
+<tr>
+<td class="number">{{ entry.item.number }}</td>
+<td>{{ entry.item.label }}</td>
+<td>{{ entry.item.state }}</td>
+<td>{{ entry.item.note }}</td>
+<td>{{ entry.status|status }}</td>
+<td>{{ entry.item.holds }}</td>
+<td>{{ entry.records }}</td>
+{% if may_change %}<td>
+<form method="post" action="{% url 'set_transfer_item' entry.item.id %}">
+{% csrf_token %}
+<label for="state-{{ entry.item.id }}">State</label>
+<select id="state-{{ entry.item.id }}" name="state">{% for value, label in item_form.fields.state.choices %}<option value="{{ value }}"{% if value == entry.item.state %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+<label for="note-{{ entry.item.id }}">Note</label>
+<input id="note-{{ entry.item.id }}" name="note" type="text" maxlength="200" value="{{ entry.item.note }}">
+<button type="submit">Record {{ entry.item.label }}</button>
+</form>
+</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<p>An Aircraft Moves to the Fleet Once Every Item Is Complete or Not Applicable</p>
+{% else %}
+<p>Checklist Not Started</p>
+{% if may_change %}<form method="post" action="{% url 'start_transfer' item.id %}">{% csrf_token %}<button type="submit">Start the Checklist for {{ item.registration }}</button></form>{% endif %}
+{% endif %}
+{% endfor %}
+<h2>Transfer Out and Record Export</h2>
+<p>None in Progress</p>
+<p>The Records Are Transferred With the Aircraft, ML.A.307. An Export Holds the Complete Record of an Aircraft</p>
+{% if may_export %}<p><a href="{% url 'records_export' %}">Export the Records of an Aircraft</a></p>{% endif %}
+{% endblock %}

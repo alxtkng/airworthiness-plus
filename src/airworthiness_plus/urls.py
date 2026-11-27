@@ -7,6 +7,7 @@ from airworthiness_plus.accounts import user_views as users
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
 from airworthiness_plus.components import views as components
+from airworthiness_plus.configuration import views as configuration
 from airworthiness_plus.contracts import views as contracts
 from airworthiness_plus.customers import views as customers
 from airworthiness_plus.dashboard import views as dashboard
@@ -25,7 +26,40 @@ from airworthiness_plus.reviews import views as reviews
 urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
     path("dashboard/", dashboard.dashboard_page, name="dashboard"),
-    path("transfers/", aircraft.transfers, name="transfers"),
+    path("transfers/", configuration.transfers_page, name="transfers"),
+    path(
+        "transfers/<uuid:aircraft_id>/start/", configuration.start_transfer, name="start_transfer"
+    ),
+    path(
+        "transfers/items/<uuid:item_id>/",
+        configuration.set_transfer_item,
+        name="set_transfer_item",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/set-up-configuration/",
+        configuration.set_up_configuration,
+        name="set_up_configuration",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/set-up-configuration/positions/add/",
+        configuration.add_position,
+        name="add_position",
+    ),
+    path(
+        "configuration/positions/<uuid:position_id>/record/",
+        configuration.record_position,
+        name="record_position",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/set-up-configuration/sign/",
+        configuration.sign_baseline,
+        name="sign_baseline",
+    ),
+    path(
+        "configuration/baselines/<uuid:baseline_id>/",
+        configuration.baseline_page,
+        name="baseline",
+    ),
     path("contracts/", contracts.contracts_page, name="contracts"),
     path("contracts/draw-up/", contracts.draw_up_contract, name="draw_up_contract"),
     path("contracts/work-orders/add/", contracts.add_work_order, name="add_work_order"),

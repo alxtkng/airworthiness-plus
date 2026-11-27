@@ -55,7 +55,7 @@ def test_the_record_and_the_code_list_the_same_actions_and_roles() -> None:
     assert {action for action, _ in RECORDED} == {action.value for action in Action}
     assert {role for _, role in RECORDED} == set(Role.values)
     assert set(MATRIX) == set(Action)
-    assert len(RECORDED) == len(Action) * len(Role) == 145
+    assert len(RECORDED) == len(Action) * len(Role) == 150
 
 
 @pytest.mark.parametrize(("action", "role"), sorted(RECORDED))

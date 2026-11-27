@@ -516,8 +516,18 @@ def component_line(component: Component, today: date) -> ComponentLine:
             days = days_between(today, fitting.due_back_on)
         return line(hours, cycles, flag=flag, days=days)
 
+    life = component.life
+    if life is not None and life.months is not None and fitting.life_from is None:
+        # Whatever the airframe has flown: the calendar life has no day to run from.
+        return line(
+            problem="Calendar Limit Not Worked Out Until the Day It Was New or Last "
+            "Overhauled Is Recorded",
+            soon=True,
+        )
     now = airframe(fitting.aircraft)
     if now is None:
+        if component.basis == Basis.NONE:
+            return line()
         return line(problem="No Airframe Hours Entered", soon=True)
     if now.hours < fitting.airframe_hours_fitted or now.cycles < fitting.airframe_cycles_fitted:
         return line(problem="Airframe Hours Entered Are Below Those When Fitted", soon=True)
@@ -530,16 +540,7 @@ def component_line(component: Component, today: date) -> ComponentLine:
         ("Airframe Hours When Fitted", formatting.hours(fitting.airframe_hours_fitted)),
         ("Hours Since New or Overhaul When Fitted", formatting.hours(fitting.hours_at_fitting)),
     ]
-    life = component.life
     if life is not None:
-        if life.months is not None and fitting.life_from is None:
-            return line(
-                hours,
-                cycles,
-                problem="Calendar Limit Not Worked Out Until the Day It Was New or Last "
-                "Overhauled Is Recorded",
-                soon=True,
-            )
         found = rules.life_limits(life, fitting.life_from, hours, cycles, today)
         if fitting.life_from is not None:
             inputs.append(("New or Last Overhauled", formatting.long_date(fitting.life_from)))

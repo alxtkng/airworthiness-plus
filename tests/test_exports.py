@@ -29,6 +29,8 @@ from airworthiness_plus.accounts.models import AccessEntry, User
 from airworthiness_plus.accounts.roles import Action, permitted
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
+from airworthiness_plus.configuration import services as configuration_services
+from airworthiness_plus.configuration.models import Product
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.directives.models import Decision
 from airworthiness_plus.exports.build import _entry, build, neutralised
@@ -67,6 +69,17 @@ KEY = secrets.token_hex(16).upper()
 @pytest.fixture(autouse=True)
 def day(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
+
+
+def baseline_for_the_export(sample: Sample, fleet: dict[str, Aircraft]) -> None:
+    """Sign a configuration baseline for G-ABCD, with one position recorded (REQ-274)."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        abcd = Aircraft.objects.get(pk=fleet["G-ABCD"].pk)
+        position = configuration_services.add_position(
+            abcd, product=Product.AIRFRAME, chapter=34, name="[Altimeter]", tracked=True
+        )
+        configuration_services.record_position(position, source="[Airframe Logbook]")
+        configuration_services.sign_baseline(abcd, by=sample.lucy)
 
 
 @pytest.fixture
@@ -172,6 +185,9 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     # Departures, the annual review in progress and the sources of directives (REQ-284 to REQ-288).
     phase1.add_programme_records(sample.ours, sample.lucy, fleet)
     phase1.add_sources(sample.ours, sample.planner)
+    # The transfer in of G-HKLM, its positions and a signed baseline (REQ-267 to REQ-274).
+    phase1.add_set_up(sample.ours, sample.lucy, fleet)
+    baseline_for_the_export(sample, fleet)
     return fleet
 
 

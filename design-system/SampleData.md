@@ -220,6 +220,17 @@ Added on 27 November 2026 for the Weighing board. The board gives a year, or a m
 - G-ABCD was weighed after its transponder was fitted, so nothing has changed since, as the board has it. G-CDEF's propeller overhaul is in progress and is not counted; the board lists it with 0 Kilograms.
 - G-FMNO's landing light is in Issue 5 of its schedule, dated after the light was fitted: the board says Landing Light, Scheduled.
 
+## Transfer In and Set Up Configuration, G-HKLM
+
+Added on 27 November 2026 for the Transfers and Set Up Configuration boards. Every date and figure marked Made Up is to be confirmed by Alex King.
+
+- The transfer started on 9 November 2026 and is 4 of 10 complete: Type Within Scope of Approval, Complete, Piper PA-38 Series (Lycoming); Management Contract, Complete, Signed 9 November 2026, [Owner Name G-HKLM]; Import Checks, Not Applicable, United Kingdom Register; Records Handover Plan, Complete, [Previous Organisation], Sent 12 November 2026; Records Received and Checked, In Progress, Engine Logbook Volume 1 Requested 13 November 2026, 14 of 18; Continuing Airworthiness Records Review, In Progress, Lucy Grant; Records Entered, Maintenance Programme, Bridging Check and Exposition Scope of Work, Open.
+- 12 tracked positions, 8 recorded. Engine: Engine, Lycoming O-235 (chapter 72); Left Magneto and Right Magneto (74); Carburettor (73). Propeller: Propeller, Fixed Pitch (61). Airframe: Vacuum Pump (37); Emergency Locator Transmitter, its Battery and Fire Extinguisher (25); Mode S Transponder (34); Very High Frequency Radio, 8.33 Kilohertz (23); Landing Light (33). Not recorded: Right Magneto, Vacuum Pump, Emergency Locator Transmitter Battery, Fire Extinguisher.
+- The board's template has 41 positions, 29 of them required equipment. Only the 12 tracked are named on the canvas, so only they are in the sample, and which are required equipment is not recorded.
+- Major items: the engine, Lycoming O-235-L2C, with no limit recorded; the propeller, 2,000 Hours or 72 Months, Manufacturer Recommendation, with no overhaul date, so its calendar limit cannot be worked out. Both are taken as fitted on 2 May 2019 at 2,150.0 airframe hours (Made Up). G-HKLM has no airframe hours entered.
+- Changes embodied: Mode S Transponder, Standard Change, 8 June 2021 (Made Up), and 8.33 Kilohertz Radio, Standard Change, 3 September 2018 (Made Up), each with a mass effect of 0.0 Kilograms (Made Up). The light-emitting diode landing light is fitted with no change recorded, so the Landing Light position needs a recorded change.
+- By hand: 6 items open, the 4 positions not recorded, the landing light, and the propeller. The baseline is not signed.
+
 ## Management System
 
 - Hazards: 7 open (2026-0001 to 2026-0007); Lucy Grant owns 2026-0004 (from the G-CDEF review on 11 November) and 2026-0005.
