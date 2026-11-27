@@ -178,6 +178,7 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
         "Dashboard",
         "Aircraft",
         "Defects",
+        "Release to Service",
         "Contracts",
         "Staff",
         "Authorisations",

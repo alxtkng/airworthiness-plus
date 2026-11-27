@@ -17,6 +17,7 @@ from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.organisations import views as settings
 from airworthiness_plus.people import views as people
 from airworthiness_plus.programme import views as programme
+from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
 
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -37,6 +38,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "contracts/<uuid:contract_id>/authority-told/",
         contracts.contract_authority_told,
         name="contract_authority_told",
+    ),
+    path("release-to-service/", releases.release_to_service, name="release_to_service"),
+    path(
+        "release-to-service/<uuid:work_id>/record/",
+        releases.record_release_certificate,
+        name="record_release_certificate",
     ),
     path("defects/", defects.defects_page, name="defects"),
     path("defects/record/", defects.record_defect, name="record_defect"),

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Record a Certificate of Release to Service{% endblock %}
+{% block content %}
+<h1>Record a Certificate of Release to Service</h1>
+<dl>
+<dt>Aircraft Registration</dt><dd>{{ work.aircraft.registration }}</dd>
+<dt>Maintenance</dt><dd>{{ work.description }}{% if work.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}</dd>
+<dt>Completed</dt><dd>{{ work.dated|long_date }}</dd>
+</dl>
+<form method="post">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Record Certificate</button></p>
+</form>
+<h2>Who May Release</h2>
+{% include "releases/who.html" %}
+<p>Not Issued With a Known Non-Compliance That Endangers Flight Safety, ML.A.801(g)</p>
+{% endblock %}

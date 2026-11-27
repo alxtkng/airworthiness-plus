@@ -179,8 +179,8 @@ def _aircraft_rows(aircraft: Aircraft, today: date) -> list[Row]:
                 text,
                 remaining,
                 work.release_flag.value,
-                "Maintenance Programme",
-                programme,
+                "Release to Service",
+                reverse("release_to_service"),
                 days=days,
             )
         )

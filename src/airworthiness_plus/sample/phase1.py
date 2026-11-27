@@ -6,6 +6,7 @@ new sample is built. Today in the sample world is 18 November 2026.
 """
 
 from datetime import date
+from decimal import Decimal
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft
@@ -16,7 +17,10 @@ from airworthiness_plus.defects.models import Basis, Decision, Defect
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people.models import Person, StaffGroup
+from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import WorkDone
+from airworthiness_plus.releases import services as release_services
+from airworthiness_plus.releases.models import IssuedBy, Release
 
 PA28 = "Piper PA-28 Series (Lycoming)"
 
@@ -172,5 +176,40 @@ def add_contracts(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> l
                 work=work,
                 ordered_by=ordered_by,
                 agreed_on=agreed_on,
+            )
+    return added
+
+
+# SampleData.md, Work in Progress, and the Release to Service board: WP-2026-043,
+# G-CDEF, released on 4 November 2026 by Chris Moore and in the records the next
+# day. The airframe hours that day are made up, below the 7,720.0 of 11 November.
+CDEF_WORK = ("100-Hour Check", "Propeller Spinner Replaced")
+CDEF_HOURS = Decimal("7715.0")
+CDEF_REFERENCE = "[Release Reference WP-2026-043]"
+
+
+def add_releases(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> list[Release]:
+    """Add the work of WP-2026-043 and its certificates, as Planning and Records."""
+    added = []
+    with working_for(ours.id, by.id):
+        cdef = Aircraft.objects.get(pk=fleet["G-CDEF"].pk)
+        chris = _certifying("Chris Moore")
+        for description in CDEF_WORK:
+            work = programme_services.record_work(
+                cdef,
+                description=description,
+                dated=date(2026, 11, 4),
+                hours=CDEF_HOURS,
+                cycles=0,
+            )
+            added.append(
+                release_services.record_certificate(
+                    work,
+                    reference=CDEF_REFERENCE,
+                    kind=IssuedBy.ORGANISATION,
+                    issued_by=chris,
+                    issued_on=date(2026, 11, 4),
+                    recorded_on=date(2026, 11, 5),
+                )
             )
     return added

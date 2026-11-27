@@ -27,6 +27,7 @@ from airworthiness_plus.maintenance_data import forms as maintenance_data
 from airworthiness_plus.organisations import forms as organisations
 from airworthiness_plus.people import forms as people
 from airworthiness_plus.programme import forms as programme
+from airworthiness_plus.releases import forms as releases
 from airworthiness_plus.reviews import forms as reviews
 
 Sets = tuple[type[forms.Form] | str, ...]
@@ -44,6 +45,7 @@ WRITES: dict[str, Sets] = {
     "contract_authority_told": (contracts.AuthorityToldForm,),
     "add_work_order": (contracts.WorkOrderForm,),
     "close_work_order": (contracts.CloseWorkOrderForm,),
+    "record_release_certificate": (releases.CertificateForm,),
     "record_defect": (defects.DefectForm,),
     "close_defect": (defects.CloseForm,),
     "record_repeat_action": (defects.RepeatActionForm,),
@@ -126,6 +128,7 @@ READS = frozenset(
         "transfers",
         "contracts",
         "contract",
+        "release_to_service",
         "defects",
         "defect",
         "repeat_defects",

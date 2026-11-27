@@ -121,6 +121,20 @@ Added on 27 November 2026 for the Contracts board (Phase 1 of the canvas build).
 - Appendix I to Part-ML has a contract state the type of operation and the owner's address. The board shows neither: the sample writes [Type of Operation] and [Owner Address G-BXYZ] and so on.
 - The work package beside each work order on the board is not recorded until work packages are built (Phase 3).
 
+## Release to Service
+
+Added on 27 November 2026 for the Release to Service board (Phase 1 of the canvas build).
+
+| Aircraft Registration | Maintenance | Issued By | Completed | In Records |
+|---|---|---|---|---|
+| G-CDEF | 100-Hour Check, WP-2026-043 | Chris Moore, Certifying Staff, UK.CAO.[Number] | 4 November 2026 | 5 November 2026 |
+| G-CDEF | Propeller Spinner Replaced, WP-2026-043 | Chris Moore, Certifying Staff, UK.CAO.[Number] | 4 November 2026 | 5 November 2026 |
+| G-ABCD | Right Main Tyre Replaced, Pilot-Owner Maintenance | [Owner Name G-ABCD], Pilot-Owner | 22 October 2026 | Due 21 November 2026 |
+
+- The two pieces of work on G-CDEF are recorded at 7,715.0 airframe hours, made up: below the 7,720.0 of its review on 11 November 2026. Their certificate reference is written [Release Reference WP-2026-043].
+- The organisation was told of the tyre on 23 October 2026, as the board has it. No certificate is recorded for it yet, so the board's Licence [Number] is not in the sample.
+- By hand for 18 November 2026: 3 issued in the last 30 days (22 October is 27 days ago, 4 November 14), 1 not yet in the records, 0 incomplete maintenance, 0 pilot-owner notices overdue.
+
 ## Management System
 
 - Hazards: 7 open (2026-0001 to 2026-0007); Lucy Grant owns 2026-0004 (from the G-CDEF review on 11 November) and 2026-0005.

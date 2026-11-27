@@ -135,7 +135,7 @@ CONTINUING_AIRWORTHINESS = [
     ["G-EJKL", "No Maintenance Programme Set Up", "Not Set", "", "", "Maintenance Programme"],
     ["G-FMNO", NO_REVIEW, "Not Set", "", "", "Maintenance Programme"],
     ["G-ABCD", "Certificate of Release to Service Not Yet in Records", "21 November 2026",
-     "3 Days", "Due Soon", "Maintenance Programme"],
+     "3 Days", "Due Soon", "Release to Service"],
     ["G-CDEF", "Copy of Review Certificate to the Civil Aviation Authority", "21 November 2026",
      "3 Days", "Due Soon", "Airworthiness Review"],
     ["G-EJKL", "Airworthiness Review Certificate Expires", "6 December 2026", "18 Days",
@@ -284,7 +284,7 @@ def test_what_is_overdue_is_red_and_comes_first(sample: Sample, day: Day) -> Non
     first = shown(found["Continuing Airworthiness"])[:9]
     assert first == [
         ["G-ABCD", "Certificate of Release to Service Not Yet in Records", "21 November 2026",
-         "1 Day Overdue", "Overdue", "Maintenance Programme"],
+         "1 Day Overdue", "Overdue", "Release to Service"],
         ["G-CDEF", "Copy of Review Certificate to the Civil Aviation Authority",
          "21 November 2026", "1 Day Overdue", "Overdue", "Airworthiness Review"],
         ["G-DGHI", "Unserviceable, Stabilator Trim Cable", "Grounded Since 14 November 2026", "",

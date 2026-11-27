@@ -116,6 +116,16 @@ Sign in as Lucy Grant. The sample of this part is on the test site once its data
 
 Say: the limit is the organisation's own number of days; the regulation gives none. The rule is ML.A.403.
 
+### Release to Service
+
+1. Open Release to Service. The counts are at the top: 3 issued in the last 30 days, 1 not yet in the records.
+2. G-ABCD's tyre comes first: Due 21 November 2026. Open its detail, then How the Release Was Calculated: 30 days, ML.A.305(a).
+3. G-CDEF's two certificates were issued by Chris Moore and entered the next day.
+4. Choose Record the Certificate for the tyre. Choose Pilot-Owner, type a name and a licence number. Record it. It is now in the records, and gone from the Dashboard.
+5. Point to Who May Release, with the point of ML.A.801 for each.
+
+Say: the system records a certificate that was issued. It does not issue one.
+
 ### Contracts
 
 1. Open Contracts. Five contracts: four for every task, and G-ABCD's for the programme review and the airworthiness review. G-HKLM's says Records Transfer.
