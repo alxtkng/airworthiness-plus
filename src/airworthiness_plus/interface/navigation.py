@@ -226,7 +226,23 @@ BOARD: tuple[Group, ...] = (
     Group(
         "Planning",
         (
-            Item("Work Packages", shown_for=MAINTAINS),
+            Item(
+                "Work Packages",
+                "work_packages",
+                shown_for=MAINTAINS,
+                inside=frozenset(
+                    {
+                        "work_package",
+                        "build_work_package",
+                        "link_package_order",
+                        "add_work_card",
+                        "issue_work_package",
+                        "complete_work_card",
+                        "inspect_work_card",
+                        "release_work_package",
+                    }
+                ),
+            ),
             Item(
                 "Manhours and Capacity",
                 shown_for=MAINTAINS,

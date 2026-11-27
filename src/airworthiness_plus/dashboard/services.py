@@ -30,6 +30,7 @@ from airworthiness_plus.interface import formatting
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.modifications import services as modification_services
 from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.planning.pending import releases_waiting
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Programme
@@ -186,6 +187,22 @@ def _aircraft_rows(aircraft: Aircraft, today: date) -> list[Row]:
                 work.release_flag.value,
                 "Release to Service",
                 reverse("release_to_service"),
+                days=days,
+            )
+        )
+
+    for pending in releases_waiting(today, aircraft):
+        text, remaining, days = _dated(pending.deadline, today, pending.flag)
+        rows.append(
+            Row(
+                registration,
+                "Work Package Release Not Yet in Records",
+                f"{pending.package.reference}, {formatting.long_date(pending.completed_on)}",
+                text,
+                remaining,
+                pending.flag.value,
+                "Work Packages",
+                reverse("work_package", args=[pending.package.pk]),
                 days=days,
             )
         )

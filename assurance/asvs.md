@@ -345,3 +345,8 @@ Not Applicable: No WebRTC. Requirements 17.1.1 to 17.3.2 at Levels 1 and 2, 7 in
 Each requirement was read in the standard and set against the code, the settings and the tests on 19 November 2026, by the same session that wrote the code. That is a self-assessment, not an independent one. The external penetration test (`assurance/penetration-test-scope.md`, Issue 40) is the independent check.
 
 Reading the standard led to changes made before this record was written: the Content Security Policy and the other response headers, cookie names, one-time codes good for 30 seconds only, the list of words a password may not contain, ending of sessions, logging of errors, and the removal of the rule against passwords made of digits alone.
+
+
+## Work package routes
+
+The package and card forms use the existing role checks, CSRF controls and the generated fields-by-action inventory (8.1.2). PostgreSQL applies organisation scope and cross-record validation. Work card evidence and issue and release history are retained (16.2.2 and 16.4.2). The browser scenario covers the form sequence. The database suite verifies row scope and reference protection.

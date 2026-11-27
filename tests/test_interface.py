@@ -153,6 +153,7 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
     sidebar = body.split('<nav aria-label="Sections">', 1)[1].split("</nav>", 1)[0]
     assert re.findall(r"<h2>([^<]+)</h2>", sidebar) == [
         "Continuing Airworthiness",
+        "Planning",
         "People",
         "Documentation",
         "Organisation",
@@ -166,6 +167,7 @@ def test_the_sidebar_the_breadcrumb_and_the_tabs_say_where_a_page_is(
         "Aircraft Configuration",
         "Release to Service",
         "Contracts",
+        "Work Packages",
         "Staff",
         "Authorisations",
         "Maintenance Data",

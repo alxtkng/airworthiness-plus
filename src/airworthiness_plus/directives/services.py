@@ -148,6 +148,7 @@ def record_compliance(
     performed_by: Person | None = None,
     release_reference: str = "",
     release_recorded_on: date | None = None,
+    historical: bool = False,
 ) -> Compliance:
     """Record compliance with a directive on an aircraft (REQ-064).
 
@@ -162,7 +163,12 @@ def record_compliance(
     try:
         work = programme_services.record_work(
             applicability.aircraft,
-            task=applicability.task if applicability.terminated_on is None else None,
+            task=applicability.task
+            if (
+                applicability.terminated_on is None
+                or (historical and dated < applicability.terminated_on)
+            )
+            else None,
             description=f"{applicability.directive}: {method}"[:200],
             dated=dated,
             hours=hours,
@@ -170,6 +176,7 @@ def record_compliance(
             performed_by=performed_by,
             release_reference=release_reference,
             release_recorded_on=release_recorded_on,
+            historical=historical,
         )
     except programme_services.RefusedError as error:
         raise RefusedError(str(error)) from error

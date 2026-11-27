@@ -16,6 +16,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.planning.pending import releases_waiting
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases import services
 from airworthiness_plus.releases.forms import CertificateForm
@@ -32,13 +33,18 @@ def _user(request: HttpRequest) -> User:
 @requires(Action.VIEW_RECORDS)
 def release_to_service(request: HttpRequest) -> HttpResponse:
     """Certificates of release to service, and whether each is in the records (REQ-264)."""
-    lines = services.release_lines(aircraft_services.today())
+    today = aircraft_services.today()
+    lines = services.release_lines(today)
+    waiting = releases_waiting(today)
+    summary = services.summary(lines)
     return render(
         request,
         "releases/releases.html",
         {
             "lines": lines,
-            "summary": services.summary(lines),
+            "summary": summary,
+            "waiting_packages": waiting,
+            "not_in_records": summary.not_in_records + len(waiting),
             "who": services.WHO_MAY_RELEASE,
             "may_record": _user(request).may(Action.RECORD_RELEASE_CERTIFICATE),
         },
@@ -50,10 +56,18 @@ def release_to_service(request: HttpRequest) -> HttpResponse:
 def release_certificate(request: HttpRequest, release_id: uuid.UUID) -> HttpResponse:
     """Show the retained release and any certification evidence (REQ-302)."""
     certificate = get_object_or_404(
-        Release.objects.select_related("work", "maintenance_authorisation__withdrawal"),
+        Release.objects.select_related(
+            "work", "maintenance_authorisation__withdrawal", "work_package"
+        ),
         pk=release_id,
     )
-    return render(request, "releases/certificate.html", {"certificate": certificate})
+    package = getattr(certificate, "work_package", None)
+    cards = package.cards.all() if package is not None else ()
+    return render(
+        request,
+        "releases/certificate.html",
+        {"certificate": certificate, "package": package, "cards": cards},
+    )
 
 
 @never_cache

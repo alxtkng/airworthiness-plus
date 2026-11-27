@@ -19,12 +19,42 @@ from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.modifications import views as modifications
 from airworthiness_plus.organisations import views as settings
 from airworthiness_plus.people import views as people
+from airworthiness_plus.planning import views as planning
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
+    path("work-packages/", planning.work_packages, name="work_packages"),
+    path("work-packages/build/", planning.build_work_package, name="build_work_package"),
+    path("work-packages/<uuid:package_id>/", planning.work_package, name="work_package"),
+    path(
+        "work-packages/<uuid:package_id>/order/",
+        planning.link_package_order,
+        name="link_package_order",
+    ),
+    path("work-packages/<uuid:package_id>/cards/", planning.add_work_card, name="add_work_card"),
+    path(
+        "work-packages/<uuid:package_id>/issue/",
+        planning.issue_work_package,
+        name="issue_work_package",
+    ),
+    path(
+        "work-packages/<uuid:package_id>/cards/<uuid:card_id>/completion/",
+        planning.complete_work_card,
+        name="complete_work_card",
+    ),
+    path(
+        "work-packages/<uuid:package_id>/cards/<uuid:card_id>/inspection/",
+        planning.inspect_work_card,
+        name="inspect_work_card",
+    ),
+    path(
+        "work-packages/<uuid:package_id>/release/",
+        planning.release_work_package,
+        name="release_work_package",
+    ),
     path("dashboard/", dashboard.dashboard_page, name="dashboard"),
     path("transfers/", configuration.transfers_page, name="transfers"),
     path(

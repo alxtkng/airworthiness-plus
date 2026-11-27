@@ -198,6 +198,9 @@ Not decided here, and so not built until Alex King says: the per-flight technica
 - Training pages show the Part-147 course route only; type evaluation for Group 3 aircraft (66.A.45(d)) is not shown yet.
 - Actions, not Findings: the Actions page holds actions from hazards and from findings. Findings live in Compliance Monitoring.
 - Work Packages, not Work Orders: a work order is the customer's written request and sits under Contracts. A work package is how the work is planned.
+- Work Packages use independent inspection as the error-capturing method for critical cards in this workflow. Record a second person's identity, qualification evidence and satisfactory findings. Capture work performed separately from final card status. A combined inspection can cover several cards. Allocate its hours once.
+- Package release records the existing certificate with each signed card and its aircraft work evidence. The certificate for the package is indexed once. A named inspector and qualification reference attest evidence held by the organisation. Recording that evidence grants no privilege.
+- Alex King confirmed on 27 November 2026 that all approval types need adequate staff and asked for current terminology. Use Staffing Plan and Staffing and Capacity in the interface. Apply approval-specific sources and show Part-145 thresholds under Part-145.
 - Internal findings live in Compliance Monitoring; findings raised by the Civil Aviation Authority live in Organisation, Oversight. Both use Level 1 and Level 2.
 - Form pages (Report a Safety Issue, Competency Assessment Form) link back to their list in the breadcrumb.
 - References: N- notices, E- enquiries, Q- quotes, INV- invoices, SR- safety reports, OR- occurrence reports, WP- work packages, F- findings.
@@ -361,6 +364,8 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Record Defect | No | Yes | No | Yes | No |
 | Record Repeat Defect Action | No | Yes | No | No | No |
 | Draw Up or End Contract | No | Yes | No | No | No |
+| Plan Work Package | No | Yes | No | Yes | No |
+| Record Work Card Evidence | No | Yes | No | Yes | No |
 | Record Work Order | No | Yes | No | Yes | No |
 | Record Certificate of Release to Service | No | Yes | No | Yes | No |
 | Record Aircraft Configuration | No | Yes | No | Yes | No |
@@ -440,6 +445,9 @@ Confirmed against the UK text in the Civil Aviation Authority Regulatory Library
 | Type training | Theory and practical completed within 3 years before application; pass 75% | Appendix III to Part-66 |
 | On the job training | First type rating in first category; within 3 years; 50% of tasks after theory; mentor 1 year in category; assessor 3 years and not the mentor | 66.A.45(c), Appendix III Section 6 |
 | Manhour plan | Reviewed at least every 3 months; shortfall over 25% in a month reported; at least half of each shift employed | AMC 145.A.30(d); Part-CAO needs enough staff, CAO.A.035(d) |
+| Work package issue and data | Agree the written order and use the applicable current instructions. The issued card records the selected revision | [CAO.A.055](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/2%20Regs/05860_CAOA055_Maintenance_data_and_work_orders.htm), [AMC1 CAO.A.055](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/3%20AMC/AMC1%20CAO%20A%20055%20Maintenance.htm), 145.A.45(e) |
+| Work card inspection and verification | Error capture after critical maintenance and general verification after completion. Independent inspection records qualified people and evidence | [CAO.A.060](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/2%20Regs/05890_CAOA060_Maintenance_standards.htm), AMC2 CAO.A.060(h), [AMC4 145.A.48(c)(2)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/3%20AMC/AMC4%20145%20A%2048%20c%202%20Performance.htm) |
+
 | Defect deferral | A defect that seriously endangers flight safety is rectified before further flight. The pilot may defer a defect on non-required equipment; the pilot using the minimum equipment list, a defect on required equipment, and otherwise only authorised certifying staff; the pilot, any other defect where the aircraft is operated under Part-NCO and the owner or the contracted CAMO or CAO agrees; appropriately qualified certifying staff, other defects where those conditions are not met. A deferred defect is rectified as soon as practicable and within the limits specified in the maintenance data, and is recorded and available to the pilot. The regulation gives no number of days | ML.A.403(a), (b)(1) to (4), (c), (d), confirmed 24 November 2026 |
 | Contracted software for records | Not subcontracting, but described in the exposition and approved by the Civil Aviation Authority, provided that each organisation has access to its own data only, data is entered only by the organisation's personnel, and the data can be retrieved at any time | AMC1 CAO.A.100(f) point (d)(2). The Part-CAMO equivalent, recorded during discovery as AMC CAMO.A.220, is To Be Checked |
 | Part-CAMO privileges | Manage the continuing airworthiness of aircraft listed on the certificate; arrange limited continuing airworthiness tasks with a subcontracted organisation; extend an airworthiness review certificate; approve the maintenance programme of a Part-ML aircraft. May additionally be approved to carry out airworthiness reviews, and then to issue a permit to fly | CAMO.A.125(d) to (f), read 24 November 2026. Not yet recorded by the system |

@@ -85,7 +85,10 @@ def record_certificate(
         limitations.strip(),
     )
     work = WorkDone.objects.select_for_update().get(pk=work.pk)
-    if Release.objects.filter(work=work).exists():
+    if (
+        Release.objects.filter(work=work).exists()
+        or Release.objects.filter(work_package__cards__work=work).exists()
+    ):
         raise RefusedError("The Certificate for This Work Is Already Recorded")
     if not reference:
         raise RefusedError("A Certificate Has a Reference")
@@ -254,6 +257,11 @@ def release_lines(today: date) -> list[ReleaseLine]:
     lines = []
     for aircraft in Aircraft.objects.all():
         for line in due.work_lines(aircraft, today):
+            if (
+                line.work.pk not in certificates
+                and getattr(line.work, "work_card", None) is not None
+            ):
+                continue
             since = days_between(line.work.dated, today)
             outstanding = line.release_flag is not Flag.NONE
             release = ReleaseLine(line, certificates.get(line.work.pk), since)

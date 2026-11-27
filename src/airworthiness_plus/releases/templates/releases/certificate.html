@@ -5,7 +5,11 @@
 <h1>{{ certificate.reference }}</h1>
 <dl>
 <dt>Aircraft Registration</dt><dd>{{ certificate.registration }}</dd>
-<dt>Maintenance</dt><dd>{{ certificate.maintenance }}</dd>
+<dt>Maintenance</dt><dd>
+{% if package %}<a href="{% url 'work_package' package.id %}">{{ package.reference }}</a>, {{ package.title }}
+<ul>{% for card in cards %}<li>{{ card.title }}</li>{% endfor %}</ul>
+{% else %}{{ certificate.maintenance }}{% endif %}
+</dd>
 <dt>Completed</dt><dd>{{ certificate.completed_on|long_date }}</dd>
 <dt>Issued By</dt><dd>{{ certificate.issued_by_text }}</dd>
 <dt>Issued</dt><dd>{{ certificate.issued_on|long_date }}</dd>

@@ -245,8 +245,14 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A contract and a work order keep what they said when recorded (REQ-241).
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
+        "planning_workpackage": {"work_package_evidence"},
+        "planning_workcard": {"work_card_evidence"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
-        "releases_release": {"release_rules", "release_certification_evidence"},
+        "releases_release": {
+            "release_rules",
+            "release_certification_evidence",
+            "release_work_package_snapshot",
+        },
         "programme_workdone": {"release_entry_fixed", "work_performer"},
         # A fitting keeps what it said, and its removal is added once (REQ-235).
         "components_installation": {"installation_rules"},

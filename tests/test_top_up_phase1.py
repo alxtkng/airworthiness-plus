@@ -140,7 +140,9 @@ def test_a_sample_seeded_before_phase_1_is_given_its_records_once(seeded: Sample
     once = history(seeded)
     assert unchanged(before, once)
     with working_for(seeded.ours.id, seeded.reader.id):
-        assert sorted(Added.objects.values_list("part", flat=True)) == sorted(Part.values)
+        assert sorted(Added.objects.values_list("part", flat=True)) == sorted(
+            set(Part.values) - {Part.WORK_PACKAGES}
+        )
         # Nobody was looked up: no defect names a person.
         assert not Defect.objects.exclude(decided_by__isnull=True).exists()
         assert set(Defect.objects.values_list("decided_by_name", flat=True)) == {""}
@@ -381,7 +383,7 @@ def test_a_part_is_recorded_once_and_is_one_the_sample_has(seeded: Sample) -> No
     a part that is known."""
     prepare_test_site.bring_phase_1(seeded.administrator)
     with working_for(seeded.ours.id, seeded.administrator.id):
-        for part in Part.values:
+        for part in set(Part.values) - {Part.WORK_PACKAGES}:
             with pytest.raises(IntegrityError, match="sample_part_added_once"):
                 with transaction.atomic():
                     Added.objects.create(organisation=seeded.ours, part=part)

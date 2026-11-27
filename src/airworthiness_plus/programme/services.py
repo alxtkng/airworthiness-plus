@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Q
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
@@ -182,6 +183,39 @@ def end_task(task: Task) -> None:
     task.save(update_fields=["retired"])
 
 
+def check_work_counters(
+    aircraft: Aircraft,
+    *,
+    task: Task | None,
+    dated: date,
+    hours: Decimal,
+    cycles: int,
+    historical: bool = False,
+) -> None:
+    """Check a proposed accomplishment against its counter and last completion."""
+    if task is not None and task.programme.aircraft_id != aircraft.id:
+        raise RefusedError("The Task Belongs to Another Aircraft")
+    counter = task.counter if task else aircraft.counters.filter(kind=CounterKind.AIRFRAME).first()
+    current = aircraft_services.current_reading(counter) if counter else None
+    if current is not None and (hours > current.hours or cycles > current.cycles):
+        raise RefusedError("Above the Hours or Cycles Now Recorded for the Counter")
+    if task is not None:
+        entries = task.work_done.order_by("dated", "hours", "cycles")
+        if historical:
+            earlier = entries.filter(Q(dated__lt=dated) | Q(dated=dated, hours__lte=hours)).last()
+            later = entries.filter(Q(dated__gt=dated) | Q(dated=dated, hours__gt=hours)).first()
+            if earlier is not None and (hours < earlier.hours or cycles < earlier.cycles):
+                raise RefusedError("Below the Counter Readings for the Earlier Work")
+            if later is not None and (hours > later.hours or cycles > later.cycles):
+                raise RefusedError("Above the Counter Readings for the Later Work")
+        else:
+            last = entries.last()
+            if last is not None and (
+                dated < last.dated or hours < last.hours or cycles < last.cycles
+            ):
+                raise RefusedError("Before the Last Time This Task Was Done")
+
+
 @transaction.atomic
 def record_work(
     aircraft: Aircraft,
@@ -196,6 +230,7 @@ def record_work(
     release_recorded_on: date | None = None,
     by_pilot_owner: bool = False,
     pilot_owner_told_on: date | None = None,
+    historical: bool = False,
 ) -> WorkDone:
     """Record work done: a task of the programme, or other maintenance (REQ-050).
 
@@ -209,21 +244,14 @@ def record_work(
     if performed_by is not None:
         if performed_by.organisation_id != aircraft.organisation_id:
             raise RefusedError("The Person Must Belong to This Organisation")
-        performed_by = Person.objects.select_for_update().get(pk=performed_by.pk)
+        performed_by = Person.objects.select_for_update(no_key=True).get(pk=performed_by.pk)
         if (performed_by.joined_on is not None and dated < performed_by.joined_on) or (
             performed_by.left_on is not None and dated > performed_by.left_on
         ):
             raise RefusedError("The Person Must Have Been With the Organisation on the Day of Work")
-    if task is not None and task.programme.aircraft_id != aircraft.id:
-        raise RefusedError("The Task Belongs to Another Aircraft")
-    counter = task.counter if task else aircraft.counters.filter(kind=CounterKind.AIRFRAME).first()
-    current = aircraft_services.current_reading(counter) if counter else None
-    if current is not None and (hours > current.hours or cycles > current.cycles):
-        raise RefusedError("Above the Hours or Cycles Now Recorded for the Counter")
-    if task is not None:
-        last = task.work_done.order_by("dated", "hours").last()
-        if last is not None and (dated < last.dated or hours < last.hours or cycles < last.cycles):
-            raise RefusedError("Before the Last Time This Task Was Done")
+    check_work_counters(
+        aircraft, task=task, dated=dated, hours=hours, cycles=cycles, historical=historical
+    )
     if release_reference and release_recorded_on is None:
         release_recorded_on = today
     if release_recorded_on is not None and not dated <= release_recorded_on <= today:

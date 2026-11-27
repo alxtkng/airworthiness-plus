@@ -28,6 +28,7 @@ from airworthiness_plus.exports.verify import MANIFEST
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
+from airworthiness_plus.planning.models import WorkCard
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases.models import Release
 from airworthiness_plus.reviews.models import ReviewStaff
@@ -188,9 +189,26 @@ def build(organisation: Organisation, *, by: User, aircraft: Aircraft | None = N
                 "work_performers": [
                     {"id": str(person.pk), "full_name": person.full_name}
                     for person in Person.objects.filter(
-                        pk__in=WorkDone.objects.filter(aircraft=aircraft)
-                        .exclude(performed_by_id=None)
-                        .values("performed_by_id")
+                        Q(
+                            pk__in=WorkDone.objects.filter(aircraft=aircraft).values(
+                                "performed_by_id"
+                            )
+                        )
+                        | Q(
+                            pk__in=WorkCard.objects.filter(package__aircraft=aircraft).values(
+                                "performed_by_id"
+                            )
+                        )
+                        | Q(
+                            pk__in=WorkCard.objects.filter(package__aircraft=aircraft).values(
+                                "supervised_by_id"
+                            )
+                        )
+                        | Q(
+                            pk__in=WorkCard.objects.filter(package__aircraft=aircraft).values(
+                                "inspector_id"
+                            )
+                        )
                     ).order_by("pk")
                 ],
                 "maintenance_authorisations": [

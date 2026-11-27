@@ -190,3 +190,8 @@ The per-flight technical log (Issue 7), choosing the type from the SRG1782 list 
 4. Open Authorisations. Use the Recency tab to see review staff recency alongside the most recent attributed work for certifying staff. Open a maintenance authorisation to record assessed work or approved maintenance employment against its scope. The Recency tab shows the resulting duration. Withdraw a mistaken assessment with a reason to retain the evidence and remove it from the total.
 5. From Authorisations, open an existing maintenance authorisation. Use a reason and an effective date when withdrawing its evidence. The original authorisation stays visible.
 6. For an externally signed release or certifying-staff deferral, identify the named authorisation and confirm its scope. Enter the signed source reference for a legacy record whose authorisation evidence is unavailable. In the aircraft’s Work Done list, follow the release reference to its retained evidence after it leaves the recent-release board.
+
+
+## Work Packages
+
+Sign in as Planning and Records and open **Planning → Work Packages → WP-2026-048**. The draft shows the annual check and right headset socket for G-EJKL and its 32.0 planned hours. Issue requires an agreed order and current maintenance data. Open a package to see the work cards, revision references and release checklist.

@@ -3,7 +3,7 @@
 {% block title %}Release to Service{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Release to Service</h1>
-<p>{{ summary.issued }} Issued, Last 30 Days, {{ summary.not_in_records }} Not Yet in Records, {{ summary.incomplete }} Incomplete Maintenance, {{ summary.notice_overdue }} Pilot-Owner Notice Overdue</p>
+<p>{{ summary.issued }} Issued, Last 30 Days, {{ not_in_records }} Not Yet in Records, {{ summary.incomplete }} Incomplete Maintenance, {{ summary.notice_overdue }} Pilot-Owner Notice Overdue</p>
 <h2>Certificates of Release to Service</h2>
 <p>In Records Within 30 Days of Completion, ML.A.305(a)</p>
 {% if lines %}
@@ -15,7 +15,7 @@
 {% for one in lines %}
 <tr>
 <td><a href="{% url 'aircraft' one.work.aircraft.id %}">{{ one.work.aircraft.registration }}</a></td>
-<td>{{ one.work.description }}{% if one.work.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}</td>
+<td>{{ one.certificate.maintenance|default:one.work.description }}{% if one.work.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}</td>
 <td>{% if one.certificate %}{{ one.certificate.issued_by_text }}{% elif one.work.by_pilot_owner %}Pilot-Owner{% endif %}</td>
 <td>{{ one.work.dated|long_date }}</td>
 <td>{% if one.in_records %}{{ one.work.release_recorded_on|long_date }}{% else %}Due {{ one.line.release_deadline|long_date }}{% endif %}</td>
@@ -32,8 +32,19 @@
 {% endfor %}
 </tbody>
 </table>
-{% else %}
+{% elif not waiting_packages %}
 <p>Nothing Completed in the Last 30 Days, and Nothing Waiting to Be Entered</p>
+{% endif %}
+{% if waiting_packages %}
+<h2>Work Packages Awaiting Release</h2>
+<table>
+<thead><tr><th>Aircraft Registration</th><th>Work Package</th><th>Completed</th><th>Enter Release By</th><th>Status</th></tr></thead>
+<tbody>
+{% for waiting in waiting_packages %}
+<tr><td>{{ waiting.package.aircraft.registration }}</td><td><a href="{% url 'work_package' waiting.package.id %}">{{ waiting.package.reference }}</a></td><td>{{ waiting.completed_on|long_date }}</td><td>{{ waiting.deadline|long_date }}</td><td>{{ waiting.flag.value|status }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
 {% endif %}
 <h2>Who May Release</h2>
 {% include "releases/who.html" %}

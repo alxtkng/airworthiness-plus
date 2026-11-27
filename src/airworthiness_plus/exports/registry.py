@@ -33,6 +33,7 @@ from airworthiness_plus.people.models import (
     Person,
     RecurrentTraining,
 )
+from airworthiness_plus.planning.models import WorkCard, WorkPackage
 from airworthiness_plus.programme.models import (
     AnnualReview,
     Departure,
@@ -78,9 +79,18 @@ def _every(aircraft: Aircraft) -> Q:
     return Q()
 
 
-def _type_rating(lookup: str) -> Callable[[Aircraft], Q]:
+def _maintenance_data(prefix: str = "") -> Callable[[Aircraft], Q]:
     # Maintenance data applies to an aircraft through its type rating.
-    return lambda aircraft: Q(**{lookup: [aircraft.type_rating]})
+    return lambda aircraft: (
+        Q(**{f"{prefix}applies_to__contains": [aircraft.type_rating]})
+        | Q(
+            **{
+                f"{prefix}pk__in": WorkCard.objects.filter(package__aircraft=aircraft).values(
+                    "data_set_id"
+                )
+            }
+        )
+    )
 
 
 REGISTRY: tuple[Exported, ...] = (
@@ -108,6 +118,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Release, _by("work__aircraft")),
     Exported(Contract, _by("aircraft")),
     Exported(WorkOrder, _by("aircraft")),
+    Exported(WorkPackage, _by("aircraft")),
+    Exported(WorkCard, _by("package__aircraft")),
     Exported(Defect, _by("aircraft")),
     # What was done about the same defect on the aircraft's type.
     Exported(RepeatAction, lambda aircraft: Q(type_rating=aircraft.type_rating)),
@@ -127,9 +139,9 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Source, _every),
     Exported(Applicability, _by("aircraft")),
     Exported(Compliance, _by("applicability__aircraft")),
-    Exported(DataSet, _type_rating("applies_to__contains")),
-    Exported(Revision, _type_rating("data_set__applies_to__contains")),
-    Exported(AmendmentCheck, _type_rating("data_set__applies_to__contains")),
+    Exported(DataSet, _maintenance_data()),
+    Exported(Revision, _maintenance_data("data_set__")),
+    Exported(AmendmentCheck, _maintenance_data("data_set__")),
     Exported(ReviewStaff, None),
     Exported(Certificate, _by("aircraft")),
     Exported(Extension, _by("certificate__aircraft")),

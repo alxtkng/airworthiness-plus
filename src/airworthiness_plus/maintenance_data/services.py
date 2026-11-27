@@ -94,6 +94,7 @@ def add_revision(data_set: DataSet, *, revision: str, revision_date: date) -> Re
 
     Data recorded as Not Held becomes Held when its first revision arrives.
     """
+    data_set = DataSet.objects.select_for_update().get(pk=data_set.pk)
     if data_set.holding == Holding.NO_LONGER_HELD:
         raise RefusedError("This Data Is No Longer Held")
     if data_set.revisions.filter(revision=revision).exists():

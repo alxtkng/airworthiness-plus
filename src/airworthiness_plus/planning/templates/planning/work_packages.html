@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Work Packages{% endblock %}
+{% block content %}
+<header class="page-heading">
+<h1>Work Packages</h1>
+{% if may_plan %}<a class="button" href="{% url 'build_work_package' %}">Build a Work Package</a>{% endif %}
+</header>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Reference</th><th>Aircraft Registration</th><th>Work</th><th>Work Order</th><th>Planned Start</th><th>Planned End</th><th>Status</th></tr></thead>
+<tbody>
+{% for package in packages %}
+<tr>
+<td><a href="{% url 'work_package' package.id %}">{{ package.reference }}</a></td>
+<td><a href="{% url 'aircraft' package.aircraft_id %}">{{ package.aircraft.registration }}</a></td>
+<td>{{ package.title }}</td>
+<td>{% if package.order %}{{ package.order.ordered_by_text }}{% else %}Not Received{% endif %}</td>
+<td>{{ package.starts_on|date:"j F Y" }}</td>
+<td>{{ package.ends_on|date:"j F Y" }}</td>
+<td>{{ package.status }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="7">No Work Packages</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}
