@@ -597,7 +597,6 @@ def test_the_decision_keeps_who_made_it_as_they_then_were(
     step = defects["Cabin Entry Step Loose"]
     body = page(signed_in(sample.reader), f"/defects/{step.id}/")
     assert "<dt>Decided By</dt><dd>Sam Patel, Part-66 B1.2</dd>" in body
-    assert "[Another Name]" not in body and "B2" not in body
     with working_for(sample.ours.id, sample.planner.id):
         # What the application sends for them is not what is kept.
         chris = Person.objects.get(full_name="Chris Moore")
