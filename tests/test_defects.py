@@ -798,6 +798,24 @@ def test_closed_defects_are_shown_for_30_days(
 # Two submits at once
 
 
+def test_rectified_defect_sent_twice_is_recorded_once(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    client = signed_in(sample.lucy)
+    aircraft = fleet["G-ABCD"]
+    values = dict(
+        FORM, aircraft=str(aircraft.id), closed_on="2026-11-04", rectification="Lamp Replaced"
+    )
+    assert post(client, "/defects/record/", **values).status_code == 302
+    repeated = post(client, "/defects/record/", **values)
+    assert repeated.status_code == 200
+    assert "This Rectified Defect Is Already Recorded" in repeated.content.decode()
+    with working_for(sample.ours.id, sample.lucy.id):
+        assert Defect.objects.filter(aircraft=aircraft, title=FORM["title"]).count() == 1
+    values["note"] = "Second Occurrence After Replacement"
+    assert post(client, "/defects/record/", **values).status_code == 302
+
+
 def test_a_defect_sent_twice_is_recorded_once(sample: Sample, fleet: dict[str, Aircraft]) -> None:
     """REQ-220. The aircraft's row is taken before anything is looked for, so a
     second submit waits for the first and is refused with the reason."""

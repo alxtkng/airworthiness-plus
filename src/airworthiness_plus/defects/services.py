@@ -90,9 +90,8 @@ def record_defect(
     if decided_on < found_on:
         raise RefusedError("A Decision Is Not Before the Defect Was Found")
     aircraft = Aircraft.objects.select_for_update().get(pk=aircraft.pk)
-    if Defect.objects.filter(
-        aircraft=aircraft, title=title, found_on=found_on, closed_on__isnull=True
-    ).exists():
+    matching = Defect.objects.filter(aircraft=aircraft, title=title, found_on=found_on)
+    if matching.filter(closed_on__isnull=True).exists():
         raise RefusedError("This Defect Is Already Recorded and Open")
 
     limit: date | None = None
@@ -125,6 +124,20 @@ def record_defect(
     closing = closed_on is not None or bool(rectification.strip()) or work_done is not None
     if closing:
         _check_closure(aircraft, found_on, rectification, closed_on, work_done, today)
+        if matching.filter(
+            chapter=chapter,
+            system=system,
+            note=note,
+            decision=decision,
+            basis=basis,
+            decided_on=decided_on,
+            decided_by=decided_by,
+            data_limit_on=data_limit_on,
+            rectification=rectification.strip(),
+            closed_on=closed_on,
+            work_done=work_done,
+        ).exists():
+            raise RefusedError("This Rectified Defect Is Already Recorded")
     elif decision == Decision.NOT_DEFERRABLE and aircraft.status != Status.UNSERVICEABLE:
         # ML.A.403(a): rectified before further flight.
         aircraft_services.make_unserviceable(aircraft, title, found_on)
