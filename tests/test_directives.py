@@ -11,7 +11,6 @@ from decimal import Decimal
 
 import pytest
 from django.db import DatabaseError, IntegrityError, connection, transaction
-from django.http import HttpResponse
 from django.test import Client
 
 from airworthiness_plus.accounts.models import AccessEntry
@@ -34,8 +33,10 @@ from tests.support import (
     Sample,
     add_sample_fleet,
     add_sample_programmes,
+    call,
     dot,
-    make_sample,
+    page,
+    post,
     signed_in,
 )
 
@@ -46,11 +47,6 @@ D = Decimal
 @pytest.fixture(autouse=True)
 def sample_today(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 @pytest.fixture
@@ -65,20 +61,6 @@ def directives(sample: Sample, fleet: dict[str, Aircraft]) -> dict[int, Directiv
     """Four directives, and for G-ABCD: one repeating, one not applicable, one
     not yet decided, one to be done once."""
     return build.add_directives(sample, fleet)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **data: str) -> HttpResponse:
-    return client.post(path, data, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def decision_of(sample: Sample, directive: Directive, aircraft: Aircraft) -> Applicability:
@@ -558,10 +540,6 @@ GENERAL = [
     ("GET", "/directives/add/", Action.RECORD_AIRWORTHINESS_DIRECTIVE),
     ("POST", "/directives/add/", Action.RECORD_AIRWORTHINESS_DIRECTIVE),
 ]
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def test_another_organisations_directives_are_not_found_or_shown(

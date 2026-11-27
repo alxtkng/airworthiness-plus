@@ -10,7 +10,6 @@ from decimal import Decimal
 
 import pytest
 from django.db import DatabaseError, IntegrityError, connection, transaction
-from django.http import HttpResponse
 from django.test import Client
 
 from airworthiness_plus.accounts.roles import Action, permitted
@@ -29,7 +28,17 @@ from airworthiness_plus.interface import formatting
 from airworthiness_rules.intervals import Reading
 from airworthiness_rules.utilisation import EntryRefusedError
 from tests.conftest import as_owner
-from tests.support import FLEET, TODAY, Sample, add_sample_fleet, dot, make_sample, signed_in
+from tests.support import (
+    FLEET,
+    TODAY,
+    Sample,
+    add_sample_fleet,
+    call,
+    dot,
+    get,
+    post,
+    signed_in,
+)
 
 pytestmark = pytest.mark.django_db
 D = Decimal
@@ -41,21 +50,8 @@ def sample_today(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     return add_sample_fleet(sample)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **data: str) -> HttpResponse:
-    return client.post(path, data, secure=True)  # type: ignore[return-value]
 
 
 def airframe(aircraft: Aircraft):  # type: ignore[no-untyped-def]
@@ -445,10 +441,6 @@ PAGES = (
     ("POST", "/counters/", Action.ADD_OR_CHANGE_AIRCRAFT),
     ("POST", "/records-received/", Action.ADD_OR_CHANGE_AIRCRAFT),
 )
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def test_another_organisations_aircraft_is_not_found_on_any_page(

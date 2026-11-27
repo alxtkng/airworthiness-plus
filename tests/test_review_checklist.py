@@ -16,7 +16,6 @@ from decimal import Decimal
 
 import pytest
 from django.db import DatabaseError, connection, transaction
-from django.http import HttpResponse
 from django.test import Client
 from django.test.utils import CaptureQueriesContext
 
@@ -44,7 +43,9 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
-    make_sample,
+    call,
+    page,
+    post,
     signed_in,
 )
 
@@ -66,11 +67,6 @@ def day(monkeypatch: pytest.MonkeyPatch) -> Day:
     moving = Day()
     monkeypatch.setattr(aircraft_services, "today", moving)
     return moving
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 @pytest.fixture
@@ -104,20 +100,6 @@ def review(sample: Sample, ejkl: Aircraft, reviews: SampleReviews) -> Review:
     """A review of G-EJKL started today by the review staff member."""
     with working_for(sample.ours.id, sample.reviewer.id):
         return services.start_review(ejkl, staff=reviews.reviewer)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def complete(sample: Sample, review: Review, *, assisted_by: str = "[Part-66 Name]") -> None:
@@ -613,10 +595,6 @@ def addresses(review: Review, certificate: Certificate):  # type: ignore[no-unty
         ),
         ("POST", f"/aircraft/{aircraft.id}/details/", Action.ADD_OR_CHANGE_AIRCRAFT),
     ]
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def pages(sample: Sample, review: Review, reviews: SampleReviews):  # type: ignore[no-untyped-def]

@@ -23,8 +23,8 @@ from airworthiness_plus.interface.formatting import long_date
 from airworthiness_plus.people.models import Person
 from airworthiness_rules.dates import uk_today
 from tests.conftest import as_owner
-from tests.support import Sample, make_sample, signed_in
-from tests.test_sign_in import Clock, code_now, get, give_password, post
+from tests.support import Sample, call, get, page, post, signed_in
+from tests.test_sign_in import Clock, code_now, give_password
 
 pytestmark = pytest.mark.django_db
 
@@ -46,11 +46,6 @@ def clock(monkeypatch: pytest.MonkeyPatch) -> Clock:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def new_user(sample: Sample) -> User:
     """A user added by the Administrator with a first password."""
     with working_for(sample.ours.id, sample.administrator.id):
@@ -61,12 +56,6 @@ def new_user(sample: Sample) -> User:
             roles=[Role.PLANNING_AND_RECORDS],
             password=FIRST,
         )
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def sign_in_with(client: Client, clock: Clock, username: str, password: str) -> HttpResponse:
@@ -762,10 +751,6 @@ def addresses(user: User):  # type: ignore[no-untyped-def]
         ("POST", f"/users/{user.id}/password/", manage),
         ("POST", f"/users/{user.id}/second-factor/", manage),
     ]
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def test_another_organisations_users_are_not_shown_or_changed(

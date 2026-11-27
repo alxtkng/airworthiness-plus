@@ -10,8 +10,6 @@ from datetime import date
 
 import pytest
 from django.db import IntegrityError, connection, transaction
-from django.http import HttpResponse
-from django.test import Client
 
 from airworthiness_plus.accounts import users
 from airworthiness_plus.accounts.models import AccessEntry, User
@@ -29,33 +27,14 @@ from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_plus.sample import build
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, make_sample, signed_in
+from tests.support import TODAY, Sample, get, page, post, signed_in
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 @pytest.fixture(autouse=True)
 def sample_day(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def person(sample: Sample, name: str) -> Person:

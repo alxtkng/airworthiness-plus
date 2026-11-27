@@ -54,7 +54,7 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
-    make_sample,
+    get,
     signed_in,
 )
 
@@ -67,11 +67,6 @@ KEY = secrets.token_hex(16).upper()
 @pytest.fixture(autouse=True)
 def day(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 @pytest.fixture
@@ -211,10 +206,6 @@ def rows(table: str, organisation_column: str, organisation: Any, omitted: list[
             [omitted, organisation],
         )
         return [json.loads(row[0]) for row in cursor.fetchall()]
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
 
 
 def post(client: Client, path: str) -> HttpResponse:

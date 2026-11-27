@@ -11,7 +11,6 @@ from decimal import Decimal
 import psycopg
 import pytest
 from django.db import DatabaseError, IntegrityError, connection, transaction
-from django.http import HttpResponse
 from django.test import Client
 
 from airworthiness_plus.accounts.models import AccessEntry, User
@@ -32,8 +31,10 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
+    call,
     dot,
-    make_sample,
+    page,
+    post,
     signed_in,
 )
 
@@ -57,11 +58,6 @@ def day(monkeypatch: pytest.MonkeyPatch) -> Day:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
@@ -71,20 +67,6 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 @pytest.fixture
 def reviews(sample: Sample, fleet: dict[str, Aircraft]) -> SampleReviews:
     return add_sample_reviews(sample, fleet)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def row_for(body: str, registration: str) -> str:
@@ -964,10 +946,6 @@ def addresses(sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
         ("POST", f"/review-staff/{reviews.lucy.id}/involvement/", Action.MANAGE_USERS_AND_ROLES),
         ("POST", f"/review-staff/{reviews.lucy.id}/restoration/", Action.MANAGE_USERS_AND_ROLES),
     ]
-
-
-def call(client: Client, method: str, path: str) -> HttpResponse:
-    return get(client, path) if method == "GET" else post(client, path)
 
 
 def test_another_organisations_certificates_and_staff_are_not_found_or_shown(

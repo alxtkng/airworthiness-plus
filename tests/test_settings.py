@@ -39,16 +39,12 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
-    make_sample,
+    page,
+    post,
     signed_in,
 )
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 @pytest.fixture
@@ -57,20 +53,6 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     add_sample_programmes(sample, fleet)
     add_sample_reviews(sample, fleet)
     return fleet
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def ours(sample: Sample) -> Organisation:

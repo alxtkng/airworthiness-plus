@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 from django.contrib.staticfiles import finders
-from django.http import HttpResponse
 from django.test import Client
 from django.urls import get_resolver
 
@@ -24,7 +23,7 @@ from tests.support import (
     add_sample_programmes,
     add_sample_reviews,
     dot,
-    make_sample,
+    page,
     signed_in,
 )
 
@@ -33,16 +32,6 @@ SOURCE = ROOT / "src" / "airworthiness_plus"
 TOKENS = json.loads((ROOT / "design-system" / "tokens.json").read_text(encoding="utf-8"))
 STYLES = (SOURCE / "interface" / "static" / "interface" / "app.css").read_text(encoding="utf-8")
 TEMPLATES = sorted(SOURCE.glob("*/templates/**/*.html"))
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 # Tokens (REQ-196)
@@ -142,11 +131,6 @@ def test_every_address_has_its_place() -> None:
         for address in ({item.address} | {tab.address for tab in item.tabs} | item.inside)
     }
     assert listed | navigation.OUTSIDE == names
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 @pytest.fixture

@@ -12,8 +12,6 @@ from datetime import date
 
 import pytest
 from django import forms
-from django.http import HttpResponse
-from django.test import Client
 
 import airworthiness_plus
 from airworthiness_plus.aircraft import services as aircraft_services
@@ -31,7 +29,7 @@ from tests.support import (
     Sample,
     add_sample_fleet,
     add_sample_programmes,
-    make_sample,
+    post,
     signed_in,
 )
 from tests.test_imports import fleet_load  # noqa: F401
@@ -46,19 +44,10 @@ def day(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     return fleet
-
-
-def post(client: Client, path: str, **data: str) -> HttpResponse:
-    return client.post(path, data, secure=True)  # type: ignore[return-value]
 
 
 def every_form() -> Iterator[type[Form]]:

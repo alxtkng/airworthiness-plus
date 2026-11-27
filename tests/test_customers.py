@@ -19,7 +19,6 @@ from django.db.migrations.exceptions import IrreversibleError
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.state import ProjectState
 from django.http import HttpResponse
-from django.test import Client
 from django.test.utils import CaptureQueriesContext
 
 from airworthiness_plus.accounts.models import AccessEntry
@@ -36,33 +35,14 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import for_each_organisation
 from airworthiness_plus.sample import build
 from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
-from tests.support import FLEET, Sample, add_sample_fleet, make_sample, signed_in
+from tests.support import FLEET, Sample, add_sample_fleet, get, page, post, signed_in
 
 pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def sample() -> Sample:
-    return make_sample()
-
-
-@pytest.fixture
 def fleet(sample: Sample) -> dict[str, Aircraft]:
     return add_sample_fleet(sample)
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-def page(client: Client, path: str) -> str:
-    response = get(client, path)
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def rows(body: str) -> list[list[str]]:

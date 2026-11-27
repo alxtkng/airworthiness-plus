@@ -36,6 +36,7 @@ from airworthiness_plus.history.sql import SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation, Privilege
 from airworthiness_plus.organisations.provisioning import provision_organisation
 from tests.conftest import as_owner
+from tests.support import get, post
 
 pytestmark = pytest.mark.django_db
 
@@ -117,14 +118,6 @@ def code_now(username: str, clock: Clock) -> str:
     """Return the code an authenticator application would show at this moment."""
     key = base64.b32decode(secret_of(username))
     return totp.hotp(key, totp.counter_at(clock.now))
-
-
-def post(client: Client, path: str, **data: str) -> HttpResponse:
-    return client.post(path, data, secure=True)  # type: ignore[return-value]
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
 
 
 def give_password(client: Client, username: str = LUCY, password: str = PASSWORD) -> HttpResponse:

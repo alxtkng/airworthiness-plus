@@ -15,8 +15,6 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection, transaction
-from django.http import HttpResponse
-from django.test import Client
 
 from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
@@ -41,7 +39,7 @@ from airworthiness_plus.sample.management.commands.seed_sample_organisation impo
     seed as seed_first,
 )
 from tests.conftest import as_owner
-from tests.support import TODAY, signed_in
+from tests.support import TODAY, page, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -63,12 +61,6 @@ def both() -> tuple[Organisation, Organisation]:
     """Both sample organisations, as the test site holds them."""
     with as_owner():
         return seed_first(PASSWORD), second.seed(PASSWORD)
-
-
-def page(client: Client, path: str) -> str:
-    response: HttpResponse = client.get(path, secure=True)  # type: ignore[assignment]
-    assert response.status_code == 200, path
-    return response.content.decode()
 
 
 def user_named(username: str) -> User:

@@ -21,7 +21,6 @@ from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError, connection
-from django.http import HttpResponse
 from django.test import Client, RequestFactory
 from django.urls import URLPattern, get_resolver
 
@@ -34,7 +33,7 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.interface.logs import UtcFormatter
 from airworthiness_plus.interface.security import CONTENT_SECURITY_POLICY
 from tests.conftest import as_owner
-from tests.support import TODAY, Sample, add_sample_fleet, make_sample, signed_in
+from tests.support import TODAY, Sample, add_sample_fleet, get, post, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -50,19 +49,6 @@ def routes() -> list[tuple[str, str]]:
         path = "/" + re.sub(r"<uuid:[a-z_]+>", str(uuid.uuid4()), str(pattern.pattern))
         found.append((pattern.name, path))
     return found
-
-
-def get(client: Client, path: str) -> HttpResponse:
-    return client.get(path, secure=True)  # type: ignore[return-value]
-
-
-def post(client: Client, path: str, **values: str) -> HttpResponse:
-    return client.post(path, values, secure=True)  # type: ignore[return-value]
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 # Every address

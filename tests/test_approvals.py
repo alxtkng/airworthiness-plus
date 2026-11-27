@@ -21,16 +21,11 @@ from airworthiness_plus.organisations.models import Approval, ApprovalType, Orga
 from airworthiness_plus.organisations.provisioning import provision_organisation
 from airworthiness_plus.organisations.sql import APPROVAL_FOR_EACH_ORGANISATION
 from tests.conftest import as_owner
-from tests.support import Sample, make_sample, signed_in
+from tests.support import Sample, signed_in
 
 pytestmark = pytest.mark.django_db
 
 EARLIER = "5f1e7d0a-0000-4000-8000-000000000001"
-
-
-@pytest.fixture
-def sample() -> Sample:
-    return make_sample()
 
 
 def held(organisation: Organisation) -> list[tuple[str, str]]:
