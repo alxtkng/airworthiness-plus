@@ -133,6 +133,29 @@ def test_grob_manual_amendment_check_is_due_by_20_november(
     assert "<td>2 November 2026</td><td>[Planning and Records Name]</td>" in body
 
 
+def test_backdated_check_keeps_the_latest_deadline(
+    sample: Sample, data: dict[str, DataSet], day: Day
+) -> None:
+    manual = data["grob"]
+    day.today = date(2026, 11, 21)
+    client = signed_in(sample.planner)
+    path = f"/maintenance-data/{manual.id}/"
+    response = post(
+        client,
+        path + "checks/",
+        checked_on="2026-11-01",
+        result="Earlier Check",
+        next_due="2027-01-15",
+    )
+    assert response.status_code == 302
+    assert "Earlier Check" in page(client, path)
+    line = lines(sample, day.today)[manual.title]
+    assert line.last_check is not None and line.last_check.checked_on == date(2026, 11, 2)
+    assert line.data_set.check_due == date(2026, 11, 20)
+    assert line.flag is Flag.OVERDUE
+    assert manual.title in page(client, "/dashboard/")
+
+
 def test_overdue_checks_come_first_and_mandatory_data_first_among_them(
     sample: Sample, data: dict[str, DataSet]
 ) -> None:
