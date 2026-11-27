@@ -98,11 +98,11 @@ def sample(day: Day) -> Sample:
 def panels(body: str) -> dict[str, list[list[str]]]:
     """Return each panel of the page: its heading, and the cells of each of its rows."""
     found: dict[str, list[list[str]]] = {}
-    for part in body.split("<main", 1)[1].split("<h2>")[1:]:
-        heading, rest = part.split("</h2>", 1)
+    for part in body.split('id="full-register"', 1)[1].split("<h3>")[1:]:
+        heading, rest = part.split("</h3>", 1)
         rows = []
-        if "<table>" in rest:
-            table = rest.split("<table>", 1)[1].split("</table>", 1)[0]
+        if "<table " in rest:
+            table = rest.split('<table data-search="always">', 1)[1].split("</table>", 1)[0]
             for row in re.findall(r"<tr>\s*(<td.*?)</tr>", table, flags=re.S):
                 cells = re.findall(r"<td[^>]*>(.*?)</td>", row, flags=re.S)
                 rows.append([re.sub(r"<[^>]+>", "", cell).strip() for cell in cells])
@@ -174,7 +174,7 @@ def test_the_dashboard_of_the_sample_on_18_november_2026(sample: Sample) -> None
     assert shown(found["People"]) == PEOPLE
     assert shown(found["Documentation"]) == DOCUMENTATION
     assert found["Organisation"] == []
-    assert "<p>Nothing Due</p>" in body.split("<h2>Organisation</h2>", 1)[1]
+    assert "<p>Nothing Due</p>" in body.split("<h3>Organisation</h3>", 1)[1]
     # The detail says where each figure comes from.
     details = {(row[0], row[1]): row[5] for row in found["Continuing Airworthiness"]}
     assert details["G-ABCD", "Certificate of Release to Service Not Yet in Records"] == (
@@ -193,6 +193,48 @@ def test_the_dashboard_of_the_sample_on_18_november_2026(sample: Sample) -> None
     assert dot("Due Soon") in body
     assert dot("To Assess") in body
     assert "status-ok" not in body
+
+
+def test_the_overview_groups_the_sample_without_losing_register_items(sample: Sample) -> None:
+    """REQ-215. The sections are visible before the full register, with useful links."""
+    body = page(signed_in(sample.reader), "/dashboard/")
+    restrictions, remainder = body.split('id="aircraft-restrictions"', 1)[1].split(
+        'id="due-and-overdue"', 1
+    )
+    due_rows, remainder = remainder.split('id="needs-assessment"', 1)
+    assessment, register = remainder.split('id="full-register"', 1)
+    assert 'href="#full-register"' in body
+    assert "G-DGHI" in restrictions and "Grounded Since 14 November 2026" in restrictions
+    assert "Certificate of Release to Service Not Yet in Records" in due_rows
+    assert "No Maintenance Programme Set Up" in assessment
+    assert "Applicability of 4 Airworthiness Directives to Assess" in assessment
+    assert "No Maintenance Programme Set Up" not in due_rows
+    assert "Unserviceable, Stabilator Trim Cable" in register
+    assert register.count('data-search="always"') == 3
+
+    with working_for(sample.ours.id, sample.reader.id):
+        original = services.dashboard(sample.ours, TODAY)
+    overview = services.triage(original)
+    represented = [
+        *(row for group in overview.restrictions for row in group.records),
+        *overview.due,
+        *overview.assessment,
+    ]
+    assert sorted(represented, key=repr) == sorted(
+        (row for panel in original for row in panel.rows), key=repr
+    )
+
+
+def test_restrictions_link_to_aircraft_and_defects_under_one_registration() -> None:
+    """REQ-215. A restriction count is a count of aircraft, not matching rows."""
+    aircraft = services.Row("G-DGHI", "Grounded", "", "", "", "Unserviceable", "Aircraft", "/a/")
+    defect = services.Row("G-DGHI", "Trim Cable", "", "", "", "Unserviceable", "Defects", "/d/")
+    panel = services.Panel("Continuing Airworthiness", "Subject", (defect, aircraft))
+
+    overview = services.triage([panel])
+
+    assert overview.restrictions == [services.AircraftRestriction("G-DGHI", [aircraft, defect])]
+    assert overview.due == overview.assessment == []
 
 
 def test_the_dashboard_stands_at_the_head_of_the_sidebar_and_links_to_each_page(
@@ -235,7 +277,7 @@ def test_another_organisation_sees_nothing_of_ours(sample: Sample) -> None:
     assert "Grob" not in body
     found = panels(body)
     assert all(rows == [] for rows in found.values())
-    assert body.count("<p>Nothing Due</p>") == 4
+    assert body.split('id="full-register"', 1)[1].count("<p>Nothing Due</p>") == 4
 
 
 def test_an_item_is_shown_from_its_lead_time(sample: Sample) -> None:
