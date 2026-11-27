@@ -1,6 +1,6 @@
 # Demo Guide
 
-Date: 24 November 2026. What can be shown on the test site, in what order, signed in as whom.
+Date: 27 November 2026. What can be shown on the test site, in what order, signed in as whom.
 
 The test site holds sample data only. No real record is ever entered on it (`test-site.md`).
 
@@ -39,10 +39,10 @@ About 10 minutes. Sign in as Lucy Grant unless a step says otherwise.
 ### The Dashboard
 
 1. Sign in. The Dashboard opens.
-2. Point to the four panels: Continuing Airworthiness, People, Documentation, Organisation.
-3. Point to G-DGHI at the top: Unserviceable, in red.
-4. Open a row with the arrow. The detail gives the rule and its reference.
-5. Follow the link in the Page column. It goes to the page that holds the item.
+2. Find G-DGHI in Aircraft Restrictions. Read the recorded reason and open its supporting record.
+3. Find the next deferred-defect limit in Due and Overdue when it is within the lead time. Open the defect.
+4. In Needs Assessment, find an aircraft with no maintenance programme set up and open the programme.
+5. Choose Full Register to see Continuing Airworthiness, Planning, People, Documentation and Organisation. Search the Continuing Airworthiness table for G-DGHI and open a row’s details.
 
 Say: the Dashboard works nothing out. It reads the same figures as the pages.
 
@@ -178,11 +178,9 @@ Say: the system records a certificate that was issued. It does not issue one.
 3. Go back. Three work orders. G-FMNO's says No Contract, Work Order Only, in its detail.
 4. Choose Record a Work Order. Choose G-BXYZ, type the work, Owner, a day. It appears under G-BXYZ's contract.
 
-## What Cannot Be Shown Yet
+## Part 4. People (Phase 2)
 
-The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
-
-## Phase 2 Staff
+### Staff and Authorisations
 
 1. Open Staff and select Organisation Chart to see the current reporting lines and management personnel.
 2. Open a staff record to see any recurrent training evidence. A freshly seeded sample shows Sam Patel’s Human Factors completion and 6 December 2026 renewal date.
@@ -191,17 +189,20 @@ The per-flight technical log (Issue 7), choosing the type from the SRG1782 list 
 5. From Authorisations, open an existing maintenance authorisation. Use a reason and an effective date when withdrawing its evidence. The original authorisation stays visible.
 6. For an externally signed release or certifying-staff deferral, identify the named authorisation and confirm its scope. Enter the signed source reference for a legacy record whose authorisation evidence is unavailable. In the aircraft’s Work Done list, follow the release reference to its retained evidence after it leaves the recent-release board.
 
+## Part 5. Planning (Phase 3)
 
-## Work Packages
+### Work Packages
 
 Sign in as Planning and Records and open **Planning → Work Packages → WP-2026-048**. The draft shows the annual check and right headset socket for G-EJKL and its 32.0 planned hours. Issue requires an agreed order and current maintenance data. Open a package to see the work cards, revision references and release checklist.
 
-
-## Staffing Plan
+### Staffing Plan
 
 Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staffing Plan**. Each approval uses its own plan. In the Part-145 sample organisation the December report preserves 290 hours needed and 192 hours available, a 34% shortfall before cover. The current plan shows 88 hours of forecast contracted cover and a 3% shortfall.
 
-
-## Staff Roster and Load and Capacity
+### Staff Roster and Load and Capacity
 
 Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staff Roster**. A maintenance shift on 19 November from 08:00 to 19:00 with a 30-minute break records 10.5 working hours and flags the organisation's 10-hour limit. Record handover notes and sign in as the named recipient to see the acknowledgement action. **Load and Capacity** shows the roster hours and preparation demand, and links to unplanned work. **Settings → Planning** shows and, for the Administrator, edits the calculation inputs.
+
+## What Cannot Be Shown Yet
+
+The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and Phases 4 to 9 of `prompts/canvas-build.md`: suppliers, goods in, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

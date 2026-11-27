@@ -262,7 +262,7 @@ Added on 27 November 2026 for the Transfers and Set Up Configuration boards. Eve
 
 Reporting lines: the three managers report to the Accountable Manager. Continuing Airworthiness Manager: Lucy Grant and the review [Name]. Maintenance Manager: Chris Moore, Sam Patel, the L2 [Name], [Contract Engineer] (contracted B1.2, authorisation not yet issued, cover from December 2026), Ellie Ward and the planning and records [Name]. Compliance Monitoring Manager: [Independent Auditor] (contracted). The three managers are written as role placeholders: [Continuing Airworthiness Manager], [Maintenance Manager], [Compliance Monitoring Manager].
 
-Employment: the Part-66 L2 [Name] is Contracted; everyone else is Employed.
+Employment: the Part-66 L2 [Name], [Contract Engineer] and [Independent Auditor] are Contracted; everyone else is Employed. Corrected 27 November 2026: this line said only the L2 [Name] was Contracted, against the reporting lines above and the Phase 2 corrections.
 
 Added on 18 November 2026 for the review pages, to be confirmed by Alex King: Lucy Grant's review of G-BXYZ is taken as 2 August 2026, the day its certificate runs from, so that she is recent when she reviews G-CDEF on 11 November 2026. The other review staff member's last review is taken as 2 December 2025, from the lapse date of 2 December 2026. Each certificate in the Fleet table other than G-CDEF's is recorded as issued one year before its valid-to date, with a placeholder reference. G-CDEF's is the first certificate issued in the system: UK.CAO.[Number]-ARC-0001, at 7,720.0 airframe hours.
 
@@ -272,7 +272,7 @@ Added on 19 November 2026 for the seed, to be confirmed by Alex King: the releas
 
 Added on 19 November 2026, to be confirmed by Alex King: the certificates of G-DGHI, G-ABCD, G-BXYZ and G-FMNO from before these records are recorded as Lucy Grant's own, from the recency figures below. The sample does not say who issued the earlier certificates of G-EJKL (6 December 2025) and G-CDEF (2 December 2025); they stay recorded from the aircraft records.
 
-Recency figures: experience in the last 2 years is Chris Moore 214 days, Sam Patel 176 days, L2 [Name] 61 days (last maintenance 14 August 2025). Lucy Grant has 5 reviews in 12 months (G-DGHI, G-ABCD, G-BXYZ, G-FMNO, G-CDEF). The lapsing review [Name] has 4 months of continuing airworthiness work; the G-EJKL review by 6 December 2026 keeps them current. Chris Moore's last work is WP-2026-046; Sam Patel's is WP-2026-043.
+Recency figures: experience in the last 2 years is Chris Moore 214 days, Sam Patel 176 days, L2 [Name] 61 days (last maintenance 14 August 2025). Lucy Grant has 5 reviews in 12 months (G-DGHI, G-ABCD, G-BXYZ, G-FMNO, G-CDEF). The lapsing review [Name] has 4 months of continuing airworthiness work; the G-EJKL review by 6 December 2026 keeps them current. Chris Moore's last work is WP-2026-046; Sam Patel's is WP-2026-043. This line is the Recency board's and contradicts the Phase 3 sample above, where Sam Patel installed the trim cable on WP-2026-046 and Chris Moore is only planned for its inspection. WP-2026-046 is not seeded; the seed has only draft WP-2026-048. To be confirmed by Alex King, 27 November 2026.
 
 | Ellie Ward | Mechanic, Trainee | Working toward Part-66 B1.2 | Joined 6 January 2025; on the job training for Cessna/Reims-Cessna 172/F172 Series (Lycoming) on G-BXYZ, 31 of 40 tasks; mentor Sam Patel, assessor Chris Moore |
 
@@ -303,7 +303,7 @@ Added on 24 November 2026 for the person records, from the Staff board:
 - The board writes Lucy Grant's sign-in as that of the Continuing Airworthiness Manager's staff; in the system she holds the roles Airworthiness Review Staff and Continuing Airworthiness Manager, as recorded on 18 November 2026. The [Continuing Airworthiness Manager] of the board is a person with no sign-in.
 - [Read Only Name] is a sign-in of the sample for the Read Only role. It is not a person of the table above this one.
 - [Planning and Records Name] joined 1 September 2026. Ellie Ward joined 6 January 2025. [Former Review Name] left 30 June 2025; the record is kept until 30 June 2027 (CAO.A.045(e), 2 years).
-- [Contract Engineer] is written here as Contracted with a Part-66 B1.2 licence, as the Staff board gives. The authorisation is a matter for Phase 2.
+- [Contract Engineer] is written here as Contracted with a Part-66 B1.2 licence, as the Staff board gives. Phase 2 settled the authorisation: none at the sample date (Phase 3 sample, above). The Work Packages board's "Authorised 11 November 2026" is not taken.
 
 ## Commercial
 

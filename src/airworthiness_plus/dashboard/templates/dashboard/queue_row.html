@@ -1,0 +1,12 @@
+{% load writing %}
+<li class="dashboard-queue-row">
+  <div class="dashboard-subject">
+    <span>{{ row.subject }}</span>
+    {% if row.status %}{{ row.status|status }}{% endif %}
+  </div>
+  <a class="dashboard-item" href="{{ row.url }}">{{ row.item }}</a>
+  {% if row.due != "Not Set" or row.remaining %}
+  <p class="dashboard-detail">{% if row.due != "Not Set" %}{{ row.due }}{% if row.remaining %}, {% endif %}{% endif %}{{ row.remaining }}</p>
+  {% endif %}
+  {% if row.detail %}<p class="dashboard-detail">{{ row.detail }}</p>{% endif %}
+</li>
