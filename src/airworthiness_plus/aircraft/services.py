@@ -1,5 +1,7 @@
 """What can be done to aircraft records. Views check the role first, then call these."""
 
+import json
+import uuid
 from datetime import date
 
 from django.db import transaction
@@ -15,6 +17,7 @@ from airworthiness_plus.aircraft.models import (
 )
 from airworthiness_plus.customers import services as customer_services
 from airworthiness_plus.customers.models import Customer
+from airworthiness_plus.history.models import Event
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_rules.dates import uk_today, utc_now
 from airworthiness_rules.intervals import Reading
@@ -151,6 +154,20 @@ def change_owner(aircraft: Aircraft, customer: Customer) -> None:
     """Record another customer as the owner. The history keeps who it was (REQ-208)."""
     aircraft.customer = customer
     aircraft.save(update_fields=["customer"])
+
+
+def every_owner(aircraft: Aircraft) -> set[uuid.UUID]:
+    """Return every customer that has ever owned the aircraft, as its history shows.
+
+    The history holds the record after each change (REQ-130), and so every
+    customer the aircraft has been given. The owner today is among them.
+    """
+    owners = {aircraft.customer_id}
+    for after in Event.of(aircraft).values_list("after_json", flat=True):
+        customer = json.loads(after or "{}").get("customer_id")
+        if customer:
+            owners.add(uuid.UUID(customer))
+    return owners
 
 
 def make_unserviceable(aircraft: Aircraft, reason: str, since: date) -> None:

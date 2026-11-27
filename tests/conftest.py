@@ -81,12 +81,15 @@ def as_owner_who_is_not_a_superuser() -> Iterator[None]:
         cursor.execute("SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED")
         for table in tables:
             cursor.execute(f"ALTER TABLE {table} OWNER TO {role}")
+        # An owner makes tables of its own, as a migration does.
+        cursor.execute(f"GRANT CREATE ON SCHEMA public TO {role}")
         cursor.execute(f"SET ROLE {role}")
     try:
         yield
     finally:
         with connection.cursor() as cursor:
             cursor.execute("SET ROLE NONE")
+            cursor.execute(f"REVOKE CREATE ON SCHEMA public FROM {role}")
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED")
             for table in tables:
                 cursor.execute(f"ALTER TABLE {table} OWNER TO {connection.ops.quote_name(builder)}")

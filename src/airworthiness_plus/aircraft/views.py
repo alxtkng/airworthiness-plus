@@ -168,6 +168,11 @@ def transfers(request: HttpRequest) -> HttpResponse:
 def aircraft_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """One aircraft: its record, its counters and every entry of hours and cycles."""
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
+    return _aircraft_page(request, aircraft, OwnerForm(initial={"customer": aircraft.customer_id}))
+
+
+def _aircraft_page(request: HttpRequest, aircraft: Aircraft, owner_form: OwnerForm) -> HttpResponse:
+    """Show an aircraft. An owner form that was refused is shown again with the reason."""
     counters = [
         (counter, services.current_reading(counter), list(counter.entries.all()))
         for counter in aircraft.counters.all()
@@ -186,7 +191,7 @@ def aircraft_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
             "aircraft": aircraft,
             "counters": counters,
             "details_form": details,
-            "owner_form": OwnerForm(initial={"customer": aircraft.customer_id}),
+            "owner_form": owner_form,
         },
     )
 
@@ -197,8 +202,10 @@ def change_owner(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """Record another customer as the owner of an aircraft (REQ-208)."""
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
     form = OwnerForm(request.POST)
-    if form.is_valid():
-        services.change_owner(aircraft, form.cleaned_data["customer"])
+    if not form.is_valid():
+        # Said on the page, not passed over in silence (finding 14 of 24 November 2026).
+        return _aircraft_page(request, aircraft, form)
+    services.change_owner(aircraft, form.cleaned_data["customer"])
     return redirect("aircraft", aircraft_id=aircraft.id)
 
 

@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import date
 
+from django.db import transaction
+
 from airworthiness_plus.customers.models import Customer, Kind
 from airworthiness_plus.organisations.models import Organisation
 
@@ -57,14 +59,21 @@ def change_customer(
     customer.save()
 
 
+@transaction.atomic
 def named(organisation: Organisation, name: str) -> Customer:
     """Return the customer of this name, making one if there is none (REQ-208).
 
     Used where an owner is given by name: the Add an Aircraft page and an
     import. A name that two customers share does not say which is meant,
     and is refused.
+
+    One at a time for an organisation: a second submit of the same form
+    waits for the first and is given the customer it made, so that one name
+    typed twice at once does not make two customers (independent review of
+    24 November 2026, finding 14).
     """
     name = name.strip()
+    Organisation.objects.select_for_update().get(pk=organisation.pk)
     found = list(Customer.objects.filter(organisation=organisation, name=name)[:2])
     if len(found) > 1:
         raise RefusedError(f"More Than One Customer Is Named {name}")

@@ -13,6 +13,7 @@ from django.db.models import Q
 
 from airworthiness_plus.acceptance.models import Problem, ProblemNote
 from airworthiness_plus.accounts.models import User
+from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, UtilisationEntry
 from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive
@@ -68,8 +69,10 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Approval, None),
     Exported(User, None),
     Exported(Person, None),
-    # The owner is part of the aircraft's record (REQ-208).
-    Exported(Customer, lambda aircraft: Q(pk=aircraft.customer_id)),
+    # The owner is part of the aircraft's record (REQ-208): every customer that
+    # has ever owned it, so that the names in its history can be read
+    # (independent review of 24 November 2026, finding 12).
+    Exported(Customer, lambda aircraft: Q(pk__in=aircraft_services.every_owner(aircraft))),
     Exported(Aircraft, lambda aircraft: Q(pk=aircraft.pk)),
     Exported(Counter, _by("aircraft")),
     Exported(UtilisationEntry, _by("counter__aircraft")),
