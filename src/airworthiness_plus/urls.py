@@ -36,6 +36,16 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="set_transfer_item",
     ),
     path(
+        "aircraft/<uuid:aircraft_id>/forecast/",
+        configuration.aircraft_forecast,
+        name="aircraft_forecast",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/configuration/",
+        configuration.aircraft_configuration,
+        name="aircraft_configuration",
+    ),
+    path(
         "aircraft/<uuid:aircraft_id>/set-up-configuration/",
         configuration.set_up_configuration,
         name="set_up_configuration",

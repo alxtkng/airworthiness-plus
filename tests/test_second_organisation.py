@@ -270,6 +270,9 @@ def test_a_test_site_seeded_before_the_canvas_build_is_given_what_is_missing(
             "Service Role Made",
             "Sample Organisation Already Set Up",
             "People of the Sample Brought Up to Date, 10 Added",
+            # From 27 November 2026 the start also adds the Phase 1 sample (REQ-294). This
+            # organisation has no aircraft, so only what needs none is added.
+            "Sources of Directives of the Sample Added, 4 Records",
             "Second Sample Organisation Set Up",
             f"Administrator {second.ADMINISTRATOR}",
         ]

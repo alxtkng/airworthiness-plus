@@ -30,7 +30,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.sample import build, second
+from airworthiness_plus.sample import build, second, top_up
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
     seed,
@@ -110,6 +110,21 @@ def complete_the_people(administrator: User) -> int:
     with working_for(administrator.organisation_id, administrator.id):
         ours = Organisation.objects.get(pk=administrator.organisation_id)
         return build.add_person_records(ours, administrator)
+
+
+def bring_phase_1(administrator: User) -> list[str]:
+    """Give a sample seeded before Phase 1 of the canvas build what it lacks (REQ-294).
+
+    Once, and only what is missing: ``top_up.add_phase_1`` says how. It
+    changes nothing that is there, looks nobody up by name, and whatever
+    goes wrong the start carries on. Return a line for each part added.
+    """
+    try:
+        with working_for(administrator.organisation_id, administrator.id):
+            ours = Organisation.objects.get(pk=administrator.organisation_id)
+            return top_up.add_phase_1(ours, administrator)
+    except Exception as error:
+        return [f"Phase 1 of the Sample Not Brought Up to Date: {type(error).__name__}"]
 
 
 def second_organisation() -> str:
@@ -211,6 +226,8 @@ class Command(BaseCommand):
             added = complete_the_people(first)
             if added:
                 self.stdout.write(f"People of the Sample Brought Up to Date, {added} Added")
+            for line in bring_phase_1(first):
+                self.stdout.write(line)
         else:
             seed(administrator)
             self.stdout.write("Sample Organisation Set Up")

@@ -18,9 +18,12 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Stage
 from airworthiness_plus.components import services as component_services
-from airworthiness_plus.configuration import services
+from airworthiness_plus.components.models import Installation
+from airworthiness_plus.configuration import forecast, services
 from airworthiness_plus.configuration.forms import ItemForm, PositionForm, RecordPositionForm
 from airworthiness_plus.configuration.models import Baseline, Position, TransferItem
+from airworthiness_plus.modifications import services as modification_services
+from airworthiness_rules.forecast import WINDOW_DAYS
 
 
 def _user(request: HttpRequest) -> User:
@@ -189,5 +192,57 @@ def baseline_page(request: HttpRequest, baseline_id: uuid.UUID) -> HttpResponse:
             "baseline": baseline,
             "positions": services.signed_positions(baseline),
             "changes": services.signed_changes(baseline),
+        },
+    )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def aircraft_forecast(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """The forecast of one aircraft: everything that falls due, the soonest first (REQ-290)."""
+    aircraft = get_object_or_404(Aircraft.objects.select_related("customer"), pk=aircraft_id)
+    today = aircraft_services.today()
+    lines = forecast.forecast_lines(aircraft, today) if aircraft.calculations_supported else []
+    return render(
+        request,
+        "configuration/forecast.html",
+        {
+            "aircraft": aircraft,
+            "lines": lines,
+            "soon": forecast.next_days(lines, today),
+            "window": WINDOW_DAYS,
+        },
+    )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def aircraft_configuration(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """The configuration of one aircraft: its positions, components and changes (REQ-292)."""
+    aircraft = get_object_or_404(Aircraft.objects.select_related("customer"), pk=aircraft_id)
+    today = aircraft_services.today()
+    positions = forecast.position_lines(aircraft, today)
+    chosen = request.GET.get("show", "")
+    if chosen not in dict(forecast.FILTERS):
+        chosen = ""
+    filters = [
+        (key, label, sum(1 for line in positions if line.shown_for(key)), key == chosen)
+        for key, label in forecast.FILTERS
+    ]
+    return render(
+        request,
+        "configuration/aircraft.html",
+        {
+            "aircraft": aircraft,
+            "positions": [line for line in positions if line.shown_for(chosen)],
+            "any_position": bool(positions),
+            "filters": filters,
+            "baseline": services.last_baseline(aircraft),
+            "components": component_services.component_lines(today, aircraft),
+            "fittings": Installation.objects.filter(aircraft=aircraft)
+            .select_related("component")
+            .order_by("-fitted_on", "component__name"),
+            "changes": modification_services.change_lines(aircraft),
+            "weight": modification_services.weight_line(aircraft),
         },
     )

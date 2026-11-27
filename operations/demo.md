@@ -91,7 +91,7 @@ Say: each organisation sees only its own records. The database enforces it, not 
 About 15 minutes. Sign in as Lucy Grant.
 
 1. **Aircraft.** Open Aircraft. Point to what comes first: what needs attention.
-2. **One aircraft.** Open G-ABCD. Show the tabs: Record, Maintenance Programme, Airworthiness Directives, Maintenance Data, Airworthiness Review.
+2. **One aircraft.** Open G-ABCD. Show the tabs: Record, Maintenance Programme, Maintenance Forecast, Airworthiness Directives, Configuration, Maintenance Data, Airworthiness Review. Open Maintenance Forecast: everything that falls due on the aircraft, the soonest first, with the next 120 days above. Open Configuration: its components, changes and weighing; for G-HKLM, its positions under five filters.
 3. **Maintenance Programme.** Open it. Open How It Was Calculated on a task. It shows the rule, the inputs and the source.
 4. **Airworthiness Directives.** Open it. Show a directive that is Applicable, one Not Applicable and one still to assess.
 5. **Airworthiness Reviews.** Open the Airworthiness Reviews tab of Aircraft. Show G-EJKL's certificate and the 90-day window.
@@ -101,7 +101,7 @@ About 15 minutes. Sign in as Lucy Grant.
 
 ## Part 3. Continuing Airworthiness, the Rest (Phase 1)
 
-Sign in as Lucy Grant. The sample of this part is on the test site once its database has been remade from the sample (Issue 100).
+Sign in as Lucy Grant. The sample of this part is added to the test site at its next start (REQ-294), but for the two defects and the two certificates that name certifying staff, which arrive once its database has been remade from the sample (Issue 100).
 
 ### The Fleet
 
@@ -180,4 +180,4 @@ Say: the system records a certificate that was issued. It does not issue one.
 
 ## What Cannot Be Shown Yet
 
-The rest of Phase 1 (the tabs of the aircraft record) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

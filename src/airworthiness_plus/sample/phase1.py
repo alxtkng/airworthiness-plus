@@ -8,6 +8,8 @@ new sample is built. Today in the sample world is 18 November 2026.
 from datetime import date
 from decimal import Decimal
 
+from django.db import transaction
+
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.components import services as component_services
@@ -291,6 +293,14 @@ COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
 )  # fmt: skip
 
 OWN_PROPELLER = "[Serial Number Propeller G-CDEF]"
+# Removed at its 6-year limit; at [Propeller Organisation], due back 25 November 2026.
+OWN_PROPELLER_REMOVAL: dict[str, object] = {
+    "removed_on": date(2026, 11, 2),
+    "airframe_hours_removed": Decimal("7715.0"),
+    "removal_reason": "Removed at 6-Year Limit",
+    "sent_to": "[Propeller Organisation]",
+    "due_back_on": date(2026, 11, 25),
+}
 
 
 def add_components(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> list[Component]:
@@ -308,14 +318,7 @@ def add_components(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> 
             aircraft = Aircraft.objects.get(pk=fleet[str(values.pop("aircraft"))].pk)
             fitted = component_services.fit_component(one, aircraft, **values)  # type: ignore[arg-type]
             if one.serial_number == OWN_PROPELLER:
-                component_services.remove_component(
-                    fitted,
-                    removed_on=date(2026, 11, 2),
-                    airframe_hours_removed=Decimal("7715.0"),
-                    removal_reason="Removed at 6-Year Limit",
-                    sent_to="[Propeller Organisation]",
-                    due_back_on=date(2026, 11, 25),
-                )
+                component_services.remove_component(fitted, **OWN_PROPELLER_REMOVAL)  # type: ignore[arg-type]
             added.append(one)
     return added
 
@@ -367,28 +370,27 @@ WEIGHINGS: tuple[tuple[str, date, int, date], ...] = (
 )
 
 
-def add_modifications(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None:
-    """Add the service bulletins, changes, repairs, weighings and weight schedules.
+def add_modification_rows(fleet: dict[str, Aircraft], present: set[str]) -> None:
+    """Add the bulletins, changes, weighings and schedules of the aircraft in ``present``.
 
-    As Planning and Records. No reweigh threshold is set: it is the
-    organisation's to set, and has no default.
+    For whoever is already working for the organisation.
     """
 
     def aircraft(registration: str) -> Aircraft:
         return Aircraft.objects.get(pk=fleet[registration].pk)
 
-    with working_for(ours.id, by.id):
-        for (
-            registration,
-            title,
-            reference,
-            classification,
-            sent_on,
-            reminder_on,
-            decision,
-            detail,
-            decided_on,
-        ) in BULLETINS:
+    for (
+        registration,
+        title,
+        reference,
+        classification,
+        sent_on,
+        reminder_on,
+        decision,
+        detail,
+        decided_on,
+    ) in BULLETINS:
+        if registration in present:
             modification_services.record_bulletin(
                 aircraft(registration),
                 title=title,
@@ -400,7 +402,8 @@ def add_modifications(ours: Organisation, by: User, fleet: dict[str, Aircraft]) 
                 detail=detail,
                 decided_on=decided_on,
             )
-        for registration, title, route, data, reference, mass, embodied_on in CHANGES:
+    for registration, title, route, data, reference, mass, embodied_on in CHANGES:
+        if registration in present:
             modification_services.record_change(
                 aircraft(registration),
                 title=title,
@@ -410,7 +413,8 @@ def add_modifications(ours: Organisation, by: User, fleet: dict[str, Aircraft]) 
                 mass_effect=Decimal(mass),
                 embodied_on=embodied_on,
             )
-        for registration, weighed_on, issue, issued_on in WEIGHINGS:
+    for registration, weighed_on, issue, issued_on in WEIGHINGS:
+        if registration in present:
             modification_services.record_weighing(
                 aircraft(registration),
                 weighed_on=weighed_on,
@@ -419,6 +423,16 @@ def add_modifications(ours: Organisation, by: User, fleet: dict[str, Aircraft]) 
             modification_services.record_schedule(
                 aircraft(registration), issue=issue, issued_on=issued_on
             )
+
+
+def add_modifications(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None:
+    """Add the service bulletins, changes, repairs, weighings and weight schedules.
+
+    As Planning and Records. No reweigh threshold is set: it is the
+    organisation's to set, and has no default.
+    """
+    with working_for(ours.id, by.id):
+        add_modification_rows(fleet, set(fleet))
 
 
 # SampleData.md, Maintenance Programme Inputs, and the Maintenance Programmes
@@ -445,6 +459,22 @@ FMNO_REVIEW: dict[str, tuple[str, bool]] = {
 }
 
 
+# The Maintenance Programmes board: G-DGHI's annual review is due 4 March 2027.
+DGHI_REVIEWED = date(2026, 3, 4)
+# G-FMNO's annual review was opened on this day, made up.
+FMNO_OPENED = date(2026, 11, 9)
+
+
+def open_fmno_review(programme: Programme) -> None:
+    """Open G-FMNO's annual review and record its four complete points and two open ones."""
+    review = programme_services.start_annual_review(programme, FMNO_OPENED)
+    points: dict[str, object] = {}
+    for name, (note, done) in FMNO_REVIEW.items():
+        points[f"{name}_note"] = note
+        points[f"{name}_done"] = done
+    programme_services.note_annual_review(review, **points)
+
+
 def add_programme_records(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None:
     """Add G-DGHI's programme and its departures, and G-FMNO's annual review in progress.
 
@@ -459,7 +489,7 @@ def add_programme_records(ours: Organisation, by: User, fleet: dict[str, Aircraf
             reference="[Programme Reference]",
             hours_per_day=Decimal("0.8"),
         )
-        programme_services.record_review(dghi, date(2026, 3, 4))
+        programme_services.record_review(dghi, DGHI_REVIEWED)
         for task, manufacturer, says, measures, justification in DEPARTURES:
             programme_services.add_departure(
                 dghi,
@@ -468,16 +498,10 @@ def add_programme_records(ours: Organisation, by: User, fleet: dict[str, Aircraf
                 programme_says=says,
                 compensating_measures=measures,
                 justification=justification,
-                recorded_on=date(2026, 3, 4),
-                owner_copy_sent_on=date(2026, 3, 4),
+                recorded_on=DGHI_REVIEWED,
+                owner_copy_sent_on=DGHI_REVIEWED,
             )
-        fmno = Programme.objects.get(aircraft_id=fleet["G-FMNO"].pk)
-        review = programme_services.start_annual_review(fmno, date(2026, 11, 9))
-        points: dict[str, object] = {}
-        for name, (note, done) in FMNO_REVIEW.items():
-            points[f"{name}_note"] = note
-            points[f"{name}_done"] = done
-        programme_services.note_annual_review(review, **points)
+        open_fmno_review(Programme.objects.get(aircraft_id=fleet["G-FMNO"].pk))
 
 
 # The Directives board, Sources: source, what it covers, a note, the day last
@@ -495,14 +519,19 @@ SOURCES: tuple[tuple[str, str, str, date, date | None, str], ...] = (
 )  # fmt: skip
 
 
+def add_source_rows(ours: Organisation) -> None:
+    """Add the sources checked for new directives, for whoever is already working."""
+    for name, covers, note, checked_on, next_check_on, words in SOURCES:
+        source = directive_services.add_source(ours, name=name, covers=covers, note=note)
+        directive_services.record_source_check(
+            source, checked_on=checked_on, next_check_on=next_check_on, next_check_note=words
+        )
+
+
 def add_sources(ours: Organisation, by: User) -> None:
     """Add the sources checked for new directives, as Planning and Records."""
     with working_for(ours.id, by.id):
-        for name, covers, note, checked_on, next_check_on, words in SOURCES:
-            source = directive_services.add_source(ours, name=name, covers=covers, note=note)
-            directive_services.record_source_check(
-                source, checked_on=checked_on, next_check_on=next_check_on, next_check_note=words
-            )
+        add_source_rows(ours)
 
 
 # The Transfers board: the ten items of G-HKLM's transfer in, started 9 November
@@ -557,6 +586,80 @@ HKLM_CHANGES = (
 )  # fmt: skip
 
 
+def add_set_up_rows(ours: Organisation, hklm: Aircraft, *, tolerant: bool = False) -> None:
+    """Add G-HKLM's checklist, major items, changes and positions, for whoever is working.
+
+    With ``tolerant``, an item of the checklist that the records as they
+    stand do not bear out is left open and the rest goes on.
+    """
+    transfer = configuration_services.start_transfer(hklm, started_on=date(2026, 11, 9))
+    for item, (state, note) in zip(transfer.items.all(), HKLM_ITEMS, strict=True):
+        if state == ItemState.OPEN:
+            continue
+        try:
+            with transaction.atomic():
+                configuration_services.set_item(item, state=state, note=note)
+        except configuration_services.RefusedError:
+            # The records as they stand do not bear the item out: it stays open.
+            if not tolerant:
+                raise
+
+    fitted = {}
+    for name, serial, values in (
+        ("Engine, Lycoming O-235-L2C", "[Serial Number Engine G-HKLM]",
+         {"basis": LimitBasis.NONE}),
+        ("Propeller, Fixed Pitch", "[Serial Number Propeller G-HKLM]",
+         {"basis": _RECOMMENDED, "limit_hours": Decimal("2000"), "limit_months": 72}),
+    ):  # fmt: skip
+        component = component_services.add_component(
+            ours,
+            name=name,
+            serial_number=serial,
+            **values,
+        )
+        component_services.fit_component(
+            component,
+            hklm,
+            position="Propeller" if "Propeller" in name else "Engine",
+            fitted_on=date(2019, 5, 2),
+            airframe_hours_fitted=Decimal("2150.0"),
+            hours_at_fitting=Decimal("0.0"),
+        )
+        fitted[serial] = component
+
+    changes = {}
+    for title, reference, embodied_on, changed in HKLM_CHANGES:
+        changes[changed] = modification_services.record_change(
+            hklm,
+            title=title,
+            route=Route.STANDARD_CHANGE,
+            reference=reference,
+            mass_effect=Decimal("0.0"),
+            embodied_on=embodied_on,
+        )
+    for product, chapter, name, major, part, serial, source, recorded in HKLM_POSITIONS:
+        position = configuration_services.add_position(
+            hklm,
+            product=product,
+            chapter=chapter,
+            name=name,
+            tracked=True,
+            major=major,
+            part_number=part,
+            source=source,
+        )
+        if recorded:
+            configuration_services.record_position(
+                position,
+                source=source,
+                part_number=part,
+                serial_number=serial,
+                needs_change=name == "Landing Light",
+                change=changes.get(name),
+                component=fitted.get(serial),
+            )
+
+
 def add_set_up(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None:
     """Add G-HKLM's transfer checklist and the set-up of its configuration.
 
@@ -566,63 +669,4 @@ def add_set_up(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None
     propeller's overhaul date is missing, as the board has it.
     """
     with working_for(ours.id, by.id):
-        hklm = Aircraft.objects.get(pk=fleet["G-HKLM"].pk)
-        transfer = configuration_services.start_transfer(hklm, started_on=date(2026, 11, 9))
-        for item, (state, note) in zip(transfer.items.all(), HKLM_ITEMS, strict=True):
-            if state != ItemState.OPEN:
-                configuration_services.set_item(item, state=state, note=note)
-
-        fitted = {}
-        for name, serial, values in (
-            ("Engine, Lycoming O-235-L2C", "[Serial Number Engine G-HKLM]",
-             {"basis": LimitBasis.NONE}),
-            ("Propeller, Fixed Pitch", "[Serial Number Propeller G-HKLM]",
-             {"basis": _RECOMMENDED, "limit_hours": Decimal("2000"), "limit_months": 72}),
-        ):  # fmt: skip
-            component = component_services.add_component(
-                ours,
-                name=name,
-                serial_number=serial,
-                **values,
-            )
-            component_services.fit_component(
-                component,
-                hklm,
-                position="Propeller" if "Propeller" in name else "Engine",
-                fitted_on=date(2019, 5, 2),
-                airframe_hours_fitted=Decimal("2150.0"),
-                hours_at_fitting=Decimal("0.0"),
-            )
-            fitted[serial] = component
-
-        changes = {}
-        for title, reference, embodied_on, changed in HKLM_CHANGES:
-            changes[changed] = modification_services.record_change(
-                hklm,
-                title=title,
-                route=Route.STANDARD_CHANGE,
-                reference=reference,
-                mass_effect=Decimal("0.0"),
-                embodied_on=embodied_on,
-            )
-        for product, chapter, name, major, part, serial, source, recorded in HKLM_POSITIONS:
-            position = configuration_services.add_position(
-                hklm,
-                product=product,
-                chapter=chapter,
-                name=name,
-                tracked=True,
-                major=major,
-                part_number=part,
-                source=source,
-            )
-            if recorded:
-                configuration_services.record_position(
-                    position,
-                    source=source,
-                    part_number=part,
-                    serial_number=serial,
-                    needs_change=name == "Landing Light",
-                    change=changes.get(name),
-                    component=fitted.get(serial),
-                )
+        add_set_up_rows(ours, Aircraft.objects.get(pk=fleet["G-HKLM"].pk))
