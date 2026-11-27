@@ -822,4 +822,5 @@ def test_record_work_keeps_the_person_who_performed_it(
         assert work.performed_by == mechanic
         assert work.performed_by_name == "Sample Mechanic"
     recency = page(signed_in(sample.reader), "/review-staff/recency/")
-    assert "Last Recorded Work 18 November 2026, Qualifying Experience Not Assessed" in recency
+    assert "Last Attributed Work" in recency
+    assert "Last Recorded Work 18 November 2026" in recency

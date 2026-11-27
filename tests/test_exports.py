@@ -94,12 +94,25 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             full_name="Sample Certifying Engineer",
             staff_group=StaffGroup.CERTIFYING,
         )
-        people_services.record_maintenance_authorisation(
+        authorisation = people_services.record_maintenance_authorisation(
             engineer,
             reference="Sample Authorisation",
             scope="Sample Aircraft",
             valid_from=TODAY,
         )
+        evidence = people_services.record_experience_evidence(
+            authorisation,
+            kind="Employment",
+            evidence_reference="Sample Experience Ledger",
+            qualification_basis="An approved maintenance organisation, sample aircraft",
+            starts_on=date(2025, 1, 1),
+            ends_on=date(2025, 6, 30),
+            days=None,
+            aircraft_type="",
+            aircraft_registration="",
+            licence_subcategory="",
+        )
+        people_services.withdraw_experience_evidence(evidence, reason="Sample correction")
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     reviews = add_sample_reviews(sample, fleet)

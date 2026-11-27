@@ -273,6 +273,9 @@ BOARD: tuple[Group, ...] = (
                         "update_involvement",
                         "record_restoration",
                         "add_maintenance_authorisation",
+                        "maintenance_experience",
+                        "record_maintenance_experience",
+                        "withdraw_maintenance_experience",
                     }
                 ),
             ),

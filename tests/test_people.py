@@ -905,7 +905,7 @@ def test_recency_tab_uses_review_records_and_identifies_missing_maintenance_evid
     assert f'href="{path}"' in page(reader, "/review-staff/")
     body = page(reader, path)
     assert "Certifying Engineer" in body
-    assert "Maintenance Experience Not Recorded" in body
+    assert "No Attributed Work Recorded" in body
     assert "Airworthiness Review Staff" in body
     assert "Certifying Engineer" not in page(signed_in(sample.stranger), path)
 
@@ -979,3 +979,42 @@ def test_staff_shows_recurrent_training_evidence_and_due_date(sample: Sample) ->
     )
     renewed = page(reader, f"/staff/{engineer.id}/")
     assert "TR-65" in renewed and "TR-66" in renewed
+
+
+def test_recency_shows_assessed_duration_by_maintenance_authorisation(sample: Sample) -> None:
+    with working_for(sample.ours.id, sample.administrator.id):
+        person = services.add_person(
+            organisation=sample.ours,
+            full_name="Experienced Engineer",
+            staff_group=StaffGroup.CERTIFYING,
+        )
+        authorisation = services.record_maintenance_authorisation(
+            person,
+            reference="CA-90",
+            scope="Piper PA-28 Airframe",
+            valid_from=date(2024, 11, 18),
+        )
+    path = f"/staff/maintenance-authorisations/{authorisation.id}/experience/"
+    fields = {
+        "kind": "Employment",
+        "starts_on": "2025-01-01",
+        "ends_on": "2025-06-30",
+        "evidence_reference": "EMP-1",
+        "qualification_basis": "Approved maintenance organisation UK.145.Test, PA-28 airframe",
+    }
+    reader = signed_in(sample.reader)
+    assert post(reader, path + "record/", **fields).status_code == 403
+    admin = signed_in(sample.administrator)
+    assert post(admin, path + "record/", **fields).status_code == 302
+    assert "Already Recorded" in post(admin, path + "record/", **fields).content.decode()
+    body = page(reader, "/review-staff/recency/")
+    assert "CA-90" in body and "6 Complete Months" in body
+    assert "EMP-1" in page(reader, path)
+    assert "CA-90" not in page(signed_in(sample.stranger), "/review-staff/recency/")
+    with working_for(sample.ours.id, sample.administrator.id):
+        record = authorisation.experience_evidence.get()
+    withdrawal = f"{path}{record.id}/withdraw/"
+    assert post(reader, withdrawal, reason="Wrong evidence").status_code == 403
+    assert post(admin, withdrawal, reason="Wrong evidence").status_code == 302
+    assert "6 Complete Months" not in page(reader, "/review-staff/recency/")
+    assert "Wrong evidence" in page(reader, path)

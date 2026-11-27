@@ -24,6 +24,7 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.organisations import approvals
+from airworthiness_plus.people import services as people_services
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.reviews import services
@@ -253,11 +254,22 @@ def recency_page(request: HttpRequest) -> HttpResponse:
         .values("performed_by_id")
         .annotate(last_work=Max("dated"))
     }
+    authorisations = (
+        MaintenanceAuthorisation.objects.filter(person__in=certifying_people)
+        .select_related("person")
+        .prefetch_related("experience_evidence__withdrawal")
+    )
+    assessments = []
+    for authorisation in authorisations:
+        evidence = list(authorisation.experience_evidence.all())
+        result = people_services.assessed_experience(evidence, today) if evidence else None
+        assessments.append((authorisation, authorisation.term_on(today), result))
     return render(
         request,
         "reviews/recency.html",
         {
             "review_lines": [services.staff_line(staff, today) for staff in review_staff],
+            "assessments": assessments,
             "certifying_staff": [(person, dates.get(person.pk)) for person in certifying_people],
         },
     )

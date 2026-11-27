@@ -320,6 +320,21 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("staff/", people.staff_page, name="staff"),
     path("staff/organisation-chart/", people.organisation_chart, name="organisation_chart"),
     path("staff/add/", people.add_person, name="add_person"),
+    path(
+        "staff/maintenance-authorisations/<uuid:authorisation_id>/experience/",
+        people.experience_evidence,
+        name="maintenance_experience",
+    ),
+    path(
+        "staff/maintenance-authorisations/<uuid:authorisation_id>/experience/record/",
+        people.record_experience_evidence,
+        name="record_maintenance_experience",
+    ),
+    path(
+        "staff/maintenance-authorisations/<uuid:authorisation_id>/experience/<uuid:evidence_id>/withdraw/",
+        people.withdraw_experience_evidence,
+        name="withdraw_maintenance_experience",
+    ),
     path("staff/<uuid:person_id>/", people.person_page, name="person"),
     path(
         "staff/<uuid:person_id>/maintenance-authorisation/",

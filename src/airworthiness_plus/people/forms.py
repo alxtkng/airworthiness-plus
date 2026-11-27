@@ -5,7 +5,7 @@ from typing import Any
 from django import forms
 
 from airworthiness_plus.interface.forms import Form
-from airworthiness_plus.people.models import Employment, Person, StaffGroup
+from airworthiness_plus.people.models import Employment, ExperienceKind, Person, StaffGroup
 
 
 class PersonForm(Form):
@@ -60,3 +60,30 @@ class RecurrentTrainingForm(Form):
     evidence_reference = forms.CharField(label="Evidence Reference", max_length=160)
     completed_on = forms.DateField(label="Completed On")
     due_on = forms.DateField(label="Renewal Due On", required=False)
+
+
+class ExperienceEvidenceForm(Form):
+    """Record only evidence already assessed against the authorisation scope."""
+
+    kind = forms.ChoiceField(label="Evidence Type", choices=ExperienceKind.choices)
+    evidence_reference = forms.CharField(label="Evidence Reference", max_length=160)
+    qualification_basis = forms.CharField(
+        label="Basis for Counting the Experience",
+        help_text="Explain how the activity or approved employment covers this authorisation.",
+        max_length=500,
+        widget=forms.Textarea,
+    )
+    starts_on = forms.DateField(label="Work Date or First Day of Employment")
+    ends_on = forms.DateField(label="Last Day of Employment", required=False)
+    days = forms.DecimalField(label="Days Credited", required=False, max_digits=3, decimal_places=2)
+    aircraft_type = forms.CharField(label="Aircraft Type", required=False, max_length=150)
+    aircraft_registration = forms.CharField(
+        label="Aircraft Registration", required=False, max_length=16
+    )
+    licence_subcategory = forms.CharField(
+        label="Licence Category or Subcategory", required=False, max_length=30
+    )
+
+
+class ExperienceWithdrawalForm(Form):
+    reason = forms.CharField(label="Reason", max_length=400)
