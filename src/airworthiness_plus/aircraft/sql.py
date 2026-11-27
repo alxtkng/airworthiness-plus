@@ -67,7 +67,10 @@ DROP FUNCTION aircraft_utilisation_fits();
 # 1. two tables that last only for the migration say which customer each text
 #    and each aircraft is given;
 # 2. for each organisation, one customer is made for each different text, named
-#    exactly as it was typed, with no kind;
+#    as it was typed, with no kind. The spaces around a text are taken off
+#    first, so that texts that differ only in them make one customer; an
+#    aircraft with no text is given a customer named Not Recorded (independent
+#    review of 24 November 2026, finding 13);
 # 3. the column of free text is removed;
 # 4. for each organisation, each aircraft is given its customer, so that the
 #    entry this writes in its history is of the record as it now stands;
@@ -90,13 +93,13 @@ CREATE TABLE aircraft_customer_migration (
 CUSTOMER_FOR_EACH_OWNER = """
         INSERT INTO aircraft_owner_migration (organisation_id, owner, customer_id)
         SELECT organisation, typed.owner, gen_random_uuid()
-          FROM (SELECT DISTINCT COALESCE(owner, '') AS owner
+          FROM (SELECT DISTINCT btrim(COALESCE(owner, '')) AS owner
                   FROM aircraft_aircraft
                  WHERE organisation_id = organisation) typed;
 
         INSERT INTO customers_customer (id, organisation_id, name, kind)
         SELECT made.customer_id, made.organisation_id,
-               COALESCE(NULLIF(btrim(made.owner), ''), 'Not Recorded'), ''
+               COALESCE(NULLIF(made.owner, ''), 'Not Recorded'), ''
           FROM aircraft_owner_migration made
          WHERE made.organisation_id = organisation
          ORDER BY made.owner;
@@ -106,7 +109,7 @@ CUSTOMER_FOR_EACH_OWNER = """
           FROM aircraft_aircraft one
           JOIN aircraft_owner_migration made
             ON made.organisation_id = one.organisation_id
-           AND made.owner = COALESCE(one.owner, '')
+           AND made.owner = btrim(COALESCE(one.owner, ''))
          WHERE one.organisation_id = organisation;
 """
 

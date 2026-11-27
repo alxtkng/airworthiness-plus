@@ -6,7 +6,7 @@ The approvals held decide which sections the sidebar shows (REQ-201).
 
 from datetime import date
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from airworthiness_plus.organisations.models import (
     Approval,
@@ -70,6 +70,14 @@ def review_refusal(organisation: Organisation) -> str:
     return REVIEW_NOT_OPEN
 
 
+def _recorded(organisation: Organisation, approval: ApprovalType) -> Approval | None:
+    """Return the record of ``approval`` for ``organisation``, held or ended, if there is one."""
+    found: Approval | None = Approval.objects.filter(
+        organisation=organisation, approval=approval
+    ).first()
+    return found
+
+
 @transaction.atomic
 def record(organisation: Organisation, *, approval: ApprovalType, reference: str) -> Approval:
     """Record an approval as held, with its reference.
@@ -80,11 +88,21 @@ def record(organisation: Organisation, *, approval: ApprovalType, reference: str
     reference = reference.strip()
     if not reference:
         raise RefusedError("An Approval Has Its Reference")
-    existing = Approval.objects.filter(organisation=organisation, approval=approval).first()
+    # One at a time for an organisation: a second submit of the same form waits
+    # for the first, then finds the approval recorded and is refused with the
+    # reason (independent review of 24 November 2026, finding 14).
+    Organisation.objects.select_for_update().get(pk=organisation.pk)
+    existing = _recorded(organisation, approval)
     if existing is None:
-        return Approval.objects.create(
-            organisation=organisation, approval=approval, reference=reference
-        )
+        try:
+            with transaction.atomic():
+                return Approval.objects.create(
+                    organisation=organisation, approval=approval, reference=reference
+                )
+        except IntegrityError as error:
+            # Recorded by other work all the same. The database holds one record
+            # for each approval: refused, never a fault.
+            raise RefusedError(f"{approval} Is Already Recorded") from error
     if existing.held:
         raise RefusedError(f"{approval} Is Already Recorded")
     existing.reference = reference

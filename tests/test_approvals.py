@@ -10,6 +10,7 @@ from datetime import date
 
 import pytest
 from django.db import IntegrityError, ProgrammingError, connection, transaction
+from django.test.utils import CaptureQueriesContext
 
 from airworthiness_plus.history import chain
 from airworthiness_plus.history.models import Event
@@ -20,7 +21,7 @@ from airworthiness_plus.organisations.models import Approval, ApprovalType, Orga
 from airworthiness_plus.organisations.provisioning import provision_organisation
 from airworthiness_plus.organisations.sql import APPROVAL_FOR_EACH_ORGANISATION
 from tests.conftest import as_owner
-from tests.support import Sample, make_sample
+from tests.support import Sample, make_sample, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -221,3 +222,106 @@ def test_an_organisation_from_before_approvals_were_records_is_given_its_own(
     with working_for(sample.ours.id, sample.administrator.id):
         assert held(sample.ours) == [("Part-CAO", "UK.CAO.[Number]")]
         assert Event.objects.filter(record_type="organisations_approval").count() == 1
+
+
+def test_the_approval_an_organisation_was_set_up_with_is_changed_only_by_the_owner(
+    sample: Sample,
+) -> None:
+    """REQ-004, REQ-200; independent review of 24 November 2026, finding 11. Only
+    application code held "only Airworthiness Limited changes it": as the
+    application's role the reference in the record of the approval could be
+    rewritten. The database now refuses the application's role, on the
+    organisation and on the record of the approval; the owner may."""
+    refusal = "Only the owner of the records changes the approval"
+    with working_for(sample.ours.id, sample.administrator.id):
+        first = Approval.objects.get(approval=ApprovalType.PART_CAO)
+        with pytest.raises(ProgrammingError, match=refusal), transaction.atomic():
+            Approval.objects.filter(pk=first.pk).update(reference="UK.CAO.[Another Number]")
+        with (
+            pytest.raises(ProgrammingError, match="never made the record of another"),
+            transaction.atomic(),
+        ):
+            Approval.objects.filter(pk=first.pk).update(approval=ApprovalType.PART_145)
+        for values in (
+            {"approval_reference": "UK.CAO.[Another Number]"},
+            {"approval_type": ApprovalType.PART_CAMO},
+        ):
+            with pytest.raises(ProgrammingError, match=refusal), transaction.atomic():
+                Organisation.objects.filter(pk=sample.ours.pk).update(**values)
+        # What the Administrator is meant to change still changes.
+        Organisation.objects.filter(pk=sample.ours.pk).update(name="[Another Name]")
+        # Another approval is the organisation's own to record, change and end.
+        other = approvals.record(
+            sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]"
+        )
+        approvals.end(other, on=date(2026, 11, 1))
+        approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Other]")
+        with (
+            pytest.raises(ProgrammingError, match="never made the record of another"),
+            transaction.atomic(),
+        ):
+            Approval.objects.filter(pk=other.pk).update(approval=ApprovalType.PART_CAMO)
+        unchanged = Organisation.objects.get(pk=sample.ours.pk)
+        assert (unchanged.approval_type, unchanged.approval_reference) == (
+            "Part-CAO",
+            "UK.CAO.[Number]",
+        )
+        assert Approval.objects.get(pk=first.pk).reference == "UK.CAO.[Number]"
+    # The owner of the tables changes it, and the history says who did.
+    with as_owner(), working_for(sample.ours.id):
+        Organisation.objects.filter(pk=sample.ours.pk).update(
+            approval_reference="UK.CAO.[New Number]"
+        )
+        Approval.objects.filter(pk=first.pk).update(reference="UK.CAO.[New Number]")
+    with working_for(sample.ours.id, sample.reader.id):
+        assert held(Organisation.objects.get(pk=sample.ours.pk))[0] == (
+            "Part-CAO",
+            "UK.CAO.[New Number]",
+        )
+        entry = Event.of(first).last()
+        assert entry is not None and entry.actor_name.startswith("Database Role ")
+
+
+def test_an_approval_submitted_twice_is_refused_the_second_time_and_never_a_fault(
+    sample: Sample, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """REQ-200; independent review of 24 November 2026, finding 14. Recording an
+    approval read and then wrote with no lock: a form sent twice at once gave a
+    server error on the constraint that holds one record for each approval. The
+    work now takes the organisation's row first, so the second waits for the
+    first; and if another record is there all the same, it is refused with the
+    reason."""
+    with working_for(sample.ours.id, sample.administrator.id):
+        with CaptureQueriesContext(connection) as sent:
+            approvals.record(
+                sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]"
+            )
+        locked = [
+            query["sql"]
+            for query in sent.captured_queries
+            if "FOR UPDATE" in query["sql"] and "organisations_organisation" in query["sql"]
+        ]
+        assert len(locked) == 1
+        assert sent.captured_queries.index(
+            next(q for q in sent.captured_queries if "FOR UPDATE" in q["sql"])
+        ) < next(
+            index
+            for index, query in enumerate(sent.captured_queries)
+            if "organisations_approval" in query["sql"]
+        )
+        # The second of two that did not see each other: the look finds nothing.
+        monkeypatch.setattr(approvals, "_recorded", lambda organisation, approval: None)
+        with pytest.raises(approvals.RefusedError, match="Part-145 Is Already Recorded"):
+            approvals.record(
+                sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]"
+            )
+        # The work it was part of goes on.
+        assert Approval.objects.filter(approval=ApprovalType.PART_145).count() == 1
+    client = signed_in(sample.administrator)
+    again = client.post(
+        "/settings/approvals/",
+        {"approval": "Part-145", "reference": "UK.145.[Number]"},
+        secure=True,
+    )
+    assert again.status_code == 200
+    assert "Part-145 Is Already Recorded" in again.content.decode()

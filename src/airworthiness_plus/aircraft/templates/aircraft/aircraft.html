@@ -39,7 +39,7 @@
 <h2>Owner of {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'change_owner' aircraft.id %}">
 {% csrf_token %}
-{% for field in owner_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% for field in owner_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Save the Owner of {{ aircraft.registration }}</button></p>
 </form>
 {% for counter, current, entries in counters %}

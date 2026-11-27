@@ -11,11 +11,16 @@ import json
 import re
 import zipfile
 from datetime import date
+from typing import Any
 
 import pytest
 from django.db import IntegrityError, connection, transaction
+from django.db.migrations.exceptions import IrreversibleError
+from django.db.migrations.loader import MigrationLoader
+from django.db.migrations.state import ProjectState
 from django.http import HttpResponse
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
 
 from airworthiness_plus.accounts.models import AccessEntry
 from airworthiness_plus.accounts.roles import Action
@@ -30,7 +35,7 @@ from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import for_each_organisation
 from airworthiness_plus.sample import build
-from tests.conftest import as_owner
+from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import FLEET, Sample, add_sample_fleet, make_sample, signed_in
 
 pytestmark = pytest.mark.django_db
@@ -320,8 +325,17 @@ def test_an_aircraft_always_has_a_customer_of_its_own_organisation(
         ):
             Aircraft.objects.filter(pk=fleet["G-ABCD"].pk).update(customer=theirs.pk)
     lucy = signed_in(sample.lucy)
-    refused = post(lucy, f"/aircraft/{fleet['G-ABCD'].id}/owner/", customer=str(theirs.id))
-    assert refused.status_code == 302  # back to the aircraft, with nothing changed
+    # Said on the page, with nothing changed (finding 14 of 24 November 2026).
+    for chosen, reason in (
+        (str(theirs.id), "Select a valid choice"),
+        ("", "This field is required"),
+        ("not-a-customer", "is not a valid"),
+    ):
+        refused = post(lucy, f"/aircraft/{fleet['G-ABCD'].id}/owner/", customer=chosen)
+        assert refused.status_code == 200, chosen
+        owner = refused.content.decode().split("<h2>Owner of G-ABCD</h2>", 1)[1]
+        said = owner.split('<span role="alert">', 1)[1].split("</span>", 1)[0]
+        assert reason in said, chosen
     assert aircraft_of(sample, "G-ABCD").customer.name == "[Owner Name G-ABCD]"
     added = post(
         lucy,
@@ -360,6 +374,36 @@ def test_the_export_of_an_aircraft_holds_its_customer_and_no_other(
     assert [(one["name"], one["kind"], one["members"]) for one in customers] == [
         ("[Syndicate Name G-BXYZ]", "Syndicate", 6)
     ]
+
+
+def test_the_export_of_an_aircraft_holds_every_customer_that_has_owned_it(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-134, REQ-208; independent review of 24 November 2026, finding 12. G-EJKL is
+    sold to the flying club and then to the syndicate of G-BXYZ. Its history names
+    each earlier owner by an identifier alone: the export holds all three customers,
+    so the names can be read, and no customer that never owned it."""
+    club = customer(sample, "[Flying Club Name]")
+    syndicate = customer(sample, "[Syndicate Name G-BXYZ]")
+    with working_for(sample.ours.id, sample.lucy.id):
+        aircraft_services.change_owner(Aircraft.objects.get(pk=fleet["G-EJKL"].pk), club)
+        aircraft_services.change_owner(Aircraft.objects.get(pk=fleet["G-EJKL"].pk), syndicate)
+        ejkl = Aircraft.objects.get(pk=fleet["G-EJKL"].pk)
+        export = build_export(sample.ours, by=sample.lucy, aircraft=ejkl)
+    with zipfile.ZipFile(io.BytesIO(export.content)) as archive:
+        customers = json.loads(archive.read("records/customers_customer.json"))
+        history = json.loads(archive.read("history/aircraft_aircraft.json"))
+    assert sorted(one["name"] for one in customers) == [
+        "[Flying Club Name]",
+        "[Owner Name G-EJKL]",
+        "[Syndicate Name G-BXYZ]",
+    ]
+    # Every customer the aircraft's history names can be read in the export.
+    named = {one["id"] for one in customers}
+    owners = set()
+    for entry in history:
+        owners.add(json.loads(entry["after"])["customer_id"])
+    assert owners == named and len(owners) == 3
 
 
 # Aircraft from before customers were records
@@ -464,6 +508,155 @@ def test_what_was_typed_as_owned_by_becomes_the_customers_name(
         ejkl = Aircraft.objects.get(registration="G-EJKL")
         assert abcd.customer_id == ejkl.customer_id
         assert abcd.owner == "Pilot-Owner"
+
+
+def put_back_as_typed(cursor: Any, typed: dict[str, str | None], organisation: str) -> None:
+    """Put the aircraft back as they were before customers: a column of text, no customer."""
+    cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+    cursor.execute("ALTER TABLE aircraft_aircraft ADD COLUMN owner varchar(200)")
+    cursor.execute("ALTER TABLE aircraft_aircraft ALTER COLUMN customer_id DROP NOT NULL")
+    cursor.execute("ALTER TABLE aircraft_aircraft DISABLE TRIGGER history_write")
+    cursor.execute("SELECT set_config('airworthiness.organisation', %s, true)", [organisation])
+    for registration, text in typed.items():
+        cursor.execute(
+            "UPDATE aircraft_aircraft SET owner = %s, customer_id = NULL "
+            "WHERE registration = %s AND organisation_id = %s",
+            [text, registration, organisation],
+        )
+        assert cursor.rowcount == 1
+    cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+    cursor.execute("ALTER TABLE aircraft_aircraft ENABLE TRIGGER history_write")
+    cursor.execute("SELECT set_config('airworthiness.organisation', '', true)")
+
+
+def run_the_migration(cursor: Any) -> None:
+    """The statements of aircraft 0003, in its order."""
+    cursor.execute(aircraft_sql.OWNERS_TO_CUSTOMERS_BEGIN)
+    cursor.execute(for_each_organisation(aircraft_sql.CUSTOMER_FOR_EACH_OWNER))
+    cursor.execute("ALTER TABLE aircraft_aircraft DROP COLUMN owner")
+    cursor.execute(for_each_organisation(aircraft_sql.AIRCRAFT_TAKE_THEIR_CUSTOMER))
+    cursor.execute(aircraft_sql.OWNERS_TO_CUSTOMERS_END)
+    cursor.execute("ALTER TABLE aircraft_aircraft ALTER COLUMN customer_id SET NOT NULL")
+
+
+# Texts that differ only in the spaces around them, one with none, and one not typed at all.
+UNTIDY: dict[str, str | None] = {
+    "G-DGHI": "Flying Club",
+    "G-EJKL": " Pilot-Owner",
+    "G-ABCD": "Pilot-Owner  ",
+    "G-BXYZ": "Pilot-Owner",
+    "G-FMNO": "   ",
+    "G-CDEF": "",
+    "G-HKLM": None,
+}
+
+
+def owners_after(sample: Sample) -> dict[str, tuple[str, object]]:
+    with working_for(sample.ours.id, sample.reader.id):
+        return {
+            one.registration: (one.customer.name, one.customer_id)
+            for one in Aircraft.objects.select_related("customer")
+        }
+
+
+def test_owner_text_is_trimmed_before_customers_are_made(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-209; independent review of 24 November 2026, finding 13. Texts that differ
+    only in the spaces around them made two customers of one name. They now make
+    one. An aircraft with no text, or only spaces, is given the one customer
+    named Not Recorded."""
+    with working_for(sample.ours.id, sample.reader.id):
+        before = Customer.objects.count()
+    with as_owner(), connection.cursor() as cursor:
+        put_back_as_typed(cursor, UNTIDY, str(sample.ours.id))
+        run_the_migration(cursor)
+    after = owners_after(sample)
+    assert {registration: name for registration, (name, _) in after.items()} == {
+        "G-DGHI": "Flying Club",
+        "G-EJKL": "Pilot-Owner",
+        "G-ABCD": "Pilot-Owner",
+        "G-BXYZ": "Pilot-Owner",
+        "G-FMNO": "Not Recorded",
+        "G-CDEF": "Not Recorded",
+        "G-HKLM": "Not Recorded",
+    }
+    # One customer for each different text: 3 for the 7 aircraft.
+    assert len({customer for _, customer in after.values()}) == 3
+    assert after["G-EJKL"][1] == after["G-ABCD"][1] == after["G-BXYZ"][1]
+    with working_for(sample.ours.id, sample.reader.id):
+        assert Customer.objects.filter(name="Pilot-Owner").count() == 1
+        assert Customer.objects.filter(name="Not Recorded").count() == 1
+        # No customer is made that no aircraft is given, and no name keeps its spaces.
+        assert Customer.objects.count() == before + 3
+        assert all(name == name.strip() for name in Customer.objects.values_list("name", flat=True))
+        assert chain.problems(list(Event.objects.all())) == []
+
+
+def test_the_migration_runs_as_an_owner_of_the_tables_who_is_not_a_superuser(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """Aircraft 0003 as the server runs it: by an owner of the tables with no other
+    power, whom row-level security holds as it holds the application (ADR-0002).
+    Every other test of it runs as a superuser, whom it never holds."""
+    with as_owner(), connection.cursor() as cursor:
+        put_back_as_typed(cursor, UNTIDY, str(sample.ours.id))
+    with as_owner_who_is_not_a_superuser(), connection.cursor() as cursor:
+        cursor.execute("SELECT rolsuper OR rolbypassrls FROM pg_roles WHERE rolname = current_user")
+        assert cursor.fetchone() == (False,)
+        cursor.execute("SELECT count(*) FROM aircraft_aircraft")
+        assert cursor.fetchone() == (0,)  # held by row-level security
+        run_the_migration(cursor)
+        cursor.execute(
+            "SELECT relforcerowsecurity FROM pg_class WHERE relname = 'organisations_organisation'"
+        )
+        assert cursor.fetchone() == (True,)
+    after = owners_after(sample)
+    assert len({customer for _, customer in after.values()}) == 3
+    assert after["G-ABCD"][0] == "Pilot-Owner" and after["G-HKLM"][0] == "Not Recorded"
+    with working_for(sample.ours.id, sample.reader.id):
+        entry = Event.of(Aircraft.objects.get(registration="G-ABCD")).last()
+        assert entry is not None
+        assert entry.changed == ["customer_id"]
+        assert entry.actor_name.startswith("Database Role ")
+        assert chain.problems(list(Event.objects.all())) == []
+
+
+def test_the_migration_says_plainly_that_it_cannot_be_reversed() -> None:
+    """Finding 13. Going back failed part way, on the column of text that is no longer
+    there. Django now refuses the whole migration before it changes anything, and
+    the refusal says why."""
+    migration = MigrationLoader(None).get_migration("aircraft", "0003_owned_by_a_customer")
+    assert not migration.operations[0].reversible
+    with pytest.raises(IrreversibleError, match="cannot be put back"):
+        # Refused when the operations are first read: nothing is asked of the database.
+        migration.unapply(ProjectState(), None)  # type: ignore[arg-type]
+
+
+def test_a_customer_named_twice_at_once_is_made_once(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-208; independent review of 24 November 2026, finding 14. Naming a new owner
+    read and then wrote with no lock, so the same form sent twice at once made
+    two customers of one name. The work now takes the organisation's row before
+    it looks, so the second waits for the first and is given its customer."""
+    with working_for(sample.ours.id, sample.lucy.id):
+        with CaptureQueriesContext(connection) as sent:
+            made = services.named(sample.ours, "[New Owner Name]")
+        statements = [query["sql"] for query in sent.captured_queries]
+        lock = next(
+            index
+            for index, statement in enumerate(statements)
+            if "FOR UPDATE" in statement and "organisations_organisation" in statement
+        )
+        look = next(
+            index for index, statement in enumerate(statements) if "customers_customer" in statement
+        )
+        assert lock < look
+        assert services.named(sample.ours, " [New Owner Name] ") == made
+        assert Customer.objects.filter(name="[New Owner Name]").count() == 1
 
 
 def test_the_sample_names_a_customer_for_every_aircraft() -> None:

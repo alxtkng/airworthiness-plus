@@ -210,7 +210,11 @@ def test_every_table_is_under_the_record_rules() -> None:
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
     extra_triggers = {
-        "organisations_organisation": {"serial_floor_guard"},
+        # The approval it was set up with is changed only by the owner (REQ-200).
+        "organisations_organisation": {"serial_floor_guard", "set_up_approval_guard"},
+        "organisations_approval": {"approval_guard"},
+        # A sign-in keeps its person after every change (REQ-204).
+        "people_person": {"sign_in_keeps_its_person"},
         # A sign-in belongs to a person (REQ-204).
         "accounts_user": {"user_has_a_person"},
         "aircraft_utilisationentry": {"utilisation_fits"},

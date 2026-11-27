@@ -183,6 +183,60 @@ def test_the_database_refuses_a_sign_in_with_no_person(sample: Sample) -> None:
         assert not User.objects.filter(username="nobody@your-organisation.example").exists()
 
 
+def test_the_database_never_leaves_a_sign_in_with_no_person(sample: Sample) -> None:
+    """REQ-204, ADR-0002; independent review of 24 November 2026, finding 11. The check
+    ran only when a sign-in was made: as the application's role, a person's sign-in
+    could be taken off the person, and the sign-in then had no person. Checked now
+    when the work is finished, after any change, whoever makes it."""
+    with connection.cursor() as cursor:
+        cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+    lucy = person(sample, "Lucy Grant")
+    chris = person(sample, "Chris Moore")
+    with working_for(sample.ours.id, sample.administrator.id):
+        with (
+            pytest.raises(IntegrityError, match="is left with no person record"),
+            transaction.atomic(),
+        ):
+            Person.objects.filter(pk=lucy.pk).update(user=None)
+            with connection.cursor() as cursor:
+                cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        assert Person.objects.get(pk=lucy.pk).user_id == sample.lucy.pk
+    # Checked with no organisation set, as it is when work ends, and the setting is put back.
+    with (
+        pytest.raises(IntegrityError, match="the sign-in of Lucy Grant is left"),
+        transaction.atomic(),
+    ):
+        with working_for(sample.ours.id, sample.administrator.id):
+            Person.objects.filter(pk=lucy.pk).update(user=None)
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT current_setting('airworthiness.organisation', true)")
+        assert cursor.fetchone() in (("",), (None,))
+    # A sign-in may be moved from one person to another within one piece of work:
+    # at its end the sign-in has a person. The check finds the person with no
+    # organisation set, as when work ends: row-level security does not hide them.
+    with transaction.atomic():
+        with working_for(sample.ours.id, sample.administrator.id):
+            Person.objects.filter(pk=lucy.pk).update(user=None)
+            Person.objects.filter(pk=chris.pk).update(user=sample.lucy.pk)
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+            cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+    with working_for(sample.ours.id, sample.reader.id):
+        assert Person.objects.get(user=sample.lucy).pk == chris.pk
+    # Nor is the owner of the tables let past it.
+    with as_owner(), working_for(sample.ours.id):
+        with (
+            pytest.raises(IntegrityError, match="is left with no person record"),
+            transaction.atomic(),
+        ):
+            Person.objects.filter(pk=chris.pk).update(user=None)
+            with connection.cursor() as cursor:
+                cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
 def test_a_new_sign_in_is_never_joined_to_a_person_by_name(sample: Sample) -> None:
     """REQ-204; independent review of 24 November 2026, finding 4. Chris Moore is
     recorded and has no sign-in. A sign-in added in the same name is another
