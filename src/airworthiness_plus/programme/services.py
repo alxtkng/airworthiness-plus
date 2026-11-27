@@ -8,6 +8,7 @@ from django.db import transaction
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
+from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme.models import (
     REVIEW_POINTS,
     AnnualReview,
@@ -189,6 +190,7 @@ def record_work(
     dated: date,
     hours: Decimal,
     cycles: int,
+    performed_by: Person | None = None,
     task: Task | None = None,
     release_reference: str = "",
     release_recorded_on: date | None = None,
@@ -204,6 +206,14 @@ def record_work(
     today = aircraft_services.today()
     if dated > today:
         raise RefusedError("Work Cannot Be Completed After Today")
+    if performed_by is not None:
+        if performed_by.organisation_id != aircraft.organisation_id:
+            raise RefusedError("The Person Must Belong to This Organisation")
+        performed_by = Person.objects.select_for_update().get(pk=performed_by.pk)
+        if (performed_by.joined_on is not None and dated < performed_by.joined_on) or (
+            performed_by.left_on is not None and dated > performed_by.left_on
+        ):
+            raise RefusedError("The Person Must Have Been With the Organisation on the Day of Work")
     if task is not None and task.programme.aircraft_id != aircraft.id:
         raise RefusedError("The Task Belongs to Another Aircraft")
     counter = task.counter if task else aircraft.counters.filter(kind=CounterKind.AIRFRAME).first()
@@ -225,6 +235,7 @@ def record_work(
         organisation_id=aircraft.organisation_id,
         aircraft=aircraft,
         task=task,
+        performed_by=performed_by,
         description=description,
         dated=dated,
         hours=hours,

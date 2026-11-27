@@ -3,6 +3,27 @@
 {% block title %}Airworthiness Review Staff{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Airworthiness Review Staff</h1>
+<h2>Maintenance Authorisations</h2>
+{% if maintenance_authorisations %}
+<table>
+<thead><tr><th>Name</th><th>Authorisation Reference</th><th data-detail>Scope and Limitations</th><th>Valid From</th><th>Valid To</th></tr></thead>
+<tbody>
+{% for authorisation in maintenance_authorisations %}
+<tr>
+<td><a href="{% url 'person' authorisation.person_id %}">{{ authorisation.person.full_name }}</a></td>
+<td>{{ authorisation.reference }}</td><td>{{ authorisation.scope }}</td>
+<td>{{ authorisation.valid_from|long_date }}</td><td>{{ authorisation.valid_to|long_date }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Maintenance Authorisations Recorded</p>{% endif %}
+{% if may_change_person and certifying_people %}
+<details><summary>Record Maintenance Authorisation</summary><ul>
+{% for person in certifying_people %}<li><a href="{% url 'add_maintenance_authorisation' person.id %}">{{ person.full_name }}</a></li>{% endfor %}
+</ul></details>
+{% endif %}
+<h2>Airworthiness Review Staff</h2>
 {% if refusal %}<p role="alert">{{ refusal }}</p>{% endif %}
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <table>

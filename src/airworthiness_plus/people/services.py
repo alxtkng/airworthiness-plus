@@ -1,7 +1,7 @@
 """What can be done with person records. Views check the role first."""
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 from django.db import transaction
@@ -14,7 +14,12 @@ from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.people.models import Employment, Person, StaffGroup
+from airworthiness_plus.people.models import (
+    Employment,
+    MaintenanceAuthorisation,
+    Person,
+    StaffGroup,
+)
 from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_rules.personnel import Retention, record_kept_until
 
@@ -74,6 +79,8 @@ def _checked(
     if reports_to is not None:
         if reports_to.organisation_id != organisation.id:
             raise RefusedError("A Person Reports to a Person of the Same Organisation")
+        # Start from the stored manager, so a form read before another edit is safe.
+        reports_to = Person.objects.get(pk=reports_to.pk)
         # Up the chain from the person reported to: it must not come back round.
         seen = {person.pk} if person is not None else set()
         above: Person | None = reports_to
@@ -143,7 +150,7 @@ def change_person(
     their review staff record too, if they have one and it has none
     (independent review of 24 November 2026, findings 5 and 6).
     """
-    organisation = Organisation.objects.get(pk=person.organisation_id)
+    organisation = Organisation.objects.select_for_update().get(pk=person.organisation_id)
     full_name = _checked(
         organisation,
         full_name=full_name,
@@ -272,3 +279,67 @@ def staff(organisation: Organisation) -> Staff:
             )
         )
     return Staff([person for person in people if person.left_on is None], former)
+
+
+@dataclass
+class ReportingLine:
+    """A current staff member and their direct reports in the organisation chart."""
+
+    person: Person
+    reports: list["ReportingLine"] = field(default_factory=list)
+
+
+def organisation_chart(
+    organisation: Organisation,
+) -> tuple[list[ReportingLine], list[Person], list[Person]]:
+    """Build the chart from the organisation's current reporting relationships (REQ-295)."""
+    people = Person.objects.filter(organisation=organisation, left_on__isnull=True).select_related(
+        "reports_to"
+    )
+    lines = {person.pk: ReportingLine(person) for person in people}
+    roots = []
+    managers = []
+    for line in lines.values():
+        person = line.person
+        if person.staff_group == StaffGroup.MANAGEMENT:
+            managers.append(person)
+        parent = lines.get(person.reports_to_id) if person.reports_to_id is not None else None
+        if parent is None:
+            roots.append(line)
+        else:
+            parent.reports.append(line)
+    roots.sort(key=lambda line: line.person.role != "Accountable Manager")
+    placed = set()
+    pending = roots.copy()
+    while pending:
+        line = pending.pop()
+        placed.add(line.person.pk)
+        pending.extend(line.reports)
+    unresolved = [line.person for key, line in lines.items() if key not in placed]
+    return roots, managers, unresolved
+
+
+@transaction.atomic
+def record_maintenance_authorisation(
+    person: Person, *, reference: str, scope: str, valid_from: date, valid_to: date | None = None
+) -> MaintenanceAuthorisation:
+    """Keep the evidence supplied by the organisation without issuing an authorisation."""
+    person = Person.objects.select_for_update().get(pk=person.pk)
+    if person.staff_group != StaffGroup.CERTIFYING:
+        raise RefusedError("A Maintenance Authorisation Names Certifying Staff")
+    if valid_to is not None and valid_to < valid_from:
+        raise RefusedError("Valid To Cannot Be Before Valid From")
+    if not reference.strip() or not scope.strip():
+        raise RefusedError("Give the Authorisation Reference and Scope")
+    if MaintenanceAuthorisation.objects.filter(
+        person=person, reference=reference.strip(), valid_from=valid_from
+    ).exists():
+        raise RefusedError("This Authorisation Is Already Recorded")
+    return MaintenanceAuthorisation.objects.create(
+        organisation_id=person.organisation_id,
+        person=person,
+        reference=reference.strip(),
+        scope=scope.strip(),
+        valid_from=valid_from,
+        valid_to=valid_to,
+    )

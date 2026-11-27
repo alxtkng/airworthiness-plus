@@ -270,6 +270,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     path("reviews/", reviews.schedule_page, name="review_schedule"),
     path("review-staff/", reviews.staff_page, name="review_staff"),
+    path("review-staff/recency/", reviews.recency_page, name="staff_recency"),
     path("review-staff/add/", reviews.add_staff, name="add_review_staff"),
     path(
         "review-staff/<uuid:staff_id>/involvement/",
@@ -317,8 +318,14 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="change_customer",
     ),
     path("staff/", people.staff_page, name="staff"),
+    path("staff/organisation-chart/", people.organisation_chart, name="organisation_chart"),
     path("staff/add/", people.add_person, name="add_person"),
     path("staff/<uuid:person_id>/", people.person_page, name="person"),
+    path(
+        "staff/<uuid:person_id>/maintenance-authorisation/",
+        people.add_maintenance_authorisation,
+        name="add_maintenance_authorisation",
+    ),
     path("staff/<uuid:person_id>/change/", people.change_person, name="change_person"),
     path("records-export/", exports.exports_page, name="records_export"),
     path("records-export/organisation/", exports.export_organisation, name="export_organisation"),

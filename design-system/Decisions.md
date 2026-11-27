@@ -165,6 +165,12 @@ Not decided here, and so not built until Alex King says: the per-flight technica
 - **Programme reviews** keep the latest review date. A future date or an older submitted date is refused with the reason. A completed annual review retains its point-by-point evidence on the programme page.
 - **Configuration baselines** keep a dependency open while its linked modification or repair is in progress. A transfer checklist's tick is checked against the live evidence when the aircraft moves to the Fleet.
 
+### Phase 2 People
+
+- **Maintenance authorisation evidence** (REQ-297). The Administrator records the reference, scope, limitations and effective dates from the organisation’s existing authorisation. This records evidence and does not issue an authorisation. The date shown does not certify that licence, experience or training evidence is current.
+- **Who performed work** (REQ-298). Work Done and directive compliance can name the person who performed the work. The name at entry is kept with the work and is independent of the release signatory. Imported records with no known performer stay without one.
+- **Certifying-staff recency is an evidence assessment.** CAO.A.040(a) points to 66.A.20(b). AMC 66.A.20(b)(2) explains the six-month and 100-day alternatives and the relevance of work to the authorisation’s scope. The Recency page shows the latest attributed work as evidence while the qualifying assessment is being built. Applying Part-145 experience and recurrent training rules calls for 145.A.35(c) and (d). For Part-CAMO review staff, CAMO.A.305(e) points to CAMO.A.310 and its AMC1(d) sets out the recent experience routes. Part-CAMO review privileges still require explicit approval records before the application offers issue.
+
 ## Navigation
 
 - The sidebar follows 1321/2014. See Sections in the README.

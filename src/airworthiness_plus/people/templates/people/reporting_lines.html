@@ -1,0 +1,10 @@
+{% for line in lines %}
+<li>
+<a href="{% url 'person' line.person.id %}">{{ line.person.full_name }}</a>{% if line.person.role %}, {{ line.person.role }}{% endif %}{% if line.person.employment == "Contracted" %}, Contracted{% endif %}
+{% if line.reports %}
+<ul>
+{% include "people/reporting_lines.html" with lines=line.reports only %}
+</ul>
+{% endif %}
+</li>
+{% endfor %}

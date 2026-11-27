@@ -515,6 +515,30 @@ def test_directive_source_check_records_next_check(
         expect(row).to_contain_text("2 December 2026")
 
 
+def test_administrator_records_maintenance_authorisation(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][0]) as page:
+        page.goto("/staff/")
+        page.get_by_role("link", name="Chris Moore", exact=True).click()
+        page.get_by_role("link", name="Record Maintenance Authorisation").click()
+        save(
+            page,
+            "Save Authorisation",
+            {
+                "reference": "TEST-CA-42",
+                "scope": "Piper PA-28 Airframe",
+                "valid_from": "2026-11-15",
+                "valid_to": "2026-12-01",
+            },
+            "TEST-CA-42",
+        )
+        page.reload()
+        row = page.get_by_role("row").filter(has_text="TEST-CA-42")
+        expect(row).to_contain_text("Chris Moore")
+        expect(row).to_contain_text("1 December 2026")
+
+
 def test_administrator_records_staff_approvals_and_limits(
     chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
 ) -> None:

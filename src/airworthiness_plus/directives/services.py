@@ -18,6 +18,7 @@ from airworthiness_plus.directives.models import (
 )
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Programme, Task, WorkDone
@@ -144,6 +145,7 @@ def record_compliance(
     dated: date,
     hours: Decimal,
     cycles: int,
+    performed_by: Person | None = None,
     release_reference: str = "",
     release_recorded_on: date | None = None,
 ) -> Compliance:
@@ -165,6 +167,7 @@ def record_compliance(
             dated=dated,
             hours=hours,
             cycles=cycles,
+            performed_by=performed_by,
             release_reference=release_reference,
             release_recorded_on=release_recorded_on,
         )

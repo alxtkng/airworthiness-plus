@@ -215,6 +215,15 @@ class WorkDone(Record):
         Task, on_delete=models.PROTECT, null=True, blank=True, related_name="work_done"
     )
     description = models.CharField("Work", max_length=200)
+    performed_by = models.ForeignKey(
+        "people.Person",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Performed By",
+    )
+    performed_by_name = models.CharField("Performed By, Name at Entry", max_length=200, blank=True)
     dated = models.DateField("Completed")
     hours = models.DecimalField("Hours", max_digits=8, decimal_places=1)
     cycles = models.PositiveIntegerField("Cycles")

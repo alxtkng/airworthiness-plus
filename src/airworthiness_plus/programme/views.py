@@ -240,6 +240,7 @@ def record_work(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
                 dated=data["dated"],
                 hours=data["hours"],
                 cycles=data["cycles"],
+                performed_by=data["performed_by"],
                 by_pilot_owner=data["by_pilot_owner"],
                 pilot_owner_told_on=data["pilot_owner_told_on"],
             )
