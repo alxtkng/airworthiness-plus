@@ -8,8 +8,8 @@ How changes reach `main`. The same steps apply to code, requirements and assuran
 2. **Branch.** A branch is a private copy of the repository where work happens without touching `main`. Name it after the work: `step-2-assurance-plan`, `req-014-next-due`, `defect-31-day-count`.
 3. **Commit.** A commit is one saved, described change. Keep each one small enough to review in a few minutes.
 4. **Pull request.** A pull request asks for the branch to be merged into `main`. It shows every changed line and runs the automated checks.
-5. **Review.** Alex reviews and approves. Calculation modules also need the independent recompute described in the working brief (Step 6).
-6. **Merge.** Only when the checks pass and the review is approved. `main` is protected: nothing is pushed to it directly.
+5. **Review.** Follow the review requirements on the protected branch. Changes to calculation modules also need the independent recompute described in the working brief (Step 6).
+6. **Merge.** Merge when the required checks pass and all applicable review requirements are met. `main` is protected: nothing is pushed to it directly.
 
 ## Rules for Every Pull Request
 
