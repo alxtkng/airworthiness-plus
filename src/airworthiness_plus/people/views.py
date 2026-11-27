@@ -32,7 +32,23 @@ def _user(request: HttpRequest) -> User:
 def staff_page(request: HttpRequest) -> HttpResponse:
     """Everyone of the organisation, and those who have left (REQ-205)."""
     staff = services.staff(_user(request).organisation)
-    return render(request, "people/staff.html", {"staff": staff})
+    return render(request, "people/staff.html", {"staff": staff, **_shown_to(request)})
+
+
+def _shown_to(request: HttpRequest) -> dict[str, bool]:
+    """Return what the roles of the user let the Staff pages show them.
+
+    A user name is half of what a sign-in needs, and five wrong passwords
+    lock it for 15 minutes: it is shown only to a role that manages users.
+    A link or a form for an action the roles do not permit is not shown;
+    the check on the server stays the control (REQ-006; independent review
+    of 24 November 2026, finding 8).
+    """
+    user = _user(request)
+    return {
+        "may_manage_users": user.may(Action.MANAGE_USERS_AND_ROLES),
+        "may_change": user.may(Action.ADD_OR_CHANGE_PERSON),
+    }
 
 
 def _initial(person: Person) -> dict[str, object]:
@@ -56,6 +72,7 @@ def _person_page(request: HttpRequest, person: Person, form: PersonForm) -> Http
             "person": person,
             "reports": person.reports.filter(left_on__isnull=True),
             "form": form,
+            **_shown_to(request),
         },
     )
 

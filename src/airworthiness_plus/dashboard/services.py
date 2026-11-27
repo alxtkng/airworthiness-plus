@@ -18,7 +18,7 @@ from decimal import Decimal
 from django.urls import reverse
 
 from airworthiness_plus.acceptance import services as acceptance_services
-from airworthiness_plus.aircraft.models import Aircraft, Stage, Status
+from airworthiness_plus.aircraft.models import Aircraft, Regime, Stage, Status
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.imports import services as import_services
 from airworthiness_plus.interface import formatting
@@ -244,9 +244,43 @@ def _aircraft_rows(aircraft: Aircraft, today: date) -> list[Row]:
                 first=True,
             )
         )
+    if aircraft.regime == Regime.NON_PART_21:
+        # Nothing is calculated for it (REQ-022), so no task of its can show as
+        # due. The Dashboard says so, as its own pages do, and does not leave it
+        # looking clear (independent review of 24 November 2026, finding 7).
+        rows.append(
+            Row(
+                registration,
+                "Calculations Not Yet Supported for Non-Part 21 Aircraft",
+                "Tasks Are Not Calculated",
+                NOT_SET,
+                "",
+                "",
+                "Maintenance Programme",
+                programme,
+                first=True,
+            )
+        )
     if held is not None:
         annual = due.review_line(held, today, due.thresholds_of(aircraft.organisation))
-        if annual.due is not None and annual.flag is not Flag.NONE:
+        if annual.due is None:
+            # Never reviewed, as far as the records say: there is no day to count
+            # from, so it is shown and not left clear. The programme page says
+            # Not Recorded (finding 7).
+            rows.append(
+                Row(
+                    registration,
+                    "Maintenance Programme Annual Review Not Recorded",
+                    "At Least Annually, ML.A.302(c)(9)",
+                    NOT_SET,
+                    "",
+                    "",
+                    "Maintenance Programme",
+                    programme,
+                    first=True,
+                )
+            )
+        elif annual.flag is not Flag.NONE:
             text, remaining, days = _dated(annual.due, today, annual.flag)
             rows.append(
                 Row(
@@ -348,7 +382,10 @@ def people(organisation: Organisation, today: date) -> Panel:
 
 
 def documentation(organisation: Organisation, today: date) -> Panel:
-    """Return the maintenance data that is not held and current (REQ-083, REQ-084, REQ-217)."""
+    """Return the maintenance data that is not held and current (REQ-083, REQ-084, REQ-217).
+
+    And each type rating of an aircraft for which no data is recorded (REQ-089).
+    """
     rows = []
     for line in data_services.data_lines(organisation, today):
         data_set = line.data_set
@@ -384,6 +421,25 @@ def documentation(organisation: Organisation, today: date) -> Panel:
                     url,
                 )
             )
+    # A type rating of an aircraft with no maintenance data recorded at all: there
+    # is no document to show as not held, so the type rating is shown (finding 7).
+    without: dict[str, list[Aircraft]] = {}
+    for aircraft in Aircraft.objects.order_by("registration"):
+        if not data_services.data_for(aircraft, today).lines:
+            without.setdefault(aircraft.type_rating, []).append(aircraft)
+    for type_rating, fleet in without.items():
+        rows.append(
+            Row(
+                type_rating,
+                "No Maintenance Data Recorded for This Type Rating",
+                ", ".join(one.registration for one in fleet),
+                NOT_SET,
+                "",
+                "",
+                "Maintenance Data",
+                reverse("aircraft_data", args=[fleet[0].id]),
+            )
+        )
     return Panel("Documentation", "Document", _ordered(rows))
 
 

@@ -18,6 +18,7 @@ from django.http import HttpResponse
 from django.test import Client
 
 from airworthiness_plus.accounts.models import AccessEntry
+from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft import sql as aircraft_sql
 from airworthiness_plus.aircraft.models import Aircraft
@@ -470,3 +471,26 @@ def test_the_sample_names_a_customer_for_every_aircraft() -> None:
     assert set(build.CUSTOMERS) == {registration for registration, *_ in FLEET} | {"G-HKLM"}
     names = [name for name, *_ in build.CUSTOMERS.values()]
     assert len(set(names)) == len(names) == 7
+
+
+@pytest.mark.parametrize("role", ["administrator", "lucy", "planner", "reviewer", "reader"])
+def test_the_customer_pages_offer_only_what_the_role_may_do(sample: Sample, role: str) -> None:
+    """REQ-006; independent review of 24 November 2026, finding 8. Add a Customer and the
+    form that changes a record are shown to the roles that may use them, and to
+    nobody the server would refuse. The check on the server stays the control."""
+    user = getattr(sample, role)
+    client = signed_in(user)
+    with working_for(sample.ours.id, sample.lucy.id):
+        customer = services.add_customer(organisation=sample.ours, name="[Owner Name G-ABCD]")
+    may = user.may(Action.ADD_OR_CHANGE_CUSTOMER)
+    assert may == (role in ("lucy", "planner"))
+    listed = client.get("/customers/", secure=True).content.decode().split("<main", 1)[1]
+    one = client.get(f"/customers/{customer.id}/", secure=True).content.decode()
+    one = one.split("<main", 1)[1]
+    assert ('href="/customers/add/"' in listed) == may
+    assert ("<form" in one) == may
+    assert "<dt>Customer</dt><dd>[Owner Name G-ABCD]</dd>" in one
+    refused = client.post(
+        f"/customers/{customer.id}/change/", {"name": "[Another Name]"}, secure=True
+    )
+    assert refused.status_code == (302 if may else 403)

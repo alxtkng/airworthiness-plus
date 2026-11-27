@@ -15,7 +15,7 @@ from django.test import Client
 
 from airworthiness_plus.accounts import users
 from airworthiness_plus.accounts.models import AccessEntry, User
-from airworthiness_plus.accounts.roles import Role
+from airworthiness_plus.accounts.roles import Action, Role
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
@@ -284,7 +284,7 @@ def test_a_sign_in_is_given_to_a_person_already_recorded_only_when_chosen(sample
 
 def test_the_staff_page_lists_everyone_and_those_who_have_left(sample: Sample) -> None:
     """REQ-205. Golden, from the Staff board. Reports To is the role reported to."""
-    body = page(signed_in(sample.reader), "/staff/")
+    body = page(signed_in(sample.administrator), "/staff/")
     current = rows(body, "Name")
     assert len(current) == 14
     assert "<p>14 People</p>" in body
@@ -363,6 +363,49 @@ def test_part_cao_gives_no_period_for_staff_who_are_not_review_staff(sample: Sam
     former = rows(page(administrator, "/staff/"), "Name</th><th>Role</th><th>Left")
     assert ["Ellie Ward", "Mechanic, Trainee", "18 November 2026"] in [row[:3] for row in former]
     assert next(row for row in former if row[0] == "Ellie Ward")[3] == "No Period Given in Part-CAO"
+
+
+@pytest.mark.parametrize("role", ["lucy", "planner", "reviewer", "reader"])
+def test_a_user_name_is_shown_only_to_a_role_that_manages_users(sample: Sample, role: str) -> None:
+    """REQ-006, REQ-205; independent review of 24 November 2026, finding 8. A user name
+    is half of a sign-in, and five wrong passwords lock it for 15 minutes. Every
+    role reads the Staff pages; only the Administrator is shown user names."""
+    client = signed_in(getattr(sample, role))
+    lucy, chris = person(sample, "Lucy Grant"), person(sample, "Chris Moore")
+    for path in ("/staff/", f"/staff/{lucy.id}/", f"/staff/{chris.id}/"):
+        body = page(client, path)
+        assert "your-organisation.example" not in body, path
+    by_name = {row[0]: row[1:] for row in rows(page(client, "/staff/"), "Name")}
+    assert by_name["Lucy Grant"][-1] == "Has a Sign-In"
+    assert by_name["Chris Moore"][-1] == "None"
+    assert "<dt>Sign-In</dt><dd>Has a Sign-In</dd>" in page(client, f"/staff/{lucy.id}/")
+    # The Administrator is shown them, here as on the Users page.
+    administrator = signed_in(sample.administrator)
+    assert "<dt>Sign-In</dt><dd>lucy.grant@your-organisation.example</dd>" in page(
+        administrator, f"/staff/{lucy.id}/"
+    )
+    with working_for(sample.ours.id, sample.administrator.id):
+        users.set_active(sample.planner, active=False, by=sample.administrator)
+    if role != "planner":
+        by_name = {row[0]: row[1:] for row in rows(page(client, "/staff/"), "Name")}
+        assert by_name["[Planning and Records Name]"][-1] == "Has a Sign-In, Inactive"
+
+
+@pytest.mark.parametrize("role", ["administrator", "lucy", "planner", "reviewer", "reader"])
+def test_the_staff_pages_offer_only_what_the_role_may_do(sample: Sample, role: str) -> None:
+    """REQ-006, finding 8. Add a Person and the form that changes a record are shown to
+    the Administrator, who may use them, and to nobody the server would refuse."""
+    user = getattr(sample, role)
+    client = signed_in(user)
+    chris = person(sample, "Chris Moore")
+    main = [page(client, path).split("<main", 1)[1] for path in ("/staff/", f"/staff/{chris.id}/")]
+    may = user.may(Action.ADD_OR_CHANGE_PERSON)
+    assert may == (role == "administrator")
+    assert ('href="/staff/add/"' in main[0]) == may
+    assert ("<form" in main[1]) == may
+    assert (f'action="/staff/{chris.id}/change/"' in main[1]) == may
+    # What is recorded is read by every role.
+    assert "<dt>Licence</dt><dd>Part-66 B1.2</dd>" in main[1]
 
 
 # Adding and changing

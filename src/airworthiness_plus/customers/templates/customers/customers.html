@@ -3,7 +3,7 @@
 {% block title %}Customers{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Customers</h1>
-<p><a href="{% url 'add_customer' %}">Add a Customer</a></p>
+{% if may_change %}<p><a href="{% url 'add_customer' %}">Add a Customer</a></p>{% endif %}
 <p>{{ lines|length }} {% if lines|length == 1 %}Customer{% else %}Customers{% endif %}, {{ aircraft }} Aircraft</p>
 <table>
 <thead>

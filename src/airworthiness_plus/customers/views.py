@@ -32,14 +32,32 @@ def customers_page(request: HttpRequest) -> HttpResponse:
     """Every customer, with their aircraft (REQ-210)."""
     lines = services.customer_lines()
     aircraft = sum(len(line.registrations) for line in lines)
-    return render(request, "customers/customers.html", {"lines": lines, "aircraft": aircraft})
+    return render(
+        request,
+        "customers/customers.html",
+        {"lines": lines, "aircraft": aircraft, "may_change": _may_change(request)},
+    )
+
+
+def _may_change(request: HttpRequest) -> bool:
+    """Return whether the user is shown the links and forms that change a customer.
+
+    Not shown to a role the server would refuse. The check on the server
+    stays the control (REQ-006; finding 8 of 24 November 2026).
+    """
+    return _user(request).may(Action.ADD_OR_CHANGE_CUSTOMER)
 
 
 def _customer_page(request: HttpRequest, customer: Customer, form: CustomerForm) -> HttpResponse:
     return render(
         request,
         "customers/customer.html",
-        {"customer": customer, "aircraft": customer.aircraft.all(), "form": form},
+        {
+            "customer": customer,
+            "aircraft": customer.aircraft.all(),
+            "form": form,
+            "may_change": _may_change(request),
+        },
     )
 
 
