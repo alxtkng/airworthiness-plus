@@ -15,7 +15,7 @@ from django.db.models import Max
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.models import User
@@ -36,6 +36,7 @@ from airworthiness_plus.reviews.forms import (
     InvolvementForm,
     ItemForm,
     RestorationForm,
+    ReviewAuthorisationForm,
     ReviewStaffForm,
     VoidForm,
 )
@@ -218,6 +219,7 @@ def _staff_page(request: HttpRequest, form: ReviewStaffForm, message: str = "") 
             ],
             "maintenance_authorisations": MaintenanceAuthorisation.objects.select_related("person"),
             "may_change_person": _user(request).may(Action.ADD_OR_CHANGE_PERSON),
+            "may_manage_review_staff": _user(request).may(Action.MANAGE_USERS_AND_ROLES),
             "certifying_people": Person.objects.filter(
                 staff_group=StaffGroup.CERTIFYING, left_on__isnull=True
             ),
@@ -313,6 +315,31 @@ def record_restoration(request: HttpRequest, staff_id: uuid.UUID) -> HttpRespons
         else:
             return redirect("review_staff")
     return _staff_page(request, ReviewStaffForm(), message)
+
+
+@never_cache
+@requires(Action.MANAGE_USERS_AND_ROLES)
+@require_http_methods(["GET", "POST"])
+@with_the_privilege
+def record_review_authorisation(request: HttpRequest, staff_id: uuid.UUID) -> HttpResponse:
+    """Record the terms of a review authorisation (REQ-300)."""
+    staff = get_object_or_404(ReviewStaff.objects.select_related("user"), pk=staff_id)
+    form = ReviewAuthorisationForm(
+        request.POST or None,
+        initial={
+            "authorisation_scope": staff.authorisation_scope,
+            "authorisation_valid_to": staff.authorisation_valid_to,
+            "version": services.review_authorisation_version(staff),
+        },
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.record_review_authorisation(staff, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("review_staff")
+    return render(request, "reviews/review_authorisation.html", {"staff": staff, "form": form})
 
 
 # The review itself
