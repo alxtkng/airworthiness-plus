@@ -124,6 +124,13 @@ Sign in as Lucy Grant. The sample of this part is on the test site once its data
 6. Open the tab Airworthiness Directives. It says G-CDEF's propeller is away, with the applicability check before refit.
 7. Open the Dashboard. The propeller due back is in Continuing Airworthiness.
 
+8. Open the tab Modifications and Repairs. G-BXYZ's service bulletin is awaiting the owner, with its reminder. Below, each change or repair has its approval route and mass effect.
+9. G-BXYZ's navigator says Weight Schedule Update. Follow it to Weight and Balance: +1.2 Kilograms since the weighing of 2019.
+10. Point to No Reweigh Threshold Set. Sign in as the Administrator, open Settings, set the reweigh threshold to 1.0 Kilograms. G-BXYZ now says Reweigh.
+11. As Lucy Grant, choose Record a Weight Schedule Issue: G-BXYZ, Issue 7, today. The navigator's records are Complete.
+
+Say: the reweigh threshold is the organisation's own. No rule read gives one, so there is none until it is set.
+
 Say: the hours of a component are those it had when fitted and what the airframe has flown since. No tolerance is given to a life limit.
 
 ### Defects
@@ -158,4 +165,4 @@ Say: the system records a certificate that was issued. It does not issue one.
 
 ## What Cannot Be Shown Yet
 
-The rest of Phase 1 (modifications and repairs, weight and balance, set up configuration, the transfer checklist, the tabs of the aircraft record, departures and the annual review checklist of a programme, and the sources of directives) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The rest of Phase 1 (set up configuration, the transfer checklist, the tabs of the aircraft record, departures and the annual review checklist of a programme, and the sources of directives) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

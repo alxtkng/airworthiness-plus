@@ -18,6 +18,8 @@ from airworthiness_plus.contracts.models import Contract, OrderedBy, Scope
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.defects.models import Basis, Decision, Defect
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.modifications import services as modification_services
+from airworthiness_plus.modifications.models import Classification, Data, OwnerDecision, Route
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people.models import Person, StaffGroup
 from airworthiness_plus.programme import services as programme_services
@@ -312,3 +314,104 @@ def add_components(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> 
                 )
             added.append(one)
     return added
+
+
+# SampleData.md, Modifications and Repairs, and the Modifications board. Service
+# bulletins: Aircraft Registration, bulletin, reference, classification, the day
+# sent to the owner, the reminder, the decision, its detail and the day recorded.
+BULLETINS: tuple[
+    tuple[str, str, str, Classification, date, date | None, OwnerDecision, str, date | None], ...
+] = (
+    ("G-ABCD", "Seat Rail and Stop Inspection", "[Service Bulletin Reference 1]",
+     Classification.RECOMMENDED, date(2026, 2, 16), None, OwnerDecision.ACCEPTED,
+     "Every 50-Hour Check", date(2026, 3, 2)),
+    ("G-ABCD", "Engine Valve Guide Inspection", "[Service Bulletin Reference 2]",
+     Classification.RECOMMENDED, date(2026, 2, 16), None, OwnerDecision.ACCEPTED,
+     "Every 100-Hour Check", date(2026, 3, 2)),
+    ("G-BXYZ", "Alternator Mounting Bracket Inspection", "[Service Bulletin Reference 3]",
+     Classification.RECOMMENDED, date(2026, 11, 10), date(2026, 11, 24), OwnerDecision.AWAITING,
+     "", None),
+    ("G-EJKL", "Seat Belt Replacement", "[Service Bulletin Reference 4]",
+     Classification.OPTIONAL, date(2026, 5, 20), None, OwnerDecision.DECLINED,
+     "Belts On Condition, Annual Check", date(2026, 6, 6)),
+)  # fmt: skip
+
+# Changes and repairs: Aircraft Registration, change or repair, approval route,
+# data (ML.A.304), reference, mass effect in Kilograms and the day embodied.
+CHANGES: tuple[tuple[str, str, Route, Data | str, str, str, date | None], ...] = (
+    ("G-BXYZ", "Panel-Mounted Navigator", Route.STANDARD_CHANGE, "",
+     "[Standard Change Reference 1]", "1.2", date(2026, 10, 12)),
+    ("G-FMNO", "Light-Emitting Diode Landing Light", Route.MINOR_CHANGE,
+     Data.DESIGN_ORGANISATION, "[Minor Change Reference]", "-0.3", date(2026, 4, 14)),
+    ("G-DGHI", "Left Wingtip Repair, Hangar Damage", Route.STRUCTURAL_REPAIR_DATA,
+     Data.DESIGN_ORGANISATION, "", "0.0", date(2025, 7, 18)),
+    ("G-ABCD", "Mode S Transponder with Position Output", Route.STANDARD_CHANGE, "",
+     "[Standard Change Reference 2]", "0.4", date(2022, 5, 10)),
+    ("G-CDEF", "Propeller Overhaul", Route.SAME_PART, "", "", "0.0", None),
+)  # fmt: skip
+
+# Weight and balance: Aircraft Registration, the day last weighed, the issue of
+# the weight schedule and the day it was issued. The days are made up.
+WEIGHINGS: tuple[tuple[str, date, int, date], ...] = (
+    ("G-BXYZ", date(2019, 6, 14), 6, date(2019, 6, 14)),
+    ("G-DGHI", date(2017, 3, 9), 9, date(2017, 3, 9)),
+    ("G-ABCD", date(2022, 5, 20), 4, date(2022, 5, 20)),
+    ("G-CDEF", date(2021, 9, 3), 3, date(2021, 9, 3)),
+    ("G-EJKL", date(2020, 7, 22), 2, date(2020, 7, 22)),
+    # Issue 5 took in the landing light of April 2026.
+    ("G-FMNO", date(2018, 4, 5), 5, date(2026, 4, 20)),
+)
+
+
+def add_modifications(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None:
+    """Add the service bulletins, changes, repairs, weighings and weight schedules.
+
+    As Planning and Records. No reweigh threshold is set: it is the
+    organisation's to set, and has no default.
+    """
+
+    def aircraft(registration: str) -> Aircraft:
+        return Aircraft.objects.get(pk=fleet[registration].pk)
+
+    with working_for(ours.id, by.id):
+        for (
+            registration,
+            title,
+            reference,
+            classification,
+            sent_on,
+            reminder_on,
+            decision,
+            detail,
+            decided_on,
+        ) in BULLETINS:
+            modification_services.record_bulletin(
+                aircraft(registration),
+                title=title,
+                reference=reference,
+                classification=classification,
+                sent_on=sent_on,
+                reminder_on=reminder_on,
+                decision=decision,
+                detail=detail,
+                decided_on=decided_on,
+            )
+        for registration, title, route, data, reference, mass, embodied_on in CHANGES:
+            modification_services.record_change(
+                aircraft(registration),
+                title=title,
+                route=route,
+                data_kind=data,
+                reference=reference,
+                mass_effect=Decimal(mass),
+                embodied_on=embodied_on,
+            )
+        for registration, weighed_on, issue, issued_on in WEIGHINGS:
+            modification_services.record_weighing(
+                aircraft(registration),
+                weighed_on=weighed_on,
+                reference=f"[Weighing Report {registration}]",
+            )
+            modification_services.record_schedule(
+                aircraft(registration), issue=issue, issued_on=issued_on
+            )

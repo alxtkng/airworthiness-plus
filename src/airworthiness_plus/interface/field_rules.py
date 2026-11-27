@@ -25,6 +25,7 @@ from airworthiness_plus.defects import forms as defects
 from airworthiness_plus.directives import forms as directives
 from airworthiness_plus.imports import forms as imports
 from airworthiness_plus.maintenance_data import forms as maintenance_data
+from airworthiness_plus.modifications import forms as modifications
 from airworthiness_plus.organisations import forms as organisations
 from airworthiness_plus.people import forms as people
 from airworthiness_plus.programme import forms as programme
@@ -56,6 +57,12 @@ WRITES: dict[str, Sets] = {
     "review_component": (components.ReviewForm,),
     "component_life_from": (components.LifeFromForm,),
     "change_component_limit": (components.LimitForm,),
+    "record_change": (modifications.ChangeForm,),
+    "embody_change": (modifications.EmbodiedForm,),
+    "record_bulletin": (modifications.BulletinForm,),
+    "decide_bulletin": (modifications.DecisionForm,),
+    "record_weighing": (modifications.WeighingForm,),
+    "record_weight_schedule": (modifications.ScheduleForm,),
     "enter_utilisation": (aircraft.UtilisationForm,),
     "make_unserviceable": (aircraft.UnserviceableForm,),
     "make_serviceable": (),
@@ -105,6 +112,7 @@ WRITES: dict[str, Sets] = {
     "record_approval_held": (organisations.ApprovalHeldForm,),
     "end_approval_held": (organisations.EndApprovalForm,),
     "set_lead_times": (organisations.LeadTimesForm,),
+    "set_reweigh_threshold": (organisations.ReweighThresholdForm,),
     "set_deferral_limits": (organisations.DeferralLimitsForm,),
     "add_user": (accounts.AddUserForm, "Code From the Administrator's Authenticator Application"),
     "set_user_roles": (
@@ -138,6 +146,8 @@ READS = frozenset(
         "release_to_service",
         "programmes",
         "components",
+        "modifications",
+        "weight_and_balance",
         "component",
         "defects",
         "defect",

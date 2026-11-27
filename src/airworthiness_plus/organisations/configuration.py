@@ -19,6 +19,7 @@ from airworthiness_plus.organisations.models import Organisation
 MOST_DAYS = 365
 MOST_HOURS = Decimal("999.9")
 MOST_CYCLES = 9999
+MOST_KILOGRAMS = Decimal("999.9")
 
 
 class RefusedError(ValueError):
@@ -63,6 +64,18 @@ def set_lead_times(
     organisation.save(
         update_fields=["due_soon_days", "due_soon_hours", "due_soon_cycles", "review_alert_days"]
     )
+
+
+def set_reweigh_threshold(organisation: Organisation, *, threshold: Decimal | None) -> None:
+    """Set the net mass change over which an aircraft is marked for a reweigh (REQ-257).
+
+    The organisation's own: no rule read gives one, and there is no
+    default. With none set, nothing is marked for a reweigh.
+    """
+    if threshold is not None and not 0 < threshold <= MOST_KILOGRAMS:
+        raise RefusedError("A Reweigh Threshold Is Above 0 and at Most 999.9 Kilograms")
+    organisation.reweigh_threshold_kilograms = threshold
+    organisation.save(update_fields=["reweigh_threshold_kilograms"])
 
 
 def set_deferral_limits(

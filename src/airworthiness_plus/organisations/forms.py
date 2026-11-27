@@ -1,5 +1,6 @@
 """Forms for the Settings page. Labels follow design-system/Writing.md."""
 
+from decimal import Decimal
 from typing import Any
 
 from django import forms
@@ -68,6 +69,19 @@ class LeadTimesForm(Form):
                 "The Earlier Alert Is More Days Than the Calendar Lead Time"
             )
         return data
+
+
+class ReweighThresholdForm(Form):
+    """The net mass change over which an aircraft is marked for a reweigh (REQ-257)."""
+
+    threshold = forms.DecimalField(
+        label="Reweigh Threshold, Kilograms, Empty for None",
+        min_value=Decimal("0.1"),
+        max_value=Decimal("999.9"),
+        max_digits=4,
+        decimal_places=1,
+        required=False,
+    )
 
 
 class DeferralLimitsForm(Form):

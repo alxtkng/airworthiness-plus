@@ -150,8 +150,8 @@ BOARD: tuple[Group, ...] = (
                 tabs=(
                     Tab("Components and Life Limits", "components"),
                     Tab("Airworthiness Directives", "directives"),
-                    Tab("Modifications and Repairs"),
-                    Tab("Weight and Balance"),
+                    Tab("Modifications and Repairs", "modifications"),
+                    Tab("Weight and Balance", "weight_and_balance"),
                 ),
                 inside=frozenset(
                     {
@@ -163,6 +163,12 @@ BOARD: tuple[Group, ...] = (
                         "component_life_from",
                         "change_component_limit",
                         "add_directive",
+                        "record_change",
+                        "embody_change",
+                        "record_bulletin",
+                        "decide_bulletin",
+                        "record_weighing",
+                        "record_weight_schedule",
                     }
                 ),
             ),
@@ -365,6 +371,7 @@ BOARD: tuple[Group, ...] = (
                         "record_approval_held",
                         "end_approval_held",
                         "set_lead_times",
+                        "set_reweigh_threshold",
                         "set_deferral_limits",
                     }
                 ),

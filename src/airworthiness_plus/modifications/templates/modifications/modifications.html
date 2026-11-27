@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Modifications and Repairs{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Modifications and Repairs</h1>
+{% if may_record %}<p><a href="{% url 'record_change' %}">Record a Change</a> <a href="{% url 'record_bulletin' %}">Record a Service Bulletin</a></p>{% endif %}
+<h2>Service Bulletins</h2>
+{% if bulletins %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Bulletin</th><th>Owner Decision</th><th>Recorded</th><th>Status</th><th data-detail>Reference</th><th data-detail>Classification</th><th data-detail>Decision in Detail</th><th data-detail>Sent to the Owner</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+</thead>
+<tbody>
+{% for line in bulletins %}
+<tr>
+<td><a href="{% url 'aircraft' line.bulletin.aircraft.id %}">{{ line.bulletin.aircraft.registration }}</a></td>
+<td>{{ line.bulletin.title }}</td>
+<td>{{ line.decision_text }}</td>
+<td>{{ line.recorded_text }}</td>
+<td>{{ line.status|status }}</td>
+<td>{{ line.bulletin.reference }}</td>
+<td>{{ line.bulletin.classification }}</td>
+<td>{{ line.decision_note }}</td>
+<td>{{ line.bulletin.sent_on|long_date }}</td>
+{% if may_record %}<td>{% if line.bulletin.awaiting %}<a href="{% url 'decide_bulletin' line.bulletin.id %}">Record the Owner Decision</a>{% endif %}</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Service Bulletins Recorded</p>
+{% endif %}
+<h2>Changes and Repairs</h2>
+{% if changes %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Change or Repair</th><th>Approval Route</th><th class="number">Mass Effect</th><th>Records</th><th>Status</th><th data-detail>Embodied</th><th data-detail>Data</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+</thead>
+<tbody>
+{% for line in changes %}
+<tr>
+<td><a href="{% url 'aircraft' line.change.aircraft.id %}">{{ line.change.aircraft.registration }}</a></td>
+<td>{{ line.change.title }}</td>
+<td>{{ line.change.route_text }}</td>
+<td class="number">{{ line.mass_text }}</td>
+<td>{% if line.status %}<a href="{% url 'weight_and_balance' %}">{{ line.records }}</a>{% else %}{{ line.records }}{% endif %}</td>
+<td>{{ line.status|status }}</td>
+<td>{{ line.embodied_text }}</td>
+<td>{{ line.change.data }}</td>
+{% if may_record %}<td>{% if not line.change.embodied_on %}<a href="{% url 'embody_change' line.change.id %}">Record as Embodied</a>{% endif %}</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Changes or Repairs Recorded</p>
+{% endif %}
+<p>Data for Modifications and Repairs, ML.A.304</p>
+{% endblock %}

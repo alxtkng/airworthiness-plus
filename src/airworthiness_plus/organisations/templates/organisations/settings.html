@@ -74,4 +74,15 @@
 {% endfor %}<p><button type="submit">Save Alert Lead Times</button></p>
 </form>
 {% endif %}
+<h2>Weight and Balance</h2>
+<p>{% if reweigh_threshold %}Reweigh Threshold {{ reweigh_threshold }} Kilograms{% else %}No Reweigh Threshold Set{% endif %}</p>
+<p>The Net Mass Change Since the Last Weighing Over Which an Aircraft Is Marked for a Reweigh. The Organisation's Own: the Regulation Gives None</p>
+{% if may_change %}
+<form method="post" action="{% url 'set_reweigh_threshold' %}">
+{% csrf_token %}
+{% if reweigh_form.non_field_errors %}<p role="alert">{{ reweigh_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in reweigh_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}<p><button type="submit">Save Reweigh Threshold</button></p>
+</form>
+{% endif %}
 {% endblock %}

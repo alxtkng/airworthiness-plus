@@ -15,6 +15,7 @@ from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
 from airworthiness_plus.maintenance_data import views as data
+from airworthiness_plus.modifications import views as modifications
 from airworthiness_plus.organisations import views as settings
 from airworthiness_plus.people import views as people
 from airworthiness_plus.programme import views as programme
@@ -70,6 +71,34 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "components/<uuid:component_id>/limit/",
         components.change_component_limit,
         name="change_component_limit",
+    ),
+    path("modifications/", modifications.modifications_page, name="modifications"),
+    path("modifications/record/", modifications.record_change, name="record_change"),
+    path(
+        "modifications/<uuid:change_id>/embodied/",
+        modifications.embody_change,
+        name="embody_change",
+    ),
+    path(
+        "modifications/service-bulletins/record/",
+        modifications.record_bulletin,
+        name="record_bulletin",
+    ),
+    path(
+        "modifications/service-bulletins/<uuid:bulletin_id>/decide/",
+        modifications.decide_bulletin,
+        name="decide_bulletin",
+    ),
+    path("weight-and-balance/", modifications.weight_and_balance, name="weight_and_balance"),
+    path(
+        "weight-and-balance/weighings/record/",
+        modifications.record_weighing,
+        name="record_weighing",
+    ),
+    path(
+        "weight-and-balance/schedules/record/",
+        modifications.record_weight_schedule,
+        name="record_weight_schedule",
     ),
     path("defects/", defects.defects_page, name="defects"),
     path("defects/record/", defects.record_defect, name="record_defect"),
@@ -231,6 +260,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "settings/approvals/<uuid:approval_id>/end/",
         settings.end_approval_held,
         name="end_approval_held",
+    ),
+    path(
+        "settings/reweigh-threshold/",
+        settings.set_reweigh_threshold,
+        name="set_reweigh_threshold",
     ),
     path("settings/lead-times/", settings.set_lead_times, name="set_lead_times"),
     path(
