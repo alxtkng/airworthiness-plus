@@ -17,6 +17,7 @@ class Part(models.TextChoices):
 
     PEOPLE = "People", "People"
     WORK_PACKAGES = "Work Packages", "Work Packages"
+    STAFFING_PLAN = "Staffing Plan", "Staffing Plan"
     # Phase 1 of the canvas build (REQ-294): each part of its sample, added once.
     DEFECTS = "Defects", "Defects"
     CONTRACTS = "Contracts", "Contracts"

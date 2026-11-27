@@ -431,6 +431,9 @@ BOARD: tuple[Group, ...] = (
                 tabs=(Tab("Organisation", "settings"), Tab("Planning", "planning_settings")),
                 inside=frozenset(
                     {
+                        "record_bank_holiday",
+                        "record_shift_pattern",
+                        "record_staffing_minimum",
                         "change_planning_settings",
                         "change_organisation_details",
                         "record_approval_held",

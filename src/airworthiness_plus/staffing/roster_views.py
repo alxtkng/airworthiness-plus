@@ -1,5 +1,6 @@
 """Roster, handover and planning settings views."""
 
+from collections.abc import Callable
 from datetime import date, timedelta
 from uuid import UUID
 
@@ -16,16 +17,27 @@ from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.interface.forms import Form
-from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.organisations.models import Approval, Organisation
 from airworthiness_plus.staffing import roster
 from airworthiness_plus.staffing.roster_forms import (
+    BankHolidayForm,
     HandoverForm,
     PublicationForm,
     SettingsForm,
     ShiftForm,
+    ShiftPatternForm,
+    StaffingMinimumForm,
     WithdrawShiftForm,
 )
-from airworthiness_plus.staffing.roster_models import Handover, PublishedRoster, Settings, Shift
+from airworthiness_plus.staffing.roster_models import (
+    BankHoliday,
+    Handover,
+    PublishedRoster,
+    Settings,
+    Shift,
+    ShiftPattern,
+    StaffingMinimum,
+)
 from airworthiness_plus.staffing.roster_rules import week_of
 from airworthiness_plus.staffing.services import RefusedError
 from airworthiness_plus.staffing.views import _user
@@ -53,6 +65,22 @@ def staff_roster(request: HttpRequest) -> HttpResponse:
     week = chosen_week(request)
     settings = roster.settings_for(user.organisation)
     checked = roster.check_shifts(week, settings)
+    publications = list(
+        PublishedRoster.objects.filter(week=week)
+        .select_related("published_by")
+        .prefetch_related("entries__shift__person")
+    )
+    latest = next(
+        (
+            publication
+            for publication in publications
+            if not any(item.supersedes_id == publication.pk for item in publications)
+        ),
+        None,
+    )
+    published_shifts = {entry.shift_id for entry in latest.entries.all()} if latest else set()
+    revised = latest is not None and published_shifts != {line.shift.pk for line in checked}
+
     with timezone.override(roster.LONDON):
         return render(
             request,
@@ -64,9 +92,8 @@ def staff_roster(request: HttpRequest) -> HttpResponse:
                 "checked": checked,
                 "crews": roster.crews(checked),
                 "publish_by": week - timedelta(days=settings.publish_days),
-                "publications": PublishedRoster.objects.filter(week=week).select_related(
-                    "published_by"
-                ),
+                "publications": publications,
+                "unpublished_changes": revised,
                 "handovers": roster.handovers_for(week),
                 "user": user,
                 "may_roster": user.may(Action.RECORD_STAFFING_PLAN),
@@ -194,6 +221,9 @@ def planning_settings(request: HttpRequest) -> HttpResponse:
         {
             "form": form,
             "may_change": user.may(Action.CHANGE_ORGANISATION_RECORD),
+            "holidays": BankHoliday.objects.all(),
+            "patterns": ShiftPattern.objects.all(),
+            "minimums": StaffingMinimum.objects.select_related("approval"),
         },
     )
 
@@ -243,3 +273,63 @@ def load_and_capacity(request: HttpRequest) -> HttpResponse:
             "may_build": may_maintain and user.may(Action.PLAN_WORK_PACKAGE),
         },
     )
+
+
+def _setting_entry(
+    request: HttpRequest, form: Form, title: str, write: Callable[..., object]
+) -> HttpResponse:
+    if request.method == "POST" and form.is_valid():
+        organisation = _user(request).organisation
+        with transaction.atomic():
+            Organisation.objects.select_for_update().only("id").get(pk=organisation.pk)
+            write(organisation=organisation, **form.cleaned_data)
+        return redirect("planning_settings")
+    return _show_form(request, form, title)
+
+
+@never_cache
+@requires(Action.CHANGE_ORGANISATION_RECORD)
+@require_http_methods(["GET", "POST"])
+def record_bank_holiday(request: HttpRequest) -> HttpResponse:
+    """Record a bank holiday for the weekly plan."""
+    form = BankHolidayForm(request.POST or None)
+
+    def save(*, organisation: Organisation, on: date, name: str) -> None:
+        BankHoliday.objects.update_or_create(
+            organisation=organisation, on=on, defaults={"name": name}
+        )
+
+    return _setting_entry(request, form, "Record Bank Holiday", save)
+
+
+@never_cache
+@requires(Action.CHANGE_ORGANISATION_RECORD)
+@require_http_methods(["GET", "POST"])
+def record_shift_pattern(request: HttpRequest) -> HttpResponse:
+    """Record an organisation shift pattern."""
+    form = ShiftPatternForm(request.POST or None)
+
+    def save(*, organisation: Organisation, name: str, **values: object) -> None:
+        ShiftPattern.objects.update_or_create(organisation=organisation, name=name, defaults=values)
+
+    return _setting_entry(request, form, "Record Shift Pattern", save)
+
+
+@never_cache
+@requires(Action.CHANGE_ORGANISATION_RECORD)
+@require_http_methods(["GET", "POST"])
+def record_staffing_minimum(request: HttpRequest) -> HttpResponse:
+    """Record the organisation's minimum and normal staffing by function."""
+    form = StaffingMinimumForm(request.POST or None)
+
+    def save(
+        *, organisation: Organisation, approval: Approval, function: str, **values: object
+    ) -> None:
+        StaffingMinimum.objects.update_or_create(
+            organisation=organisation,
+            approval=approval,
+            function=function,
+            defaults=values,
+        )
+
+    return _setting_entry(request, form, "Record Staffing Minimum", save)

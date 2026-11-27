@@ -292,7 +292,9 @@ def close_work_order(
 
 def work_orders() -> list[WorkOrder]:
     """Return every work order: those open first, in the order they were agreed (REQ-246)."""
-    orders = WorkOrder.objects.select_related("aircraft", "contract", "work_done")
+    orders = WorkOrder.objects.select_related("aircraft", "contract", "work_done").prefetch_related(
+        "packages"
+    )
     return sorted(
         orders,
         key=lambda order: (

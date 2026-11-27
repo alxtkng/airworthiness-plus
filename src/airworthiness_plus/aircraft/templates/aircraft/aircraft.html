@@ -15,6 +15,7 @@
 <dt>Customer</dt><dd><a href="{% url 'customer' aircraft.customer.id %}">{{ aircraft.customer.name }}</a></dd>
 <dt>Regime</dt><dd>{{ aircraft.regime }}</dd>
 <dt>Status</dt><dd>{% if aircraft.status == "Serviceable" %}{{ aircraft.status }}{% else %}{{ aircraft.status|status }}{% endif %}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
+{% if next_package %}<dt>Next Work Package</dt><dd><a href="{% url 'work_package' next_package.id %}">{{ next_package.reference }}</a>, {{ next_package.starts_on|long_date }}</dd>{% endif %}
 {% if aircraft.stage == "Transfer In" %}<dt>Transfer In</dt><dd>Records {{ aircraft.records_received }} of {{ aircraft.records_expected }} Received</dd>{% endif %}
 </dl>
 {% if aircraft.regime == "Non-Part 21" %}<p>Calculations Not Yet Supported for Non-Part 21 Aircraft</p>{% endif %}

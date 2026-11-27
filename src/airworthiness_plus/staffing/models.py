@@ -4,6 +4,30 @@ from django.db import models
 from django.db.models import F, Q
 
 from airworthiness_plus.history.models import Record
+from airworthiness_plus.staffing.roster_models import (
+    BankHoliday as BankHoliday,
+)
+from airworthiness_plus.staffing.roster_models import (
+    Handover as Handover,
+)
+from airworthiness_plus.staffing.roster_models import (
+    PublishedRoster as PublishedRoster,
+)
+from airworthiness_plus.staffing.roster_models import (
+    PublishedShift as PublishedShift,
+)
+from airworthiness_plus.staffing.roster_models import (
+    Settings as Settings,
+)
+from airworthiness_plus.staffing.roster_models import (
+    Shift as Shift,
+)
+from airworthiness_plus.staffing.roster_models import (
+    ShiftPattern as ShiftPattern,
+)
+from airworthiness_plus.staffing.roster_models import (
+    StaffingMinimum as StaffingMinimum,
+)
 
 
 class Function(models.TextChoices):
@@ -84,6 +108,17 @@ class Report(Record):
             ),
         ]
 
+    @property
+    def shortfall_percent(self) -> int:
+        from airworthiness_plus.staffing.rules import assess
+
+        return assess(
+            needed=self.needed,
+            employed=self.employed,
+            contracted=self.contracted,
+            approval=self.demand.approval.approval,
+        ).display_percent
+
 
 class AbsenceType(models.TextChoices):
     HOLIDAY = "Holiday", "Holiday"
@@ -107,7 +142,3 @@ class Absence(Record):
                 name="staffing_absence_has_valid_dates_and_kind",
             ),
         ]
-
-
-# The roster records share this application and its migration history.
-from airworthiness_plus.staffing.roster_models import Handover, PublishedRoster, Settings, Shift  # noqa: E402, F401

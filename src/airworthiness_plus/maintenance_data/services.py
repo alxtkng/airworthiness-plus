@@ -131,6 +131,7 @@ def record_check(
         organisation_id=data_set.organisation_id,
         data_set=data_set,
         checked_on=checked_on,
+        next_due=next_due,
         checked_by=checked_by,
         result=result,
     )

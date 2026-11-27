@@ -30,7 +30,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.sample import build, planning, second, top_up
+from airworthiness_plus.sample import build, planning, second, staffing, top_up
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
     seed,
@@ -137,6 +137,20 @@ def bring_work_packages(administrator: User) -> str:
                 return "Work Packages of the Sample Added, 1 Work Package"
     except Exception as error:
         return f"Sample Work Package Not Added: {type(error).__name__}"
+    return ""
+
+
+def bring_staffing(username: str, approval_reference: str) -> str:
+    """Give an earlier test site the staffing sample for its own approval."""
+    try:
+        administrator = administrator_named(username)
+        if administrator is not None:
+            with working_for(administrator.organisation_id, administrator.id):
+                organisation = Organisation.objects.get(pk=administrator.organisation_id)
+                if organisation.approval_reference == approval_reference:
+                    staffing.add(organisation, administrator)
+    except Exception as error:
+        return f"Sample Staffing Plan Not Added: {type(error).__name__}"
     return ""
 
 
@@ -250,3 +264,10 @@ class Command(BaseCommand):
             self.stdout.write(f"Administrator {ADMINISTRATOR}")
         # The second sample organisation holds Part-CAMO and Part-145 (REQ-218).
         self.stdout.write(second_organisation())
+        for username, reference in (
+            (ADMINISTRATOR, build.APPROVAL_REFERENCE),
+            (second.ADMINISTRATOR, second.APPROVAL_REFERENCE),
+        ):
+            result = bring_staffing(username, reference)
+            if result:
+                self.stderr.write(result)

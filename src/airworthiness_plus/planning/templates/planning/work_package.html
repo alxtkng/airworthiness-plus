@@ -23,6 +23,7 @@
 <a class="button" href="{% url 'issue_work_package' package.id %}">Issue Work Package</a></p>
 {% endif %}
 <h2>Work Cards</h2>
+<button type="button" data-print hidden>Print Work Cards</button>
 <p>{{ signed }} of {{ cards|length }} Signed, {{ planned }} Planned Hours, {{ inspection }} Planned Inspection Hours</p>
 <div class="table-wrap">
 <table>

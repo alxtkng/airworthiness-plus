@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from itertools import pairwise
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
@@ -16,11 +17,18 @@ from airworthiness_plus.organisations.models import Approval, ApprovalType, Orga
 from airworthiness_plus.people.models import Employment, Person
 from airworthiness_plus.planning.models import WorkPackage
 from airworthiness_plus.staffing.models import Absence
-from airworthiness_plus.staffing.roster_models import Handover, PublishedRoster, Settings, Shift
+from airworthiness_plus.staffing.roster_models import (
+    Handover,
+    PublishedRoster,
+    PublishedShift,
+    Settings,
+    Shift,
+)
 from airworthiness_plus.staffing.roster_rules import (
     active_minutes,
     employed_share,
     gap_minutes,
+    minutes_in_window,
     week_of,
 )
 from airworthiness_plus.staffing.services import RefusedError
@@ -71,8 +79,10 @@ def add_shift(
     mitigation: str = "",
     permission: str = "",
 ) -> Shift:
+    Organisation.objects.select_for_update(no_key=True).only("id").get(pk=actor.organisation_id)
     person = Person.objects.select_for_update(no_key=True).get(pk=person.pk)
-    start_day, end_day = local_day(starts_at), local_day(ends_at)
+    start_day = local_day(starts_at)
+    end_day = local_day(ends_at - timedelta(microseconds=1))
     if (
         person.organisation_id != actor.organisation_id
         or approval.organisation_id != actor.organisation_id
@@ -124,6 +134,7 @@ def add_shift(
 
 @transaction.atomic
 def withdraw_shift(shift: Shift, *, actor: User, reason: str) -> None:
+    Organisation.objects.select_for_update(no_key=True).only("id").get(pk=actor.organisation_id)
     shift = Shift.objects.select_for_update().get(pk=shift.pk)
     reason = reason.strip()
     if shift.organisation_id != actor.organisation_id or shift.withdrawn_on or not reason:
@@ -139,7 +150,7 @@ def publish(*, actor: User, week: date, note: str) -> PublishedRoster:
     if week != week_of(week) or not note.strip():
         raise RefusedError("Choose the Monday of the Roster Week and Record the Agreement")
     previous = PublishedRoster.objects.filter(week=week, replacement__isnull=True).first()
-    return PublishedRoster.objects.create(
+    publication = PublishedRoster.objects.create(
         organisation_id=actor.organisation_id,
         week=week,
         published_on=aircraft_services.today(),
@@ -147,6 +158,16 @@ def publish(*, actor: User, week: date, note: str) -> PublishedRoster:
         note=note.strip(),
         supersedes=previous,
     )
+
+    PublishedShift.objects.bulk_create(
+        [
+            PublishedShift(
+                organisation_id=actor.organisation_id, publication=publication, shift=shift
+            )
+            for shift in shifts_between(week, week + timedelta(days=6))
+        ]
+    )
+    return publication
 
 
 @transaction.atomic
@@ -171,6 +192,18 @@ def record_handover(
         or (package is not None and package.organisation_id != organisation)
     ):
         raise RefusedError("The Handover Belongs to This Organisation")
+    shifts = list(
+        Shift.objects.filter(
+            person__in=[incoming, outgoing],
+            starts_at__lte=handed_at,
+            ends_at__gte=handed_at,
+            withdrawn_on__isnull=True,
+        )
+    )
+    ends = [shift.ends_at for shift in shifts]
+    starts = [shift.starts_at for shift in shifts]
+    overlap = max(0, gap_minutes(max(starts), min(ends))) if len(shifts) == 2 else None
+    settings = settings_for(actor.organisation)
     return Handover.objects.create(
         organisation_id=organisation,
         package=package,
@@ -179,6 +212,8 @@ def record_handover(
         handed_at=handed_at,
         stage=stage.strip(),
         parts=parts.strip(),
+        overlap=overlap,
+        overlap_target=settings.overlap_minutes,
     )
 
 
@@ -196,8 +231,17 @@ def acknowledge(handover: Handover, actor: User) -> None:
 class CheckedShift:
     shift: Shift
     minutes: int
+    minutes_this_week: int
     rest: int | None
+    weekly_minutes: int
     flags: tuple[str, ...]
+
+    @property
+    def available(self) -> bool:
+        return not any(
+            flag in self.flags
+            for flag in ("Staff Absence", "Staff Unavailable", "Approval Unavailable")
+        )
 
     @property
     def hours(self) -> Decimal:
@@ -209,6 +253,8 @@ class Crew:
     date: date
     area: str
     name: str
+    starts: datetime
+    ends: datetime
     employed: int
     contracted: int
     percent: int | None
@@ -219,17 +265,25 @@ class Crew:
 def check_shifts(week: date, settings: Settings) -> list[CheckedShift]:
     sunday = week + timedelta(days=6)
     previous_day = week - timedelta(days=1)
-    preceding = max(1, (settings.minimum_rest_minutes + 1439) // 1440)
+    # A shift that starts the day before the rest window can end inside it.
+    preceding = 1 + max(1, (settings.minimum_rest_minutes + 1439) // 1440)
     shifts = shifts_between(week - timedelta(days=preceding), sunday)
-    current = [shift for shift in shifts if local_day(shift.starts_at) >= week]
+    week_start, week_end = midnight(week), midnight(sunday + timedelta(days=1))
     totals: dict[object, int] = defaultdict(int)
-    for shift in current:
-        totals[shift.person_id] += (
-            active_minutes(shift.starts_at, shift.ends_at, shift.break_minutes)
-            + shift.other_minutes
+    minutes: dict[object, int] = {}
+    for shift in shifts:
+        if shift.ends_at <= week_start:
+            continue
+        minutes[shift.pk] = minutes_in_window(
+            shift.starts_at, shift.ends_at, shift.break_minutes, week_start, week_end
         )
+        totals[shift.person_id] += minutes[shift.pk]
+        if shift.starts_at >= week_start:
+            totals[shift.person_id] += shift.other_minutes
     absences: dict[object, list[Absence]] = defaultdict(list)
-    for absence in Absence.objects.filter(starts_on__lte=sunday, ends_on__gte=previous_day):
+    for absence in Absence.objects.filter(
+        starts_on__lte=sunday + timedelta(days=1), ends_on__gte=previous_day
+    ):
         absences[absence.person_id].append(absence)
     latest: dict[object, datetime] = {}
     checked: list[CheckedShift] = []
@@ -237,11 +291,18 @@ def check_shifts(week: date, settings: Settings) -> list[CheckedShift]:
         on = local_day(shift.starts_at)
         prior = latest.get(shift.person_id)
         latest[shift.person_id] = shift.ends_at
-        if on < week:
+        if shift.pk not in minutes:
             continue
         rest = gap_minutes(prior, shift.starts_at) if prior is not None else None
         active = active_minutes(shift.starts_at, shift.ends_at, shift.break_minutes)
         flags = []
+        end_day = local_day(shift.ends_at - timedelta(microseconds=1))
+        if (shift.person.joined_on and on < shift.person.joined_on) or (
+            shift.person.left_on and end_day > shift.person.left_on
+        ):
+            flags.append("Staff Unavailable")
+        if not (shift.approval.held_on(on) and shift.approval.held_on(end_day)):
+            flags.append("Approval Unavailable")
         if active > settings.maximum_shift_minutes:
             flags.append("Long Shift")
         if rest is not None and rest < settings.minimum_rest_minutes:
@@ -255,40 +316,57 @@ def check_shifts(week: date, settings: Settings) -> list[CheckedShift]:
         ):
             flags.append("Critical Task After the First Half")
         if any(
-            absence.starts_on <= local_day(shift.ends_at) and absence.ends_on >= on
+            absence.starts_on <= local_day(shift.ends_at - timedelta(microseconds=1))
+            and absence.ends_on >= on
             for absence in absences[shift.person_id]
         ):
             flags.append("Staff Absence")
-        checked.append(CheckedShift(shift, active, rest, tuple(flags)))
+        checked.append(
+            CheckedShift(
+                shift, active, minutes[shift.pk], rest, totals[shift.person_id], tuple(flags)
+            )
+        )
     return checked
 
 
 def crews(shifts: list[CheckedShift]) -> list[Crew]:
-    groups: dict[tuple[date, str, str], list[Shift]] = defaultdict(list)
+    groups: dict[tuple[date, str, str], list[CheckedShift]] = defaultdict(list)
     for line in shifts:
         shift = line.shift
-        if (
-            shift.approval.approval == ApprovalType.PART_145
-            and shift.maintenance
-            and "Staff Absence" not in line.flags
-        ):
-            key = local_day(shift.starts_at), shift.area, shift.shift_name
-            groups[key].append(shift)
+        if shift.approval.approval == ApprovalType.PART_145 and shift.maintenance:
+            key = local_day(shift.starts_at), shift.area.casefold(), shift.shift_name.casefold()
+            groups[key].append(line)
     result = []
-    for (day, area, name), people in sorted(groups.items()):
-        employed = len(
-            {shift.person_id for shift in people if shift.person.employment == Employment.EMPLOYED}
+    for (day, _, _), group in sorted(groups.items()):
+        boundaries = sorted(
+            {stamp for line in group for stamp in (line.shift.starts_at, line.shift.ends_at)}
         )
-        contracted = len(
-            {
-                shift.person_id
-                for shift in people
-                if shift.person.employment == Employment.CONTRACTED
-            }
-        )
-        percent, below = employed_share(employed, contracted)
-        permission = tuple(sorted({shift.permission for shift in people if shift.permission}))
-        result.append(Crew(day, area, name, employed, contracted, percent, below, permission))
+        for start, end in pairwise(boundaries):
+            scheduled = [
+                line for line in group if line.shift.starts_at <= start < line.shift.ends_at
+            ]
+            if not scheduled:
+                continue
+            people = [line.shift for line in scheduled if line.available]
+            employed = sum(shift.person.employment == Employment.EMPLOYED for shift in people)
+            contracted = sum(shift.person.employment == Employment.CONTRACTED for shift in people)
+            percent, below = employed_share(employed, contracted)
+            permission = tuple(sorted({shift.permission for shift in people if shift.permission}))
+            first = scheduled[0].shift
+            result.append(
+                Crew(
+                    day,
+                    first.area,
+                    first.shift_name,
+                    start,
+                    end,
+                    employed,
+                    contracted,
+                    percent,
+                    below,
+                    permission,
+                )
+            )
     return result
 
 

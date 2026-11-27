@@ -1043,3 +1043,46 @@ def test_roster_records_fatigue_handover_and_publication(
         open_row_action(page, "Awaiting Acknowledgement", "Acknowledge")
         save(page, "Acknowledge Handover", {}, "Handovers")
         expect(page.get_by_text("Awaiting Acknowledgement", exact=True)).to_have_count(0)
+
+
+def test_planning_policy_records_are_editable(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][0]) as page:
+        page.goto("/settings/planning/")
+        page.get_by_role("link", name="Record Bank Holiday").click()
+        save(
+            page,
+            "Record Bank Holiday",
+            {"on": "2026-12-25", "name": "Christmas Day"},
+            "Christmas Day",
+        )
+        page.get_by_role("link", name="Record Shift Pattern").click()
+        save(
+            page,
+            "Record Shift Pattern",
+            {
+                "name": "Day Shift",
+                "area": "Hangar",
+                "days": "Monday to Friday",
+                "starts_at": "08:00",
+                "ends_at": "16:30",
+                "break_minutes": "30",
+            },
+            "Day Shift",
+        )
+        page.get_by_role("link", name="Record Staffing Minimum").click()
+        save(
+            page,
+            "Record Staffing Minimum",
+            {
+                "approval": "Part-CAO, UK.CAO.[Number]",
+                "function": "Certifying Staff",
+                "minimum": "1",
+                "normal": "2",
+                "applies_on": "Hangar Working Days",
+            },
+            "Hangar Working Days",
+        )
+        page.goto("/staffing/capacity/?week=2026-12-21")
+        expect(page.locator("main")).to_contain_text("40.0")

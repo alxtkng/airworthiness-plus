@@ -148,7 +148,12 @@ def add_card(
 
 
 def _check_data(
-    package: WorkPackage, data_set: DataSet, revision: Revision | None, on: date
+    package: WorkPackage,
+    data_set: DataSet,
+    revision: Revision | None,
+    on: date,
+    *,
+    checked_until: date | None,
 ) -> None:
     if (
         (
@@ -157,9 +162,13 @@ def _check_data(
         )
         or revision is None
         or revision.revision_date > on
-        or data_set.check_due is None
-        or data_set.check_due < on
-        or (data_set.evidence_dated is not None and data_set.evidence_dated > on)
+        or checked_until is None
+        or checked_until < on
+        or (
+            package.issued_on is None
+            and data_set.evidence_dated is not None
+            and data_set.evidence_dated > on
+        )
         or (data_set.applies_to and package.aircraft.type_rating not in data_set.applies_to)
     ):
         raise RefusedError(f"Maintenance Data Must Be Applicable, Held and Current: {data_set}")
@@ -187,9 +196,10 @@ def issue_package(package: WorkPackage) -> None:
         _check_scope(package, card.task, card.directive)
         data_set = data[card.data_set_id]
         revision = data_services.current_revision(data_set)
-        _check_data(package, data_set, revision, today)
+        _check_data(package, data_set, revision, today, checked_until=data_set.check_due)
         card.revision = revision
-        card.save(update_fields=["revision"])
+        card.issue_check_due = data_set.check_due
+        card.save(update_fields=["revision", "issue_check_due"])
     package.issued_on = today
     package.save(update_fields=["issued_on"])
 
@@ -251,13 +261,29 @@ def record_completion(
         or (current.current and revision.pk != current.pk)
     ):
         raise RefusedError("Record the Current Maintenance Data Revision Used for the Work")
-    _check_data(package, data_set, revision, completed_on)
+    checks = data_set.checks.filter(
+        checked_on__range=(package.issued_on, completed_on),
+        next_due__isnull=False,
+    ).order_by("-checked_on", "next_due")
+    latest = checks.first()
+    checked_until = latest.next_due if latest is not None else card.issue_check_due
+    if checked_until is None:
+        # A package issued before amendment checks carried their own due date.
+        # Accept a retained issue-day check or current data for work done today.
+        if completed_on == aircraft_services.today() or completed_on == package.issued_on:
+            checked_until = data_set.check_due
+    _check_data(package, data_set, revision, completed_on, checked_until=checked_until)
     card.performed_revision = revision
     task = card.directive.task if card.directive is not None else card.task
     _check_scope(package, card.task, card.directive)
     try:
         programme_services.check_work_counters(
-            package.aircraft, task=task, dated=completed_on, hours=hours, cycles=cycles
+            package.aircraft,
+            task=task,
+            dated=completed_on,
+            hours=hours,
+            cycles=cycles,
+            historical=True,
         )
     except programme_services.RefusedError as error:
         raise RefusedError(str(error)) from error

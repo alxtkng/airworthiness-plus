@@ -30,13 +30,14 @@
 </table>
 <h2>Shortfall Reports</h2>
 <table>
-<thead><tr><th>Reported</th><th>Month</th><th>Function</th><th>Hours Needed</th><th>Employed Hours</th><th>Contracted Hours</th><th>Reported To</th><th data-detail>Action Taken</th></tr></thead>
+<thead><tr><th>Reported</th><th>Month</th><th>Function</th><th>Hours Needed</th><th>Employed Hours</th><th>Contracted Hours</th><th>Shortfall</th><th>Reported To</th><th data-detail>Action Taken</th></tr></thead>
 <tbody>
 {% for report in reports %}
-<tr><td>{{ report.reported_on|long_date }}</td><td>{{ report.demand.month|date:"F Y" }}</td><td>{{ report.demand.function }}</td><td>{{ report.needed }}</td><td>{{ report.employed }}</td><td>{{ report.contracted }}</td><td>{{ report.reported_to }}</td><td>{{ report.action }}</td></tr>
-{% empty %}<tr><td colspan="8">No Shortfall Reports</td></tr>{% endfor %}
+<tr><td>{{ report.reported_on|long_date }}</td><td>{{ report.demand.month|date:"F Y" }}</td><td>{{ report.demand.function }}</td><td>{{ report.needed }}</td><td>{{ report.employed }}</td><td>{{ report.contracted }}</td><td>{{ report.shortfall_percent }}%</td><td>{{ report.reported_to }}</td><td>{{ report.action }}</td></tr>
+{% empty %}<tr><td colspan="9">No Shortfall Reports</td></tr>{% endfor %}
 </tbody>
 </table>
+{% include "staffing/crews.html" %}
 <h2>Absences</h2>
 <table>
 <thead><tr><th>Person</th><th>Absence</th><th>From</th><th>To</th></tr></thead>

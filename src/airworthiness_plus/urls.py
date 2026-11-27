@@ -44,6 +44,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="acknowledge_handover",
     ),
     path("settings/planning/", roster.planning_settings, name="planning_settings"),
+    path("settings/planning/holiday/", roster.record_bank_holiday, name="record_bank_holiday"),
+    path("settings/planning/pattern/", roster.record_shift_pattern, name="record_shift_pattern"),
+    path(
+        "settings/planning/minimum/", roster.record_staffing_minimum, name="record_staffing_minimum"
+    ),
     path(
         "settings/planning/change/",
         roster.change_planning_settings,

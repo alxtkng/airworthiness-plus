@@ -11,7 +11,7 @@ import json
 import secrets
 import warnings
 import zipfile
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -59,7 +59,12 @@ from airworthiness_plus.sample import phase1
 from airworthiness_plus.staffing import roster
 from airworthiness_plus.staffing import services as staffing_services
 from airworthiness_plus.staffing.models import AbsenceType, Function
-from airworthiness_plus.staffing.roster_models import Settings
+from airworthiness_plus.staffing.roster_models import (
+    BankHoliday,
+    Settings,
+    ShiftPattern,
+    StaffingMinimum,
+)
 from airworthiness_rules.intervals import Interval, Reading
 from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import (
@@ -295,6 +300,26 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             ends_on=date(2026, 12, 18),
         )
         Settings.objects.create(organisation=sample.ours)
+        BankHoliday.objects.create(
+            organisation=sample.ours, on=date(2026, 12, 25), name="Christmas Day"
+        )
+        ShiftPattern.objects.create(
+            organisation=sample.ours,
+            name="Day Shift",
+            area="Hangar",
+            days="Monday to Friday",
+            starts_at=time(8),
+            ends_at=time(16, 30),
+            break_minutes=30,
+        )
+        StaffingMinimum.objects.create(
+            organisation=sample.ours,
+            approval=approval,
+            function=Function.CERTIFYING,
+            minimum=1,
+            normal=2,
+            applies_on="Hangar Working Days",
+        )
         roster.add_shift(
             actor=sample.planner,
             approval=approval,

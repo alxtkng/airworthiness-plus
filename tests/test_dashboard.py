@@ -169,7 +169,13 @@ def test_the_dashboard_of_the_sample_on_18_november_2026(sample: Sample) -> None
     """REQ-215 to REQ-217. Golden: every row, in order, worked by hand above."""
     body = page(signed_in(sample.reader), "/dashboard/")
     found = panels(body)
-    assert list(found) == ["Continuing Airworthiness", "People", "Documentation", "Organisation"]
+    assert list(found) == [
+        "Continuing Airworthiness",
+        "Planning",
+        "People",
+        "Documentation",
+        "Organisation",
+    ]
     assert shown(found["Continuing Airworthiness"]) == CONTINUING_AIRWORTHINESS
     assert shown(found["People"]) == PEOPLE
     assert shown(found["Documentation"]) == DOCUMENTATION
@@ -235,7 +241,7 @@ def test_another_organisation_sees_nothing_of_ours(sample: Sample) -> None:
     assert "Grob" not in body
     found = panels(body)
     assert all(rows == [] for rows in found.values())
-    assert body.count("<p>Nothing Due</p>") == 4
+    assert body.count("<p>Nothing Due</p>") == 5
 
 
 def test_an_item_is_shown_from_its_lead_time(sample: Sample) -> None:

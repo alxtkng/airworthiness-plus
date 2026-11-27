@@ -10,4 +10,19 @@
 <p>Review the Staffing Plan at Least Every Three Months, AMC1 145.A.30(d)</p>
 <p>Report a Shortfall Over 25% in Any Function in a Calendar Month, AMC1 145.A.30(d)</p>
 <p>At Least Half of Each Maintenance Crew Employed, AMC1 145.A.30(d)</p>
+<h2>Minimum Staffing</h2>
+{% if may_change %}<p><a href="{% url 'record_staffing_minimum' %}">Record Staffing Minimum</a></p>{% endif %}
+<table><thead><tr><th>Approval</th><th>Function</th><th>Minimum</th><th>Normal</th><th>Applies On</th></tr></thead>
+<tbody>{% for minimum in minimums %}<tr><td>{{ minimum.approval.approval }}</td><td>{{ minimum.function }}</td><td>{{ minimum.minimum }}</td><td>{{ minimum.normal }}</td><td>{{ minimum.applies_on }}</td></tr>{% empty %}<tr><td colspan="5">No Staffing Minimum Recorded</td></tr>{% endfor %}</tbody></table>
+<h2>Shift Patterns</h2>
+{% if may_change %}<p><a href="{% url 'record_shift_pattern' %}">Record Shift Pattern</a></p>{% endif %}
+<table><thead><tr><th>Shift Pattern</th><th>Area</th><th>Days</th><th>Starts</th><th>Ends</th><th>Break in Minutes</th></tr></thead>
+<tbody>{% for pattern in patterns %}<tr><td>{{ pattern.name }}</td><td>{{ pattern.area }}</td><td>{{ pattern.days }}</td><td>{{ pattern.starts_at|time:"H:i" }}</td><td>{{ pattern.ends_at|time:"H:i" }}</td><td>{{ pattern.break_minutes }}</td></tr>{% empty %}<tr><td colspan="6">No Shift Patterns Recorded</td></tr>{% endfor %}</tbody></table>
+<h2>Absence Types</h2>
+<p>Holiday Counts Against Annual Leave</p>
+<p>Sickness, Training and Jury Service</p>
+<h2>Bank Holidays</h2>
+{% if may_change %}<p><a href="{% url 'record_bank_holiday' %}">Record Bank Holiday</a></p>{% endif %}
+<table><thead><tr><th>Date</th><th>Bank Holiday</th></tr></thead>
+<tbody>{% for holiday in holidays %}<tr><td>{{ holiday.on|date:"j F Y" }}</td><td>{{ holiday.name }}</td></tr>{% empty %}<tr><td colspan="2">No Bank Holidays Recorded</td></tr>{% endfor %}</tbody></table>
 {% endblock %}

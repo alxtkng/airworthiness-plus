@@ -36,3 +36,18 @@ def workload(
         return None, needed > 0
     percent = needed * 100 / available
     return _whole_percent(percent), percent >= margin_percent
+
+
+def minutes_in_window(
+    starts: datetime,
+    ends: datetime,
+    break_minutes: int,
+    window_start: datetime,
+    window_end: datetime,
+) -> int:
+    """Split a shift across periods and allocate an untimed break to its first minutes."""
+    starts, ends = starts.astimezone(UTC), ends.astimezone(UTC)
+    staffed_from = starts + timedelta(minutes=break_minutes)
+    left = max(staffed_from, window_start.astimezone(UTC))
+    right = min(ends, window_end.astimezone(UTC))
+    return max(0, gap_minutes(left, right))

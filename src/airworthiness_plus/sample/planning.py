@@ -24,7 +24,7 @@ def add_work_packages(organisation: Organisation, actor: User, aircraft: Aircraf
         if Added.objects.filter(part=Part.WORK_PACKAGES).exists():
             return 0
         added = 0
-        if not WorkPackage.objects.exists():
+        if not WorkPackage.objects.filter(reference="WP-2026-048").exists():
             package = services.build_package(
                 aircraft,
                 reference="WP-2026-048",

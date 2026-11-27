@@ -159,6 +159,7 @@ class AmendmentCheck(Record):
     organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
     data_set = models.ForeignKey(DataSet, on_delete=models.PROTECT, related_name="checks")
     checked_on = models.DateField("Checked")
+    next_due = models.DateField("Next Amendment Check By", null=True)
     checked_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
     result = models.CharField("Result", max_length=200)
 

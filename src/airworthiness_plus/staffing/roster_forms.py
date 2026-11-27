@@ -7,6 +7,7 @@ from airworthiness_plus.organisations.models import Approval
 from airworthiness_plus.people.models import Person
 from airworthiness_plus.planning.models import WorkPackage
 from airworthiness_plus.staffing.forms import ApprovalChoice
+from airworthiness_plus.staffing.models import Function
 
 LOCAL_TIME = forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M")
 
@@ -57,6 +58,9 @@ class HandoverForm(Form):
 
 
 class SettingsForm(Form):
+    annual_leave_days = forms.IntegerField(
+        label="Annual Leave Allowance in Days", min_value=0, max_value=366
+    )
     load_margin_percent = forms.IntegerField(
         label="Load Warning Percentage", min_value=1, max_value=100
     )
@@ -84,3 +88,43 @@ class SettingsForm(Form):
     standard_break_minutes = forms.IntegerField(
         label="Standard Break in Minutes", min_value=0, max_value=1439
     )
+
+
+class BankHolidayForm(Form):
+    on = forms.DateField(label="Date")
+    name = forms.CharField(label="Bank Holiday", max_length=120)
+
+
+class ShiftPatternForm(Form):
+    name = forms.CharField(label="Shift Pattern", max_length=100)
+    area = forms.CharField(label="Area", max_length=100)
+    days = forms.CharField(label="Days", max_length=120)
+    starts_at = forms.TimeField(label="Starts")
+    ends_at = forms.TimeField(label="Ends")
+    break_minutes = forms.IntegerField(label="Break in Minutes", min_value=0, max_value=1439)
+
+    def clean(self) -> dict[str, object]:
+        values = super().clean() or {}
+        start = self.cleaned_data.get("starts_at")
+        end = self.cleaned_data.get("ends_at")
+        pause = self.cleaned_data.get("break_minutes")
+        if start is not None and end is not None and pause is not None:
+            elapsed = (60 * (end.hour - start.hour) + end.minute - start.minute) % 1440
+            if not 0 <= pause < elapsed:
+                self.add_error("break_minutes", "The Break Must Be Shorter Than the Shift")
+        return values
+
+
+class StaffingMinimumForm(Form):
+    approval = ApprovalChoice(label="Approval", queryset=Approval.objects.all())
+    function = forms.ChoiceField(label="Function", choices=Function.choices)
+    minimum = forms.IntegerField(label="Minimum", min_value=0, max_value=32767)
+    normal = forms.IntegerField(label="Normal", min_value=0, max_value=32767)
+    applies_on = forms.CharField(label="Applies On", max_length=200)
+
+    def clean_normal(self) -> int:
+        normal: int = self.cleaned_data["normal"]
+        minimum = self.cleaned_data.get("minimum")
+        if minimum is not None and normal < minimum:
+            raise forms.ValidationError("The Normal Number Is at Least the Minimum")
+        return normal

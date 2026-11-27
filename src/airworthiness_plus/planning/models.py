@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import F, Q
 
 from airworthiness_plus.aircraft.models import Aircraft
-from airworthiness_plus.contracts.models import WorkOrder
+from airworthiness_plus.contracts.models import Outcome, WorkOrder
 from airworthiness_plus.defects.models import Defect
 from airworthiness_plus.directives.models import Applicability
 from airworthiness_plus.history.models import Record
@@ -73,6 +73,12 @@ class WorkPackage(Record):
     def status(self) -> str:
         if self.released_on is not None:
             return "Released"
+        if (
+            self.order_id is not None
+            and self.order is not None
+            and self.order.outcome == Outcome.WITHDRAWN
+        ):
+            return "Work Order Withdrawn"
         if self.issued_on is None:
             return "Draft"
         if any(card.completed_on is not None for card in self.cards.all()):
@@ -88,6 +94,7 @@ class WorkCard(Record):
     title = models.CharField("Task", max_length=200)
     data_set = models.ForeignKey(DataSet, on_delete=models.PROTECT, related_name="+")
     revision = models.ForeignKey(Revision, on_delete=models.PROTECT, null=True, related_name="+")
+    issue_check_due = models.DateField("Amendment Check Due at Issue", null=True)
     performed_revision = models.ForeignKey(
         Revision, on_delete=models.PROTECT, null=True, related_name="+"
     )

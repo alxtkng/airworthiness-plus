@@ -395,6 +395,16 @@
     table.classList.add("compact");
   }
 
+  Array.prototype.forEach.call(document.querySelectorAll("[data-print]"), function (control) {
+    control.hidden = false;
+    control.addEventListener("click", function () {
+      var collapsed = document.querySelectorAll("main details:not([open])");
+      collapsed.forEach(function (detail) { detail.open = true; });
+      window.print();
+      collapsed.forEach(function (detail) { detail.open = false; });
+    });
+  });
+
   document.documentElement.classList.add("js");
   Array.prototype.forEach.call(
     document.querySelectorAll("main table:not([data-plain])"),
