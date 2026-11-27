@@ -58,7 +58,7 @@ def fleet(page: Page, organisation: str) -> None:
             ("G-ABCD", "15 Days"),
             ("G-BXYZ", "9 Days"),
             ("G-FMNO", "78 Days"),
-            ("G-CDEF", "220.0 Hours"),
+            ("G-CDEF", "358 Days"),
         ):
             expect(rows.filter(has_text=registration)).to_contain_text(remaining)
     else:

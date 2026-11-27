@@ -57,6 +57,7 @@ class FleetRow:
     review_valid_to: date | None
     # Where the aircraft comes in the Fleet: what needs attention first.
     rank: tuple[int, int, int, str] = (0, 0, 0, "")
+    unprojected: bool = False
 
     @property
     def soon(self) -> bool:
@@ -64,11 +65,15 @@ class FleetRow:
 
         An Unserviceable aircraft, one whose next due is within 30 days, a
         limit in hours or cycles being placed by its projected days, and
-        one with something that cannot be calculated, which nobody can
-        place outside the 30 days.
+        one with a limit that cannot be calculated or projected by day.
         """
         unserviceable, severity, days, _ = self.rank
-        return unserviceable == 0 or -severity >= CANNOT_BE_CALCULATED or days <= DUE_WITHIN_DAYS
+        return (
+            unserviceable == 0
+            or -severity >= CANNOT_BE_CALCULATED
+            or days <= DUE_WITHIN_DAYS
+            or self.unprojected
+        )
 
 
 def _airframe(aircraft: Aircraft) -> Reading | None:
@@ -92,8 +97,8 @@ DUE_WITHIN_DAYS = 30
 
 def _next_due(
     aircraft: Aircraft, today: date, review_valid_to: date | None
-) -> tuple[str, str, tuple[int, int, int, str]]:
-    """Return what is due next on the aircraft, what remains, and where it comes in the Fleet.
+) -> tuple[str, str, tuple[int, int, int, str], bool]:
+    """Return what is due next, what remains, its rank and whether anything is unprojected.
 
     The first two values are as the Fleet shows them (REQ-043, REQ-044,
     REQ-100, REQ-280). The third puts the Fleet in order: an Unserviceable aircraft, then
@@ -108,16 +113,21 @@ def _next_due(
     planning utilisation, and when a task cannot be placed in it the Fleet
     says so.
     """
+    from airworthiness_plus.components import services as component_services
+    from airworthiness_plus.components.models import Basis
     from airworthiness_plus.defects import services as defect_services
     from airworthiness_plus.programme import due
 
     registration = aircraft.registration
     if aircraft.status == Status.UNSERVICEABLE:
-        return "Rectify Defect", "Grounded", (0, 0, 0, registration)
+        return "Rectify Defect", "Grounded", (0, 0, 0, registration), False
     lines = due.due_lines(aircraft, today)
     first, complete = due.next_due(lines)
     candidates: list[tuple[int, str, str]] = []
     unranked = bool(lines) and not first
+    unprojected = not complete or any(
+        not line.reached and any(limit.projected is None for limit in line.first) for line in lines
+    )
     severity = max(
         (CANNOT_BE_CALCULATED if line.needs_attention else SEVERITY[line.flag] for line in lines),
         default=0,
@@ -130,7 +140,11 @@ def _next_due(
         text = "; ".join(line.task.title for line in first)
         remaining_text = "; ".join(line.remaining_summary for line in first)
         candidates.append(
-            (days, text if complete else f"{text}; Other Tasks Not Ranked", remaining_text)
+            (
+                days,
+                text if complete else f"{text}; Other Tasks Not Ranked, No Planning Utilisation",
+                remaining_text,
+            )
         )
     for defect in defect_services.open_lines(aircraft.organisation, today, aircraft):
         if defect.days_left is not None:
@@ -142,15 +156,44 @@ def _next_due(
                 )
             )
             severity = max(severity, SEVERITY[defect.flag])
+    if aircraft.calculations_supported:
+        for component in component_services.component_lines(today, aircraft):
+            if not component.fitted or component.component.basis == Basis.NONE:
+                continue
+            name = component.component.name
+            days_at_limit = component.days
+            if component.problem:
+                severity = CANNOT_BE_CALCULATED
+            else:
+                severity = max(severity, SEVERITY[component.flag])
+            if component.problem or any(limit.remaining <= 0 for limit in component.limits):
+                days_at_limit = -1
+            elif days_at_limit is None:
+                name = f"{name}, No Planning Utilisation"
+                unprojected = True
+                days_at_limit = -1
+            candidates.append((days_at_limit, name, component.remaining_text))
+
+        programme = getattr(aircraft, "programme", None)
+        if programme is not None and programme.last_reviewed is not None:
+            annual = due.review_line(programme, today, due.thresholds_of(aircraft.organisation))
+            if annual.due is not None:
+                remaining = days_between(today, annual.due)
+                candidates.append(
+                    (
+                        min(remaining, -1) if remaining <= 0 else remaining,
+                        "Maintenance Programme Annual Review",
+                        _calendar_remaining(remaining),
+                    )
+                )
+                severity = max(severity, SEVERITY[annual.flag])
     if review_valid_to is not None:
         remaining = days_between(today, review_valid_to)
         candidates.append(
             (
                 min(remaining, -1) if remaining <= 0 else remaining,
                 "Airworthiness Review",
-                f"{formatting.amount(Unit.CALENDAR, -remaining)} Overdue"
-                if remaining < 0
-                else formatting.amount(Unit.CALENDAR, remaining),
+                _calendar_remaining(remaining),
             )
         )
         expiry = Limit(Unit.CALENDAR, review_valid_to, remaining)
@@ -162,13 +205,19 @@ def _next_due(
         severity = CANNOT_BE_CALCULATED
     if not candidates:
         text = "Not Ranked, No Planning Utilisation" if unranked else ""
-        return text, "", (1, -severity, NOT_KNOWN, registration)
+        return text, "", (1, -severity, NOT_KNOWN, registration), unprojected
     soonest = min(days for days, _, _ in candidates)
     shown = "; ".join(text for days, text, _ in candidates if days == soonest)
     left = "; ".join(amount for days, _, amount in candidates if days == soonest)
     if unranked:
         shown = f"{shown}; Tasks Not Ranked, No Planning Utilisation"
-    return shown, left, (1, -severity, soonest, registration)
+    return shown, left, (1, -severity, soonest, registration), unprojected
+
+
+def _calendar_remaining(days: int) -> str:
+    if days < 0:
+        return f"{formatting.amount(Unit.CALENDAR, -days)} Overdue"
+    return formatting.amount(Unit.CALENDAR, days)
 
 
 def _user(request: HttpRequest) -> User:
@@ -185,10 +234,16 @@ def fleet(request: HttpRequest) -> HttpResponse:
     from airworthiness_plus.reviews import services as review_services
 
     rows = []
-    for aircraft in Aircraft.objects.filter(stage=Stage.FLEET).select_related("customer"):
+    for aircraft in Aircraft.objects.filter(stage=Stage.FLEET).select_related(
+        "customer", "organisation", "programme"
+    ):
         valid_to = review_services.current_valid_to(aircraft)
-        next_due, remaining, rank = _next_due(aircraft, today, valid_to)
-        rows.append(FleetRow(aircraft, _airframe(aircraft), next_due, remaining, valid_to, rank))
+        next_due, remaining, rank, unprojected = _next_due(aircraft, today, valid_to)
+        rows.append(
+            FleetRow(
+                aircraft, _airframe(aircraft), next_due, remaining, valid_to, rank, unprojected
+            )
+        )
     # What needs attention first (dogfooding D-5). A column heading sorts it another way.
     rows.sort(key=lambda row: row.rank)
     # The Fleet board's filter (REQ-281). Anything else asked for shows every aircraft.

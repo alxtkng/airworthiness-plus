@@ -40,14 +40,14 @@ No maintenance programme, directive, maintenance data or review certificate is r
 | G-ABCD | Piper PA-28 Series (Lycoming) | Pilot-Owner | Serviceable | 50-Hour Check and Left Landing Light Deferral | 12.4 Hours and 15 Days | 14 March 2027 | 6,412.6 |
 | G-BXYZ | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Syndicate of 6 | Serviceable | Cabin Entry Step Deferral | 9 Days | 2 August 2027 | 3,318.0 |
 | G-FMNO | Grob G115/120 Series (Lycoming) | Pilot-Owner | Serviceable | Annual Check | 78 Days | 27 April 2027 | 4,950.2 |
-| G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Engine Overhaul | 220 Hours | 2 December 2027 | 7,731.5 |
+| G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Maintenance Programme Annual Review | 358 Days | 2 December 2027 | 7,731.5 |
 | G-HKLM | Piper PA-38 Series (Lycoming) | Pilot-Owner | Transfer In | Records 14 of 18 Received | | | |
 
 Corrected on 27 November 2026 from the Fleet board: what remains is a column of its own, Remaining, beside Next Due. With deferred defects included, four aircraft are Due in 30 Days on 18 November 2026: G-DGHI, Unserviceable; G-BXYZ, 9 days to its cabin entry step limit; G-ABCD, 15 days to both its check and its defect limit; G-EJKL, 18 days to its review certificate expiry. One is Unserviceable.
 
 ## Maintenance Programme Inputs
 
-The Fleet table shows results. These are the inputs that produce them, added on 18 November 2026 so that the golden test cases can be worked by hand. The Fleet also compares these results with deferred defect limits and review certificate expiry.
+The Fleet table shows results. These are the inputs that produce them, added on 18 November 2026 so that the golden test cases can be worked by hand. The Fleet compares these results with fitted component limits, recorded annual programme reviews, deferred defect limits and review certificate expiry.
 
 | Aircraft Registration | Task | Interval | Last Done | Airframe Hours When Done | Planning Utilisation |
 |---|---|---|---|---|---|
@@ -59,7 +59,7 @@ The Fleet table shows results. These are the inputs that produce them, added on 
 - G-BXYZ: due at 3,359.0 hours (41.0 hours remaining) or on 30 July 2027 (254 days). At 0.5 hours a day 41.0 hours is 82 days, so hours come first.
 - G-FMNO: due at 5,012.0 hours (61.8 hours remaining) or on 4 February 2027 (78 days). At 0.2 hours a day 61.8 hours is 309 days, so the calendar limit comes first.
 
-Added on 18 November 2026 for the programme pages, to be confirmed by Alex King: G-ABCD and G-CDEF are taken to be on the design approval holder's instructions. G-CDEF's engine counts hours since its last overhaul, 0.0 on 12 March 2019, and reads 1,780.0; the overhaul is taken as every 2,000 hours, so 220.0 remain. The Fleet table writes this as 220 Hours; the system writes hours to one decimal place, 220.0 Hours. G-CDEF's programme was last reviewed with its airworthiness review on 11 November 2026. The G-ABCD tyre was replaced at 6,390.0 airframe hours.
+Added on 18 November 2026 for the programme pages, to be confirmed by Alex King: G-ABCD and G-CDEF are taken to be on the design approval holder's instructions. G-CDEF's engine counts hours since its last overhaul, 0.0 on 12 March 2019, and reads 1,780.0; the overhaul is taken as every 2,000 hours, so 220.0 remain. The original Fleet board writes this as 220 Hours. G-CDEF's programme was last reviewed with its airworthiness review on 11 November 2026. The next annual programme review on 11 November 2027 is 358 days from the sample date, before the projected overhaul at 366 days and the airworthiness review certificate expiry at 379 days. The G-ABCD tyre was replaced at 6,390.0 airframe hours.
 
 The basis of each aircraft's maintenance programme is not yet recorded here. The tolerance cases, added on 18 November 2026, take G-BXYZ and G-FMNO to be on the Minimum Inspection Programme (ML.A.302(d)(1): tolerance 1 month or 10 hours); to be confirmed by Alex King.
 

@@ -37,6 +37,12 @@ def test_the_forecast_date_is_today_and_the_days_to_the_limit() -> None:
         rules.within_window(TODAY, TODAY, -1)
 
 
+def test_the_latest_supported_forecast_date() -> None:
+    last_day = (date.max - TODAY).days
+    assert rules.forecast_date(TODAY, last_day) == date.max
+    assert rules.forecast_date(TODAY, last_day + 1) is None
+
+
 DATES = st.dates(min_value=date(1950, 1, 1), max_value=date(2100, 12, 31))
 
 
