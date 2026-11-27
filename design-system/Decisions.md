@@ -84,6 +84,8 @@ Corrections after the independent review of 24 November 2026 (`assurance/indepen
 - **A form sent twice** (finding 14). Recording an approval and naming a new customer take the organisation's row first, so the second waits for the first: it is refused with the reason, or given the customer already made. Changing an owner with a choice that is not valid shows the reason on the aircraft's page
 - **The most a setting may be** (the recompute; REQ-212 to REQ-214) is held by the service and by the database as well as the form: 365 days, 999.9 hours, 9,999 cycles
 
+- **The latest amendment check sets the next check deadline** (REQ-083, pull request 132). A check dated before the latest stays in the history. If the dates are equal, the last entry sets the next deadline.
+
 Phase 1, Continuing Airworthiness, the Rest, decided as ours while building from 27 November 2026 (REQ-220 onward). Each can be changed by Alex King:
 
 - **A defect is recorded with its decision** (REQ-220). Not Deferrable or Deferred, with who decided and the day. The decision is not changed afterwards: if a deferred defect can no longer be deferred, it is closed or a new defect is recorded. A defect already rectified is recorded with its rectification and changes nothing of the aircraft
@@ -153,6 +155,15 @@ Phase 1, Continuing Airworthiness, the Rest, decided as ours while building from
 - **The Dashboard after Phase 1.** Its Continuing Airworthiness panel now also shows: a component whose limit is near, reached or cannot be calculated, and one that is off-wing and due back (REQ-237); a service bulletin awaiting the owner, an aircraft whose weight schedule is to update and one over the reweigh threshold (REQ-258); a source of directives never checked or with a check near or late, and an annual review in progress (REQ-289, REQ-286); and the progress of a transfer's checklist (REQ-277). Each is read from the service that owns it. Still not on it from the Home board: Work Order Not Planned, which waits for work packages (Phase 3)
 
 Not decided here, and so not built until Alex King says: the per-flight technical log (Issue 7), and choosing the type from the SRG1782 list, which needs the Civil Aviation Authority's list as data (REQ-021).
+
+### Phase 1 review corrections
+
+- **Issued certificates and completed airworthiness reviews** show the aircraft identity and authorisation saved with the certificate. The upgrade gives existing certificates the values available on the day it runs. The backfill is in their history.
+- **Recording a release** uses the Release to Service form. Recording work or directive compliance creates the work entry. Its release reference and entry date are recorded together and retained. The release board counts certificates by their issue date.
+- **Management contracts and releases** keep the approval that covers the activity. Where two held approvals qualify, the organisation's original approval takes precedence if it qualifies. Approval records have an end date. An approval whose start is unknown is treated as held up to that end date, as for record retention.
+- **An aircraft owner changes after its current management contract is ended.** Ending the contract preserves the signed record and lets the organisation record the change of owner separately. The recorded end day remains inclusive for historical lookup. A replacement signed on that day takes precedence when work is linked.
+- **Programme reviews** keep the latest review date. A future date or an older submitted date is refused with the reason. A completed annual review retains its point-by-point evidence on the programme page.
+- **Configuration baselines** keep a dependency open while its linked modification or repair is in progress. A transfer checklist's tick is checked against the live evidence when the aircraft moves to the Fleet.
 
 ## Navigation
 

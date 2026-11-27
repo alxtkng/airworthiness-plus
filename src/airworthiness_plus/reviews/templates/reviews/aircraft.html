@@ -23,7 +23,7 @@
 {% for certificate, extensions in certificates %}
 <tr>
 <td><a href="{% url 'certificate' certificate.id %}">{{ certificate.reference }}</a></td>
-<td>{% if certificate.issued_by %}{{ certificate.review_staff_name }}, {{ certificate.issued_by.authorisation_reference }}{% if certificate.from_before_records %}, Before These Records{% endif %}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
+<td>{% if certificate.issued_by %}{{ certificate.review_staff_name }}, {{ certificate.review_staff_authorisation }}{% if certificate.from_before_records %}, Before These Records{% endif %}{% else %}{{ certificate.issued_elsewhere_by }}{% endif %}</td>
 <td>{{ certificate.issued_on|long_date }}</td>
 <td>{{ certificate.valid_to|long_date }}</td>
 <td>{% if certificate.voided %}Void, {{ certificate.void_reason }}{% elif certificate == line.certificate %}Current{% else %}Superseded{% endif %}</td>
@@ -53,7 +53,7 @@
 </form>
 {% endif %}
 <h2>Review {{ aircraft.registration }}</h2>
-{% for review in reviews %}<p><a href="{% url 'review' review.id %}">Review Started {{ review.started_on|long_date }} by {{ review.staff.user.full_name }}{% if review.certificate %}, {{ review.certificate.reference }}{% else %}, in Progress{% endif %}</a></p>
+{% for review in reviews %}<p><a href="{% url 'review' review.id %}">Review Started {{ review.started_on|long_date }} by {% if review.certificate %}{{ review.certificate.review_staff_name }}, {{ review.certificate.reference }}{% else %}{{ review.staff.user.full_name }}, in Progress{% endif %}</a></p>
 {% endfor %}
 {% if not refusal %}
 <form method="post" action="{% url 'start_review' aircraft.id %}">

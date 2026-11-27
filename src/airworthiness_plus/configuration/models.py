@@ -185,7 +185,7 @@ class Position(Record):
         """Return Recorded, Not Recorded or Needs a Recorded Change, as the board does."""
         if not self.recorded:
             return "Not Recorded"
-        if self.needs_change and self.change_id is None:
+        if self.needs_change and (self.change is None or self.change.embodied_on is None):
             return "Needs a Recorded Change"
         return "Recorded"
 

@@ -139,7 +139,7 @@ def test_the_release_to_service_page_of_the_sample_on_18_november_2026(
     listed, who = tables(body)
     assert [row[:11] for row in listed] == LISTED
     assert (
-        "<p>3 Issued, Last 30 Days, 1 Not Yet in Records, 0 Incomplete Maintenance, "
+        "<p>2 Issued, Last 30 Days, 1 Not Yet in Records, 0 Incomplete Maintenance, "
         "0 Pilot-Owner Notice Overdue</p>" in body
     )
     assert "<p>In Records Within 30 Days of Completion, ML.A.305(a)</p>" in body
@@ -524,6 +524,31 @@ def test_a_certificate_sent_twice_is_recorded_once(
         "[Earlier Reference]",
         date(2026, 11, 12),
     )
+
+
+def test_a_later_date_cannot_override_when_a_release_already_entered_the_records(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    work = work_on(
+        sample,
+        fleet["G-EJKL"],
+        release_reference="[Earlier Reference]",
+        release_recorded_on=date(2026, 11, 11),
+    )
+    with pytest.raises(services.RefusedError, match="Already Entered in the Records"):
+        record(
+            sample,
+            work,
+            reference="[Earlier Reference]",
+            issued_on=date(2026, 11, 13),
+            recorded_on=date(2026, 11, 14),
+        )
+    with pytest.raises(services.RefusedError, match="On or After the Day It Was Issued"):
+        record(sample, work, reference="[Earlier Reference]", issued_on=date(2026, 11, 13))
+    with working_for(sample.ours.id, sample.reader.id):
+        assert not Release.objects.filter(work=work).exists()
+        work.refresh_from_db()
+        assert work.release_recorded_on == date(2026, 11, 11)
 
 
 # Who may

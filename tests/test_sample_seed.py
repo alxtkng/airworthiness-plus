@@ -149,8 +149,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Piper PA-28 Series (Lycoming)",
             "Pilot-Owner",
             "Serviceable",
-            "50-Hour Check",
-            "12.4 Hours",
+            "50-Hour Check; Deferred Defect Limit, Left Landing Light Inoperative",
+            "12.4 Hours; 15 Days",
             "14 March 2027",
             "6,412.6",
         ],
@@ -158,8 +158,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Cessna/Reims-Cessna 172/F172 Series (Lycoming)",
             "Syndicate of 6",
             "Serviceable",
-            "100-Hour or Annual Check",
-            "41.0 Hours",
+            "Deferred Defect Limit, Cabin Entry Step Loose",
+            "9 Days",
             "2 August 2027",
             "3,318.0",
         ],
@@ -247,36 +247,39 @@ def test_the_fleet_opens_with_what_needs_attention_first(reader: Client) -> None
     """Dogfooding D-5, decided 19 November 2026. The Unserviceable aircraft, then
     whatever is marked, then the soonest due.
 
-    By hand. G-DGHI is Unserviceable. G-EJKL's review is 18 days away, which is
-    Due Soon, and nothing else is marked. Then by days to what is next due:
-    G-ABCD 12.4 hours at 0.8 a day is 15 days; G-FMNO 78 days; G-BXYZ 41.0
-    hours at 0.5 a day is 82 days; G-CDEF 220.0 hours at 0.6 a day is 366
-    days, rounded down.
+    G-DGHI is Unserviceable. Due Soon in order of days left: G-BXYZ's
+    deferred defect (9), G-ABCD's check and deferred defect (15) and
+    G-EJKL's review (18). G-FMNO follows (78), then G-CDEF (366).
     """
     order = [row[0] for row in rows(reader, "/")]
-    assert order == ["G-DGHI", "G-EJKL", "G-ABCD", "G-FMNO", "G-BXYZ", "G-CDEF"]
+    assert order == ["G-DGHI", "G-BXYZ", "G-ABCD", "G-EJKL", "G-FMNO", "G-CDEF"]
 
 
 def test_the_fleet_is_filtered_as_the_fleet_board_filters_it(reader: Client) -> None:
-    """REQ-281. Golden, from the Fleet board: All 6, Due in 30 Days 3, Unserviceable 1.
+    """REQ-281. Golden, from the Fleet board: All 6, Due in 30 Days 4, Unserviceable 1.
 
     By hand, for 18 November 2026. G-DGHI is Unserviceable. G-EJKL's review is
-    18 days away. G-ABCD's 12.4 hours at 0.8 a day are 15 days. The others are
-    78, 82 and 366 days away: outside the 30.
+    18 days away, G-BXYZ's defect is 9 days away, and G-ABCD's task and
+    defect are each 15 days away. G-FMNO and G-CDEF are outside the window.
     """
     response: HttpResponse = reader.get("/", secure=True)  # type: ignore[assignment]
     body = response.content.decode()
     filters = body.split('<p class="filter">', 1)[1].split("</p>", 1)[0]
     assert re.findall(r'<a href="([^"]*)"( aria-current="true")?>([^<]+)</a>', filters) == [
         ("/", ' aria-current="true"', "All 6"),
-        ("/?show=due", "", "Due in 30 Days 3"),
+        ("/?show=due", "", "Due in 30 Days 4"),
         ("/?show=unserviceable", "", "Unserviceable 1"),
     ]
-    assert [row[0] for row in rows(reader, "/?show=due")] == ["G-DGHI", "G-EJKL", "G-ABCD"]
+    assert [row[0] for row in rows(reader, "/?show=due")] == [
+        "G-DGHI",
+        "G-BXYZ",
+        "G-ABCD",
+        "G-EJKL",
+    ]
     assert [row[0] for row in rows(reader, "/?show=unserviceable")] == ["G-DGHI"]
     # The view asked for is the one marked, and anything else shows every aircraft.
     due: HttpResponse = reader.get("/?show=due", secure=True)  # type: ignore[assignment]
-    assert '<a href="/?show=due" aria-current="true">Due in 30 Days 3</a>' in due.content.decode()
+    assert '<a href="/?show=due" aria-current="true">Due in 30 Days 4</a>' in due.content.decode()
     assert len(rows(reader, "/?show=anything")) == 6
     # The search is always shown above the Fleet, however few aircraft (REQ-282).
     assert '<table data-search="always">' in body
@@ -285,8 +288,8 @@ def test_the_fleet_is_filtered_as_the_fleet_board_filters_it(reader: Client) -> 
     assert remaining == {
         "G-DGHI": "Grounded",
         "G-EJKL": "18 Days",
-        "G-ABCD": "12.4 Hours",
-        "G-BXYZ": "41.0 Hours",
+        "G-ABCD": "12.4 Hours; 15 Days",
+        "G-BXYZ": "9 Days",
         "G-FMNO": "78 Days",
         "G-CDEF": "220.0 Hours",
     }

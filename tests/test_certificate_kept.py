@@ -165,6 +165,12 @@ def test_the_database_never_lets_what_a_certificate_showed_be_altered(
             "organisation_address",
             "organisation_approval_reference",
             "review_staff_name",
+            "review_staff_authorisation",
+            "aircraft_registration",
+            "aircraft_type_rating",
+            "aircraft_manufacturer",
+            "aircraft_designation",
+            "aircraft_serial_number",
         ):
             with pytest.raises(DatabaseError, match="never altered"), transaction.atomic():
                 Certificate.objects.filter(pk=reviews.cdef.pk).update(**{field: "[Altered]"})
@@ -180,8 +186,12 @@ def test_the_database_never_lets_what_a_certificate_showed_be_altered(
             issued_by=reviews.lucy,
             organisation_name="[Altered]",
             review_staff_name="[Altered]",
+            aircraft_registration="G-FAKE",
+            review_staff_authorisation="[Altered]",
         )
         direct.refresh_from_db()
+        assert direct.aircraft_registration == "G-EJKL"
+        assert direct.review_staff_authorisation == "[Authorisation Reference 1]"
         assert (
             direct.organisation_name,
             direct.organisation_address,

@@ -17,16 +17,16 @@
 <dt>Next Review By</dt><dd>{{ review.due|long_date }}{% if review.flag.value %}, {{ review.flag.value|status }}{% endif %}</dd>
 </dl>
 <p>
-<a href="{% url 'set_up_programme' aircraft.id %}">Change Programme</a>
-<a href="{% url 'add_task' aircraft.id %}">Add a Task</a>
-<a href="{% url 'record_work' aircraft.id %}">Record Work Done</a>
+{% if may_change %}<a href="{% url 'set_up_programme' aircraft.id %}">Change Programme</a>
+<a href="{% url 'add_task' aircraft.id %}">Add a Task</a>{% endif %}
+{% if may_record_work %}<a href="{% url 'record_work' aircraft.id %}">Record Work Done</a>{% endif %}
 </p>
-<form method="post" action="{% url 'record_review' aircraft.id %}">
+{% if may_review %}<form method="post" action="{% url 'record_review' aircraft.id %}">
 {% csrf_token %}
 <label for="reviewed_on">Reviewed</label>
 <input id="reviewed_on" name="reviewed_on" type="date" required>
 <button type="submit">Record Programme Review</button>
-</form>
+</form>{% endif %}
 <h2>Departures From Manufacturer's Instructions</h2>
 {% if may_change %}<p><a href="{% url 'add_departure' aircraft.id %}">Record a Departure</a></p>{% endif %}
 {% if departures %}
@@ -87,7 +87,14 @@
 {% if may_review %}<form method="post" action="{% url 'start_annual_review' aircraft.id %}">{% csrf_token %}<button type="submit">Start the Annual Review</button></form>{% endif %}
 {% endif %}
 {% for done in completed_reviews %}
-<p>Annual Review Completed {{ done.completed_on|long_date }} by {{ done.completed_by_name }}</p>
+<details>
+<summary>Annual Review Completed {{ done.completed_on|long_date }} by {{ done.completed_by_name }}</summary>
+<dl>
+{% for name, label, point, note, complete in done.points %}
+<dt>{{ label }}, {{ point }}</dt><dd>{{ note }}</dd>
+{% endfor %}
+</dl>
+</details>
 {% endfor %}
 <p>Reviewed at Least Annually, ML.A.302(c)(9); What the Review Considers, AMC1 ML.A.302(c)(9)</p>
 <h2>Tasks</h2>
@@ -131,6 +138,11 @@
 </td>
 </tr>
 {% endfor %}
+{% if may_change %}<tr><td colspan="7">
+<form method="post" action="{% url 'retire_task' line.task.id %}">
+{% csrf_token %}<button type="submit">Retire {{ line.task.title }}</button>
+</form>
+</td></tr>{% endif %}
 {% if line.tolerance_note %}<tr>
 <td colspan="7">{{ line.tolerance_note }}</td>
 </tr>
@@ -139,7 +151,7 @@
 </table>
 {% else %}
 <p>No Programme Recorded</p>
-<p><a href="{% url 'set_up_programme' aircraft.id %}">Record the Programme</a> <a href="{% url 'record_work' aircraft.id %}">Record Work Done</a></p>
+<p>{% if may_change %}<a href="{% url 'set_up_programme' aircraft.id %}">Record the Programme</a>{% endif %} {% if may_record_work %}<a href="{% url 'record_work' aircraft.id %}">Record Work Done</a>{% endif %}</p>
 {% endif %}
 <h2>Work Done</h2>
 <table>
@@ -153,12 +165,7 @@
 <td>{{ line.work.description }}</td>
 <td class="number">{{ line.work.hours|hours }}</td>
 <td>{% if line.work.release_reference %}{{ line.work.release_reference }}, Recorded {{ line.work.release_recorded_on|long_date }}{% if line.release_late %}, After the 30 Days{% endif %}{% else %}To Be Recorded by {{ line.release_deadline|long_date }}, {{ line.release_flag.value }}
-<form method="post" action="{% url 'record_release' line.work.id %}">
-{% csrf_token %}
-<label for="release-{{ line.work.id }}">Certificate of Release to Service</label>
-<input id="release-{{ line.work.id }}" name="release_reference" type="text" maxlength="100" required>
-<button type="submit">Record Release</button>
-</form>{% endif %}</td>
+{% if may_record_work %}<a href="{% url 'record_release_certificate' line.work.id %}">Record Certificate of Release to Service</a>{% endif %}{% endif %}</td>
 <td>{% if line.work.by_pilot_owner %}Pilot-Owner Maintenance{% if line.work.pilot_owner_told_on %}, Organisation Told {{ line.work.pilot_owner_told_on|long_date }}{% if line.told_late %}, After the 30 Days{% endif %}{% endif %}{% endif %}</td>
 <td>{% for item in line.workings %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}</td>
 </tr>

@@ -18,7 +18,7 @@ class AddUserForm(Form):
     """
 
     person = forms.ModelChoiceField(
-        label="Person Already Recorded, With No Sign-In",
+        label="Recorded Person with No Sign-In",
         queryset=Person.objects.none(),
         required=False,
         empty_label="A New Person",

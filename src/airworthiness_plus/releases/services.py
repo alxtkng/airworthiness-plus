@@ -93,7 +93,12 @@ def record_certificate(
         raise RefusedError("A Certificate Is Not Issued After Today")
     if issued_on < work.dated:
         raise RefusedError("A Certificate Is Not Issued Before the Work Was Completed")
-    recorded_on = recorded_on or work.release_recorded_on or today
+    if work.release_recorded_on is not None:
+        if recorded_on is not None and recorded_on != work.release_recorded_on:
+            raise RefusedError("Use the Day the Release Was Already Entered in the Records")
+        recorded_on = work.release_recorded_on
+    else:
+        recorded_on = recorded_on or today
     if not issued_on <= recorded_on <= today:
         raise RefusedError(
             "A Certificate Is Entered in the Records On or After the Day It Was Issued, "
@@ -104,12 +109,16 @@ def record_certificate(
             "Pilot-Owner Maintenance Is Released by the Pilot-Owner, and Nothing Else Is, ML.A.803"
         )
     if kind == IssuedBy.ORGANISATION:
-        if not maintains(work.aircraft.organisation):
+        if not approvals.may_act_on(
+            work.aircraft.organisation, issued_on, ApprovalType.PART_145, Privilege.MAINTENANCE
+        ):
             raise RefusedError(NOT_OPEN)
         if issued_by is None:
             raise RefusedError("Certifying Staff Who Issue a Certificate Are Named")
         if issued_by.staff_group != StaffGroup.CERTIFYING:
             raise RefusedError("The Person Named Is Not Certifying Staff")
+        if issued_by.joined_on is not None and issued_by.joined_on > issued_on:
+            raise RefusedError("The Person Named Had Not Joined by the Day of Issue")
         if issued_by.left_on is not None and issued_by.left_on < issued_on:
             raise RefusedError("The Person Named Had Left by the Day of Issue")
         if issuer_name or licence:
@@ -127,6 +136,7 @@ def record_certificate(
         raise RefusedError(
             "Incomplete Maintenance Is Released With Its Limitations Stated, ML.A.801(f)"
         )
+    Aircraft.objects.select_for_update().get(pk=work.aircraft_id)
     stops = (
         Defect.objects.filter(
             aircraft=work.aircraft, decision=Decision.NOT_DEFERRABLE, found_on__lte=issued_on
@@ -180,6 +190,14 @@ class ReleaseLine:
         return "" if self.in_records else self.line.release_flag.value
 
     @property
+    def issued_recently(self) -> bool:
+        """Return whether a certificate was issued inside the board's reporting window."""
+        if self.certificate is None:
+            return False
+        days = self.days_since - days_between(self.work.dated, self.certificate.issued_on)
+        return 0 <= days <= SHOWN_FOR_DAYS
+
+    @property
     def notice_overdue(self) -> bool:
         """Return whether a pilot-owner told the organisation late, or has not yet and is late."""
         work = self.work
@@ -216,8 +234,9 @@ def release_lines(today: date) -> list[ReleaseLine]:
         for line in due.work_lines(aircraft, today):
             since = days_between(line.work.dated, today)
             outstanding = line.release_flag is not Flag.NONE
-            if outstanding or 0 <= since <= SHOWN_FOR_DAYS:
-                lines.append(ReleaseLine(line, certificates.get(line.work.pk), since))
+            release = ReleaseLine(line, certificates.get(line.work.pk), since)
+            if outstanding or 0 <= since <= SHOWN_FOR_DAYS or release.issued_recently:
+                lines.append(release)
     return sorted(
         lines,
         key=lambda one: (
@@ -233,9 +252,9 @@ def release_lines(today: date) -> list[ReleaseLine]:
 def summary(lines: list[ReleaseLine]) -> Summary:
     """Return the counts of the page (REQ-264)."""
     return Summary(
-        issued=sum(1 for one in lines if 0 <= one.days_since <= SHOWN_FOR_DAYS),
+        issued=sum(one.issued_recently for one in lines),
         not_in_records=sum(1 for one in lines if not one.in_records),
-        incomplete=Release.objects.filter(incomplete=True).count(),
+        incomplete=sum(one.certificate is not None and one.certificate.incomplete for one in lines),
         notice_overdue=sum(1 for one in lines if one.notice_overdue),
     )
 

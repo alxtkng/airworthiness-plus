@@ -107,6 +107,7 @@ def _next_due(
     planning utilisation, and when a task cannot be placed in it the Fleet
     says so.
     """
+    from airworthiness_plus.defects import services as defect_services
     from airworthiness_plus.programme import due
 
     registration = aircraft.registration
@@ -130,13 +131,25 @@ def _next_due(
         candidates.append(
             (days, text if complete else f"{text}; Other Tasks Not Ranked", remaining_text)
         )
+    for defect in defect_services.open_lines(aircraft.organisation, today, aircraft):
+        if defect.days_left is not None:
+            candidates.append(
+                (
+                    defect.days_left,
+                    f"Deferred Defect Limit, {defect.defect.title}",
+                    defect.remaining_text,
+                )
+            )
+            severity = max(severity, SEVERITY[defect.flag])
     if review_valid_to is not None:
         remaining = days_between(today, review_valid_to)
         candidates.append(
             (
                 min(remaining, -1) if remaining <= 0 else remaining,
                 "Airworthiness Review",
-                formatting.amount(Unit.CALENDAR, remaining),
+                f"{formatting.amount(Unit.CALENDAR, -remaining)} Overdue"
+                if remaining < 0
+                else formatting.amount(Unit.CALENDAR, remaining),
             )
         )
         expiry = Limit(Unit.CALENDAR, review_valid_to, remaining)
@@ -237,6 +250,8 @@ def _aircraft_page(
             "counters": counters,
             "details_form": details,
             "owner_form": owner_form,
+            "may_change_aircraft": user.may(Action.ADD_OR_CHANGE_AIRCRAFT),
+            "may_enter_utilisation": user.may(Action.ENTER_UTILISATION),
             "problem": problem,
             "defects": defect_services.open_lines(user.organisation, services.today(), aircraft),
             "may_record_defect": user.may(Action.RECORD_DEFECT),
@@ -253,7 +268,11 @@ def change_owner(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     if not form.is_valid():
         # Said on the page, not passed over in silence (finding 14 of 24 November 2026).
         return _aircraft_page(request, aircraft, form)
-    services.change_owner(aircraft, form.cleaned_data["customer"])
+    try:
+        services.change_owner(aircraft, form.cleaned_data["customer"])
+    except services.OwnerChangeRefusedError as error:
+        form.add_error(None, str(error))
+        return _aircraft_page(request, aircraft, form)
     return redirect("aircraft", aircraft_id=aircraft.id)
 
 
@@ -388,7 +407,9 @@ def add_counter(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
 @require_POST
 def records_received(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """Update the count of records received, and move a complete transfer to the Fleet."""
-    aircraft = get_object_or_404(Aircraft, pk=aircraft_id, stage=Stage.TRANSFER_IN)
+    aircraft = get_object_or_404(
+        Aircraft.objects.select_for_update(), pk=aircraft_id, stage=Stage.TRANSFER_IN
+    )
     form = RecordsReceivedForm(request.POST)
     expected = aircraft.records_expected or 0
     if form.is_valid() and form.cleaned_data["received"] <= expected:
@@ -396,7 +417,12 @@ def records_received(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpRespon
         if request.POST.get("complete") == "Yes":
             try:
                 services.complete_transfer(aircraft)
-            except services.TransferNotCompleteError:
-                return redirect("transfers")
+            except services.TransferNotCompleteError as error:
+                return render(
+                    request,
+                    "configuration/refused.html",
+                    {"reason": str(error), "back": "transfers", "arguments": ()},
+                    status=409,
+                )
             return redirect("aircraft", aircraft_id=aircraft.id)
     return redirect("transfers")

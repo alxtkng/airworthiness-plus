@@ -112,6 +112,8 @@ def record_defect(
         if data_limit_on is not None and data_limit_on < decided_on:
             raise RefusedError("A Limit Is Not Before the Day of the Decision")
         limit = rules.deferral_limit(decided_on, days, data_limit_on)
+        if days_between(decided_on, limit) > rules.MOST_DAYS:
+            raise RefusedError("A Limit Is at Most 365 Days After the Decision")
     elif decision == Decision.NOT_DEFERRABLE:
         if basis or data_limit_on is not None:
             raise RefusedError("A Defect That Is Not Deferrable Has No Limit")
@@ -123,7 +125,7 @@ def record_defect(
 
     closing = closed_on is not None or bool(rectification.strip()) or work_done is not None
     if closing:
-        _check_closure(aircraft, found_on, rectification, closed_on, work_done, today)
+        _check_closure(aircraft, found_on, decided_on, rectification, closed_on, work_done, today)
         if matching.filter(
             chapter=chapter,
             system=system,
@@ -169,6 +171,8 @@ def _check_certifying(person: Person, on: date) -> None:
     """Refuse a person who is not certifying staff, or who had left by the day."""
     if person.staff_group != StaffGroup.CERTIFYING:
         raise RefusedError("The Person Named Is Not Certifying Staff")
+    if person.joined_on is not None and person.joined_on > on:
+        raise RefusedError("The Person Named Had Not Joined by the Day of the Decision")
     if person.left_on is not None and person.left_on < on:
         raise RefusedError("The Person Named Had Left by the Day of the Decision")
 
@@ -176,6 +180,7 @@ def _check_certifying(person: Person, on: date) -> None:
 def _check_closure(
     aircraft: Aircraft,
     found_on: date,
+    decided_on: date,
     rectification: str,
     closed_on: date | None,
     work_done: WorkDone | None,
@@ -189,6 +194,8 @@ def _check_closure(
         raise RefusedError("A Defect Is Not Closed After Today")
     if closed_on < found_on:
         raise RefusedError("A Defect Is Not Closed Before It Was Found")
+    if closed_on < decided_on:
+        raise RefusedError("A Defect Is Not Closed Before the Decision Was Made")
     if work_done is not None and work_done.aircraft_id != aircraft.id:
         raise RefusedError("The Work Done Belongs to Another Aircraft")
 
@@ -213,6 +220,7 @@ def close_defect(
     _check_closure(
         defect.aircraft,
         defect.found_on,
+        defect.decided_on,
         rectification,
         closed_on,
         work_done,

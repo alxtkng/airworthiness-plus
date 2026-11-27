@@ -75,12 +75,6 @@ class WorkForm(Form):
     dated = forms.DateField(label="Completed")
     hours = forms.DecimalField(label="Hours", max_digits=8, decimal_places=1, min_value=0)
     cycles = forms.IntegerField(label="Cycles", min_value=0)
-    release_reference = forms.CharField(
-        label="Certificate of Release to Service", max_length=100, required=False
-    )
-    release_recorded_on = forms.DateField(
-        label="Release Entered in the Records, If Before Today", required=False
-    )
     by_pilot_owner = forms.BooleanField(label="Pilot-Owner Maintenance", required=False)
     pilot_owner_told_on = forms.DateField(label="Organisation Told", required=False)
 
@@ -89,12 +83,6 @@ class WorkForm(Form):
         self.fields["task"].queryset = Task.objects.filter(  # type: ignore[attr-defined]
             programme__aircraft_id=aircraft_id, retired=False
         )
-
-
-class ReleaseForm(Form):
-    """Record that the certificate of release to service is in the records."""
-
-    release_reference = forms.CharField(label="Certificate of Release to Service", max_length=100)
 
 
 class ReviewForm(Form):

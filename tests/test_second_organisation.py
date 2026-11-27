@@ -144,6 +144,45 @@ def test_the_second_organisation_is_that_of_the_sample(
         assert chain.problems(list(Event.objects.all())) == []
 
 
+def test_maintenance_and_management_records_take_the_approval_for_the_activity(
+    both: tuple[Organisation, Organisation],
+) -> None:
+    from airworthiness_plus.contracts import services as contracts
+    from airworthiness_plus.contracts.models import Scope
+    from airworthiness_plus.programme import services as programmes
+    from airworthiness_plus.releases import services as releases
+    from airworthiness_plus.releases.models import IssuedBy
+
+    _, theirs = both
+    administrator = user_named(second.ADMINISTRATOR)
+    with working_for(theirs.id, administrator.id):
+        aircraft = Aircraft.objects.get(registration="G-JNOP")
+        staff = Person.objects.get(full_name="[Second Certifying Staff Name]")
+        contract = contracts.draw_up_contract(
+            aircraft,
+            scope=Scope.ALL,
+            type_of_operation="Private",
+            owner_address="[Owner Address]",
+            signed_on=TODAY,
+        )
+        work = programmes.record_work(
+            aircraft,
+            description="Inspection",
+            dated=TODAY,
+            hours=Decimal("2406.5"),
+            cycles=0,
+        )
+        certificate = releases.record_certificate(
+            work,
+            reference="CRS-1",
+            kind=IssuedBy.ORGANISATION,
+            issued_by=staff,
+            issued_on=TODAY,
+        )
+        assert contract.organisation_approval_reference == "UK.CAMO.[Number]"
+        assert certificate.approval_reference == "UK.145.[Number]"
+
+
 def test_each_sample_organisation_sees_its_own_records_alone(
     both: tuple[Organisation, Organisation],
 ) -> None:

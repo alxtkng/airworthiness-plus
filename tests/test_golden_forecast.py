@@ -31,6 +31,7 @@ def test_the_forecast_date_is_today_and_the_days_to_the_limit() -> None:
     assert rules.within_window(TODAY, date(2027, 3, 18))
     assert not rules.within_window(TODAY, date(2027, 3, 19))
     assert rules.within_window(TODAY, TODAY)
+    assert not rules.within_window(TODAY, date(2026, 11, 17))
     assert not rules.within_window(TODAY, None)
     with pytest.raises(ValueError, match="below zero"):
         rules.within_window(TODAY, TODAY, -1)

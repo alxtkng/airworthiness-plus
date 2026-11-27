@@ -105,8 +105,8 @@ def set_item(item: TransferItem, *, state: ItemState | str, note: str = "") -> T
     records bear it out. Not Applicable is for the items that may not
     apply, with the reason. The same state and note sent twice is refused.
     """
+    aircraft = Aircraft.objects.select_for_update().get(pk=item.transfer.aircraft_id)
     item = TransferItem.objects.select_for_update().get(pk=item.pk)
-    aircraft = item.transfer.aircraft
     if aircraft.stage != Stage.TRANSFER_IN:
         raise RefusedError("The Checklist of an Aircraft in the Fleet Is Never Altered")
     if state not in ItemState.values:
@@ -177,7 +177,16 @@ def stops_the_fleet(aircraft: Aircraft) -> list[str]:
     transfer = Transfer.objects.filter(aircraft=aircraft).first()
     if transfer is None:
         return []
-    return [item.label for item in transfer.items.all() if not item.done]
+    today = aircraft_services.today()
+    stops = []
+    for item in transfer.items.all():
+        if not item.done:
+            stops.append(item.label)
+        elif item.state == ItemState.COMPLETE:
+            evidence = what_the_records_say(aircraft, item.number, today)
+            if evidence is not None and not evidence[0]:
+                stops.append(f"{item.label}, {evidence[1]}")
+    return stops
 
 
 # Positions
@@ -276,14 +285,26 @@ def last_baseline(aircraft: Aircraft) -> Baseline | None:
     return Baseline.objects.filter(aircraft=aircraft).order_by("-signed_on", "-id").first()
 
 
+def fitted_component(position: Position, today: date) -> component_services.ComponentLine | None:
+    """Return the linked component while it is still fitted to this aircraft."""
+    if position.component is None:
+        return None
+    line = component_services.component_line(position.component, today)
+    if not line.fitted or line.fitting is None or line.fitting.aircraft_id != position.aircraft_id:
+        return None
+    return line
+
+
 def _major_problem(position: Position, today: date) -> str:
     """Return what is missing of a major item, or nothing."""
-    if not position.recorded:
-        return ""  # Already an open item: the position is not recorded.
-    if position.component is None:
+    if not position.recorded and position.tracked:
+        return ""  # The checklist already shows this tracked position as not recorded.
+    if position.component_id is None:
         return f"{position.name}, No Component Recorded"
-    problem = component_services.component_line(position.component, today).problem
-    return f"{position.name}, {problem}" if problem else ""
+    line = fitted_component(position, today)
+    if line is None:
+        return f"{position.name}, Component No Longer Fitted"
+    return f"{position.name}, {line.problem}" if line.problem else ""
 
 
 @dataclass(frozen=True)
@@ -348,7 +369,7 @@ def set_up(aircraft: Aircraft, today: date) -> SetUp:
     for position in positions:
         if position.tracked and not position.recorded:
             open_items.append(f"{position.name}, Not Recorded")
-        elif position.needs_change and position.change_id is None:
+        elif position.status == "Needs a Recorded Change":
             open_items.append(f"{position.name}, Needs a Recorded Change")
         if position.major:
             problem = _major_problem(position, today)

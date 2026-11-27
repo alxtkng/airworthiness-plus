@@ -307,7 +307,7 @@ def test_a_deferred_defect_is_recorded_with_its_limit(
     assert "<dt>Default Limit of the Organisation</dt><dd>30 Days</dd>" in body
     # The aircraft stays Serviceable, and its own page lists the defect.
     record_page = page(planner, f"/aircraft/{fleet['G-ABCD'].id}/")
-    assert f"<dt>Status</dt><dd>{dot('Serviceable')}</dd>" in record_page
+    assert "<dt>Status</dt><dd>Serviceable</dd>" in record_page
     assert f'<a href="/defects/{defect.id}/">Left Landing Light Inoperative</a>' in record_page
 
 
@@ -485,6 +485,10 @@ def test_the_database_refuses_a_grounding_defect_on_a_serviceable_aircraft(
         ({"basis": "Certifying Staff"}, "Certifying Staff Who Defer a Defect Are Named"),
         ({"basis": "Pilot-in-Command, Minimum Equipment List"}, "Minimum Equipment List Gives"),
         ({"data_limit_on": "2026-11-02"}, "Not Before the Day of the Decision"),
+        (
+            {"basis": "Pilot-in-Command, Minimum Equipment List", "data_limit_on": "2028-01-01"},
+            "365 Days After the Decision",
+        ),
         ({"decision": "Not Deferrable"}, "Not Deferrable Has No Limit"),
         ({"decision": "Deferred Later"}, "Select a valid choice"),
         ({"rectification": "[Done]"}, "Has the Day It Was Closed"),
@@ -970,7 +974,7 @@ def test_the_dashboard_shows_each_deferred_defect_from_its_lead_time(
         return [
             [row.subject, row.item, row.due, row.remaining, row.status, row.detail, row.page]
             for row in panel.rows
-            if row.page == "Defects"
+            if row.page == "Defects" and row.item.startswith("Deferred Defect Limit")
         ]
 
     assert rows() == DASHBOARD

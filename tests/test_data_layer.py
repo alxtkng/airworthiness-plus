@@ -242,6 +242,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "contracts_workorder": {"workorder_rules"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
         "releases_release": {"release_rules"},
+        "programme_workdone": {"release_entry_fixed"},
         # A fitting keeps what it said, and its removal is added once (REQ-235).
         "components_installation": {"installation_rules"},
         # A decision on a service bulletin, and a change or repair, are fixed (REQ-250, REQ-252).
@@ -252,7 +253,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "programme_annualreview": {"annualreview_rules"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
-        "reviews_certificate": {"certificate_serial", "certificate_fixed"},
+        "reviews_certificate": {"certificate_serial", "certificate_fixed", "certificate_identity"},
         # An extension keeps what it showed when it was made (REQ-110).
         "reviews_extension": {"extension_keeps", "extension_fixed"},
         "reviews_reviewstaff": {"reviewstaff_fixed"},

@@ -27,9 +27,12 @@ def _log(request: HttpRequest, message: str = "") -> HttpResponse:
         request,
         "acceptance/problem_log.html",
         {
-            "lines": services.problem_log(),
+            "lines": [
+                (line, NoteForm(auto_id=f"problem-{line.problem.id}-%s"))
+                for line in services.problem_log()
+            ],
+            "may_add": _user(request).may(Action.ADD_TO_PROBLEM_LOG),
             "problem_form": ProblemForm(),
-            "note_form": NoteForm(),
             "message": message,
         },
     )

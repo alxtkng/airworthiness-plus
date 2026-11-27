@@ -37,17 +37,17 @@ No maintenance programme, directive, maintenance data or review certificate is r
 |---|---|---|---|---|---|---|---|
 | G-DGHI | Piper PA-28 Series (Lycoming) | Flying Club | Unserviceable, Stabilator Trim Cable | Rectify Defect | Grounded | 19 May 2027 | 9,874.3 |
 | G-EJKL | Cessna/Reims-Cessna 152/F152 Series (Lycoming) | Pilot-Owner | Serviceable | Airworthiness Review | 18 Days | 6 December 2026 | 11,206.8 |
-| G-ABCD | Piper PA-28 Series (Lycoming) | Pilot-Owner | Serviceable | 50-Hour Check | 12.4 Hours | 14 March 2027 | 6,412.6 |
-| G-BXYZ | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Syndicate of 6 | Serviceable | 100-Hour or Annual Check | 41.0 Hours | 2 August 2027 | 3,318.0 |
+| G-ABCD | Piper PA-28 Series (Lycoming) | Pilot-Owner | Serviceable | 50-Hour Check and Left Landing Light Deferral | 12.4 Hours and 15 Days | 14 March 2027 | 6,412.6 |
+| G-BXYZ | Cessna/Reims-Cessna 172/F172 Series (Lycoming) | Syndicate of 6 | Serviceable | Cabin Entry Step Deferral | 9 Days | 2 August 2027 | 3,318.0 |
 | G-FMNO | Grob G115/120 Series (Lycoming) | Pilot-Owner | Serviceable | Annual Check | 78 Days | 27 April 2027 | 4,950.2 |
 | G-CDEF | Robin DR 400 series (Lycoming) | Syndicate of 4 | Serviceable | Engine Overhaul | 220 Hours | 2 December 2027 | 7,731.5 |
 | G-HKLM | Piper PA-38 Series (Lycoming) | Pilot-Owner | Transfer In | Records 14 of 18 Received | | | |
 
-Corrected on 27 November 2026 from the Fleet board: what remains is a column of its own, Remaining, beside Next Due. By the Fleet board's filter, three aircraft are Due in 30 Days on 18 November 2026: G-DGHI, Unserviceable; G-EJKL, 18 days; G-ABCD, 12.4 hours at 0.8 hours a day, 15 days. One is Unserviceable.
+Corrected on 27 November 2026 from the Fleet board: what remains is a column of its own, Remaining, beside Next Due. With deferred defects included, four aircraft are Due in 30 Days on 18 November 2026: G-DGHI, Unserviceable; G-BXYZ, 9 days to its cabin entry step limit; G-ABCD, 15 days to both its check and its defect limit; G-EJKL, 18 days to its review certificate expiry. One is Unserviceable.
 
 ## Maintenance Programme Inputs
 
-The Fleet table shows results. These are the inputs that produce them, added on 18 November 2026 so that the golden test cases can be worked by hand. They are chosen to agree with the Fleet table; nothing in the Fleet table changes.
+The Fleet table shows results. These are the inputs that produce them, added on 18 November 2026 so that the golden test cases can be worked by hand. The Fleet also compares these results with deferred defect limits and review certificate expiry.
 
 | Aircraft Registration | Task | Interval | Last Done | Airframe Hours When Done | Planning Utilisation |
 |---|---|---|---|---|---|
@@ -161,7 +161,7 @@ Added on 27 November 2026 for the Release to Service board (Phase 1 of the canva
 
 - The two pieces of work on G-CDEF are recorded at 7,715.0 airframe hours, made up: below the 7,720.0 of its review on 11 November 2026. Their certificate reference is written [Release Reference WP-2026-043].
 - The organisation was told of the tyre on 23 October 2026, as the board has it. No certificate is recorded for it yet, so the board's Licence [Number] is not in the sample.
-- By hand for 18 November 2026: 3 issued in the last 30 days (22 October is 27 days ago, 4 November 14), 1 not yet in the records, 0 incomplete maintenance, 0 pilot-owner notices overdue.
+- By hand for 18 November 2026: 2 issued in the last 30 days (4 November is 14 days ago), 1 not yet in the records, 0 incomplete maintenance, 0 pilot-owner notices overdue.
 
 ## Components
 
@@ -180,7 +180,7 @@ Added on 27 November 2026 for the Components board (Phase 1 of the canvas build)
 - By hand for 18 November 2026. G-CDEF engine: 7,731.5 less 5,951.5 is 1,780.0 hours; 220.0 remain; at 0.6 hours a day, 366 days. Vacuum pump: 6,412.6 less 6,230.6 is 182.0; 318.0 remain; at 0.8 hours a day, 397 days. G-DGHI engine: 9,874.3 less 7,734.3 is 2,140.0; review at 9,900.0, 25.7 hours remain. Battery: 102 days. Fire extinguisher: 133 days.
 - G-CDEF's own propeller was removed at its 6-year limit on 2 November 2026 at 7,715.0 airframe hours, taken as the hours of WP-2026-043 two days later: 16.5 and 7,715.0 less 6,319.5 is the board's 1,412.0 hours since overhaul. It is at [Propeller Organisation], due back 25 November 2026, 7 days. The 16.5 hours it is taken to have had when fitted are made up so that the board's 6,319.5 and 1,412 both hold.
 - The loan propeller's limit is not in the sample, so none is recorded.
-- Counts: 7 tracked, 1 off-wing, 1 on condition, 3 due in 6 months (the G-DGHI engine, which has no planning utilisation to place it by, the battery and the fire extinguisher). The board's 38 Tracked and its 3 Months and 4 Months are not taken: day counts are exact.
+- Counts with the full sample: 9 tracked, 1 off-wing, 1 on condition, 4 due in 6 months (the G-DGHI engine at 0.8 hours a day, the battery, the fire extinguisher and G-HKLM’s propeller with an unknown calendar limit). The board's 38 Tracked and its 3 Months and 4 Months are not taken: day counts are exact.
 - The board writes the limits of the battery and the fire extinguisher as February 2027 and March 2027; the last day of each month is taken.
 
 ## Modifications and Repairs

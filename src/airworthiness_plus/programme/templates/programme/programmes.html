@@ -21,7 +21,7 @@
 <td>{% if line.programme %}{% if line.review.last_reviewed %}{{ line.review.last_reviewed|long_date }}{% else %}Not Recorded{% endif %}{% endif %}</td>
 <td>{{ line.review.due|long_date }}</td>
 <td class="number">{{ line.remaining }}</td>
-<td>{{ line.review.flag.value|status }}</td>
+<td>{% if line.review and not line.review.last_reviewed %}{{ "To Assess"|status }}{% else %}{{ line.review.flag.value|status }}{% endif %}</td>
 <td>{{ line.in_progress }}</td>
 </tr>
 {% endfor %}

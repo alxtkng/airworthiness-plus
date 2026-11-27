@@ -356,6 +356,46 @@ def test_g_ejkl_certificate_is_issued_from_the_completed_review(
     assert "<button" not in kept.split("<main")[1]
 
 
+def test_review_point_controls_have_row_specific_labels(sample: Sample, review: Review) -> None:
+    client = signed_in(sample.reviewer)
+    body = page(client, f"/reviews/{review.id}/")
+    with working_for(sample.ours.id, sample.reviewer.id):
+        for item in review.items.all():
+            field_id = f"review-{item.id}-evidence"
+            assert body.count(f'id="{field_id}"') == 1
+            assert body.count(f'for="{field_id}"') == 1
+    assert body.count('<option value="Not Applicable">') == 2
+
+
+def test_issued_certificate_and_completed_review_keep_their_identity(
+    sample: Sample, review: Review
+) -> None:
+    from airworthiness_plus.accounts.models import User
+
+    complete(sample, review)
+    issued = post(signed_in(sample.reviewer), f"/reviews/{review.id}/issue/")
+    assert issued.status_code == 302
+    reader = signed_in(sample.reader)
+    certificate_path = issued["Location"]
+    review_path = f"/reviews/{review.id}/"
+    with working_for(sample.ours.id, sample.administrator.id):
+        Aircraft.objects.filter(pk=review.aircraft_id).update(
+            registration="G-NEWX",
+            manufacturer="New Manufacturer",
+            designation="New Designation",
+            serial_number="New Serial",
+        )
+        User.objects.filter(pk=sample.reviewer.pk).update(full_name="New Reviewer")
+    certificate = page(reader, certificate_path)
+    assert "<dd>[Aircraft Manufacturer]</dd>" in certificate
+    assert "<dd>[Manufacturer Designation]</dd>" in certificate
+    assert "<dd>[Aircraft Serial Number]</dd>" in certificate
+    assert "<dt>Aircraft Registration</dt><dd>G-EJKL</dd>" in certificate
+    completed = page(reader, review_path)
+    assert "<dt>Review Staff</dt><dd>[Review Name], [Authorisation Reference 2]</dd>" in completed
+    assert completed.count(f"<td>{EVIDENCE}</td>") == 16
+
+
 def test_a_review_is_issued_once(sample: Sample, review: Review) -> None:
     """REQ-110. A second attempt finds the certificate already there."""
     complete(sample, review)

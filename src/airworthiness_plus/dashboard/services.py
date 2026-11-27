@@ -23,6 +23,7 @@ from airworthiness_plus.components import services as component_services
 from airworthiness_plus.configuration import services as configuration_services
 from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.defects import services as defect_services
+from airworthiness_plus.defects.models import Decision
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.imports import services as import_services
 from airworthiness_plus.interface import formatting
@@ -344,6 +345,24 @@ def _deferred_defects(organisation: Organisation, today: date) -> list[Row]:
     rows = []
     for line in defect_services.open_lines(organisation, today):
         defect = line.defect
+        if defect.decision == Decision.NOT_DEFERRABLE and (
+            defect.title != defect.aircraft.unserviceable_reason
+            or defect.found_on != defect.aircraft.unserviceable_since
+        ):
+            rows.append(
+                Row(
+                    defect.aircraft.registration,
+                    f"Not Deferrable, {defect.title}",
+                    defect.point,
+                    NOT_SET,
+                    line.remaining_text,
+                    Status.UNSERVICEABLE.value,
+                    "Defects",
+                    reverse("defect", args=[defect.id]),
+                    first=True,
+                )
+            )
+            continue
         if defect.limit_on is None or line.days_left is None or line.flag is Flag.NONE:
             continue
         rows.append(
