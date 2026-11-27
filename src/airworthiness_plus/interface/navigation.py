@@ -136,7 +136,17 @@ BOARD: tuple[Group, ...] = (
                     }
                 ),
             ),
-            Item("Defects", tabs=_tabs("Open and Deferred", "Repeat Defects")),
+            Item(
+                "Defects",
+                "defects",
+                tabs=(
+                    Tab("Open and Deferred", "defects"),
+                    Tab("Repeat Defects", "repeat_defects"),
+                ),
+                inside=frozenset(
+                    {"record_defect", "defect", "close_defect", "record_repeat_action"}
+                ),
+            ),
             Item("Maintenance Programmes"),
             Item(
                 "Aircraft Configuration",

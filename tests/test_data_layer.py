@@ -206,6 +206,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         "imports_valuecheck": ["INSERT", "SELECT"],
         # That a part of the sample was added is recorded once and never changed (REQ-218).
         "sample_added": ["INSERT", "SELECT"],
+        # What was done about a repeat defect is added and never changed (REQ-227).
+        "defects_repeataction": ["INSERT", "SELECT"],
     }
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
@@ -218,6 +220,10 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A sign-in belongs to a person (REQ-204).
         "accounts_user": {"user_has_a_person"},
         "aircraft_utilisationentry": {"utilisation_fits"},
+        # Not made Serviceable while a defect that is Not Deferrable is open (REQ-221).
+        "aircraft_aircraft": {"open_defect_guard"},
+        # A defect keeps its decision and who made it (REQ-225).
+        "defects_defect": {"defect_rules"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
         "reviews_certificate": {"certificate_serial", "certificate_fixed"},

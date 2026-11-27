@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Record a Defect{% endblock %}
+{% block content %}
+<h1>Record a Defect</h1>
+<form method="post">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Record Defect</button></p>
+</form>
+<h2>Deferral Limits</h2>
+<table>
+<thead><tr><th>Decision By</th><th>Applies To</th><th>Default Limit</th><th>Point</th></tr></thead>
+<tbody>
+{% for line in limits %}
+<tr><td>{{ line.decision_by }}</td><td>{{ line.applies_to }}</td><td>{{ line.limit }}</td><td>{{ line.point }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<p>Limit in the Maintenance Data Applies When Shorter, ML.A.403(c)</p>
+<p>A Defect That Seriously Endangers Flight Safety Is Rectified Before Further Flight, ML.A.403(a)</p>
+{% endblock %}

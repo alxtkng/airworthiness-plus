@@ -33,6 +33,7 @@ from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis, InspectionCategory, Task
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import Certificate, ReviewStaff
+from airworthiness_plus.sample import phase1
 from airworthiness_plus.sample.models import Added, Part
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 
@@ -614,6 +615,9 @@ def build(ours: Organisation, administrator: User) -> Staff:
     fleet = add_fleet(people)
     add_programmes(people, fleet)
     add_other_work(people, fleet)
+    # Continuing Airworthiness, the Rest (Phase 1 of the canvas build).
+    phase1.add_defects(ours, people.planner, fleet)
+    phase1.add_repeat_actions(ours, people.lucy)
     add_reviews(people, fleet)
     add_directives(people, fleet)
     add_maintenance_data(people)

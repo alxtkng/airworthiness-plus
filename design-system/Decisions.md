@@ -84,6 +84,20 @@ Corrections after the independent review of 24 November 2026 (`assurance/indepen
 - **A form sent twice** (finding 14). Recording an approval and naming a new customer take the organisation's row first, so the second waits for the first: it is refused with the reason, or given the customer already made. Changing an owner with a choice that is not valid shows the reason on the aircraft's page
 - **The most a setting may be** (the recompute; REQ-212 to REQ-214) is held by the service and by the database as well as the form: 365 days, 999.9 hours, 9,999 cycles
 
+Phase 1, Continuing Airworthiness, the Rest, decided as ours while building from 27 November 2026 (REQ-220 onward). Each can be changed by Alex King:
+
+- **A defect is recorded with its decision** (REQ-220). Not Deferrable or Deferred, with who decided and the day. The decision is not changed afterwards: if a deferred defect can no longer be deferred, it is closed or a new defect is recorded. A defect already rectified is recorded with its rectification and changes nothing of the aircraft
+- **Not Deferrable grounds the aircraft** (REQ-221; ML.A.403(a)). Recording such a defect makes the aircraft Unserviceable, with the defect as the reason and the day it was found, unless it already is. The aircraft is not made Serviceable while such a defect is open: the service and the database both refuse. Closing the defect does not itself make the aircraft Serviceable; that is done on the aircraft's page by whoever may
+- **The limit of a deferred defect** (REQ-222) is the day of the decision and the organisation's default for who deferred it (REQ-214), or the limit in the maintenance data when that is the earlier (ML.A.403(c)). Under the minimum equipment list the limit the list gives is typed in and no default applies. The days are counted from the decision, not from when the defect was found: the board's three limits are each 30 days after the decision. The limit is kept as given: a later change to the settings moves no limit already given. No limit is more than 365 days after its decision
+- **Who is named** (REQ-222, REQ-225). Certifying staff who defer under ML.A.403(b)(4) are a person of the staff group Certifying Staff who had not left by the day. Whether they hold a current authorisation is not checked until authorisations are built (Phase 2). A pilot-in-command is not a person record and is written Pilot-in-Command. The name and licence of whoever decided are kept as they stood, written by the database, and shown as recorded: Sam Patel, Part-66 B1.2
+- **A deferred defect is Due Soon from the calendar lead time** (REQ-223), Due on its last day and Overdue after it. This settles the open point that the board's amber dot did not follow its own lead time. A limit that has passed is shown red and changes nothing by itself: the system never changes an aircraft's status on its own
+- **Closed defects are listed for 30 days** (REQ-224), as the board's heading says. Every defect stays in the record and on its own page
+- **What counts as the same defect** (REQ-226; the open point of the plan). A defect names the chapter of its system as a number from 1 to 99 and the system in words, as the board writes them: Chapter 33, Lights. The same defect is one in the same chapter on aircraft of the same type rating, matched exactly. This counts two different faults in one chapter together, which errs toward looking. The 12 months are those ending today: from the day after the same day a year before. 3 is a Repeat, 2 is Watching, 1 is No Action, as the board gives them. The system holds no list of chapter names: none was found on the canvas beyond the four the board shows
+- **The action on a repeat** (REQ-227) is recorded by the Continuing Airworthiness Manager for a type rating and chapter, added and never changed; a later one takes its place and the earlier stays. A Repeat with no action recorded is marked To Assess
+- **Not built from the Defects and Repeat Defects boards:** the Work Package column, until work packages are built (Phase 3); the Export button of Repeat Defects, because the records export already holds every defect
+- **Who records** (role matrix below). Record Defect, which is also closing one: the Continuing Airworthiness Manager and Planning and Records, as for work done. Record Repeat Defect Action: the Continuing Airworthiness Manager
+- **The sample of Phase 1 on the test site** arrives when its database is next remade from the sample (Issue 100), as the 7 customers do. Nothing is added to a sample already there
+
 Not decided here, and so not built until Alex King says: the per-flight technical log (Issue 7), and choosing the type from the SRG1782 list, which needs the Civil Aviation Authority's list as data (REQ-021).
 
 ## Navigation
@@ -268,6 +282,8 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Change Maintenance Programme | No | Yes | No | No | No |
 | Record Maintenance Programme Review | No | Yes | Yes | No | No |
 | Record Accomplishment | No | Yes | No | Yes | No |
+| Record Defect | No | Yes | No | Yes | No |
+| Record Repeat Defect Action | No | Yes | No | No | No |
 | Record Airworthiness Directive | No | Yes | No | Yes | No |
 | Decide Directive Applicability | No | Yes | No | No | No |
 | Record Directive Compliance | No | Yes | No | Yes | No |

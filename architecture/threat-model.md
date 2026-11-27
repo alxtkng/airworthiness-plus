@@ -221,6 +221,15 @@ The independent review of 24 November 2026 (`assurance/independent-verification/
 
 Still open after these corrections: the privileges of an approval are not held by the database against the application's own role, so the check of the airworthiness review privilege rests on application code never changing them.
 
+## Added on 27 November 2026
+
+The canvas build, Phase 1 (`prompts/canvas-build.md`): Continuing Airworthiness, the Rest.
+
+| What Was Added | Threat | How It Is Met |
+|---|---|---|
+| Defects of each aircraft, with who deferred each and its limit, and the action on a repeat defect | TH-008, TH-020, TH-021 | Records like any other: row-level security, history, no delete, and each refers only to an aircraft, a person and work done of its own organisation, by trigger. Recording and closing are POSTs with the forgery token, checked against the role matrix on the server (Record Defect, Record Repeat Defect Action). The decision, who made it and the limit are fixed by the database once recorded, so a signed-in user with the role cannot quietly lengthen a limit or change who deferred a defect; a closed defect is fixed whole (`tests/test_defects.py`) |
+| A change of an aircraft's status that the database now refuses | TH-021 | An aircraft with an open defect that is Not Deferrable is not made Serviceable, by a trigger on the aircraft table as well as in the service, so no path through the application can clear it (`tests/test_defects.py`) |
+
 ## Not Yet Covered
 
 - Email (password reset, notifications): no email flow is designed yet. It is modelled when it is added.

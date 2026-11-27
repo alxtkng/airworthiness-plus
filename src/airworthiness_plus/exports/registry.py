@@ -16,6 +16,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, UtilisationEntry
 from airworthiness_plus.customers.models import Customer
+from airworthiness_plus.defects.models import Defect, RepeatAction
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
@@ -79,6 +80,9 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Programme, _by("aircraft")),
     Exported(Task, _by("programme__aircraft")),
     Exported(WorkDone, _by("aircraft")),
+    Exported(Defect, _by("aircraft")),
+    # What was done about the same defect on the aircraft's type.
+    Exported(RepeatAction, lambda aircraft: Q(type_rating=aircraft.type_rating)),
     Exported(Directive, _every),
     Exported(Applicability, _by("aircraft")),
     Exported(Compliance, _by("applicability__aircraft")),

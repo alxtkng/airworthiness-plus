@@ -171,8 +171,14 @@ def aircraft_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     return _aircraft_page(request, aircraft, OwnerForm(initial={"customer": aircraft.customer_id}))
 
 
-def _aircraft_page(request: HttpRequest, aircraft: Aircraft, owner_form: OwnerForm) -> HttpResponse:
+def _aircraft_page(
+    request: HttpRequest, aircraft: Aircraft, owner_form: OwnerForm, problem: str = ""
+) -> HttpResponse:
     """Show an aircraft. An owner form that was refused is shown again with the reason."""
+    from airworthiness_plus.defects import services as defect_services
+
+    user = request.user
+    assert isinstance(user, User)  # noqa: S101  guaranteed by ``requires``
     counters = [
         (counter, services.current_reading(counter), list(counter.entries.all()))
         for counter in aircraft.counters.all()
@@ -192,6 +198,9 @@ def _aircraft_page(request: HttpRequest, aircraft: Aircraft, owner_form: OwnerFo
             "counters": counters,
             "details_form": details,
             "owner_form": owner_form,
+            "problem": problem,
+            "defects": defect_services.open_lines(user.organisation, services.today(), aircraft),
+            "may_record_defect": user.may(Action.RECORD_DEFECT),
         },
     )
 
@@ -307,7 +316,11 @@ def make_unserviceable(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResp
 def make_serviceable(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     """Record the aircraft as Serviceable (REQ-023)."""
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
-    services.make_serviceable(aircraft)
+    try:
+        services.make_serviceable(aircraft)
+    except services.NotServiceableError as error:
+        owner = OwnerForm(initial={"customer": aircraft.customer_id})
+        return _aircraft_page(request, aircraft, owner, problem=str(error))
     return redirect("aircraft", aircraft_id=aircraft.id)
 
 

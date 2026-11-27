@@ -99,6 +99,23 @@ About 15 minutes. Sign in as Lucy Grant.
 7. **Records.** Open Records, under Organisation. Show Records Export. Export one aircraft.
 8. **Read Only.** Sign in as the reader. Try to open Add an Aircraft. It is refused.
 
+## Part 3. Continuing Airworthiness, the Rest (Phase 1)
+
+Sign in as Lucy Grant. The sample of this part is on the test site once its database has been remade from the sample (Issue 100).
+
+### Defects
+
+1. Open Defects, under Continuing Airworthiness. Four are open. G-DGHI comes first: Not Deferrable, Grounded.
+2. Point to G-BXYZ: deferred by Sam Patel on 28 October 2026, limit 27 November 2026.
+3. Open it. Open How the Limit Was Calculated: the day of the decision, the organisation's 30 days, and ML.A.403.
+4. Open Deferral Limits. It is the Settings page, where the 30 days are set.
+5. Go back. Choose Record a Defect. Choose G-FMNO, Deferred, Pilot-in-Command. Record it. Its limit is 30 days from the day decided.
+6. Open the tab Repeat Defects. Landing light failures on the Piper PA-28: 3 in 12 months, a Repeat, with the action taken.
+7. Open the Dashboard. The deferred defects are in Continuing Airworthiness, each with its limit and days remaining.
+8. Open G-DGHI under Aircraft. Choose Record as Serviceable. It is refused: a defect that is Not Deferrable is open.
+
+Say: the limit is the organisation's own number of days; the regulation gives none. The rule is ML.A.403.
+
 ## What Cannot Be Shown Yet
 
-Phases 1 to 9 of `prompts/canvas-build.md`: defects, components, release to service, contracts, work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The rest of Phase 1 and Phases 2 to 9 of `prompts/canvas-build.md`: components, release to service, contracts, work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

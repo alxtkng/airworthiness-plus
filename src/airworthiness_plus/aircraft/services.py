@@ -28,6 +28,10 @@ class ConfirmationNeededError(Exception):
     """The gain in hours or cycles is unusual and has not been confirmed (REQ-025)."""
 
 
+class NotServiceableError(ValueError):
+    """Something recorded stops the aircraft being made Serviceable (REQ-221)."""
+
+
 class TransferNotCompleteError(Exception):
     """Records are still outstanding, so the aircraft stays out of the Fleet (REQ-027)."""
 
@@ -179,7 +183,20 @@ def make_unserviceable(aircraft: Aircraft, reason: str, since: date) -> None:
 
 
 def make_serviceable(aircraft: Aircraft) -> None:
-    """Record the aircraft as Serviceable (REQ-023). The history keeps the earlier status."""
+    """Record the aircraft as Serviceable (REQ-023). The history keeps the earlier status.
+
+    Refused while a defect that is Not Deferrable is open: such a defect is
+    rectified before further flight (ML.A.403(a); REQ-221). The database
+    refuses it too.
+    """
+    # Defects are built on aircraft, so they are looked up here and not at the top.
+    from airworthiness_plus.defects.models import Decision, Defect
+
+    stops = Defect.objects.filter(
+        aircraft=aircraft, decision=Decision.NOT_DEFERRABLE, closed_on__isnull=True
+    ).first()
+    if stops is not None:
+        raise NotServiceableError(f"Open Defect That Is Not Deferrable, ML.A.403(a): {stops.title}")
     aircraft.status = Status.SERVICEABLE
     aircraft.unserviceable_reason = ""
     aircraft.unserviceable_since = None
