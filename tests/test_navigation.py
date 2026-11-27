@@ -218,7 +218,7 @@ def test_only_what_is_built_is_in_the_sidebar() -> None:
                 assert tab.address is not None
                 assert reverse(tab.address).startswith("/"), tab.label
     not_built = [item for group in navigation.BOARD for item in group.items if item.address is None]
-    assert {"Defects", "Hazard Log", "Work Packages", "Marketplace", "Help"} <= {
+    assert {"Hazard Log", "Work Packages", "Marketplace", "Help"} <= {
         item.label for item in not_built
     }
     for item in not_built:

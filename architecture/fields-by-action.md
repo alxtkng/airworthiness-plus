@@ -20,6 +20,9 @@ Each line is an address that changes something: the action it needs, the roles t
 
 | Action | Roles | Address | What It Does | Values It May Set |
 |---|---|---|---|---|
+| Record Defect | Continuing Airworthiness Manager, Planning and Records | `/defects/record/` | Record a defect and what was decided of it (REQ-220 to REQ-222) | Aircraft Registration; Defect; Note; Found; Chapter; System; Decision; Deferred By; Decided; Certifying Staff; Limit in the Maintenance Data or the Minimum Equipment List; Rectification, If Already Rectified; Closed, If Already Rectified |
+| Record Repeat Defect Action | Continuing Airworthiness Manager | `/defects/repeat/action/` | Record what was done about a repeat defect (REQ-227) | Type Rating; Chapter; Action |
+| Record Defect | Continuing Airworthiness Manager, Planning and Records | `/defects/<uuid:defect_id>/close/` | Record that a defect is rectified (REQ-224) | Rectification; Closed; Work Done |
 | Add or Change Aircraft | Continuing Airworthiness Manager, Planning and Records | `/aircraft/add/` | Add an aircraft | Aircraft Registration; Type Rating; Serial Number; Aircraft Manufacturer; Manufacturer’s Designation; Owned By; Name of a New Customer; Regime; Date of Airframe Hours; Airframe Hours; Airframe Cycles; Records Expected for a Transfer In |
 | Add or Change Aircraft | Continuing Airworthiness Manager, Planning and Records | `/aircraft/<uuid:aircraft_id>/details/` | Record the serial number, manufacturer and designation of an aircraft | Aircraft Serial Number; Aircraft Manufacturer; Manufacturer’s Designation |
 | Enter Utilisation | Continuing Airworthiness Manager, Planning and Records | `/aircraft/<uuid:aircraft_id>/hours-and-cycles/` | Enter hours and cycles. The page names the aircraft throughout (REQ-026) | Counter; Date; Total Hours; Total Cycles; Corrects an Earlier Entry; Confirm This Unusual Increase |

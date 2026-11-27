@@ -8,6 +8,7 @@ from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
 from airworthiness_plus.customers import views as customers
 from airworthiness_plus.dashboard import views as dashboard
+from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
@@ -21,6 +22,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
     path("dashboard/", dashboard.dashboard_page, name="dashboard"),
     path("transfers/", aircraft.transfers, name="transfers"),
+    path("defects/", defects.defects_page, name="defects"),
+    path("defects/record/", defects.record_defect, name="record_defect"),
+    path("defects/repeat/", defects.repeat_defects, name="repeat_defects"),
+    path("defects/repeat/action/", defects.record_repeat_action, name="record_repeat_action"),
+    path("defects/<uuid:defect_id>/", defects.defect_page, name="defect"),
+    path("defects/<uuid:defect_id>/close/", defects.close_defect, name="close_defect"),
     path("aircraft/add/", aircraft.add_aircraft, name="add_aircraft"),
     path("aircraft/<uuid:aircraft_id>/", aircraft.aircraft_page, name="aircraft"),
     path("aircraft/<uuid:aircraft_id>/details/", aircraft.record_details, name="aircraft_details"),

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Repeat Defects{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Repeat Defects</h1>
+<h2>Repeats and Watch List</h2>
+<p>Repeat: 3 of the Same Defect on One Type in 12 Months</p>
+{% if lines %}
+<table>
+<thead>
+<tr><th>Type Rating</th><th>System</th><th class="number">In 12 Months</th><th>State</th><th>Action</th><th>Status</th><th data-detail>Aircraft Registration</th><th data-detail>Defects</th><th data-detail>Action Recorded</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td>{{ line.type_rating }}</td>
+<td>{{ line.system_text }}</td>
+<td class="number">{{ line.count }}</td>
+<td>{{ line.state }}</td>
+<td>{{ line.action.action }}</td>
+<td>{{ line.status|status }}</td>
+<td>{{ line.registrations }}</td>
+<td>{% for defect in line.defects %}<a href="{% url 'defect' defect.id %}">{{ defect.aircraft.registration }}, {{ defect.title }}, {{ defect.found_on|long_date }}</a>{% if not forloop.last %}; {% endif %}{% endfor %}</td>
+<td>{{ line.action.recorded_on|long_date }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Defects in the Last 12 Months</p>
+{% endif %}
+{% if may_record %}
+<h2>Record an Action</h2>
+<form method="post" action="{% url 'record_repeat_action' %}">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Record Action</button></p>
+</form>
+{% endif %}
+{% endblock %}

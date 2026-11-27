@@ -78,6 +78,27 @@ The basis of each aircraft's maintenance programme is not yet recorded here. The
 - Open defects: G-DGHI trim cable (grounded since 14 November); G-ABCD left landing light (deferred to 3 December); G-BXYZ cabin entry step (deferred to 27 November); G-EJKL right headset socket (deferred to 12 December).
 - Occurrence reports: OR-2026-003 G-FMNO suspected unapproved part (closed); OR-2026-002 G-DGHI trim cable (follow-up due); OR-2026-001 G-BXYZ fuel contamination (closed).
 
+## Defects
+
+Added on 27 November 2026 for the Defects and Repeat Defects boards (Phase 1 of the canvas build). The four open defects and the two closed ones are the boards'. The days marked Made Up, the chapters and the three earlier defects are made up for the sample and are to be confirmed by Alex King.
+
+| Aircraft Registration | Defect | Found | System | Decision | Decided By | Limit | Closed |
+|---|---|---|---|---|---|---|---|
+| G-DGHI | Stabilator Trim Cable Frayed at Pulley, Trim Check | 14 November 2026 | Chapter 27, Flight Controls | Not Deferrable, 14 November 2026 | Chris Moore | Grounded | |
+| G-ABCD | Left Landing Light Inoperative, Placarded, Daylight Only | 3 November 2026 | Chapter 33, Lights | Deferred, 3 November 2026 | Pilot-in-Command | 3 December 2026 | |
+| G-BXYZ | Cabin Entry Step Loose, No Effect on Flight, Step Out of Use | 28 October 2026 | Chapter 53, Fuselage (Made Up) | Deferred, 28 October 2026 | Sam Patel | 27 November 2026 | |
+| G-EJKL | Right Headset Socket Crackle, Left Socket Serviceable | 12 November 2026 | Chapter 23, Communications | Deferred, 12 November 2026 | Pilot-in-Command | 12 December 2026 | |
+| G-ABCD | Right Main Tyre Worn to Limit | 22 October 2026 | Chapter 32, Landing Gear (Made Up) | Not Deferrable, 22 October 2026 | | | 22 October 2026, Tyre Replaced, Pilot-Owner Maintenance |
+| G-CDEF | Propeller Spinner Crack | 2 November 2026 | Chapter 61, Propeller | Not Deferrable, 2 November 2026 | Chris Moore | | 4 November 2026, Spinner Replaced |
+| G-ABCD | Landing Light Inoperative | 10 February 2026 (Made Up) | Chapter 33, Lights | Deferred, 10 February 2026 | Pilot-in-Command | 12 March 2026 | 12 February 2026, Lamp Replaced (Made Up) |
+| G-DGHI | Landing Light Inoperative | 16 June 2026 (Made Up) | Chapter 33, Lights | Deferred, 16 June 2026 | Pilot-in-Command | 16 July 2026 | 19 June 2026, Lamp Replaced (Made Up) |
+| G-DGHI | Stabilator Trim Cable Wear | 9 December 2025 (Made Up) | Chapter 27, Flight Controls | Deferred, 9 December 2025 | Chris Moore | 8 January 2026 | 16 December 2025, Cable Tension Adjusted (Made Up) |
+
+- Each limit is the day of the decision and the organisation's default of 30 days: 3 November to 3 December 2026 (15 days from 18 November), 28 October to 27 November 2026 (9 days), 12 November to 12 December 2026 (24 days).
+- Repeat defects in the 12 months from 19 November 2025 to 18 November 2026: Piper PA-28 Series (Lycoming), Chapter 33, 3 (G-ABCD February and November, G-DGHI June), action Add Lamp Holder Check to 50-Hour Check; Chapter 27, 2 (G-DGHI December 2025 and November 2026), action Pulley Alignment, WP-2026-046; Cessna 152, Chapter 23, 1; Robin DR 400, Chapter 61, 1.
+- Contradictions between boards, corrected here: the Repeat Defects board leaves out G-BXYZ's step and G-ABCD's tyre, which the Defects board shows; by the rule they are one each (Cessna 172, Chapter 53; Piper PA-28, Chapter 32) and the page shows them. The Defects board gives G-EJKL's socket, at 24 days, no amber dot while the Home board gives it one: with a lead time of 30 days it is Due Soon. The Repeat Defects board dates the spinner crack November; the Components board says 2 November 2026.
+- The work package beside each defect on the board (WP-2026-046, WP-2026-047, Not Planned, With Airworthiness Review) is not recorded until work packages are built (Phase 3).
+
 ## Management System
 
 - Hazards: 7 open (2026-0001 to 2026-0007); Lucy Grant owns 2026-0004 (from the G-CDEF review on 11 November) and 2026-0005.

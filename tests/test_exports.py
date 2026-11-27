@@ -45,6 +45,7 @@ from airworthiness_plus.maintenance_data.models import Kind
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis
 from airworthiness_plus.reviews import services as review_services
+from airworthiness_plus.sample import phase1
 from airworthiness_rules.intervals import Interval, Reading
 from tests.conftest import as_owner
 from tests.support import (
@@ -162,6 +163,9 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             no_evidence_not_airworthy=True,
         )
     assert review is not None
+    # Defects, and what was done about a repeat (REQ-220, REQ-227).
+    phase1.add_defects(sample.ours, sample.planner, fleet)
+    phase1.add_repeat_actions(sample.ours, sample.lucy)
     return fleet
 
 

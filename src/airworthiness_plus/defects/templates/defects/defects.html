@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Open and Deferred Defects{% endblock %}
+{% block content %}
+<h1 class="visually-hidden">Open and Deferred Defects</h1>
+<p>{% if may_record %}<a href="{% url 'record_defect' %}">Record a Defect</a> {% endif %}<a href="{% url 'settings' %}">Deferral Limits</a></p>
+<h2>Open Defects</h2>
+{% if lines %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Defect</th><th>Decision</th><th>Limit</th><th class="number">Remaining</th><th>Status</th><th data-detail>Note</th><th data-detail>Decided By</th><th data-detail>Decided</th><th data-detail>Found</th><th data-detail>System</th><th data-detail>Point</th><th data-detail>How the Limit Was Calculated</th></tr>
+</thead>
+<tbody>
+{% for line in lines %}
+<tr>
+<td><a href="{% url 'aircraft' line.defect.aircraft.id %}">{{ line.defect.aircraft.registration }}</a></td>
+<td><a href="{% url 'defect' line.defect.id %}">{{ line.defect.title }}</a></td>
+<td>{{ line.defect.decision }}</td>
+<td>{{ line.limit_text }}</td>
+<td class="number">{{ line.remaining_text }}</td>
+<td>{{ line.status|status }}</td>
+<td>{{ line.defect.note }}</td>
+<td>{{ line.defect.decided_by_text }}</td>
+<td>{{ line.defect.decided_on|long_date }}</td>
+<td>{{ line.defect.found_on|long_date }}</td>
+<td>{{ line.defect.system_text }}</td>
+<td>{{ line.defect.point }}</td>
+<td>{% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Open Defects</p>
+{% endif %}
+<h2>Closed, Last 30 Days</h2>
+{% if closed %}
+<table>
+<thead>
+<tr><th>Aircraft Registration</th><th>Defect</th><th>Rectification</th><th>Closed</th><th data-detail>Work Done</th><th data-detail>Found</th></tr>
+</thead>
+<tbody>
+{% for defect in closed %}
+<tr>
+<td><a href="{% url 'aircraft' defect.aircraft.id %}">{{ defect.aircraft.registration }}</a></td>
+<td><a href="{% url 'defect' defect.id %}">{{ defect.title }}</a></td>
+<td>{{ defect.rectification }}</td>
+<td>{{ defect.closed_on|long_date }}</td>
+<td>{% if defect.work_done %}{{ defect.work_done.description }}{% if defect.work_done.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}{% endif %}</td>
+<td>{{ defect.found_on|long_date }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>None Closed in the Last 30 Days</p>
+{% endif %}
+{% endblock %}

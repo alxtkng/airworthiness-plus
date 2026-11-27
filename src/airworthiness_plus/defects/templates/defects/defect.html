@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ defect.title }}{% endblock %}
+{% block content %}
+<h1>{{ defect.title }}</h1>
+<p>Defect, <a href="{% url 'aircraft' defect.aircraft.id %}">{{ defect.aircraft.registration }}</a></p>
+<dl>
+<dt>Aircraft Registration</dt><dd>{{ defect.aircraft.registration }}</dd>
+<dt>Defect</dt><dd>{{ defect.title }}</dd>
+<dt>Note</dt><dd>{{ defect.note }}</dd>
+<dt>Found</dt><dd>{{ defect.found_on|long_date }}</dd>
+<dt>System</dt><dd>{{ defect.system_text }}</dd>
+<dt>Decision</dt><dd>{{ defect.decision }}</dd>
+<dt>Decided By</dt><dd>{{ defect.decided_by_text }}</dd>
+<dt>Decided</dt><dd>{{ defect.decided_on|long_date }}</dd>
+<dt>Point</dt><dd>{{ defect.point }}</dd>
+{% if defect.open %}
+<dt>Limit</dt><dd>{{ line.limit_text }}</dd>
+<dt>Remaining</dt><dd>{{ line.remaining_text }}</dd>
+<dt>Status</dt><dd>{{ line.status|status }}</dd>
+{% else %}
+<dt>Limit</dt><dd>{{ defect.limit_on|long_date }}</dd>
+<dt>Rectification</dt><dd>{{ defect.rectification }}</dd>
+<dt>Closed</dt><dd>{{ defect.closed_on|long_date }}</dd>
+<dt>Work Done</dt><dd>{% if defect.work_done %}{{ defect.work_done.description }}{% if defect.work_done.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}{% endif %}</dd>
+{% endif %}
+</dl>
+{% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% if defect.open and may_record %}
+<h2>Close {{ defect.title }}</h2>
+{% if defect.decision == "Not Deferrable" %}<p>The Aircraft Stays Unserviceable Until It Is Made Serviceable on Its Own Page</p>{% endif %}
+<form method="post" action="{% url 'close_defect' defect.id %}">
+{% csrf_token %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Close {{ defect.title }}</button></p>
+</form>
+{% endif %}
+{% endblock %}

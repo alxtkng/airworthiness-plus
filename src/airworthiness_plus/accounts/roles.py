@@ -42,6 +42,8 @@ class Action(Enum):
     CHANGE_MAINTENANCE_PROGRAMME = "Change Maintenance Programme"
     RECORD_MAINTENANCE_PROGRAMME_REVIEW = "Record Maintenance Programme Review"
     RECORD_ACCOMPLISHMENT = "Record Accomplishment"
+    RECORD_DEFECT = "Record Defect"
+    RECORD_REPEAT_DEFECT_ACTION = "Record Repeat Defect Action"
     RECORD_AIRWORTHINESS_DIRECTIVE = "Record Airworthiness Directive"
     DECIDE_DIRECTIVE_APPLICABILITY = "Decide Directive Applicability"
     RECORD_DIRECTIVE_COMPLIANCE = "Record Directive Compliance"
@@ -74,6 +76,8 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.CHANGE_MAINTENANCE_PROGRAMME: frozenset({_MANAGER}),
     Action.RECORD_MAINTENANCE_PROGRAMME_REVIEW: frozenset({_MANAGER, _REVIEW}),
     Action.RECORD_ACCOMPLISHMENT: frozenset({_MANAGER, _RECORDS}),
+    Action.RECORD_DEFECT: frozenset({_MANAGER, _RECORDS}),
+    Action.RECORD_REPEAT_DEFECT_ACTION: frozenset({_MANAGER}),
     Action.RECORD_AIRWORTHINESS_DIRECTIVE: frozenset({_MANAGER, _RECORDS}),
     Action.DECIDE_DIRECTIVE_APPLICABILITY: frozenset({_MANAGER}),
     Action.RECORD_DIRECTIVE_COMPLIANCE: frozenset({_MANAGER, _RECORDS}),

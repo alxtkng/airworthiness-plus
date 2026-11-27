@@ -19,6 +19,7 @@ from django.urls import reverse
 
 from airworthiness_plus.acceptance import services as acceptance_services
 from airworthiness_plus.aircraft.models import Aircraft, Regime, Stage, Status
+from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.imports import services as import_services
 from airworthiness_plus.interface import formatting
@@ -318,9 +319,33 @@ def _to_assess(aircraft: Aircraft, today: date) -> list[Row]:
     ]
 
 
+def _deferred_defects(organisation: Organisation, today: date) -> list[Row]:
+    """Return each deferred defect whose limit is within the lead time or passed (REQ-228)."""
+    rows = []
+    for line in defect_services.open_lines(organisation, today):
+        defect = line.defect
+        if defect.limit_on is None or line.days_left is None or line.flag is Flag.NONE:
+            continue
+        rows.append(
+            Row(
+                defect.aircraft.registration,
+                f"Deferred Defect Limit, {defect.title}",
+                f"Deferred by {defect.decided_by_text}, "
+                f"{formatting.long_date(defect.decided_on)}, {defect.point}",
+                formatting.long_date(defect.limit_on),
+                line.remaining_text,
+                line.flag.value,
+                "Defects",
+                reverse("defect", args=[defect.id]),
+                days=line.days_left,
+            )
+        )
+    return rows
+
+
 def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
-    """Return what is due on the aircraft of the organisation (REQ-216)."""
-    rows: list[Row] = []
+    """Return what is due on the aircraft of the organisation (REQ-216, REQ-228)."""
+    rows: list[Row] = _deferred_defects(organisation, today)
     for aircraft in Aircraft.objects.all():
         if aircraft.stage == Stage.TRANSFER_IN:
             rows.append(

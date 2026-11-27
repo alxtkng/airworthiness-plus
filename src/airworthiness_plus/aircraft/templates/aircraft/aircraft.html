@@ -24,11 +24,32 @@
 <a href="{% url 'add_counter' aircraft.id %}">Add an Engine or Propeller</a>
 {% if aircraft.status == "Serviceable" %}<a href="{% url 'make_unserviceable' aircraft.id %}">Record as Unserviceable</a>{% endif %}
 </p>
+{% if problem %}<p role="alert">{{ problem }}</p>{% endif %}
 {% if aircraft.status == "Unserviceable" %}
 <form method="post" action="{% url 'make_serviceable' aircraft.id %}">
 {% csrf_token %}
 <button type="submit">Record as Serviceable</button>
 </form>
+{% endif %}
+<h2>Open Defects of {{ aircraft.registration }}</h2>
+{% if may_record_defect %}<p><a href="{% url 'record_defect' %}?aircraft={{ aircraft.id }}">Record a Defect</a></p>{% endif %}
+{% if defects %}
+<table>
+<thead><tr><th>Defect</th><th>Decision</th><th>Limit</th><th class="number">Remaining</th><th>Status</th></tr></thead>
+<tbody>
+{% for line in defects %}
+<tr>
+<td><a href="{% url 'defect' line.defect.id %}">{{ line.defect.title }}</a></td>
+<td>{{ line.defect.decision }}</td>
+<td>{{ line.limit_text }}</td>
+<td class="number">{{ line.remaining_text }}</td>
+<td>{{ line.status|status }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Open Defects</p>
 {% endif %}
 <h2>Details of {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'aircraft_details' aircraft.id %}">
