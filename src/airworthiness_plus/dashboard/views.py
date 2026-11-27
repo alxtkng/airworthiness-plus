@@ -14,8 +14,10 @@ from airworthiness_plus.dashboard import services
 @never_cache
 @requires(Action.VIEW_RECORDS)
 def dashboard_page(request: HttpRequest) -> HttpResponse:
-    """Everything due across the organisation, a panel for each section."""
+    """Show the operational overview and its complete register."""
     user = request.user
     assert isinstance(user, User)  # noqa: S101  guaranteed by ``requires``
     panels = services.dashboard(user.organisation, aircraft_services.today())
-    return render(request, "dashboard/dashboard.html", {"panels": panels})
+    return render(
+        request, "dashboard/dashboard.html", {"panels": panels, "triage": services.triage(panels)}
+    )

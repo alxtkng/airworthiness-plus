@@ -1,12 +1,52 @@
 {% extends "base.html" %}
 {% load writing %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard</section>
+</div>
+{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Dashboard</h1>
+<div class="dashboard">
+<nav class="dashboard-index" aria-label="Dashboard Sections">
+  <a href="#aircraft-restrictions">Aircraft Restrictions <span>{{ triage.restrictions|length }}</span></a>
+  <a href="#due-and-overdue">Due and Overdue <span>{{ triage.due|length }}</span></a>
+  <a href="#needs-assessment">Needs Assessment <span>{{ triage.assessment|length }}</span></a>
+  <a class="dashboard-register-link" href="#full-register">Full Register</a>
+</nav>
+<section class="dashboard-restrictions" id="aircraft-restrictions" aria-labelledby="restrictions-heading">
+  <h2 id="restrictions-heading">Aircraft Restrictions</h2>
+  {% if triage.restrictions %}
+  <ul class="dashboard-list">
+    {% for restriction in triage.restrictions %}
+    <li class="dashboard-restriction">
+      <h3>{{ restriction.registration }} {{ restriction.records.0.status|status }}</h3>
+      <ul class="dashboard-list">
+        {% for row in restriction.records %}
+        <li>
+          <a class="dashboard-item" href="{{ row.url }}">{{ row.item }}</a>
+          {% if row.due != "Not Set" or row.remaining %}
+          <p class="dashboard-detail">{% if row.due != "Not Set" %}{{ row.due }}{% else %}{{ row.remaining }}{% endif %}</p>
+          {% endif %}
+          {% if row.detail %}<p class="dashboard-detail">{{ row.detail }}</p>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p>No Aircraft Restrictions Recorded</p>{% endif %}
+</section>
+
+<div class="dashboard-queues">
+  {% include "dashboard/queue.html" with id="due-and-overdue" title="Due and Overdue" rows=triage.due empty="Nothing Due" only %}
+  {% include "dashboard/queue.html" with id="needs-assessment" title="Needs Assessment" rows=triage.assessment empty="Nothing Awaiting Assessment" only %}
+</div>
+
+<section id="full-register" class="dashboard-register" tabindex="-1" aria-labelledby="register-heading">
+<h2 id="register-heading">Full Register</h2>
 {% for panel in panels %}
-<h2>{{ panel.title }}</h2>
+<h3>{{ panel.title }}</h3>
 {% if panel.rows %}
-<table>
+<table data-search="always">
 <thead>
 <tr><th>{{ panel.subject }}</th><th>Item</th><th>Due</th><th class="number">Remaining</th><th>Status</th><th data-detail>Detail</th><th>Page</th></tr>
 </thead>
@@ -28,4 +68,6 @@
 <p>Nothing Due</p>
 {% endif %}
 {% endfor %}
+</section>
+</div>
 {% endblock %}

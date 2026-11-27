@@ -1,8 +1,7 @@
 """What the Dashboard shows: everything due across the organisation (REQ-215 to REQ-217).
 
-The Home board of the canvas. One panel for each section that is built,
-and in it one row for each thing that is due, due soon, overdue or
-waiting. A phase that builds a section adds its panel or its rows here.
+The full register has one panel for each built section. The overview groups
+those same rows by the attention they need.
 
 Nothing is worked out here. Each row is read from the service that owns
 the figure, so the Dashboard, the page it links to and the Fleet cannot
@@ -45,6 +44,7 @@ NOT_SET = "Not Set"
 NO_DAY = 1_000_000
 # What is red comes first (REQ-193): overdue, or stopping the aircraft.
 RED = frozenset({Flag.OVERDUE.value, Status.UNSERVICEABLE.value})
+DUE_STATUSES = frozenset(flag.value for flag in Flag if flag is not Flag.NONE)
 
 
 @dataclass(frozen=True)
@@ -80,6 +80,44 @@ class Panel:
     title: str
     subject: str
     rows: tuple[Row, ...]
+
+
+@dataclass(frozen=True)
+class AircraftRestriction:
+    registration: str
+    records: list[Row]
+
+
+@dataclass(frozen=True)
+class Triage:
+    restrictions: list[AircraftRestriction]
+    due: list[Row]
+    assessment: list[Row]
+
+
+def triage(panels: list[Panel]) -> Triage:
+    """Group the existing rows for the overview using their recorded statuses."""
+    restrictions: dict[str, list[Row]] = {}
+    deadlines: list[Row] = []
+    assessment: list[Row] = []
+    for panel in panels:
+        for row in panel.rows:
+            if row.status == Status.UNSERVICEABLE.value:
+                restrictions.setdefault(row.subject, []).append(row)
+            elif row.status in DUE_STATUSES:
+                deadlines.append(row)
+            else:
+                assessment.append(row)
+    return Triage(
+        [
+            AircraftRestriction(
+                registration, sorted(records, key=lambda row: row.page != "Aircraft")
+            )
+            for registration, records in sorted(restrictions.items())
+        ],
+        sorted(deadlines, key=lambda row: row.order),
+        sorted(assessment, key=lambda row: row.order),
+    )
 
 
 def _remaining(unit: Unit, remaining: Decimal | int, flag: Flag) -> str:
@@ -593,7 +631,7 @@ def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
         else:
             rows += _aircraft_rows(aircraft, today)
         rows += _to_assess(aircraft, today)
-    return Panel("Continuing Airworthiness", "Aircraft Registration", _ordered(rows))
+    return Panel("Continuing Airworthiness", "Subject", _ordered(rows))
 
 
 def people(organisation: Organisation, today: date) -> Panel:
