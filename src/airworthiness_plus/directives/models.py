@@ -6,7 +6,7 @@ as Applicability to Assess.
 """
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft
@@ -111,3 +111,54 @@ class Compliance(Record):
         Applicability, on_delete=models.PROTECT, related_name="compliance"
     )
     work = models.OneToOneField(WorkDone, on_delete=models.PROTECT, related_name="+")
+
+
+class Source(Record):
+    """One source the organisation checks for new directives (REQ-288).
+
+    When it was last checked and when the next check is due. Each check
+    changes this record, and the history keeps every earlier one.
+    """
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    name = models.CharField("Source", max_length=200)
+    covers = models.CharField("Covers", max_length=300)
+    note = models.CharField("Note", max_length=200, blank=True)
+    last_checked_on = models.DateField("Last Checked", null=True, blank=True)
+    next_check_on = models.DateField("Next Check", null=True, blank=True)
+    # Where the next check has no day: Each Amendment.
+    next_check_note = models.CharField("Next Check in Words", max_length=100, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organisation", "name"], name="directive_source_recorded_once"
+            ),
+            models.CheckConstraint(
+                condition=~Q(name="") & ~Q(covers=""),
+                name="directive_source_has_a_name_and_what_it_covers",
+            ),
+            # Never checked, with no next check; or checked, with the next check
+            # as a day on or after it, or in words, and not both.
+            models.CheckConstraint(
+                condition=Q(
+                    last_checked_on__isnull=True, next_check_on__isnull=True, next_check_note=""
+                )
+                | (
+                    Q(last_checked_on__isnull=False)
+                    & (
+                        Q(
+                            next_check_on__isnull=False,
+                            next_check_on__gte=F("last_checked_on"),
+                            next_check_note="",
+                        )
+                        | (Q(next_check_on__isnull=True) & ~Q(next_check_note=""))
+                    )
+                ),
+                name="directive_source_check_has_its_next_check",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.name

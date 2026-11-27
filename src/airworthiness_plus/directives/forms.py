@@ -81,3 +81,19 @@ class TerminationForm(Form):
 
     action = forms.CharField(label="Terminating Action", max_length=200)
     on = forms.DateField(label="Terminated")
+
+
+class SourceForm(Form):
+    """Record a source the organisation checks for new directives."""
+
+    name = forms.CharField(label="Source", max_length=200)
+    covers = forms.CharField(label="Covers", max_length=300)
+    note = forms.CharField(label="Note", max_length=200, required=False)
+
+
+class SourceCheckForm(Form):
+    """Record that a source was checked, and when it is next checked."""
+
+    checked_on = forms.DateField(label="Last Checked")
+    next_check_on = forms.DateField(label="Next Check", required=False)
+    next_check_note = forms.CharField(label="Next Check in Words", max_length=100, required=False)

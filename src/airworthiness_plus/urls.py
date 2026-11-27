@@ -47,6 +47,42 @@ urlpatterns: list[URLPattern | URLResolver] = [
         releases.record_release_certificate,
         name="record_release_certificate",
     ),
+    path("directives/sources/add/", directives.add_directive_source, name="add_directive_source"),
+    path(
+        "directives/sources/<uuid:source_id>/check/",
+        directives.check_directive_source,
+        name="check_directive_source",
+    ),
+    path(
+        "programmes/departures/<uuid:departure_id>/owner-copy/",
+        programme.departure_copy_sent,
+        name="departure_copy_sent",
+    ),
+    path(
+        "programmes/departures/<uuid:departure_id>/withdraw/",
+        programme.withdraw_departure,
+        name="withdraw_departure",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/programme/departures/add/",
+        programme.add_departure,
+        name="add_departure",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/programme/annual-review/start/",
+        programme.start_annual_review,
+        name="start_annual_review",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/programme/annual-review/",
+        programme.note_annual_review,
+        name="note_annual_review",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/programme/annual-review/complete/",
+        programme.complete_annual_review,
+        name="complete_annual_review",
+    ),
     path("programmes/", programme.programmes_page, name="programmes"),
     path("components/", components.components_page, name="components"),
     path("components/add/", components.add_component, name="add_component"),

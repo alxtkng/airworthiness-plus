@@ -169,6 +169,9 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     phase1.add_components(sample.ours, sample.planner, fleet)
     # Service bulletins, changes, repairs, weighings and weight schedules (REQ-249 to REQ-254).
     phase1.add_modifications(sample.ours, sample.planner, fleet)
+    # Departures, the annual review in progress and the sources of directives (REQ-284 to REQ-288).
+    phase1.add_programme_records(sample.ours, sample.lucy, fleet)
+    phase1.add_sources(sample.ours, sample.planner)
     return fleet
 
 

@@ -112,7 +112,12 @@ Sign in as Lucy Grant. The sample of this part is on the test site once its data
 ### Maintenance Programmes
 
 1. Open Maintenance Programmes. Every aircraft of the Fleet is listed with its programme and when its annual review is due.
-2. G-DGHI and G-EJKL say No Maintenance Programme Set Up. Open one: the programme is set up on the aircraft's own page.
+2. G-EJKL says No Maintenance Programme Set Up. Open it: the programme is set up on the aircraft's own page.
+3. Go back. G-DGHI has 2 departures. Open it: each says what the manufacturer recommends, what the programme says, the compensating measures and the justification, with the owner copy sent.
+4. Go back. G-FMNO's detail says Open, 4 of 6 Complete. Open it and find Annual Review: the six points of AMC1 ML.A.302(c)(9), two still open.
+5. Choose Complete the Review with today's date. It is refused, and names the two points. Tick them, save, and complete it: the programme is reviewed today.
+
+Say: the annual review is not completed with a point still open. That rule is ours.
 
 ### Aircraft Configuration
 
@@ -121,7 +126,7 @@ Sign in as Lucy Grant. The sample of this part is on the test site once its data
 3. Go back. Open the detail of G-CDEF's engine, then How What Remains Was Calculated: 1,780.0 hours since overhaul, 220.0 left, ML.A.503.
 4. G-DGHI's engine is On Condition: Review at 9,900.0.
 5. Choose Add a Component. Type a name, choose Service Life Limit and 500 hours. Add it, then record its installation on G-ABCD at today's airframe hours.
-6. Open the tab Airworthiness Directives. It says G-CDEF's propeller is away, with the applicability check before refit.
+6. Open the tab Airworthiness Directives. It says G-CDEF's propeller is away, with the applicability check before refit. Sources lists what the organisation checks for new directives, each with when it was last checked and next. Choose Record a Check beside one.
 7. Open the Dashboard. The propeller due back is in Continuing Airworthiness.
 
 8. Open the tab Modifications and Repairs. G-BXYZ's service bulletin is awaiting the owner, with its reminder. Below, each change or repair has its approval route and mass effect.
@@ -165,4 +170,4 @@ Say: the system records a certificate that was issued. It does not issue one.
 
 ## What Cannot Be Shown Yet
 
-The rest of Phase 1 (set up configuration, the transfer checklist, the tabs of the aircraft record, departures and the annual review checklist of a programme, and the sources of directives) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The rest of Phase 1 (set up configuration, the transfer checklist, and the tabs of the aircraft record) and Phases 2 to 9 of `prompts/canvas-build.md`: work packages, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

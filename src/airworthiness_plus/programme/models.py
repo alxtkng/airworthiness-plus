@@ -1,8 +1,9 @@
 """The maintenance programme, its tasks and the work done (REQ-040 to REQ-059)."""
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 
+from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft.models import Aircraft, Counter
 from airworthiness_plus.history.models import Record
 from airworthiness_plus.organisations.models import Organisation
@@ -247,3 +248,165 @@ class WorkDone(Record):
     def reading(self) -> Reading:
         """Return when the work was done, in the form the calculation rules take."""
         return Reading(self.dated, self.hours, self.cycles)
+
+
+class Departure(Record):
+    """One departure of a programme from the design approval holder's recommendations.
+
+    ML.A.302(c)(7) and (c)(8): an owner who declares a programme is
+    responsible for any deviation, and an organisation that approves one
+    keeps the justification for each (REQ-284). What was recorded is never
+    altered. The day a copy went to the owner, and the day the departure
+    was withdrawn, are each added once.
+    """
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    programme = models.ForeignKey(Programme, on_delete=models.PROTECT, related_name="departures")
+    task = models.CharField("Task", max_length=200)
+    manufacturer = models.CharField("Manufacturer", max_length=200)
+    programme_says = models.CharField("Programme", max_length=200)
+    compensating_measures = models.CharField("Compensating Measures", max_length=300)
+    justification = models.CharField("Justification", max_length=300)
+    recorded_on = models.DateField("Recorded")
+    owner_copy_sent_on = models.DateField("Owner Copy Sent", null=True, blank=True)
+    withdrawn_on = models.DateField("Withdrawn", null=True, blank=True)
+
+    class Meta:
+        ordering = ["recorded_on", "task", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(task="")
+                & ~Q(manufacturer="")
+                & ~Q(programme_says="")
+                & ~Q(compensating_measures="")
+                & ~Q(justification=""),
+                name="departure_says_what_it_departs_from_and_why",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(owner_copy_sent_on__isnull=True) | Q(owner_copy_sent_on__gte=F("recorded_on"))
+                )
+                & (Q(withdrawn_on__isnull=True) | Q(withdrawn_on__gte=F("recorded_on"))),
+                name="departure_dates_follow_its_recording",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.task
+
+
+# AMC1 ML.A.302(c)(9), point (a)(1) to (6): what the annual review takes into
+# consideration. The name of each field, its label as the Maintenance Programmes
+# board writes it, and the point.
+REVIEW_POINTS: tuple[tuple[str, str, str], ...] = (
+    ("results", "Maintenance Results This Year", "AMC1 ML.A.302(c)(9)(a)(1)"),
+    ("airworthiness_review", "Last Airworthiness Review", "AMC1 ML.A.302(c)(9)(a)(2)"),
+    (
+        "revisions",
+        "Minimum Inspection Programme and Manufacturer's Revisions",
+        "AMC1 ML.A.302(c)(9)(a)(3)",
+    ),
+    ("configuration", "Configuration, Type and Operation", "AMC1 ML.A.302(c)(9)(a)(4)"),
+    ("pilot_owners", "Pilot-Owners", "AMC1 ML.A.302(c)(9)(a)(5)"),
+    (
+        "mandatory",
+        "Directives, Airworthiness Limitations and Data Sheet",
+        "AMC1 ML.A.302(c)(9)(a)(6)",
+    ),
+)
+
+
+def _point_whole(name: str) -> Q:
+    """A point that is complete says what was found."""
+    return Q(**{f"{name}_done": False}) | ~Q(**{f"{name}_note": ""})
+
+
+class AnnualReview(Record):
+    """One annual review of a programme, point by point (REQ-286; ML.A.302(c)(9)).
+
+    Once it is completed nothing of it changes, and it keeps the name of
+    whoever completed it as it then stood: the database writes it.
+    """
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    programme = models.ForeignKey(
+        Programme, on_delete=models.PROTECT, related_name="annual_reviews"
+    )
+    opened_on = models.DateField("Opened")
+
+    results_note = models.CharField(max_length=300, blank=True)
+    results_done = models.BooleanField(default=False)
+    airworthiness_review_note = models.CharField(max_length=300, blank=True)
+    airworthiness_review_done = models.BooleanField(default=False)
+    revisions_note = models.CharField(max_length=300, blank=True)
+    revisions_done = models.BooleanField(default=False)
+    configuration_note = models.CharField(max_length=300, blank=True)
+    configuration_done = models.BooleanField(default=False)
+    pilot_owners_note = models.CharField(max_length=300, blank=True)
+    pilot_owners_done = models.BooleanField(default=False)
+    mandatory_note = models.CharField(max_length=300, blank=True)
+    mandatory_done = models.BooleanField(default=False)
+
+    completed_on = models.DateField("Completed", null=True, blank=True)
+    completed_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    # As it stood on the day the review was completed, written by the database.
+    completed_by_name = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["opened_on", "id"]
+        constraints = [
+            # One review in progress for a programme at a time.
+            models.UniqueConstraint(
+                fields=["programme"],
+                condition=Q(completed_on__isnull=True),
+                name="annual_review_one_in_progress_for_a_programme",
+            ),
+            models.CheckConstraint(
+                condition=_point_whole("results")
+                & _point_whole("airworthiness_review")
+                & _point_whole("revisions")
+                & _point_whole("configuration")
+                & _point_whole("pilot_owners")
+                & _point_whole("mandatory"),
+                name="annual_review_point_complete_says_what_was_found",
+            ),
+            # Completed with every point complete, by somebody, not before it was opened.
+            models.CheckConstraint(
+                condition=Q(completed_on__isnull=True, completed_by__isnull=True)
+                | Q(
+                    completed_on__gte=F("opened_on"),
+                    completed_on__isnull=False,
+                    completed_by__isnull=False,
+                    results_done=True,
+                    airworthiness_review_done=True,
+                    revisions_done=True,
+                    configuration_done=True,
+                    pilot_owners_done=True,
+                    mandatory_done=True,
+                ),
+                name="annual_review_completed_with_every_point_complete",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Annual Review, {self.opened_on}"
+
+    @property
+    def points(self) -> list[tuple[str, str, str, str, bool]]:
+        """Return each point: its name, label, reference, what was found and whether complete."""
+        return [
+            (name, label, point, getattr(self, f"{name}_note"), getattr(self, f"{name}_done"))
+            for name, label, point in REVIEW_POINTS
+        ]
+
+    @property
+    def complete_count(self) -> int:
+        """Return how many of the six points are complete."""
+        return sum(1 for *_, done in self.points if done)
+
+    @property
+    def progress(self) -> str:
+        """Return the progress as the board writes it: 4 of 6 Complete."""
+        return f"{self.complete_count} of {len(REVIEW_POINTS)} Complete"

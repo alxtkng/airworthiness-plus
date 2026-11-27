@@ -7,6 +7,31 @@
 {% for fitting in awaiting_refit %}
 <p><a href="{% url 'component' fitting.component_id %}">{{ fitting.aircraft_registration }} {{ fitting.component.name }}</a>, At {{ fitting.sent_to }}, Applicability Check Before Refit</p>
 {% endfor %}
+<h2>Sources</h2>
+{% if may_record %}<p><a href="{% url 'add_directive_source' %}">Record a Source</a></p>{% endif %}
+{% if sources %}
+<table>
+<thead>
+<tr><th>Source</th><th>Covers</th><th>Last Checked</th><th>Next Check</th><th>Status</th><th data-detail>Note</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+</thead>
+<tbody>
+{% for line in sources %}
+<tr>
+<td>{{ line.source.name }}</td>
+<td>{{ line.source.covers }}</td>
+<td>{% if line.source.last_checked_on %}{{ line.source.last_checked_on|long_date }}{% else %}Not Checked{% endif %}</td>
+<td>{{ line.next_text }}</td>
+<td>{{ line.status|status }}</td>
+<td>{{ line.source.note }}</td>
+{% if may_record %}<td><a href="{% url 'check_directive_source' line.source.id %}">Record a Check</a></td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Sources Recorded</p>
+{% endif %}
+<h2>Directives</h2>
 <table>
 <thead>
 <tr><th>Directive Number</th><th data-detail>Revision</th><th data-detail>Issuing Authority</th><th>Subject</th><th>Effective Date</th><th data-detail>Supersedes</th><th>Status</th></tr>

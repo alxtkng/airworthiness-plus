@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ aircraft.registration }}, Record a Departure{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>Record a Departure From the Manufacturer's Instructions</p>
+<form method="post">
+{% csrf_token %}
+{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<p><button type="submit">Record Departure</button></p>
+</form>
+<p>The Organisation Keeps the Justification for Any Deviation From the Design Approval Holder's Recommendations, ML.A.302(c)(8)</p>
+{% endblock %}

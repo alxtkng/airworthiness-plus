@@ -47,15 +47,17 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
 
 INSTRUCTIONS = "Design Approval Holder\N{RIGHT SINGLE QUOTATION MARK}s Instructions"
 LISTED = [
-    ["G-ABCD", INSTRUCTIONS, "[Programme Reference]", "1", "Not Recorded", "", "", ""],
-    ["G-BXYZ", "Minimum Inspection Programme", "[Programme Reference]", "1", "Not Recorded", "",
-     "", ""],
-    ["G-CDEF", INSTRUCTIONS, "[Programme Reference]", "1", "11 November 2026",
-     "11 November 2027", "358 Days", ""],
-    ["G-DGHI", "No Maintenance Programme Set Up", "", "", "", "", "", ""],
-    ["G-EJKL", "No Maintenance Programme Set Up", "", "", "", "", "", ""],
-    ["G-FMNO", "Minimum Inspection Programme", "[Programme Reference]", "1", "Not Recorded", "",
-     "", ""],
+    # From 27 November 2026 the list also has how many departures are in force, after
+    # the tasks, and a review in progress, last (REQ-284, REQ-286): none of either here.
+    ["G-ABCD", INSTRUCTIONS, "[Programme Reference]", "1", "0", "Not Recorded", "", "", "", ""],
+    ["G-BXYZ", "Minimum Inspection Programme", "[Programme Reference]", "1", "0",
+     "Not Recorded", "", "", "", ""],
+    ["G-CDEF", INSTRUCTIONS, "[Programme Reference]", "1", "0", "11 November 2026",
+     "11 November 2027", "358 Days", "", ""],
+    ["G-DGHI", "No Maintenance Programme Set Up", "", "", "", "", "", "", "", ""],
+    ["G-EJKL", "No Maintenance Programme Set Up", "", "", "", "", "", "", "", ""],
+    ["G-FMNO", "Minimum Inspection Programme", "[Programme Reference]", "1", "0",
+     "Not Recorded", "", "", "", ""],
 ]  # fmt: skip
 
 
@@ -89,7 +91,7 @@ def test_the_annual_review_is_marked_as_it_falls_due(
 
     def cdef() -> list[str]:
         (rows,) = tables(page(reader, "/programmes/"))
-        return next(row[5:8] for row in rows if row[0] == "G-CDEF")
+        return next(row[6:9] for row in rows if row[0] == "G-CDEF")
 
     day.today = date(2027, 10, 11)
     assert cdef() == ["11 November 2027", "31 Days", ""]

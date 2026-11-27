@@ -6,25 +6,39 @@ another organisation is not found (REQ-003).
 """
 
 import uuid
+from collections.abc import Callable
+from datetime import date
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods, require_POST
 
+from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.programme import due, services
 from airworthiness_plus.programme.forms import (
+    AnnualReviewForm,
+    CompleteReviewForm,
+    DepartureDateForm,
+    DepartureForm,
     ProgrammeForm,
     ReleaseForm,
     ReviewForm,
     TaskForm,
     WorkForm,
 )
-from airworthiness_plus.programme.models import Basis, Programme, Task, WorkDone
+from airworthiness_plus.programme.models import (
+    AnnualReview,
+    Basis,
+    Departure,
+    Programme,
+    Task,
+    WorkDone,
+)
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 
@@ -60,8 +74,35 @@ def programme_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse
             "review": review,
             "work": due.work_lines(aircraft, today),
             "today": today,
+            **_review_parts(request, programme),
         },
     )
+
+
+def _review_parts(request: HttpRequest, programme: Programme | None) -> dict[str, object]:
+    """Return the departures and the annual review of a programme, for its page."""
+    user = request.user
+    assert isinstance(user, User)  # noqa: S101  guaranteed by ``requires``
+    if programme is None:
+        return {}
+    review = services.open_annual_review(programme)
+    initial: dict[str, object] = {}
+    if review is not None:
+        for name, _, _, note, done in review.points:
+            initial[f"{name}_note"] = note
+            initial[f"{name}_done"] = done
+    return {
+        "departures": Departure.objects.filter(programme=programme).order_by(
+            "withdrawn_on", "recorded_on", "task"
+        ),
+        "annual_review": review,
+        "annual_form": AnnualReviewForm(initial=initial),
+        "completed_reviews": AnnualReview.objects.filter(
+            programme=programme, completed_on__isnull=False
+        ).order_by("-completed_on"),
+        "may_change": user.may(Action.CHANGE_MAINTENANCE_PROGRAMME),
+        "may_review": user.may(Action.RECORD_MAINTENANCE_PROGRAMME_REVIEW),
+    }
 
 
 @never_cache
@@ -229,3 +270,117 @@ def programmes_page(request: HttpRequest) -> HttpResponse:
     """The maintenance programme of every aircraft of the Fleet (REQ-283)."""
     lines = due.programme_lines(aircraft_services.today())
     return render(request, "programme/programmes.html", {"lines": lines})
+
+
+def _refused(request: HttpRequest, aircraft: Aircraft, reason: str) -> HttpResponse:
+    """Say why something of a programme was refused, with the way back to the programme."""
+    return render(
+        request,
+        "programme/refused.html",
+        {"aircraft": aircraft, "reason": reason},
+        status=409,
+    )
+
+
+@never_cache
+@requires(Action.CHANGE_MAINTENANCE_PROGRAMME)
+@require_http_methods(["GET", "POST"])
+def add_departure(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """Record a departure from the manufacturer's instructions (REQ-284)."""
+    aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
+    programme = get_object_or_404(Programme, aircraft=aircraft)
+    form = DepartureForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.add_departure(programme, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("programme", aircraft_id=aircraft.id)
+    return render(request, "programme/departure.html", {"aircraft": aircraft, "form": form})
+
+
+def _departure_dated(
+    request: HttpRequest, departure_id: uuid.UUID, record: Callable[[Departure, date], object]
+) -> HttpResponse:
+    departure = get_object_or_404(
+        Departure.objects.select_related("programme__aircraft"), pk=departure_id
+    )
+    aircraft = departure.programme.aircraft
+    form = DepartureDateForm(request.POST)
+    if not form.is_valid():
+        return _refused(request, aircraft, "Give the Date")
+    try:
+        record(departure, form.cleaned_data["on"])
+    except services.RefusedError as error:
+        return _refused(request, aircraft, str(error))
+    return redirect("programme", aircraft_id=aircraft.id)
+
+
+@requires(Action.CHANGE_MAINTENANCE_PROGRAMME)
+@require_POST
+def departure_copy_sent(request: HttpRequest, departure_id: uuid.UUID) -> HttpResponse:
+    """Record the day a copy of a departure went to the owner (REQ-285)."""
+    return _departure_dated(request, departure_id, services.departure_copy_sent)
+
+
+@requires(Action.CHANGE_MAINTENANCE_PROGRAMME)
+@require_POST
+def withdraw_departure(request: HttpRequest, departure_id: uuid.UUID) -> HttpResponse:
+    """Record that a departure no longer stands (REQ-285)."""
+    return _departure_dated(request, departure_id, services.withdraw_departure)
+
+
+@requires(Action.RECORD_MAINTENANCE_PROGRAMME_REVIEW)
+@require_POST
+def start_annual_review(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """Open the annual review of the programme (REQ-286)."""
+    aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
+    programme = get_object_or_404(Programme, aircraft=aircraft)
+    try:
+        services.start_annual_review(programme)
+    except services.RefusedError as error:
+        return _refused(request, aircraft, str(error))
+    return redirect("programme", aircraft_id=aircraft.id)
+
+
+def _open_review(aircraft_id: uuid.UUID) -> tuple[Aircraft, AnnualReview | None]:
+    aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
+    programme = get_object_or_404(Programme, aircraft=aircraft)
+    return aircraft, services.open_annual_review(programme)
+
+
+@requires(Action.RECORD_MAINTENANCE_PROGRAMME_REVIEW)
+@require_POST
+def note_annual_review(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """Record what was found on each point of the annual review (REQ-286)."""
+    aircraft, review = _open_review(aircraft_id)
+    form = AnnualReviewForm(request.POST)
+    if review is None:
+        return _refused(request, aircraft, "No Annual Review Is in Progress")
+    if not form.is_valid():
+        return _refused(request, aircraft, "A Note Is at Most 300 Characters")
+    try:
+        services.note_annual_review(review, **form.cleaned_data)
+    except services.RefusedError as error:
+        return _refused(request, aircraft, str(error))
+    return redirect("programme", aircraft_id=aircraft.id)
+
+
+@requires(Action.RECORD_MAINTENANCE_PROGRAMME_REVIEW)
+@require_POST
+def complete_annual_review(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
+    """Complete the annual review and record the programme as reviewed (REQ-287)."""
+    aircraft, review = _open_review(aircraft_id)
+    form = CompleteReviewForm(request.POST)
+    user = request.user
+    assert isinstance(user, User)  # noqa: S101  guaranteed by ``requires``
+    if review is None:
+        return _refused(request, aircraft, "No Annual Review Is in Progress")
+    if not form.is_valid():
+        return _refused(request, aircraft, "Give the Day the Review Was Completed")
+    try:
+        services.complete_annual_review(review, by=user, **form.cleaned_data)
+    except services.RefusedError as error:
+        return _refused(request, aircraft, str(error))
+    return redirect("programme", aircraft_id=aircraft.id)
