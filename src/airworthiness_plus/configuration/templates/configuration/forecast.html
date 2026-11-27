@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ aircraft.registration }}, Maintenance Forecast{% endblock %}
+{% block tabs %}{% include "interface/aircraft_tabs.html" with active="Maintenance Forecast" %}{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+{% if aircraft.regime == "Non-Part 21" %}<p>Calculations Not Yet Supported for Non-Part 21 Aircraft</p>{% endif %}
+{% if aircraft.stage == "Transfer In" %}<p>No Due Items Until Records Are Complete</p>{% endif %}
+<h2>Next {{ window }} Days</h2>
+{% if soon %}
+<table>
+<thead><tr><th>Forecast Date</th><th>Item</th><th class="number">Remaining</th><th>Status</th><th>Page</th></tr></thead>
+<tbody>
+{% for line in soon %}
+<tr><td>{{ line.forecast_text }}</td><td>{{ line.item }}</td><td class="number">{{ line.remaining }}</td><td>{{ line.status|status }}</td><td><a href="{{ line.url }}">{{ line.page }}</a></td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>Nothing Forecast in the Next {{ window }} Days</p>
+{% endif %}
+<h2>Maintenance Forecast</h2>
+{% if lines %}
+<table>
+<thead><tr><th>Item</th><th>Next Due</th><th class="number">Remaining</th><th>Forecast Date</th><th>Status</th><th data-detail>Detail</th><th data-detail>Page</th></tr></thead>
+<tbody>
+{% for line in lines %}
+<tr><td>{{ line.item }}</td><td>{{ line.due }}</td><td class="number">{{ line.remaining }}</td><td>{{ line.forecast_text }}</td><td>{{ line.status|status }}</td><td>{{ line.detail }}</td><td><a href="{{ line.url }}">{{ line.page }}</a></td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>Nothing to Forecast</p>
+{% endif %}
+<p>A Forecast Date Is a Projection From the Planning Utilisation, for Planning Only. A Task Is Due When Any Limit Is Reached</p>
+{% endblock %}
