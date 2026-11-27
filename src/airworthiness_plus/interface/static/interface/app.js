@@ -389,6 +389,9 @@
         row.classList.toggle("open", open);
         button.setAttribute("aria-expanded", open ? "true" : "false");
       });
+      if (row.hasAttribute("data-open-details")) {
+        button.click();
+      }
     });
     sortable(table, rows, head, held);
     searchable(table, rows);

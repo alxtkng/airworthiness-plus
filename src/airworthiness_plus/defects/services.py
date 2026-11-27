@@ -113,9 +113,9 @@ def record_defect(
         days = default_days(aircraft.organisation, basis)
         if days is None and data_limit_on is None:
             raise RefusedError("Give the Limit the Minimum Equipment List Gives, ML.A.403(b)(2)")
-        if data_limit_on is not None and data_limit_on < decided_on:
-            raise RefusedError("A Limit Is Not Before the Day of the Decision")
-        limit = rules.deferral_limit(decided_on, days, data_limit_on)
+        if data_limit_on is not None and data_limit_on < found_on:
+            raise RefusedError("A Limit Is Not Before the Day the Defect Was First Identified")
+        limit = rules.deferral_limit(found_on, days, data_limit_on)
         if days_between(decided_on, limit) > rules.MOST_DAYS:
             raise RefusedError("A Limit Is at Most 365 Days After the Decision")
     elif decision == Decision.NOT_DEFERRABLE:
@@ -182,7 +182,7 @@ def record_defect(
         work_done=work_done if closing else None,
     )
     # Who decided is written by the database, as their record stands (REQ-225).
-    defect.refresh_from_db(fields=["decided_by_name", "decided_by_licence"])
+    defect.refresh_from_db(fields=["decided_by_name", "decided_by_licence", "default_started_on"])
     return defect
 
 
@@ -290,6 +290,8 @@ class DefectLine:
         if defect.limit_on is None:
             return None
         inputs = [("Decided", formatting.long_date(defect.decided_on))]
+        if defect.default_started_on is not None:
+            inputs.append(("First Identified", formatting.long_date(defect.default_started_on)))
         if defect.default_days is not None:
             inputs.append(
                 (
@@ -304,12 +306,18 @@ class DefectLine:
                 else "Limit in the Maintenance Data"
             )
             inputs.append((label, formatting.long_date(defect.data_limit_on)))
-        rule = (
-            "The Limit the Minimum Equipment List Gives"
-            if defect.default_days is None
-            else "The Day of the Decision and the Organisation's Default Limit, "
-            "or the Limit in the Maintenance Data When It Is Earlier"
-        )
+        if defect.default_days is None:
+            rule = "The Limit the Minimum Equipment List Gives"
+        else:
+            start = (
+                "The Day the Defect Was First Identified"
+                if defect.default_started_on is not None
+                else "The Day of the Decision"
+            )
+            rule = (
+                f"{start} and the Organisation's Default Limit, "
+                "or the Limit in the Maintenance Data When It Is Earlier"
+            )
         return Working(
             "How the Limit Was Calculated",
             formatting.long_date(defect.limit_on),
@@ -386,8 +394,9 @@ class RepeatLine:
 
     @property
     def status(self) -> str:
-        """Return the word of the status mark: a repeat with no action recorded is to assess."""
-        return "To Assess" if self.state == "Repeat" and self.action is None else ""
+        """Mark a repeat for assessment when the latest occurrence has no covering action."""
+        covered = self.action is not None and self.defects[-1].found_on <= self.action.recorded_on
+        return "To Assess" if self.state == "Repeat" and not covered else ""
 
     @property
     def registrations(self) -> str:
@@ -441,7 +450,16 @@ def record_repeat_action(
     latest = RepeatAction.objects.filter(
         type_rating=type_rating, chapter=chapter, superseded_by__isnull=True
     ).first()
-    if latest is not None and latest.action == action:
+    if (
+        latest is not None
+        and latest.action == action
+        and not Defect.objects.filter(
+            aircraft__type_rating=type_rating,
+            chapter=chapter,
+            found_on__gt=latest.recorded_on,
+            found_on__lte=today,
+        ).exists()
+    ):
         raise RefusedError("This Action Is Already Recorded")
     return RepeatAction.objects.create(
         organisation=organisation,

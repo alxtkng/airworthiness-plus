@@ -5,6 +5,7 @@ from typing import Any
 from django.db import models
 from django.db.models import Q
 
+from airworthiness_plus.defects.models import Defect
 from airworthiness_plus.history.models import Record, RecordsAreNeverDeletedError
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
@@ -124,3 +125,28 @@ class Release(Record):
     def point(self) -> str:
         """Return the point of ML.A.801(b) the certificate was issued under."""
         return POINTS[IssuedBy(self.kind)]
+
+
+class HistoricalReleaseEvidence(Record):
+    """A signed source retained separately from a verified release."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    work = models.ForeignKey(WorkDone, on_delete=models.PROTECT, related_name="historical_releases")
+    grounding_defect = models.ForeignKey(Defect, on_delete=models.PROTECT, related_name="+")
+    reference = models.CharField("Signed Release Reference", max_length=100)
+    issuer_name = models.CharField("Issuer Named in the Source", max_length=200)
+    issued_on = models.DateField("Date on the Signed Release")
+    source = models.CharField("Signed Evidence Reference", max_length=200)
+
+    class Meta:
+        ordering = ["-issued_on", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["work", "reference", "issued_on"],
+                name="historical_release_once_per_source",
+            ),
+            models.CheckConstraint(
+                condition=~Q(reference="") & ~Q(issuer_name="") & ~Q(source=""),
+                name="historical_release_has_evidence",
+            ),
+        ]

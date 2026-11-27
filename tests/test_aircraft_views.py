@@ -19,17 +19,24 @@ attention; 4 not recorded; none recorded as required equipment.
 
 import re
 from datetime import date
+from decimal import Decimal
 
 import pytest
 
 from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.aircraft.models import Aircraft, CounterKind
+from airworthiness_plus.components import services as component_services
+from airworthiness_plus.components.models import Basis
 from airworthiness_plus.configuration import forecast
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.sample import build, phase1
+from airworthiness_rules.intervals import Interval, Reading, TaskKind
 from tests.support import TODAY, Sample, get, make_sample, page, signed_in
 from tests.test_modifications import rows
+from tests.test_sample_seed import row_of
+from tests.test_sample_seed import rows as seeded_rows
 
 pytestmark = pytest.mark.django_db
 
@@ -53,6 +60,63 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
     phase1.add_modifications(sample.ours, sample.planner, fleet)
     phase1.add_set_up(sample.ours, sample.lucy, fleet)
     return fleet
+
+
+def test_fleet_keeps_unprojectable_tasks_in_the_due_filter(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    aircraft = fleet["G-FMNO"]
+    with working_for(sample.ours.id, sample.lucy.id):
+        programme = aircraft.programme
+        programme.hours_per_day = None
+        programme.save(update_fields=["hours_per_day"])
+        programme_services.add_task(
+            programme,
+            title="Calendar Inspection",
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=aircraft.counters.get(kind=CounterKind.AIRFRAME),
+            source="[Maintenance Manual Reference]",
+            interval=Interval(days=120),
+            starts=Reading(TODAY, Decimal("4950.2"), 0),
+        )
+    row = row_of(seeded_rows(signed_in(sample.reader), "/?show=due"), "G-FMNO")
+    assert "No Planning Utilisation" in row[4]
+
+
+def test_fleet_puts_the_fitted_component_limit_beside_the_programme(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    aircraft = fleet["G-FMNO"]
+    with working_for(sample.ours.id, sample.planner.id):
+        component = component_services.add_component(
+            sample.ours,
+            name="Emergency Locator Transmitter Battery",
+            basis=Basis.DATE,
+            limit_date=date(2026, 11, 23),
+            date_label="Battery Date",
+        )
+        component_services.fit_component(
+            component,
+            aircraft,
+            position="Emergency Locator Transmitter",
+            fitted_on=TODAY,
+            airframe_hours_fitted=Decimal("4950.2"),
+            hours_at_fitting=Decimal("0"),
+            airframe_cycles_fitted=0,
+            cycles_at_fitting=0,
+        )
+    row = row_of(seeded_rows(signed_in(sample.reader), "/?show=due"), "G-FMNO")
+    assert row[4:6] == ["Emergency Locator Transmitter Battery", "5 Days"]
+
+
+def test_fleet_puts_the_annual_programme_review_beside_the_programme(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    aircraft = fleet["G-FMNO"]
+    with working_for(sample.ours.id, sample.lucy.id):
+        programme_services.record_review(aircraft.programme, date(2025, 11, 27))
+    row = row_of(seeded_rows(signed_in(sample.reader), "/?show=due"), "G-FMNO")
+    assert row[4:6] == ["Maintenance Programme Annual Review", "9 Days"]
 
 
 # The forecast view
@@ -133,6 +197,67 @@ def test_what_cannot_be_placed_or_calculated_is_said_and_not_left_out(
     hklm = page(reader, f"/aircraft/{fleet['G-HKLM'].id}/forecast/")
     assert "No Due Items Until Records Are Complete" in hklm
     assert "Nothing to Forecast" in hklm and "<table>" not in hklm.split("<main", 1)[1]
+
+
+def test_forecast_keeps_the_calendar_limit_when_hours_cannot_be_projected(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    aircraft = fleet["G-DGHI"]
+    with working_for(sample.ours.id, sample.planner.id):
+        hose = component_services.add_component(
+            sample.ours,
+            name="Flexible Hose",
+            basis=Basis.CERTIFIED,
+            limit_hours=Decimal("2000.0"),
+            limit_months=60,
+        )
+        component_services.fit_component(
+            hose,
+            aircraft,
+            position="Fuel System",
+            fitted_on=TODAY,
+            airframe_hours_fitted=Decimal("9874.3"),
+            hours_at_fitting=Decimal("0"),
+            airframe_cycles_fitted=0,
+            cycles_at_fitting=0,
+            life_from=date(2021, 12, 1),
+        )
+    body = page(signed_in(sample.reader), f"/aircraft/{aircraft.id}/forecast/")
+    assert row_of(rows(body, 0), "1 December 2026, Hours Not Forecast")[1:4] == [
+        "Flexible Hose",
+        "2,000.0 Hours; 13 Days",
+        "Due Soon",
+    ]
+
+
+def test_forecast_keeps_a_cycle_limit_beyond_the_calendar(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    aircraft = fleet["G-ABCD"]
+    with working_for(sample.ours.id, sample.lucy.id):
+        programme = aircraft.programme
+        programme.cycles_per_day = Decimal("0.1")
+        programme.save(update_fields=["cycles_per_day"])
+        bearing = component_services.add_component(
+            sample.ours, name="Bearing", basis=Basis.CERTIFIED, limit_cycles=999_999
+        )
+        component_services.fit_component(
+            bearing,
+            aircraft,
+            position="Bearing",
+            fitted_on=TODAY,
+            airframe_hours_fitted=Decimal("6412.6"),
+            hours_at_fitting=Decimal("0"),
+            airframe_cycles_fitted=0,
+            cycles_at_fitting=0,
+        )
+    body = page(signed_in(sample.reader), f"/aircraft/{aircraft.id}/forecast/")
+    assert row_of(rows(body, 1), "Bearing")[1:4] == [
+        "999,999 Cycles",
+        "999,999 Cycles",
+        "Not Forecast, Beyond 31 December 9999",
+    ]
+    assert all(row[1] != "Bearing" for row in rows(body, 0))
 
 
 def test_forecast_places_a_passed_calendar_limit_on_today(

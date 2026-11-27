@@ -510,7 +510,9 @@ def test_every_aircraft_page_follows_the_role_matrix(
         path = "/aircraft/add/" if tail == "add" else f"/aircraft/{target.id}{tail}"
         response = call(client, method, path)
         if permitted(user.roles, action):
-            assert response.status_code in (200, 302), f"{role} {method} {tail}"
+            # The direct POST omits the required count, which the Transfers form rejects.
+            expected_statuses = (400,) if tail == "/records-received/" else (200, 302)
+            assert response.status_code in expected_statuses, f"{role} {method} {tail}"
         else:
             assert response.status_code == 403, f"{role} {method} {tail}"
             refusals += 1

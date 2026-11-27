@@ -18,12 +18,13 @@ from django.test import Client
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.components.services import component_lines
 from airworthiness_plus.history import chain
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.reviews.models import Certificate
 from tests.conftest import as_owner
-from tests.support import TODAY, signed_in
+from tests.support import TODAY, get, signed_in
 
 pytestmark = pytest.mark.django_db
 PASSWORD = secrets.token_urlsafe(18)
@@ -122,9 +123,8 @@ def test_a_weak_password_sets_nothing_up(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
-    """SampleData.md, Fleet: every cell of every row. One difference is known and recorded:
-    the sample writes 220 Hours for G-CDEF and the system writes hours to one decimal place.
-    Next Due and Remaining are two columns, as the Fleet board has them (REQ-280)."""
+    """SampleData.md, Fleet: every cell of every row, including the comparison with
+    recorded programme reviews. Next Due and Remaining are separate columns (REQ-280)."""
     table = {row[0]: row[1:8] for row in rows(reader, "/")}
     assert table == {
         "G-DGHI": [
@@ -176,8 +176,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Robin DR 400 series (Lycoming)",
             "Syndicate of 4",
             "Serviceable",
-            "Engine Overhaul",
-            "220.0 Hours",
+            "Maintenance Programme Annual Review",
+            "358 Days",
             "2 December 2027",
             "7,731.5",
         ],
@@ -190,6 +190,22 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
         "Pilot-Owner",
         "Records 14 of 18 Received",
     ]
+
+
+def test_the_components_page_counts_the_full_seeded_sample(reader: Client) -> None:
+    """REQ-234. The whole sample uses G-DGHI's planning rate of 0.8 hours a day."""
+    body = get(reader, "/components/").content.decode()
+    assert "<p>9 Tracked, 1 Off-Wing, 1 On Condition, 4 Due in 6 Months</p>" in body
+    table = rows(reader, "/components/")
+    assert table[0][0:2] == ["Propeller, Fixed Pitch", "G-HKLM"]
+    assert row_of(table, "Engine, Lycoming O-360", "G-DGHI")[4] == "25.7 Hours"
+    with as_owner():
+        engine = next(
+            line
+            for line in component_lines(TODAY)
+            if line.component.name == "Engine, Lycoming O-360" and line.fitted_to == "G-DGHI"
+        )
+    assert engine.days == 32
 
 
 # SampleData.md, Maintenance Programme Inputs
@@ -291,7 +307,7 @@ def test_the_fleet_is_filtered_as_the_fleet_board_filters_it(reader: Client) -> 
         "G-ABCD": "12.4 Hours; 15 Days",
         "G-BXYZ": "9 Days",
         "G-FMNO": "78 Days",
-        "G-CDEF": "220.0 Hours",
+        "G-CDEF": "358 Days",
     }
     # A reader may not add an aircraft, and is not shown the link (REQ-006).
     assert "Add an Aircraft" not in body.split("<main", 1)[1]

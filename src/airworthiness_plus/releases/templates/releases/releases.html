@@ -46,6 +46,17 @@
 </tbody>
 </table>
 {% endif %}
+{% if historical_evidence %}
+<h2>Unverified Historical Evidence</h2>
+<table>
+<thead><tr><th>Aircraft Registration</th><th>Maintenance</th><th>Signed Release Reference</th><th>Issued</th><th>Issuer</th><th>Evidence Reference</th><th>Grounding Defect</th></tr></thead>
+<tbody>
+{% for entry in historical_evidence %}
+<tr><td>{{ entry.work.aircraft.registration }}</td><td>{{ entry.work.description }}</td><td>{{ entry.reference }}</td><td>{{ entry.issued_on|long_date }}</td><td>{{ entry.issuer_name }}</td><td>{{ entry.source }}</td><td><a href="{% url 'defect' entry.grounding_defect_id %}">{{ entry.grounding_defect.title }}</a></td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
 <h2>Who May Release</h2>
 {% include "releases/who.html" %}
 {% endblock %}

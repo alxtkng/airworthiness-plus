@@ -193,7 +193,13 @@ BOARD: tuple[Group, ...] = (
                 "Release to Service",
                 "release_to_service",
                 shown_for=MAINTAINS,
-                inside=frozenset({"record_release_certificate", "release_certificate"}),
+                inside=frozenset(
+                    {
+                        "record_release_certificate",
+                        "release_certificate",
+                        "record_historical_release_evidence",
+                    }
+                ),
             ),
             Item(
                 "Contracts",

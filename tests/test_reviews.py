@@ -892,8 +892,8 @@ def test_the_fleet_sets_the_review_beside_the_programme(
     sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews
 ) -> None:
     """REQ-100, SampleData.md, Fleet, Next Due and Review Certificate Valid To.
-    G-EJKL: Airworthiness Review, 18 Days. G-DGHI: Rectify Defect. G-CDEF: the
-    engine overhaul, projected at 366 days, comes before the review at 379."""
+    G-EJKL: Airworthiness Review, 18 Days. G-DGHI: Rectify Defect. For G-CDEF,
+    the programme review at 358 days precedes the overhaul at 366 and the ARC at 379."""
     body = page(signed_in(sample.reader), "/")
     assert "<td>Airworthiness Review</td><td>18 Days</td>" in row_for(body, "G-EJKL")
     assert "<td>6 December 2026</td>" in row_for(body, "G-EJKL")
@@ -902,7 +902,9 @@ def test_the_fleet_sets_the_review_beside_the_programme(
     assert "<td>50-Hour Check</td><td>12.4 Hours</td>" in row_for(body, "G-ABCD")
     assert "<td>100-Hour or Annual Check</td><td>41.0 Hours</td>" in row_for(body, "G-BXYZ")
     assert "<td>Annual Check</td><td>78 Days</td>" in row_for(body, "G-FMNO")
-    assert "<td>Engine Overhaul</td><td>220.0 Hours</td>" in row_for(body, "G-CDEF")
+    assert "<td>Maintenance Programme Annual Review</td><td>358 Days</td>" in row_for(
+        body, "G-CDEF"
+    )
     assert "<td>2 December 2027</td>" in row_for(body, "G-CDEF")
 
 

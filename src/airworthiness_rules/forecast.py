@@ -19,9 +19,9 @@ def forecast_date(today: date, days: int | None) -> date | None:
     ``days`` is the whole days to the limit: the days to a calendar limit,
     or the projected days to a limit in hours or cycles, which are rounded
     down so that the forecast is never late. A limit already reached or
-    passed is forecast for today.
+    passed is forecast for today. A projection beyond the calendar has no date.
     """
-    if days is None:
+    if days is None or days > days_between(today, date.max):
         return None
     return today if days <= 0 else add_days(today, days)
 

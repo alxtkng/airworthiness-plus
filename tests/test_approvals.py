@@ -6,22 +6,26 @@ reference, and nothing is removed: an approval that ends is marked with
 the day it ended.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from django.db import IntegrityError, ProgrammingError, connection, transaction
 from django.test.utils import CaptureQueriesContext
 
+from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.contracts import services as contract_services
+from airworthiness_plus.contracts.models import Contract, Scope
 from airworthiness_plus.history import chain
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import for_each_organisation
 from airworthiness_plus.organisations import approvals
-from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation
+from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation, Privilege
 from airworthiness_plus.organisations.provisioning import provision_organisation
 from airworthiness_plus.organisations.sql import APPROVAL_FOR_EACH_ORGANISATION
+from airworthiness_rules.dates import uk_today, utc_now
 from tests.conftest import as_owner
-from tests.support import Sample, signed_in
+from tests.support import Sample, add_sample_fleet, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -143,6 +147,50 @@ def test_an_approval_that_ends_is_kept_with_the_day_it_ended(sample: Sample) -> 
             ["no_longer_held_on"],
             ["no_longer_held_on"],
         ]
+
+
+def test_a_renewed_approval_does_not_cover_its_gap(
+    sample: Sample, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """REQ-200, REQ-240. Earlier approval references and gaps survive re-recording."""
+    today = uk_today(utc_now())
+    ended = today - timedelta(days=5)
+    before = ended - timedelta(days=1)
+    monkeypatch.setattr(aircraft_services, "today", lambda: today)
+    fleet = add_sample_fleet(sample)
+    with as_owner():
+        Organisation.objects.filter(pk=sample.ours.pk).update(privileges=[Privilege.MAINTENANCE])
+    args = {
+        "scope": Scope.ALL,
+        "type_of_operation": "Private",
+        "owner_address": "Pilot-Owner Address",
+    }
+    with working_for(sample.ours.id, sample.administrator.id):
+        approval = approvals.record(
+            sample.ours, approval=ApprovalType.PART_CAMO, reference="UK.CAMO.[First]"
+        )
+        approvals.end(approval, on=ended)
+        renewed = approvals.record(
+            sample.ours, approval=ApprovalType.PART_CAMO, reference="UK.CAMO.[Renewed]"
+        )
+        assert renewed.held_on(before)
+        assert not renewed.held_on(ended)
+        assert not renewed.held_on(today - timedelta(days=1))
+        assert renewed.held_on(today)
+        with pytest.raises(contract_services.RefusedError, match="Requires Part-CAMO"):
+            contract_services.draw_up_contract(fleet["G-ABCD"], signed_on=ended, **args)
+        with pytest.raises(IntegrityError, match="No approval covers"), transaction.atomic():
+            Contract.objects.create(
+                organisation=sample.ours,
+                aircraft=fleet["G-ABCD"],
+                customer=fleet["G-ABCD"].customer,
+                signed_on=ended,
+                **args,
+            )
+        earlier = contract_services.draw_up_contract(fleet["G-ABCD"], signed_on=before, **args)
+        current = contract_services.draw_up_contract(fleet["G-BXYZ"], signed_on=today, **args)
+        assert earlier.organisation_approval_reference == "UK.CAMO.[First]"
+        assert current.organisation_approval_reference == "UK.CAMO.[Renewed]"
 
 
 def test_the_approval_the_organisation_was_set_up_with_is_not_ended_on_a_page(

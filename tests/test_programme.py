@@ -86,12 +86,14 @@ def test_the_fleet_shows_what_is_due_next(
 ) -> None:
     """REQ-043, REQ-045, REQ-046, REQ-058. SampleData.md, Fleet, Next Due: G-ABCD
     50-Hour Check, 12.4 Hours; G-BXYZ 100-Hour or Annual Check, 41.0 Hours; G-FMNO
-    Annual Check, 78 Days; G-CDEF Engine Overhaul, 220.0 Hours."""
+    Annual Check, 78 Days; G-CDEF Maintenance Programme Annual Review, 358 Days."""
     body = page(signed_in(sample.reader), "/")
     assert "<td>50-Hour Check</td><td>12.4 Hours</td>" in row_for(body, "G-ABCD")
     assert "<td>100-Hour or Annual Check</td><td>41.0 Hours</td>" in row_for(body, "G-BXYZ")
     assert "<td>Annual Check</td><td>78 Days</td>" in row_for(body, "G-FMNO")
-    assert "<td>Engine Overhaul</td><td>220.0 Hours</td>" in row_for(body, "G-CDEF")
+    assert "<td>Maintenance Programme Annual Review</td><td>358 Days</td>" in row_for(
+        body, "G-CDEF"
+    )
     assert "<td></td>" in row_for(body, "G-EJKL")  # no programme recorded yet
 
 

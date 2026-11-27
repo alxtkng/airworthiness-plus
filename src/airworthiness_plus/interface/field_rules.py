@@ -71,6 +71,7 @@ WRITES: dict[str, Sets] = {
     "contract_authority_told": (contracts.AuthorityToldForm,),
     "add_work_order": (contracts.WorkOrderForm,),
     "close_work_order": (contracts.CloseWorkOrderForm,),
+    "record_historical_release_evidence": (releases.HistoricalReleaseEvidenceForm,),
     "record_release_certificate": (releases.CertificateForm,),
     "record_defect": (defects.DefectForm,),
     "close_defect": (defects.CloseForm,),

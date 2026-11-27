@@ -11,7 +11,7 @@
 </thead>
 <tbody>
 {% for item, line in coming %}
-<tr>
+<tr{% if item.id == rejected_aircraft %} data-open-details{% endif %}>
 <td><a href="{% url 'aircraft' item.id %}">{{ item.registration }}</a></td>
 <td>{{ item.type_rating }}</td>
 <td>{{ item.owner }}</td>
@@ -22,7 +22,12 @@
 <form method="post" action="{% url 'records_received' item.id %}">
 {% csrf_token %}
 <label for="received-{{ item.id }}">Records Received</label>
+{% if item.id == rejected_aircraft %}
+<div id="received-error-{{ item.id }}" role="alert">{{ records_form.received.errors }}</div>
+<input id="received-{{ item.id }}" name="received" type="text" inputmode="numeric" value="{{ records_form.received.value|default_if_none:'' }}" aria-invalid="true" aria-describedby="received-error-{{ item.id }}" required>
+{% else %}
 <input id="received-{{ item.id }}" name="received" type="number" min="0" max="{{ item.records_expected }}" value="{{ item.records_received }}" required>
+{% endif %}
 <button type="submit">Save</button>
 <button type="submit" name="complete" value="Yes">Save and Move to Fleet</button>
 </form>

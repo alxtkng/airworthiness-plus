@@ -245,6 +245,7 @@ COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
          "source": "[Propeller Manufacturer's Service Information]"},
         {"aircraft": "G-CDEF", "position": "Propeller", "fitted_on": date(2020, 11, 2),
          "airframe_hours_fitted": Decimal("6319.5"), "hours_at_fitting": Decimal("16.5"),
+         "airframe_cycles_fitted": 0, "cycles_at_fitting": 0,
          "life_from": date(2020, 11, 2), "release_document": "Release Certificate on File"},
     ),
     (
@@ -252,6 +253,7 @@ COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
          "serial_number": "[Serial Number Loan Propeller]", "basis": LimitBasis.NONE},
         {"aircraft": "G-CDEF", "position": "Propeller", "fitted_on": date(2026, 11, 4),
          "airframe_hours_fitted": Decimal("7715.0"), "hours_at_fitting": Decimal("0.0"),
+         "airframe_cycles_fitted": 0, "cycles_at_fitting": 0,
          "release_document": "[Release Reference WP-2026-043]"},
     ),
     (
@@ -261,6 +263,7 @@ COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
          "source": "Departure From the Manufacturer's 2,000 Hours or 12 Years"},
         {"aircraft": "G-DGHI", "position": "Engine", "fitted_on": date(2018, 6, 4),
          "airframe_hours_fitted": Decimal("7734.3"), "hours_at_fitting": Decimal("0.0"),
+         "airframe_cycles_fitted": 0, "cycles_at_fitting": 0,
          "life_from": date(2018, 6, 4)},
     ),
     (
@@ -269,14 +272,16 @@ COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
          "limit_date": date(2027, 2, 28), "date_label": "Battery Date"},
         {"aircraft": "G-ABCD", "position": "Emergency Locator Transmitter",
          "fitted_on": date(2022, 2, 14), "airframe_hours_fitted": Decimal("5890.0"),
-         "hours_at_fitting": Decimal("0.0")},
+         "hours_at_fitting": Decimal("0.0"),
+         "airframe_cycles_fitted": 0, "cycles_at_fitting": 0},
     ),
     (
         {"name": "Fire Extinguisher", "part_number": "[Part Number Extinguisher G-BXYZ]",
          "basis": LimitBasis.DATE, "limit_date": date(2027, 3, 31),
          "date_label": "Label Inspection Date"},
         {"aircraft": "G-BXYZ", "position": "Cabin", "fitted_on": date(2022, 4, 1),
-         "airframe_hours_fitted": Decimal("2950.0"), "hours_at_fitting": Decimal("0.0")},
+         "airframe_hours_fitted": Decimal("2950.0"), "hours_at_fitting": Decimal("0.0"),
+         "airframe_cycles_fitted": 0, "cycles_at_fitting": 0},
     ),
     (
         {"name": "Engine, Lycoming O-360", "serial_number": "[Serial Number Engine G-CDEF]",
@@ -284,6 +289,7 @@ COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
          "source": "[Engine Manufacturer's Service Instruction]"},
         {"aircraft": "G-CDEF", "position": "Engine", "fitted_on": date(2019, 3, 12),
          "airframe_hours_fitted": Decimal("5951.5"), "hours_at_fitting": Decimal("0.0"),
+         "airframe_cycles_fitted": 0, "cycles_at_fitting": 0,
          "life_from": date(2019, 3, 12)},
     ),
     (
@@ -292,6 +298,7 @@ COMPONENTS: tuple[tuple[dict[str, object], dict[str, object]], ...] = (
          "source": "[Vacuum Pump Manufacturer's Service Information]"},
         {"aircraft": "G-ABCD", "position": "Engine", "fitted_on": date(2026, 4, 6),
          "airframe_hours_fitted": Decimal("6230.6"), "hours_at_fitting": Decimal("0.0"),
+         "airframe_cycles_fitted": 0, "cycles_at_fitting": 0,
          "life_from": date(2026, 4, 6)},
     ),
 )  # fmt: skip
@@ -301,6 +308,7 @@ OWN_PROPELLER = "[Serial Number Propeller G-CDEF]"
 OWN_PROPELLER_REMOVAL: dict[str, object] = {
     "removed_on": date(2026, 11, 2),
     "airframe_hours_removed": Decimal("7715.0"),
+    "airframe_cycles_removed": 0,
     "removal_reason": "Removed at 6-Year Limit",
     "sent_to": "[Propeller Organisation]",
     "due_back_on": date(2026, 11, 25),
@@ -628,6 +636,8 @@ def add_set_up_rows(ours: Organisation, hklm: Aircraft, *, tolerant: bool = Fals
             fitted_on=date(2019, 5, 2),
             airframe_hours_fitted=Decimal("2150.0"),
             hours_at_fitting=Decimal("0.0"),
+            airframe_cycles_fitted=0,
+            cycles_at_fitting=0,
         )
         fitted[serial] = component
 

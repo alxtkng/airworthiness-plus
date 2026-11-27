@@ -19,7 +19,7 @@ from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import for_each_organisation
 from airworthiness_plus.organisations import approvals
-from airworthiness_plus.organisations.models import Approval, ApprovalType
+from airworthiness_plus.organisations.models import ApprovalType
 from airworthiness_plus.people import services
 from airworthiness_plus.people.models import Employment, Person, StaffGroup
 from airworthiness_plus.people.sql import PERSON_FOR_EACH_USER
@@ -737,15 +737,30 @@ def test_record_kept_until_uses_the_approvals_held_on_the_day_the_person_left(
     # A person who leaves after Part-145 ended is not given its 3 years.
     leave(sample, "[Review Name]", date(2026, 11, 18))
     assert former_row(sample, "[Review Name]")[3] == "18 November 2028, 2 Years After Leaving"
-    # Held to the day before: no longer held from 30 June 2025 is not held on 30 June 2025.
     with working_for(sample.ours.id, sample.administrator.id):
         approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]")
-        approvals.end(Approval.objects.get(pk=held.pk), on=date(2025, 7, 1))
+    # Recording the approval as held again keeps the earlier period and the gap.
     assert former_row(sample, "[Former Review Name]")[3] == "30 June 2028, 3 Years After Leaving"
+    assert former_row(sample, "[Review Name]")[3] == "18 November 2028, 2 Years After Leaving"
+
+
+@pytest.mark.parametrize(
+    ("ended_on", "kept_until"),
+    [
+        (date(2025, 7, 1), "30 June 2028, 3 Years After Leaving"),
+        (date(2025, 6, 30), "30 June 2027, 2 Years After Leaving"),
+    ],
+)
+def test_a_person_leaving_on_the_first_approval_end_day_has_no_retention_under_it(
+    sample: Sample, ended_on: date, kept_until: str
+) -> None:
+    """REQ-206. The approval is no longer held on the day it ends."""
     with working_for(sample.ours.id, sample.administrator.id):
-        approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]")
-        approvals.end(Approval.objects.get(pk=held.pk), on=date(2025, 6, 30))
-    assert former_row(sample, "[Former Review Name]")[3] == "30 June 2027, 2 Years After Leaving"
+        approval = approvals.record(
+            sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[Number]"
+        )
+        approvals.end(approval, on=ended_on)
+    assert former_row(sample, "[Former Review Name]")[3] == kept_until
 
 
 def test_a_person_who_was_ever_review_staff_keeps_the_2_years(sample: Sample) -> None:

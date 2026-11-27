@@ -1,21 +1,19 @@
 """Deferred defects and repeat defects (REQ-220 to REQ-229).
 
 UK Regulation (EU) No 1321/2014, ML.A.403, read in the Civil Aviation
-Authority Regulatory Library on 24 November 2026:
+Authority Regulatory Library on 27 November 2026:
 
 - (a) a defect that seriously endangers flight safety is rectified before
   further flight;
 - (b)(1) to (4) say who may defer any other defect;
-- (c) a deferred defect is rectified as soon as practicable and within the
-  limits specified in the maintenance data.
+- (c) a deferred defect is rectified as soon as practicable from first
+  identification, within the maintenance-data limits.
 
-The regulation gives no number of days. Ours, not the regulation's
-(design-system/Decisions.md, Canvas Build): the organisation keeps a
-default limit in days for points (b)(1), (b)(3) and (b)(4), counted from
-the day of the decision; a limit given in the maintenance data, or in the
-minimum equipment list for point (b)(2), applies when it is the earlier.
-What counts as a repeat defect is ours as well: the Repeat Defects board
-says 3 of the same defect on one type in 12 months.
+The organisation sets a default for (b)(1), (b)(3) and (b)(4), starting
+on the date first identified for new deferrals. An earlier maintenance-data
+limit takes precedence. Under (b)(2) the minimum equipment list gives
+the limit. The Repeat Defects board uses three occurrences of the same
+defect on one type in 12 months (design-system/Decisions.md).
 """
 
 from datetime import date
@@ -39,11 +37,11 @@ FIRST_CHAPTER, LAST_CHAPTER = 1, 99
 """The chapter of the system a defect is in is a number of two digits at most."""
 
 
-def deferral_limit(decided_on: date, default_days: int | None, data_limit: date | None) -> date:
+def deferral_limit(identified_on: date, default_days: int | None, data_limit: date | None) -> date:
     """Return the last day by which a deferred defect is rectified (REQ-222).
 
     ``default_days`` is the organisation's default for the decision, counted
-    from the day of the decision; none where the minimum equipment list
+    from the day the defect was first identified; none where the minimum equipment list
     gives the limit. ``data_limit`` is a limit specified in the maintenance
     data or the list, and applies when it is the earlier (ML.A.403(c)).
     """
@@ -51,9 +49,9 @@ def deferral_limit(decided_on: date, default_days: int | None, data_limit: date 
         raise ValueError("A deferred defect has a limit")
     if default_days is not None and not 1 <= default_days <= MOST_DAYS:
         raise ValueError("A default limit is from 1 to 365 days")
-    if data_limit is not None and data_limit < decided_on:
-        raise ValueError("A limit is not before the day of the decision")
-    found = [] if default_days is None else [add_days(decided_on, default_days)]
+    if data_limit is not None and data_limit < identified_on:
+        raise ValueError("A limit is not before the day the defect was first identified")
+    found = [] if default_days is None else [add_days(identified_on, default_days)]
     if data_limit is not None:
         found.append(data_limit)
     return min(found)

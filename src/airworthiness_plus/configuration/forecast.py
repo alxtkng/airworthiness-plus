@@ -22,7 +22,7 @@ from airworthiness_plus.programme.models import Programme
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_rules import forecast as rules
 from airworthiness_rules.dates import days_between
-from airworthiness_rules.intervals import TaskKind, Unit
+from airworthiness_rules.intervals import TaskKind, Unit, Utilisation, projected_days
 from airworthiness_rules.programme import Flag
 
 
@@ -41,6 +41,7 @@ class ForecastLine:
     url: str
     # A line that could not be calculated comes first.
     problem: bool = False
+    forecast_note: str = ""
 
     @property
     def forecast_text(self) -> str:
@@ -48,8 +49,9 @@ class ForecastLine:
         if self.problem:
             return "Cannot Be Calculated"
         if self.forecast is None:
-            return "Not Forecast, No Planning Utilisation"
-        return formatting.long_date(self.forecast)
+            return self.forecast_note or "Not Forecast, No Planning Utilisation"
+        day = formatting.long_date(self.forecast)
+        return f"{day}, {self.forecast_note}" if self.forecast_note else day
 
 
 def expected_days(limits: tuple[due.ExplainedLimit, ...]) -> int | None:
@@ -65,6 +67,17 @@ def expected_days(limits: tuple[due.ExplainedLimit, ...]) -> int | None:
     return min(found) if found else None
 
 
+def _forecast_note(
+    forecast: date | None, days: int | None, unprojected: tuple[Unit, ...] = ()
+) -> str:
+    if forecast is None and days is not None:
+        return "Not Forecast, Beyond 31 December 9999"
+    if forecast is not None and unprojected:
+        units = " and ".join(unit.value for unit in unprojected)
+        return f"{units} Not Forecast"
+    return ""
+
+
 def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
     """Return everything of an aircraft that falls due, the soonest forecast first (REQ-290).
 
@@ -76,6 +89,12 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
     lines: list[ForecastLine] = []
     programme_url = reverse("programme", args=[aircraft.id])
     valid_to = review_services.current_valid_to(aircraft)
+    programme = Programme.objects.filter(aircraft=aircraft).first()
+    utilisation = (
+        Utilisation(programme.hours_per_day, programme.cycles_per_day)
+        if programme is not None
+        else None
+    )
     for line in due.due_lines(aircraft, today, valid_to):
         of_directive = line.task.kind == TaskKind.AIRWORTHINESS_DIRECTIVE.value
         page, url = (
@@ -91,38 +110,48 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
             )
             continue
         shown = line.first if line.ranked else line.limits
+        days = expected_days(shown)
+        forecast = rules.forecast_date(today, days)
         lines.append(
             ForecastLine(
                 line.task.title,
                 line.task.source,
                 " or ".join(limit.due_text for limit in shown),
                 line.remaining_summary,
-                rules.forecast_date(today, expected_days(shown)),
+                forecast,
                 line.flag.value,
                 page,
                 url,
+                forecast_note=_forecast_note(forecast, days),
             )
         )
     for component in component_services.component_lines(today, aircraft):
         if component.component.basis == Basis.NONE:
             continue
         url = reverse("component", args=[component.component.id])
+        days = component.days
+        unprojected: tuple[Unit, ...] = ()
+        if any(limit.remaining <= 0 for limit in component.limits):
+            days = 0
+        elif days is None:
+            projections = [
+                (limit.unit, projected_days(limit, utilisation)) for limit in component.limits
+            ]
+            days = min((days for _, days in projections if days is not None), default=None)
+            unprojected = tuple(unit for unit, days in projections if days is None)
+        forecast = rules.forecast_date(today, days)
         lines.append(
             ForecastLine(
                 component.component.name,
                 component.problem or component.limit_text,
                 component.due_text,
                 component.remaining_text,
-                rules.forecast_date(
-                    today,
-                    0
-                    if any(limit.remaining <= 0 for limit in component.limits)
-                    else component.days,
-                ),
+                forecast,
                 component.status,
                 "Aircraft Configuration",
                 url,
                 problem=bool(component.problem),
+                forecast_note=_forecast_note(forecast, days, unprojected),
             )
         )
     for defect in defect_services.open_lines(aircraft.organisation, today, aircraft):
@@ -154,7 +183,6 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
                 reverse("aircraft_review", args=[aircraft.id]),
             )
         )
-    programme = Programme.objects.filter(aircraft=aircraft).first()
     if programme is not None:
         annual = due.review_line(programme, today, due.thresholds_of(aircraft.organisation))
         if annual.due is not None:
