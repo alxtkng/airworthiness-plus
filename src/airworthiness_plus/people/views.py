@@ -17,7 +17,11 @@ from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.accounts.user_views import code_page
 from airworthiness_plus.people import services
-from airworthiness_plus.people.forms import MaintenanceAuthorisationForm, PersonForm
+from airworthiness_plus.people.forms import (
+    MaintenanceAuthorisationForm,
+    PersonForm,
+    RecurrentTrainingForm,
+)
 from airworthiness_plus.people.models import Person, StaffGroup
 
 
@@ -32,7 +36,16 @@ def _user(request: HttpRequest) -> User:
 def staff_page(request: HttpRequest) -> HttpResponse:
     """Everyone of the organisation, and those who have left (REQ-205)."""
     staff = services.staff(_user(request).organisation)
-    return render(request, "people/staff.html", {"staff": staff, **_shown_to(request)})
+    training = services.current_recurrent_training(_user(request).organisation)
+    return render(
+        request,
+        "people/staff.html",
+        {
+            "staff": staff,
+            "staff_rows": [(person, training.get(person.pk, ())) for person in staff.current],
+            **_shown_to(request),
+        },
+    )
 
 
 @never_cache
@@ -83,6 +96,7 @@ def _person_page(request: HttpRequest, person: Person, form: PersonForm) -> Http
         {
             "person": person,
             "reports": person.reports.filter(left_on__isnull=True),
+            "training_records": person.recurrent_training.all(),
             "certifying_staff": person.staff_group == StaffGroup.CERTIFYING,
             "form": form,
             **_shown_to(request),
@@ -164,3 +178,20 @@ def add_maintenance_authorisation(request: HttpRequest, person_id: uuid.UUID) ->
     return render(
         request, "people/maintenance_authorisation.html", {"person": person, "form": form}
     )
+
+
+@never_cache
+@requires(Action.ADD_OR_CHANGE_PERSON)
+@require_http_methods(["GET", "POST"])
+def add_recurrent_training(request: HttpRequest, person_id: uuid.UUID) -> HttpResponse:
+    """Record a person's training evidence and stated renewal date (REQ-299)."""
+    person = get_object_or_404(Person, pk=person_id)
+    form = RecurrentTrainingForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.record_recurrent_training(person, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("person", person_id=person.id)
+    return render(request, "people/recurrent_training.html", {"person": person, "form": form})

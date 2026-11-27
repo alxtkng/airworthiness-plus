@@ -151,6 +151,15 @@ def add_people(ours: Organisation, administrator: User) -> Staff:
         reviewer = add("review", "[Review Name]", Role.AIRWORTHINESS_REVIEW_STAFF)
         reader = add("reader", "[Read Only Name]", Role.READ_ONLY)
     add_person_records(ours, administrator)
+    with working_for(ours.id, administrator.id):
+        sam = Person.objects.get(full_name="Sam Patel")
+        people_services.record_recurrent_training(
+            sam,
+            subject="Human Factors",
+            evidence_reference="[Training Certificate]",
+            completed_on=date(2024, 12, 6),
+            due_on=date(2026, 12, 6),
+        )
     return Staff(ours, administrator, lucy, planner, reviewer, reader)
 
 

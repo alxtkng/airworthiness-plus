@@ -25,7 +25,7 @@ from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
 from airworthiness_plus.modifications.models import Bulletin, Change, Weighing, WeightSchedule
 from airworthiness_plus.organisations.models import Approval, Organisation
-from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, RecurrentTraining
 from airworthiness_plus.programme.models import (
     AnnualReview,
     Departure,
@@ -82,6 +82,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(User, None),
     Exported(Person, None),
     Exported(MaintenanceAuthorisation, None),
+    Exported(RecurrentTraining, None),
     # The owner is part of the aircraft's record (REQ-208): every customer that
     # has ever owned it, so that the names in its history can be read
     # (independent review of 24 November 2026, finding 12).

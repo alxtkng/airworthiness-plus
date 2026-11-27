@@ -6,10 +6,10 @@
 {% if may_change %}<p><a href="{% url 'add_person' %}">Add a Person</a></p>{% endif %}
 <table>
 <thead>
-<tr><th>Name</th><th>Role</th><th>Reports To</th><th>Employment</th><th>Licence</th><th data-detail>Staff Group</th><th data-detail>Joined</th><th data-detail>Sign-In</th></tr>
+<tr><th>Name</th><th>Role</th><th>Reports To</th><th>Employment</th><th>Licence</th><th data-detail>Staff Group</th><th data-detail>Joined</th><th>Recurrent Training</th><th data-detail>Sign-In</th></tr>
 </thead>
 <tbody>
-{% for person in staff.current %}
+{% for person, training in staff_rows %}
 <tr>
 <td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td>
 <td>{{ person.role }}</td>
@@ -18,6 +18,7 @@
 <td>{{ person.licence }}</td>
 <td>{{ person.staff_group }}</td>
 <td>{{ person.joined_on|long_date }}</td>
+<td>{% for course in training %}{{ course.subject }}, Completed {{ course.completed_on|long_date }}{% if course.due_on %}, Due {{ course.due_on|long_date }}{% else %}, No Renewal Date Recorded{% endif %}{% if not forloop.last %}<br>{% endif %}{% empty %}No Training Recorded{% endfor %}</td>
 <td>{% if person.user %}{% if may_manage_users %}{{ person.user.username }}{% else %}Has a Sign-In{% endif %}{% if not person.user.is_active %}, Inactive{% endif %}{% else %}None{% endif %}</td>
 </tr>
 {% endfor %}

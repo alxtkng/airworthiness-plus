@@ -51,3 +51,12 @@ class MaintenanceAuthorisationForm(Form):
     scope = forms.CharField(label="Scope and Limitations", max_length=400, widget=forms.Textarea)
     valid_from = forms.DateField(label="Valid From")
     valid_to = forms.DateField(label="Valid To", required=False)
+
+
+class RecurrentTrainingForm(Form):
+    """Record completed training from the organisation's evidence."""
+
+    subject = forms.CharField(label="Training Subject", max_length=160)
+    evidence_reference = forms.CharField(label="Evidence Reference", max_length=160)
+    completed_on = forms.DateField(label="Completed On")
+    due_on = forms.DateField(label="Renewal Due On", required=False)

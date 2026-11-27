@@ -272,7 +272,7 @@ Recency figures: experience in the last 2 years is Chris Moore 214 days, Sam Pat
 
 | Ellie Ward | Mechanic, Trainee | Working toward Part-66 B1.2 | Joined 6 January 2025; on the job training for Cessna/Reims-Cessna 172/F172 Series (Lycoming) on G-BXYZ, 31 of 40 tasks; mentor Sam Patel, assessor Chris Moore |
 
-Training: Sam Patel recurrent training due 6 December 2026; the review [Name] has Human Factors overdue. Placeholders: [Part-147 Organisation], [Training Provider], [Previous Employer], [Base], [Job Card].
+Training: Sam Patel completed Human Factors on 6 December 2024 and renewal is due 6 December 2026, as shown on the Recurrent Training board. The seed uses [Training Certificate] as the evidence reference; the review [Name] has Human Factors overdue. Placeholders: [Part-147 Organisation], [Training Provider], [Previous Employer], [Base], [Job Card].
 
 Roles are written in full: Continuing Airworthiness Manager, Compliance Monitoring Manager, Safety Manager, Maintenance Manager.
 

@@ -291,6 +291,7 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-296 | The Recency tab shows current review-staff recency from the same assessment as the authorisations page. It lists certifying staff separately and marks missing maintenance experience evidence as not recorded | Recency board; REQ-113, REQ-114, REQ-203; CAO.A.040 and AMC 66.A.20(b)(2) | Must | Test |
 | REQ-297 | The system records a certifying staff member’s existing maintenance authorisation with its reference, scope, limitations and validity dates. There is one record for the same person, reference and start date. An Administrator records it and any Staff reader of that organisation can see it | Authorisations board; 145.A.35(g), (h), 145.A.55; REQ-003, REQ-006, REQ-203 | Must | Test |
 | REQ-298 | Work Done and directive compliance can record the person who performed the work. The person must belong to the same organisation and their known employment dates must include the work date. The recorded name is retained alongside the work separately from its certificate issuer. Existing work with unknown attribution stays unknown | Canvas Build, Phase 2 People; REQ-003, REQ-050, REQ-064, REQ-130 | Must | Test |
+| REQ-299 | Staff records retain completed recurrent training with its evidence reference and optional organisation-supplied renewal date. The Staff list shows the latest completion per subject. Recording a completion creates no training or certification privilege | Canvas Build, Phase 2 People; 145.A.35(d), (e) and (j) | Must | Test |
 
 ## Open Points
 

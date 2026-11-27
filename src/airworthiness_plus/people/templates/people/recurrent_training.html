@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Record Recurrent Training{% endblock %}
+{% block content %}
+<h1>Record Recurrent Training</h1>
+<p>{{ person.full_name }}</p>
+<form method="post">
+{% csrf_token %}
+{{ form.as_p }}
+<button type="submit">Save Training</button>
+</form>
+{% endblock %}

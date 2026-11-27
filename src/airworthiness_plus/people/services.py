@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from django.db import transaction
+from django.db.models import Value
+from django.db.models.functions import Lower
 
 from airworthiness_plus.accounts import users
 from airworthiness_plus.accounts.models import User
@@ -18,6 +20,7 @@ from airworthiness_plus.people.models import (
     Employment,
     MaintenanceAuthorisation,
     Person,
+    RecurrentTraining,
     StaffGroup,
 )
 from airworthiness_plus.reviews.models import ReviewStaff
@@ -343,3 +346,54 @@ def record_maintenance_authorisation(
         valid_from=valid_from,
         valid_to=valid_to,
     )
+
+
+@transaction.atomic
+def record_recurrent_training(
+    person: Person,
+    *,
+    subject: str,
+    evidence_reference: str,
+    completed_on: date,
+    due_on: date | None,
+) -> RecurrentTraining:
+    """Record completed training without changing any earlier evidence."""
+    person = Person.objects.select_for_update().get(pk=person.pk)
+    subject, evidence_reference = subject.strip(), evidence_reference.strip()
+    if not subject or not evidence_reference:
+        raise RefusedError("Give the Training Subject and Evidence Reference")
+    if completed_on > aircraft_services.today():
+        raise RefusedError("Completion Cannot Be in the Future")
+    if due_on is not None and due_on <= completed_on:
+        raise RefusedError("Renewal Must Be Due After Completion")
+    if (
+        RecurrentTraining.objects.alias(subject_key=Lower("subject"))
+        .filter(person=person, subject_key=Lower(Value(subject)), completed_on=completed_on)
+        .exists()
+    ):
+        raise RefusedError("This Training Completion Is Already Recorded")
+    return RecurrentTraining.objects.create(
+        organisation_id=person.organisation_id,
+        person=person,
+        subject=subject,
+        evidence_reference=evidence_reference,
+        completed_on=completed_on,
+        due_on=due_on,
+    )
+
+
+def current_recurrent_training(
+    organisation: Organisation,
+) -> dict[uuid.UUID, list[RecurrentTraining]]:
+    """Return each current staff member's latest completion in each subject."""
+    records = RecurrentTraining.objects.filter(
+        organisation=organisation, person__left_on__isnull=True
+    ).annotate(subject_key=Lower("subject"))
+    by_person: dict[uuid.UUID, list[RecurrentTraining]] = {}
+    seen: set[tuple[uuid.UUID, str]] = set()
+    for course in records:
+        key = (course.person_id, course.subject_key)
+        if key not in seen:
+            seen.add(key)
+            by_person.setdefault(course.person_id, []).append(course)
+    return by_person

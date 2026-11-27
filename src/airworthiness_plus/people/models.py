@@ -8,6 +8,7 @@ contracted engineers and auditors are people of the organisation too.
 
 from django.db import models
 from django.db.models import F, Q
+from django.db.models.functions import Lower
 
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.models import Record
@@ -107,5 +108,35 @@ class MaintenanceAuthorisation(Record):
             models.UniqueConstraint(
                 fields=["person", "reference", "valid_from"],
                 name="maintenance_authorisation_recorded_once",
+            ),
+        ]
+
+
+class RecurrentTraining(Record):
+    """Documented completion and the renewal date set by the organisation (REQ-299)."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    person = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="recurrent_training")
+    subject = models.CharField("Training Subject", max_length=160)
+    evidence_reference = models.CharField("Evidence Reference", max_length=160)
+    completed_on = models.DateField("Completed On")
+    due_on = models.DateField("Renewal Due On", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-completed_on", "subject", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(subject="") & ~Q(evidence_reference=""),
+                name="recurrent_training_has_subject_and_evidence",
+            ),
+            models.CheckConstraint(
+                condition=Q(due_on__isnull=True) | Q(due_on__gt=F("completed_on")),
+                name="recurrent_training_due_after_completion",
+            ),
+            models.UniqueConstraint(
+                F("person"),
+                Lower("subject"),
+                F("completed_on"),
+                name="recurrent_training_completion_recorded_once",
             ),
         ]

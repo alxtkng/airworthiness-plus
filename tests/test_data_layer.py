@@ -211,6 +211,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
         "people_maintenanceauthorisation": ["INSERT", "SELECT"],
+        "people_recurrenttraining": ["INSERT", "SELECT"],
         # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
         "configuration_transfer": ["INSERT", "SELECT"],
         "configuration_baseline": ["INSERT", "SELECT"],
