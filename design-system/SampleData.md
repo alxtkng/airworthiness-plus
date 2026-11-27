@@ -69,7 +69,28 @@ The basis of each aircraft's maintenance programme is not yet recorded here. The
 Added on 27 November 2026 for the Maintenance Programmes list. The Maintenance Programmes board contradicts what is recorded above, and is not taken until Alex King says which is right:
 
 - The board gives G-ABCD's programme as Owner Declared, Issue 3, based on the Minimum Inspection Programme and the manufacturer's instructions, with its annual review due 2 March 2027; G-BXYZ's as Organisation Approved, Issue 5, on the manufacturer's instructions, due 15 January 2027; G-CDEF's as Organisation Approved, Issue 2, due 8 April 2027. The record above has G-ABCD and G-CDEF on the design approval holder's instructions, G-BXYZ and G-FMNO on the Minimum Inspection Programme, and one annual review recorded: G-CDEF's, on 11 November 2026, so next by 11 November 2027.
-- Who declared or approved a programme, its issue, its departures from the manufacturer's instructions and the six-item annual review are not recorded yet.
+- Who declared or approved a programme, and its issue, are not recorded yet.
+
+Added on 27 November 2026 for departures and the annual review, from the Maintenance Programmes board, to be confirmed by Alex King:
+
+- G-DGHI is given a programme, as the board has it: on the design approval holder's instructions, planning utilisation 0.8 hours a day (the board's Club Use, About 300 Hours a Year), last reviewed 4 March 2026, so next by 4 March 2027, 106 days from 18 November 2026. Until now the sample gave G-DGHI no programme.
+- Its two departures, each recorded on 4 March 2026 with the owner copy sent that day: Engine Overhaul, Lycoming O-360, manufacturer 2,000 Hours or 12 Years, programme On Condition, Reviewed Every 100 Hours, compensating measures Oil Analysis Every 50 Hours, Compression and Borescope Every 100 Hours, justification Club Use, About 300 Hours a Year; and Vacuum Pump Replacement, manufacturer 500 Hours, programme On Condition, compensating measures Standby Vacuum Source Fitted, justification Pump Checked Every 50 Hours. The board gives no justification apart from its second line; that line is taken as it.
+- G-FMNO's annual review is in progress, opened 9 November 2026 (made up), 4 of 6 complete, as the board has it: Maintenance Results This Year, 2 Defects, No Repeats; Last Airworthiness Review, 27 April 2026, Programme Adequate; Configuration, Type and Operation, No Change, Private Flying; Directives, Airworthiness Limitations and Data Sheet, Checked 16 November 2026. Open: Minimum Inspection Programme and Manufacturer's Revisions, Maintenance Manual Revision [Revision] to Check; Pilot-Owners, Awaiting Owner Confirmation.
+- With 0.8 hours a day G-DGHI's engine review, 25.7 hours away, is placed at 32 days, so the Components page then reads in the board's order.
+
+## Sources of Directives
+
+Added on 27 November 2026 for the Airworthiness Directives board.
+
+| Source | Covers | Last Checked | Next Check |
+|---|---|---|---|
+| Civil Aviation Authority | United Kingdom Directives, All Aircraft | 16 November 2026 | 30 November 2026 |
+| CAP 747 Mandatory Requirements for Airworthiness, Issue [Issue] | Generic Requirements and Concessions | 16 November 2026 | Each Amendment |
+| Federal Aviation Administration, State of Design, Biweekly [Reference] | Piper and Cessna Airframes, Lycoming Engines, Sensenich and McCauley Propellers | 16 November 2026 | 30 November 2026 |
+| European Union Aviation Safety Agency, State of Design | Robin and Grob Airframes | 16 November 2026 | 30 November 2026 |
+
+- Corrected on 27 November 2026: the board gives CAP 747 as last checked 2 November 2026. Documentation, above, has CAP 747 checked 16 November 2026, and the sample follows that.
+- By hand for 18 November 2026: 30 November is 12 days away, inside the lead time of 30 days, so the three are Due Soon.
 
 ## Work in Progress
 

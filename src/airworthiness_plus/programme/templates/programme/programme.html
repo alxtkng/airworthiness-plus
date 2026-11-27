@@ -27,6 +27,69 @@
 <input id="reviewed_on" name="reviewed_on" type="date" required>
 <button type="submit">Record Programme Review</button>
 </form>
+<h2>Departures From Manufacturer's Instructions</h2>
+{% if may_change %}<p><a href="{% url 'add_departure' aircraft.id %}">Record a Departure</a></p>{% endif %}
+{% if departures %}
+<table>
+<thead>
+<tr><th>Task</th><th>Manufacturer</th><th>Programme</th><th>Compensating Measures</th><th>Owner Copy</th><th data-detail>Justification</th><th data-detail>Recorded</th><th data-detail>Withdrawn</th>{% if may_change %}<th data-detail>Record</th>{% endif %}</tr>
+</thead>
+<tbody>
+{% for departure in departures %}
+<tr>
+<td>{{ departure.task }}</td>
+<td>{{ departure.manufacturer }}</td>
+<td>{{ departure.programme_says }}</td>
+<td>{{ departure.compensating_measures }}</td>
+<td>{% if departure.owner_copy_sent_on %}Sent {{ departure.owner_copy_sent_on|long_date }}{% else %}Not Sent{% endif %}</td>
+<td>{{ departure.justification }}</td>
+<td>{{ departure.recorded_on|long_date }}</td>
+<td>{% if departure.withdrawn_on %}{{ departure.withdrawn_on|long_date }}{% else %}In Force{% endif %}</td>
+{% if may_change %}<td>
+{% if not departure.owner_copy_sent_on %}<form method="post" action="{% url 'departure_copy_sent' departure.id %}">{% csrf_token %}<label for="copy-{{ departure.id }}">Owner Copy Sent</label> <input id="copy-{{ departure.id }}" name="on" type="date" required> <button type="submit">Record Owner Copy Sent</button></form>{% endif %}
+{% if not departure.withdrawn_on %}<form method="post" action="{% url 'withdraw_departure' departure.id %}">{% csrf_token %}<label for="withdraw-{{ departure.id }}">Withdrawn</label> <input id="withdraw-{{ departure.id }}" name="on" type="date" required> <button type="submit">Withdraw Departure</button></form>{% endif %}
+</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No Departures Recorded</p>
+{% endif %}
+<h2>Annual Review</h2>
+{% if annual_review %}
+<p>Opened {{ annual_review.opened_on|long_date }}, {{ annual_review.progress }}</p>
+<table>
+<thead><tr><th>Point</th><th>Found</th><th>Complete</th><th data-detail>Reference</th></tr></thead>
+<tbody>
+{% for name, label, point, note, done in annual_review.points %}
+<tr><td>{{ label }}</td><td>{{ note }}</td><td>{% if done %}Complete{% else %}Open{% endif %}</td><td>{{ point }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% if may_review %}
+<form method="post" action="{% url 'note_annual_review' aircraft.id %}">
+{% csrf_token %}
+{% for field in annual_form %}
+<p>{{ field.label_tag }}<br>{{ field }}</p>
+{% endfor %}
+<p><button type="submit">Save the Review</button></p>
+</form>
+<form method="post" action="{% url 'complete_annual_review' aircraft.id %}">
+{% csrf_token %}
+<label for="completed_on">Completed</label>
+<input id="completed_on" name="completed_on" type="date" required>
+<button type="submit">Complete the Review</button>
+</form>
+{% endif %}
+{% else %}
+<p>No Annual Review in Progress</p>
+{% if may_review %}<form method="post" action="{% url 'start_annual_review' aircraft.id %}">{% csrf_token %}<button type="submit">Start the Annual Review</button></form>{% endif %}
+{% endif %}
+{% for done in completed_reviews %}
+<p>Annual Review Completed {{ done.completed_on|long_date }} by {{ done.completed_by_name }}</p>
+{% endfor %}
+<p>Reviewed at Least Annually, ML.A.302(c)(9); What the Review Considers, AMC1 ML.A.302(c)(9)</p>
 <h2>Tasks</h2>
 <table>
 <thead>

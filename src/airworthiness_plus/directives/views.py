@@ -24,9 +24,11 @@ from airworthiness_plus.directives.forms import (
     ComplianceForm,
     DecisionForm,
     DirectiveForm,
+    SourceCheckForm,
+    SourceForm,
     TerminationForm,
 )
-from airworthiness_plus.directives.models import Applicability, Decision, Directive
+from airworthiness_plus.directives.models import Applicability, Decision, Directive, Source
 from airworthiness_rules.intervals import Interval, Reading
 
 
@@ -51,6 +53,11 @@ def directives_page(request: HttpRequest) -> HttpResponse:
         request,
         "directives/directives.html",
         {
+            "sources": services.source_lines(
+                _user(request).organisation, aircraft_services.today()
+            ),
+            "may_record": _user(request).may(Action.RECORD_AIRWORTHINESS_DIRECTIVE),
+            "check_form": SourceCheckForm(),
             "directives": Directive.objects.all(),
             # ML.A.504(a): applicability is checked before a component is fitted again.
             "awaiting_refit": component_services.awaiting_refit(),
@@ -196,4 +203,45 @@ def terminate(request: HttpRequest, applicability_id: uuid.UUID) -> HttpResponse
             "title": f"Terminating Action for {applicability.directive}",
             "button": "Record Terminating Action",
         },
+    )
+
+
+@never_cache
+@requires(Action.RECORD_AIRWORTHINESS_DIRECTIVE)
+@require_http_methods(["GET", "POST"])
+def add_directive_source(request: HttpRequest) -> HttpResponse:
+    """Record a source the organisation checks for new directives (REQ-288)."""
+    form = SourceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.add_source(_user(request).organisation, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("directives")
+    return render(
+        request,
+        "directives/source.html",
+        {"form": form, "title": "Record a Source", "button": "Record Source", "source": None},
+    )
+
+
+@never_cache
+@requires(Action.RECORD_AIRWORTHINESS_DIRECTIVE)
+@require_http_methods(["GET", "POST"])
+def check_directive_source(request: HttpRequest, source_id: uuid.UUID) -> HttpResponse:
+    """Record that a source was checked for new directives (REQ-288)."""
+    source = get_object_or_404(Source, pk=source_id)
+    form = SourceCheckForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.record_source_check(source, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("directives")
+    return render(
+        request,
+        "directives/source.html",
+        {"form": form, "title": "Record a Check", "button": "Record Check", "source": source},
     )

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ aircraft.registration }}, Maintenance Programme{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p role="alert">{{ reason }}</p>
+<p><a href="{% url 'programme' aircraft.id %}">Maintenance Programme</a></p>
+{% endblock %}

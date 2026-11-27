@@ -623,6 +623,8 @@ def build(ours: Organisation, administrator: User) -> Staff:
     phase1.add_releases(ours, people.planner, fleet)
     phase1.add_components(ours, people.planner, fleet)
     phase1.add_modifications(ours, people.planner, fleet)
+    phase1.add_programme_records(ours, people.lucy, fleet)
+    phase1.add_sources(ours, people.planner)
     add_reviews(people, fleet)
     add_directives(people, fleet)
     add_maintenance_data(people)

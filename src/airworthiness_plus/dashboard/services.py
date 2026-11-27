@@ -29,6 +29,7 @@ from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.modifications import services as modification_services
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due
+from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Programme
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import ReviewStaff
@@ -266,6 +267,21 @@ def _aircraft_rows(aircraft: Aircraft, today: date) -> list[Row]:
             )
         )
     if held is not None:
+        opened = programme_services.open_annual_review(held)
+        if opened is not None:
+            # The annual review is under way and not yet complete (REQ-286).
+            rows.append(
+                Row(
+                    registration,
+                    f"Maintenance Programme Annual Review in Progress, {opened.progress}",
+                    f"Opened {formatting.long_date(opened.opened_on)}, AMC1 ML.A.302(c)(9)",
+                    NOT_SET,
+                    "",
+                    "To Assess",
+                    "Maintenance Programme",
+                    programme,
+                )
+            )
         annual = due.review_line(held, today, due.thresholds_of(aircraft.organisation))
         if annual.due is None:
             # Never reviewed, as far as the records say: there is no day to count
@@ -486,6 +502,45 @@ def _modifications(organisation: Organisation, today: date) -> list[Row]:
     return rows
 
 
+def _directive_sources(organisation: Organisation, today: date) -> list[Row]:
+    """Return each source of directives never checked, or with a check near or late (REQ-289)."""
+    rows = []
+    page, url = "Aircraft Configuration", reverse("directives")
+    for line in directive_services.source_lines(organisation, today):
+        source = line.source
+        if source.last_checked_on is None:
+            rows.append(
+                Row(
+                    source.name,
+                    "Source of Directives Not Checked",
+                    source.covers,
+                    NOT_SET,
+                    "",
+                    "To Assess",
+                    page,
+                    url,
+                    first=True,
+                )
+            )
+        elif source.next_check_on is not None and line.days is not None:
+            if line.flag is Flag.NONE:
+                continue
+            rows.append(
+                Row(
+                    source.name,
+                    "Source of Directives to Check",
+                    f"{source.covers}, Last Checked {formatting.long_date(source.last_checked_on)}",
+                    formatting.long_date(source.next_check_on),
+                    _remaining(Unit.CALENDAR, line.days, line.flag),
+                    line.flag.value,
+                    page,
+                    url,
+                    days=line.days,
+                )
+            )
+    return rows
+
+
 def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
     """Return what is due on the aircraft of the organisation (REQ-216, REQ-228, REQ-237)."""
     rows: list[Row] = (
@@ -493,6 +548,7 @@ def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
         + _ended_contracts()
         + _components(today)
         + _modifications(organisation, today)
+        + _directive_sources(organisation, today)
     )
     for aircraft in Aircraft.objects.all():
         if aircraft.stage == Stage.TRANSFER_IN:

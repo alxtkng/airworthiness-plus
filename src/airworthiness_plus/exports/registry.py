@@ -19,13 +19,19 @@ from airworthiness_plus.components.models import Component, Installation
 from airworthiness_plus.contracts.models import Contract, WorkOrder
 from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.defects.models import Defect, RepeatAction
-from airworthiness_plus.directives.models import Applicability, Compliance, Directive
+from airworthiness_plus.directives.models import Applicability, Compliance, Directive, Source
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
 from airworthiness_plus.modifications.models import Bulletin, Change, Weighing, WeightSchedule
 from airworthiness_plus.organisations.models import Approval, Organisation
 from airworthiness_plus.people.models import Person
-from airworthiness_plus.programme.models import Programme, Task, WorkDone
+from airworthiness_plus.programme.models import (
+    AnnualReview,
+    Departure,
+    Programme,
+    Task,
+    WorkDone,
+)
 from airworthiness_plus.releases.models import Release
 from airworthiness_plus.reviews.models import (
     Certificate,
@@ -84,6 +90,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Programme, _by("aircraft")),
     Exported(Task, _by("programme__aircraft")),
     Exported(WorkDone, _by("aircraft")),
+    Exported(Departure, _by("programme__aircraft")),
+    Exported(AnnualReview, _by("programme__aircraft")),
     Exported(Release, _by("work__aircraft")),
     Exported(Contract, _by("aircraft")),
     Exported(WorkOrder, _by("aircraft")),
@@ -98,6 +106,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(Weighing, _by("aircraft")),
     Exported(WeightSchedule, _by("aircraft")),
     Exported(Directive, _every),
+    # The sources checked for directives are checked for every aircraft.
+    Exported(Source, _every),
     Exported(Applicability, _by("aircraft")),
     Exported(Compliance, _by("applicability__aircraft")),
     Exported(DataSet, _type_rating("applies_to__contains")),

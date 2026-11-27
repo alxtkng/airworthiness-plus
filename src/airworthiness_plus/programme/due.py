@@ -553,6 +553,10 @@ class ProgrammeLine:
     tasks: int
     review: ReviewLine | None
     today: date
+    # Departures from the manufacturer's instructions that are in force (REQ-284).
+    departures: int = 0
+    # The progress of an annual review in progress: 4 of 6 Complete (REQ-286).
+    in_progress: str = ""
 
     @property
     def remaining(self) -> str:
@@ -579,5 +583,8 @@ def programme_lines(today: date) -> list[ProgrammeLine]:
             continue
         review = review_line(programme, today, thresholds_of(aircraft.organisation))
         tasks = programme.tasks.filter(retired=False).count()
-        lines.append(ProgrammeLine(aircraft, programme, tasks, review, today))
+        departures = programme.departures.filter(withdrawn_on__isnull=True).count()
+        opened = programme.annual_reviews.filter(completed_on__isnull=True).first()
+        progress = f"Open, {opened.progress}" if opened is not None else ""
+        lines.append(ProgrammeLine(aircraft, programme, tasks, review, today, departures, progress))
     return lines

@@ -17,13 +17,15 @@ from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.contracts.models import Contract, OrderedBy, Scope
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.defects.models import Basis, Decision, Defect
+from airworthiness_plus.directives import services as directive_services
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.modifications import services as modification_services
 from airworthiness_plus.modifications.models import Classification, Data, OwnerDecision, Route
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people.models import Person, StaffGroup
 from airworthiness_plus.programme import services as programme_services
-from airworthiness_plus.programme.models import WorkDone
+from airworthiness_plus.programme.models import Basis as ProgrammeBasis
+from airworthiness_plus.programme.models import Programme, WorkDone
 from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy, Release
 
@@ -414,4 +416,88 @@ def add_modifications(ours: Organisation, by: User, fleet: dict[str, Aircraft]) 
             )
             modification_services.record_schedule(
                 aircraft(registration), issue=issue, issued_on=issued_on
+            )
+
+
+# SampleData.md, Maintenance Programme Inputs, and the Maintenance Programmes
+# board: the departures of G-DGHI's programme from the manufacturer's
+# instructions. Task, manufacturer, programme, compensating measures, justification.
+DEPARTURES: tuple[tuple[str, str, str, str, str], ...] = (
+    ("Engine Overhaul, Lycoming O-360", "2,000 Hours or 12 Years",
+     "On Condition, Reviewed Every 100 Hours",
+     "Oil Analysis Every 50 Hours, Compression and Borescope Every 100 Hours",
+     "Club Use, About 300 Hours a Year"),
+    ("Vacuum Pump Replacement", "500 Hours", "On Condition", "Standby Vacuum Source Fitted",
+     "Pump Checked Every 50 Hours"),
+)  # fmt: skip
+
+# The annual review of G-FMNO's programme, 4 of 6 complete: the point, what was
+# found and whether it is complete.
+FMNO_REVIEW: dict[str, tuple[str, bool]] = {
+    "results": ("2 Defects, No Repeats", True),
+    "airworthiness_review": ("27 April 2026, Programme Adequate", True),
+    "revisions": ("Maintenance Manual Revision [Revision] to Check", False),
+    "configuration": ("No Change, Private Flying", True),
+    "pilot_owners": ("Awaiting Owner Confirmation", False),
+    "mandatory": ("Checked 16 November 2026", True),
+}
+
+
+def add_programme_records(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> None:
+    """Add G-DGHI's programme and its departures, and G-FMNO's annual review in progress.
+
+    As the Continuing Airworthiness Manager. G-DGHI's programme is on the
+    manufacturer's instructions, last reviewed on 4 March 2026, as the
+    Maintenance Programmes board has it.
+    """
+    with working_for(ours.id, by.id):
+        dghi = programme_services.set_up_programme(
+            Aircraft.objects.get(pk=fleet["G-DGHI"].pk),
+            basis=ProgrammeBasis.INSTRUCTIONS,
+            reference="[Programme Reference]",
+            hours_per_day=Decimal("0.8"),
+        )
+        programme_services.record_review(dghi, date(2026, 3, 4))
+        for task, manufacturer, says, measures, justification in DEPARTURES:
+            programme_services.add_departure(
+                dghi,
+                task=task,
+                manufacturer=manufacturer,
+                programme_says=says,
+                compensating_measures=measures,
+                justification=justification,
+                recorded_on=date(2026, 3, 4),
+                owner_copy_sent_on=date(2026, 3, 4),
+            )
+        fmno = Programme.objects.get(aircraft_id=fleet["G-FMNO"].pk)
+        review = programme_services.start_annual_review(fmno, date(2026, 11, 9))
+        points: dict[str, object] = {}
+        for name, (note, done) in FMNO_REVIEW.items():
+            points[f"{name}_note"] = note
+            points[f"{name}_done"] = done
+        programme_services.note_annual_review(review, **points)
+
+
+# The Directives board, Sources: source, what it covers, a note, the day last
+# checked, and the next check as a day or in words.
+SOURCES: tuple[tuple[str, str, str, date, date | None, str], ...] = (
+    ("Civil Aviation Authority", "United Kingdom Directives, All Aircraft", "",
+     date(2026, 11, 16), date(2026, 11, 30), ""),
+    ("CAP 747 Mandatory Requirements for Airworthiness", "Generic Requirements and Concessions",
+     "Issue [Issue]", date(2026, 11, 16), None, "Each Amendment"),
+    ("Federal Aviation Administration",
+     "Piper and Cessna Airframes, Lycoming Engines, Sensenich and McCauley Propellers",
+     "State of Design, Biweekly [Reference]", date(2026, 11, 16), date(2026, 11, 30), ""),
+    ("European Union Aviation Safety Agency", "Robin and Grob Airframes", "State of Design",
+     date(2026, 11, 16), date(2026, 11, 30), ""),
+)  # fmt: skip
+
+
+def add_sources(ours: Organisation, by: User) -> None:
+    """Add the sources checked for new directives, as Planning and Records."""
+    with working_for(ours.id, by.id):
+        for name, covers, note, checked_on, next_check_on, words in SOURCES:
+            source = directive_services.add_source(ours, name=name, covers=covers, note=note)
+            directive_services.record_source_check(
+                source, checked_on=checked_on, next_check_on=next_check_on, next_check_note=words
             )

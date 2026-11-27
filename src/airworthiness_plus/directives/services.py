@@ -9,13 +9,21 @@ from django.db import transaction
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter
-from airworthiness_plus.directives.models import Applicability, Compliance, Decision, Directive
+from airworthiness_plus.directives.models import (
+    Applicability,
+    Compliance,
+    Decision,
+    Directive,
+    Source,
+)
+from airworthiness_plus.interface import formatting
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Programme, Task, WorkDone
-from airworthiness_rules.intervals import Interval, Reading, TaskKind
-from airworthiness_rules.programme import Flag
+from airworthiness_rules.dates import days_between
+from airworthiness_rules.intervals import Interval, Limit, Reading, TaskKind, Unit
+from airworthiness_rules.programme import Flag, Thresholds, limit_flag
 
 
 class RefusedError(ValueError):
@@ -250,3 +258,97 @@ def status(aircraft: Aircraft, today: date) -> list[StatusLine]:
             StatusLine(directive, applicability, last, count, next_due, flag, superseded, limits)
         )
     return lines
+
+
+@transaction.atomic
+def add_source(organisation: Organisation, *, name: str, covers: str, note: str = "") -> Source:
+    """Record a source the organisation checks for new directives (REQ-288). Once."""
+    name, covers = name.strip(), covers.strip()
+    if not name or not covers:
+        raise RefusedError("A Source Has a Name and Says What It Covers")
+    Organisation.objects.select_for_update().get(pk=organisation.pk)
+    if Source.objects.filter(name=name).exists():
+        raise RefusedError("This Source Is Already Recorded")
+    return Source.objects.create(
+        organisation=organisation, name=name, covers=covers, note=note.strip()
+    )
+
+
+@transaction.atomic
+def record_source_check(
+    source: Source,
+    *,
+    checked_on: date,
+    next_check_on: date | None = None,
+    next_check_note: str = "",
+) -> Source:
+    """Record that a source was checked, and when it is next checked (REQ-288).
+
+    The next check is a day, or words such as Each Amendment, and not
+    both. A check is not before the last one, and the same check sent
+    twice is recorded once.
+    """
+    words = next_check_note.strip()
+    source = Source.objects.select_for_update().get(pk=source.pk)
+    if checked_on > aircraft_services.today():
+        raise RefusedError("A Check Is Not After Today")
+    if (next_check_on is None) == (not words):
+        raise RefusedError("Give the Day of the Next Check, or Say When It Is, and Not Both")
+    if next_check_on is not None and next_check_on < checked_on:
+        raise RefusedError("The Next Check Is Not Before This One")
+    if source.last_checked_on is not None:
+        if checked_on < source.last_checked_on:
+            raise RefusedError("A Check Is Not Before the Last One")
+        same = (source.last_checked_on, source.next_check_on, source.next_check_note)
+        if same == (checked_on, next_check_on, words):
+            raise RefusedError("This Check Is Already Recorded")
+    source.last_checked_on = checked_on
+    source.next_check_on = next_check_on
+    source.next_check_note = words
+    source.save(update_fields=["last_checked_on", "next_check_on", "next_check_note"])
+    return source
+
+
+@dataclass(frozen=True)
+class SourceLine:
+    """One source, with when its next check is due and how it stands."""
+
+    source: Source
+    flag: Flag
+    days: int | None
+
+    @property
+    def next_text(self) -> str:
+        """Return the next check: a day, words, or that it has never been checked."""
+        source = self.source
+        if source.next_check_on is not None:
+            return formatting.long_date(source.next_check_on)
+        return source.next_check_note or "Not Checked"
+
+    @property
+    def status(self) -> str:
+        """Return the word of the status mark. A source never checked is to assess."""
+        if self.source.last_checked_on is None:
+            return "To Assess"
+        return self.flag.value
+
+
+def source_lines(organisation: Organisation, today: date) -> list[SourceLine]:
+    """Return every source: one never checked first, then the nearest check (REQ-289)."""
+    thresholds = Thresholds(days=organisation.due_soon_days)
+    lines = []
+    for source in Source.objects.all():
+        flag, days = Flag.NONE, None
+        if source.next_check_on is not None:
+            days = days_between(today, source.next_check_on)
+            flag = limit_flag(Limit(Unit.CALENDAR, source.next_check_on, days), thresholds)
+        lines.append(SourceLine(source, flag, days))
+    return sorted(
+        lines,
+        key=lambda line: (
+            line.source.last_checked_on is not None,
+            line.days is None,
+            line.days or 0,
+            line.source.name,
+        ),
+    )

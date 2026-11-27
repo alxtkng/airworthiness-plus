@@ -239,6 +239,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A decision on a service bulletin, and a change or repair, are fixed (REQ-250, REQ-252).
         "modifications_bulletin": {"bulletin_rules"},
         "modifications_change": {"change_rules"},
+        # A departure and a completed annual review keep what they said (REQ-285, REQ-287).
+        "programme_departure": {"departure_rules"},
+        "programme_annualreview": {"annualreview_rules"},
         "directives_applicability": {"no_bulk_insert", "no_bulk_update"},
         "maintenance_data_revision": {"never_current_again"},
         "reviews_certificate": {"certificate_serial", "certificate_fixed"},

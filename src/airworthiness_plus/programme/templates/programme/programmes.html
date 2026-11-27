@@ -8,7 +8,7 @@
 {% if lines %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Programme</th><th>Programme Reference</th><th class="number">Tasks</th><th>Last Reviewed</th><th>Annual Review Due</th><th class="number">Remaining</th><th>Status</th></tr>
+<tr><th>Aircraft Registration</th><th>Programme</th><th>Programme Reference</th><th class="number">Tasks</th><th class="number">Departures</th><th>Last Reviewed</th><th>Annual Review Due</th><th class="number">Remaining</th><th>Status</th><th data-detail>Annual Review</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -17,10 +17,12 @@
 <td>{% if line.programme %}{{ line.programme.basis }}{% else %}No Maintenance Programme Set Up{% endif %}</td>
 <td>{{ line.programme.reference }}</td>
 <td class="number">{% if line.programme %}{{ line.tasks }}{% endif %}</td>
+<td class="number">{% if line.programme %}{{ line.departures }}{% endif %}</td>
 <td>{% if line.programme %}{% if line.review.last_reviewed %}{{ line.review.last_reviewed|long_date }}{% else %}Not Recorded{% endif %}{% endif %}</td>
 <td>{{ line.review.due|long_date }}</td>
 <td class="number">{{ line.remaining }}</td>
 <td>{{ line.review.flag.value|status }}</td>
+<td>{{ line.in_progress }}</td>
 </tr>
 {% endfor %}
 </tbody>
