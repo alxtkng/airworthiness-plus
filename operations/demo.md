@@ -103,6 +103,12 @@ About 15 minutes. Sign in as Lucy Grant.
 
 Sign in as Lucy Grant. The sample of this part is on the test site once its database has been remade from the sample (Issue 100).
 
+### The Fleet
+
+1. Open Aircraft. Next Due and Remaining are two columns. Choose the heading Remaining to sort by it.
+2. Choose Due in 30 Days: three aircraft. Choose Unserviceable: G-DGHI alone.
+3. Type a registration in the search above the table.
+
 ### Defects
 
 1. Open Defects, under Continuing Airworthiness. Four are open. G-DGHI comes first: Not Deferrable, Grounded.

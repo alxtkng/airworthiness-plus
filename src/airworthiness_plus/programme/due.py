@@ -135,12 +135,17 @@ class DueLine:
         return bool(self.problem)
 
     @property
-    def summary(self) -> str:
-        """Return the task and what remains, as the Fleet shows it."""
+    def remaining_summary(self) -> str:
+        """Return what remains of the task, or why it cannot be calculated."""
         if not self.limits:
-            return f"{self.task.title}, {self.problem}"
+            return self.problem
         shown = self.first if self.ranked else self.limits
-        return f"{self.task.title}, " + " or ".join(limit.remaining_text for limit in shown)
+        return " or ".join(limit.remaining_text for limit in shown)
+
+    @property
+    def summary(self) -> str:
+        """Return the task and what remains."""
+        return f"{self.task.title}, {self.remaining_summary}"
 
 
 def thresholds_of(organisation: Organisation) -> Thresholds:

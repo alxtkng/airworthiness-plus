@@ -123,14 +123,16 @@ def test_a_weak_password_sets_nothing_up(monkeypatch: pytest.MonkeyPatch) -> Non
 
 def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
     """SampleData.md, Fleet: every cell of every row. One difference is known and recorded:
-    the sample writes 220 Hours for G-CDEF and the system writes hours to one decimal place."""
-    table = {row[0]: row[1:7] for row in rows(reader, "/")}
+    the sample writes 220 Hours for G-CDEF and the system writes hours to one decimal place.
+    Next Due and Remaining are two columns, as the Fleet board has them (REQ-280)."""
+    table = {row[0]: row[1:8] for row in rows(reader, "/")}
     assert table == {
         "G-DGHI": [
             "Piper PA-28 Series (Lycoming)",
             "Flying Club",
             "Unserviceable, Stabilator Trim Cable",
             "Rectify Defect",
+            "Grounded",
             "19 May 2027",
             "9,874.3",
         ],
@@ -138,7 +140,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Cessna/Reims-Cessna 152/F152 Series (Lycoming)",
             "Pilot-Owner",
             "Serviceable",
-            "Airworthiness Review, 18 Days",
+            "Airworthiness Review",
+            "18 Days",
             "6 December 2026",
             "11,206.8",
         ],
@@ -146,7 +149,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Piper PA-28 Series (Lycoming)",
             "Pilot-Owner",
             "Serviceable",
-            "50-Hour Check, 12.4 Hours",
+            "50-Hour Check",
+            "12.4 Hours",
             "14 March 2027",
             "6,412.6",
         ],
@@ -154,7 +158,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Cessna/Reims-Cessna 172/F172 Series (Lycoming)",
             "Syndicate of 6",
             "Serviceable",
-            "100-Hour or Annual Check, 41.0 Hours",
+            "100-Hour or Annual Check",
+            "41.0 Hours",
             "2 August 2027",
             "3,318.0",
         ],
@@ -162,7 +167,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Grob G115/120 Series (Lycoming)",
             "Pilot-Owner",
             "Serviceable",
-            "Annual Check, 78 Days",
+            "Annual Check",
+            "78 Days",
             "27 April 2027",
             "4,950.2",
         ],
@@ -170,7 +176,8 @@ def test_the_fleet_is_the_fleet_of_the_sample(reader: Client) -> None:
             "Robin DR 400 series (Lycoming)",
             "Syndicate of 4",
             "Serviceable",
-            "Engine Overhaul, 220.0 Hours",
+            "Engine Overhaul",
+            "220.0 Hours",
             "2 December 2027",
             "7,731.5",
         ],
@@ -248,6 +255,69 @@ def test_the_fleet_opens_with_what_needs_attention_first(reader: Client) -> None
     """
     order = [row[0] for row in rows(reader, "/")]
     assert order == ["G-DGHI", "G-EJKL", "G-ABCD", "G-FMNO", "G-BXYZ", "G-CDEF"]
+
+
+def test_the_fleet_is_filtered_as_the_fleet_board_filters_it(reader: Client) -> None:
+    """REQ-281. Golden, from the Fleet board: All 6, Due in 30 Days 3, Unserviceable 1.
+
+    By hand, for 18 November 2026. G-DGHI is Unserviceable. G-EJKL's review is
+    18 days away. G-ABCD's 12.4 hours at 0.8 a day are 15 days. The others are
+    78, 82 and 366 days away: outside the 30.
+    """
+    response: HttpResponse = reader.get("/", secure=True)  # type: ignore[assignment]
+    body = response.content.decode()
+    filters = body.split('<p class="filter">', 1)[1].split("</p>", 1)[0]
+    assert re.findall(r'<a href="([^"]*)"( aria-current="true")?>([^<]+)</a>', filters) == [
+        ("/", ' aria-current="true"', "All 6"),
+        ("/?show=due", "", "Due in 30 Days 3"),
+        ("/?show=unserviceable", "", "Unserviceable 1"),
+    ]
+    assert [row[0] for row in rows(reader, "/?show=due")] == ["G-DGHI", "G-EJKL", "G-ABCD"]
+    assert [row[0] for row in rows(reader, "/?show=unserviceable")] == ["G-DGHI"]
+    # The view asked for is the one marked, and anything else shows every aircraft.
+    due: HttpResponse = reader.get("/?show=due", secure=True)  # type: ignore[assignment]
+    assert '<a href="/?show=due" aria-current="true">Due in 30 Days 3</a>' in due.content.decode()
+    assert len(rows(reader, "/?show=anything")) == 6
+    # The search is always shown above the Fleet, however few aircraft (REQ-282).
+    assert '<table data-search="always">' in body
+    # What remains is a column of its own (REQ-280).
+    remaining = {row[0]: row[5] for row in rows(reader, "/")}
+    assert remaining == {
+        "G-DGHI": "Grounded",
+        "G-EJKL": "18 Days",
+        "G-ABCD": "12.4 Hours",
+        "G-BXYZ": "41.0 Hours",
+        "G-FMNO": "78 Days",
+        "G-CDEF": "220.0 Hours",
+    }
+    # A reader may not add an aircraft, and is not shown the link (REQ-006).
+    assert "Add an Aircraft" not in body.split("<main", 1)[1]
+
+
+def test_what_is_due_in_30_days_at_its_edges(
+    seeded: dict[str, Aircraft], reader: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """REQ-281. G-EJKL's certificate is valid to 6 December 2026: 30 days away on
+    6 November it is among those due in 30 days, and 31 days away on 5 November it
+    is not. An aircraft with something that cannot be calculated is always among
+    them, and so is an Unserviceable one, whatever the days."""
+    from airworthiness_plus.aircraft import services as aircraft_services
+    from airworthiness_plus.aircraft.views import CANNOT_BE_CALCULATED, NOT_KNOWN, FleetRow
+
+    def soon(rank: tuple[int, int, int, str]) -> bool:
+        return FleetRow(seeded["G-ABCD"], None, "", "", None, rank).soon
+
+    assert soon((1, -CANNOT_BE_CALCULATED, NOT_KNOWN, "G-ABCD"))
+    assert soon((0, 0, 0, "G-ABCD"))
+    assert soon((1, 0, 30, "G-ABCD")) and not soon((1, 0, 31, "G-ABCD"))
+    assert not soon((1, -1, NOT_KNOWN, "G-ABCD"))
+
+    def due_on(day: date) -> list[str]:
+        monkeypatch.setattr(aircraft_services, "today", lambda: day)
+        return sorted(row[0] for row in rows(reader, "/?show=due"))
+
+    assert "G-EJKL" in due_on(date(2026, 11, 6))
+    assert "G-EJKL" not in due_on(date(2026, 11, 5))
 
 
 # SampleData.md, review certificates and review staff

@@ -526,6 +526,23 @@ def searching_page() -> str:
 </main></body></html>"""
 
 
+def test_a_short_table_that_asks_for_it_is_searched() -> None:
+    """REQ-282. The Fleet board shows its search always. A table of 4 rows that
+    asks for it has the search and the count, and is searched as a long one is."""
+    body = searching_page().replace('<table id="short">', '<table id="short" data-search="always">')
+    pages = {"/searching/": HttpResponse(body)}
+
+    def check(page: Page) -> None:
+        page.goto(f"{ORIGIN}/searching/")
+        assert page.get_by_label("Search This Table").count() == 2
+        count = page.locator("#short + p[role=status]")
+        assert count.text_content() == "4 of 4 Shown"
+        page.get_by_label("Search This Table").nth(1).fill("short 3")
+        assert count.text_content() == "1 of 4 Shown"
+
+    in_browser(pages, check)
+
+
 def shown_names(page: Page) -> list[str]:
     return page.evaluate(  # type: ignore[no-any-return]
         """() => [...document.querySelectorAll('#long tbody tr:not(.detail)')]
