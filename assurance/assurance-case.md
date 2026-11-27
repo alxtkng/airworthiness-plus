@@ -138,6 +138,8 @@ Hazards answered: H-005.
 | Sub-claim | Argument | Evidence | Status |
 |---|---|---|---|
 | C8.1 A staffing shortfall can be identified and traced by approval and function | Required and available hours are compared. The Part-145 reporting threshold uses the exact ratio. The report retains its figures after cover changes the plan | `tests/test_golden_staffing.py` and the staffing browser journey | Available |
+| C8.2 Weekly load and staffing expose the basis and the organisation's limits | Roster, absences, package hours and settings supply the workload. A rounded display does not control the warning. Date arithmetic uses elapsed time where needed | `tests/test_golden_roster.py` and the roster browser journey | Available |
+| C8.3 Handovers retain acknowledgement evidence | The incoming person acknowledges via their sign-in. The database retains the original and who acknowledged it | Roster browser journey and record rules | Available |
 
 ## Maintaining This Case
 

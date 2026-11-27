@@ -23,10 +23,32 @@ from airworthiness_plus.planning import views as planning
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
+from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
+    path("staffing/capacity/", roster.load_and_capacity, name="load_and_capacity"),
+    path("staffing/roster/", roster.staff_roster, name="staff_roster"),
+    path("staffing/roster/add/", roster.add_roster_shift, name="add_roster_shift"),
+    path("staffing/roster/publish/", roster.publish_roster, name="publish_roster"),
+    path(
+        "staffing/roster/<uuid:shift_id>/withdraw/",
+        roster.withdraw_roster_shift,
+        name="withdraw_roster_shift",
+    ),
+    path("staffing/handovers/add/", roster.record_handover, name="record_handover"),
+    path(
+        "staffing/handovers/<uuid:handover_id>/acknowledge/",
+        roster.acknowledge_handover,
+        name="acknowledge_handover",
+    ),
+    path("settings/planning/", roster.planning_settings, name="planning_settings"),
+    path(
+        "settings/planning/change/",
+        roster.change_planning_settings,
+        name="change_planning_settings",
+    ),
     path("staffing/", staffing.staffing_plan, name="staffing_plan"),
     path("staffing/hours/", staffing.record_staffing_hours, name="record_staffing_hours"),
     path("staffing/review/", staffing.review_staffing_plan, name="review_staffing_plan"),

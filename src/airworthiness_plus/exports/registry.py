@@ -52,6 +52,7 @@ from airworthiness_plus.reviews.models import (
 from airworthiness_plus.sample.models import Added
 from airworthiness_plus.staffing.models import Absence, Demand, Report
 from airworthiness_plus.staffing.models import Review as StaffingReview
+from airworthiness_plus.staffing.roster_models import Handover, PublishedRoster, Settings, Shift
 
 
 @dataclass(frozen=True)
@@ -160,4 +161,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(StaffingReview, None),
     Exported(Report, None),
     Exported(Absence, None),
+    Exported(Handover, _by("package__aircraft")),
+    Exported(PublishedRoster, None),
+    Exported(Settings, None),
+    Exported(Shift, None),
 )

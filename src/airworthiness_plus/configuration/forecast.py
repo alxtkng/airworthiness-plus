@@ -52,7 +52,7 @@ class ForecastLine:
         return formatting.long_date(self.forecast)
 
 
-def _days(limits: tuple[due.ExplainedLimit, ...]) -> int | None:
+def expected_days(limits: tuple[due.ExplainedLimit, ...]) -> int | None:
     """Return whole days to the first limit, including one already reached."""
     if any(limit.limit.remaining <= 0 for limit in limits):
         return 0
@@ -97,7 +97,7 @@ def forecast_lines(aircraft: Aircraft, today: date) -> list[ForecastLine]:
                 line.task.source,
                 " or ".join(limit.due_text for limit in shown),
                 line.remaining_summary,
-                rules.forecast_date(today, _days(shown)),
+                rules.forecast_date(today, expected_days(shown)),
                 line.flag.value,
                 page,
                 url,

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Planning Settings{% endblock %}
+{% block content %}
+<h1>Planning Settings</h1>
+{% if may_change %}<p><a href="{% url 'change_planning_settings' %}">Edit Planning Settings</a></p>{% endif %}
+<dl>
+{% for field in form %}<dt>{{ field.label }}</dt><dd>{% if field.name == "critical_first_half" %}{{ field.value|yesno:"Yes,No" }}{% else %}{{ field.value }}{% endif %}</dd>{% endfor %}
+</dl>
+<h2>Part-145</h2>
+<p>Review the Staffing Plan at Least Every Three Months, AMC1 145.A.30(d)</p>
+<p>Report a Shortfall Over 25% in Any Function in a Calendar Month, AMC1 145.A.30(d)</p>
+<p>At Least Half of Each Maintenance Crew Employed, AMC1 145.A.30(d)</p>
+{% endblock %}

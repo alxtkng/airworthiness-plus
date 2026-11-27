@@ -200,3 +200,8 @@ Sign in as Planning and Records and open **Planning → Work Packages → WP-202
 ## Staffing Plan
 
 Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staffing Plan**. Each approval uses its own plan. In the Part-145 sample organisation, enter December certifying staff demand of 290 hours and availability of 192 hours to see the report needed at 34%. Record the report, then add 88 contracted hours to show the remaining 3% shortfall.
+
+
+## Staff Roster and Load and Capacity
+
+Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staff Roster**. A maintenance shift on 19 November from 08:00 to 19:00 with a 30-minute break records 10.5 working hours and flags the organisation's 10-hour limit. Record handover notes and sign in as the named recipient to see the acknowledgement action. **Load and Capacity** shows the roster hours and preparation demand, and links to unplanned work. **Settings → Planning** shows and, for the Administrator, edits the calculation inputs.

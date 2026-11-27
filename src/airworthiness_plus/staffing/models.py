@@ -107,3 +107,7 @@ class Absence(Record):
                 name="staffing_absence_has_valid_dates_and_kind",
             ),
         ]
+
+
+# The roster records share this application and its migration history.
+from airworthiness_plus.staffing.roster_models import Handover, PublishedRoster, Settings, Shift  # noqa: E402, F401
