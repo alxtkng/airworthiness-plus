@@ -3,6 +3,7 @@
 from django.urls import URLPattern, URLResolver, path
 
 from airworthiness_plus.acceptance import views as acceptance
+from airworthiness_plus.accounts import passkey_views
 from airworthiness_plus.accounts import user_views as users
 from airworthiness_plus.accounts import views as accounts
 from airworthiness_plus.aircraft import views as aircraft
@@ -473,10 +474,15 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="reset_user_second_factor",
     ),
     path("users/<uuid:user_id>/sessions/", users.end_sessions, name="end_user_sessions"),
+    path("account/passkeys/", passkey_views.passkey_settings, name="passkey_settings"),
+    path("account/passkeys/add/", passkey_views.add_passkey, name="add_passkey"),
+    path("account/passkeys/remove/", passkey_views.remove_passkey, name="remove_passkey"),
+    path("account/verify/", passkey_views.verify_passkey, name="verify_passkey"),
     path("account/password/", users.change_password, name="change_password"),
     path("account/sessions/", users.end_other_sessions, name="end_other_sessions"),
     path("account/sessions/<uuid:session_id>/end/", users.end_session, name="end_session"),
     path("sign-in/", accounts.sign_in_page, name="sign_in"),
+    path("sign-in/passkey/", passkey_views.passkey_sign_in, name="passkey_sign_in"),
     path("sign-in/code/", accounts.code_page, name="code"),
     path("sign-in/set-up/", accounts.set_up_page, name="set_up"),
     path("sign-out/", accounts.sign_out, name="sign_out"),

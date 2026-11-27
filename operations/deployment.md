@@ -27,6 +27,7 @@ Every setting comes from the environment (`src/airworthiness_plus/environment.py
 | Name | Required | Value |
 |---|---|---|
 | `AIRWORTHINESS_SECRET_KEY` | Yes | At least 50 random characters, made on the server and kept only there. Changing it ends every session |
+| `AIRWORTHINESS_MANAGED_DEVICES_ONLY` | No | Set to `true` only if access is restricted to managed, single-user devices. This sets the deployment's idle limit to 60 minutes. Shared or mixed-device deployments use the 30-minute default |
 | `AIRWORTHINESS_ALLOWED_HOSTS` | Yes | The service's host name, and nothing else |
 | `AIRWORTHINESS_DATABASE_NAME`, `_USER`, `_PASSWORD`, `_HOST`, `_PORT` | Name and user | For the service: the login role. For migrations: the owner |
 | `AIRWORTHINESS_DATABASE_OWNER_WORK` | No | `true` only for migrations and setting up an organisation. Never set for the running service |
@@ -102,3 +103,8 @@ Run in the build environment, not on the server. PostgreSQL 16, a database owned
 One thing the rehearsal taught: with HTTPS only pretended by a header, Django refused the sign-in because the page's origin did not match. That is the forgery protection working, and it means the proxy must really end HTTPS.
 
 The image itself could not be built in the build environment, which has no container service. The pipeline builds it.
+
+
+### Passkeys
+
+Publish one supported HTTPS sign-in hostname and keep it stable. Passkeys are bound to that hostname. If it changes, use the password and authenticator app to sign in and enrol new passkeys. Use the reverse proxy's verified HTTPS signal for the application as described above.

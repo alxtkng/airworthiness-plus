@@ -54,7 +54,7 @@ The full matrix is in `design-system/Decisions.md`, Roles and Permissions. Every
 
 - Each organisation's records are separated in the database itself, not only in the pages.
 - Connections are encrypted. The service asks nothing of any other site and sends nothing to one.
-- Sign-in is locked after 5 failures for 15 minutes; a session ends after 30 minutes without use and after 12 hours whatever happens.
+- Sign in with a user-verified passkey or a password and authenticator code. Five failures lock sign-in for 15 minutes. Sessions end on browser close, after 12 hours overall or after 30 minutes without use. A deployment restricted to managed single-user devices can use a 60-minute idle limit.
 - The measures are assessed against OWASP ASVS 5.0 Level 2 (`assurance/asvs.md`) and the threat model (`architecture/threat-model.md`). An external penetration test comes before any customer's records are held.
 
 ## What the Service Connects To

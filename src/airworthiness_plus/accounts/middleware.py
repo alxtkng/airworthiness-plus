@@ -11,7 +11,9 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.contrib.auth import SESSION_KEY, get_user
+from django.contrib.sessions.backends.base import SessionBase
 from django.http import HttpRequest, HttpResponse
 
 from airworthiness_plus.accounts import sign_in
@@ -22,11 +24,12 @@ from airworthiness_plus.history.session import working_for
 ORGANISATION_KEY = "organisation"
 SIGNED_IN_AT_KEY = "signed_in_at"
 LAST_SEEN_KEY = "last_seen"
+VERIFIED_AT_KEY = "verified_at"
 
 # Ours, not the regulation's (threat TH-002). A session ends 30 minutes
 # after its last request, and 12 hours after sign-in whatever happens.
-IDLE_MINUTES = 30
 ABSOLUTE_HOURS = 12
+VERIFICATION_MINUTES = 5
 
 
 def _identifier(value: object) -> uuid.UUID | None:
@@ -38,9 +41,19 @@ def _identifier(value: object) -> uuid.UUID | None:
 
 def _moment(value: object) -> datetime | None:
     try:
-        return datetime.fromisoformat(str(value))
+        moment = datetime.fromisoformat(str(value))
+        return moment if moment.utcoffset() is not None else None
     except ValueError:
         return None
+
+
+def recently_verified(session: SessionBase) -> bool:
+    verified = _moment(session.get(VERIFIED_AT_KEY, session.get(SIGNED_IN_AT_KEY)))
+    if verified is None:
+        return False
+    return (
+        timedelta() <= sign_in.current_time() - verified <= timedelta(minutes=VERIFICATION_MINUTES)
+    )
 
 
 class OrganisationContextMiddleware:
@@ -80,9 +93,9 @@ class OrganisationContextMiddleware:
         started, seen = _moment(signed_in_at), _moment(last_seen)
         if started is None or seen is None:
             return True
-        return now - seen > timedelta(minutes=IDLE_MINUTES) or now - started > timedelta(
-            hours=ABSOLUTE_HOURS
-        )
+        return now - seen > timedelta(
+            minutes=settings.SESSION_IDLE_MINUTES
+        ) or now - started > timedelta(hours=ABSOLUTE_HOURS)
 
     def process_exception(self, request: HttpRequest, exception: Exception) -> None:
         """Enter a refused action in the access log.

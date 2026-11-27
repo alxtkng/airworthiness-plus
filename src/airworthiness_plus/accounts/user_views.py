@@ -1,18 +1,19 @@
 """The Users page and the change of password (REQ-005 to REQ-010)."""
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import cast
 
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import HASH_SESSION_KEY, update_session_auth_hash
+from django.contrib.auth.hashers import check_password
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods, require_POST
 
 from airworthiness_plus.accounts import sessions, sign_in, users
-from airworthiness_plus.accounts.middleware import SIGNED_IN_AT_KEY
-from airworthiness_plus.accounts.models import AccessEntry, User
+from airworthiness_plus.accounts.middleware import VERIFIED_AT_KEY, recently_verified
+from airworthiness_plus.accounts.models import AccessEntry, AccessKind, User
 from airworthiness_plus.accounts.permissions import address_of, requires, signed_in
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.accounts.user_forms import (
@@ -24,18 +25,6 @@ from airworthiness_plus.accounts.user_forms import (
 
 def _user(request: HttpRequest) -> User:
     return cast(User, request.user)
-
-
-# Ours: a session this new has just given a password and a code.
-JUST_SIGNED_IN_MINUTES = 5
-
-
-def _just_signed_in(request: HttpRequest) -> bool:
-    try:
-        started = datetime.fromisoformat(str(request.session.get(SIGNED_IN_AT_KEY)))
-    except ValueError:
-        return False
-    return sign_in.current_time() - started <= timedelta(minutes=JUST_SIGNED_IN_MINUTES)
 
 
 def _users(
@@ -108,7 +97,7 @@ def add_user(request: HttpRequest) -> HttpResponse:
     form = AddUserForm(request.POST)
     if not form.is_valid():
         return _users(request, "Give a Full Name and a User Name That Is an Email Address")
-    asked = code_page(request, "Add a User", "Adding a User")
+    asked = code_page(request, "Add a User", "Adding a User", full=True)
     if asked is not None:
         return asked
     password = users.new_first_password()
@@ -130,7 +119,7 @@ def set_roles(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     form = RolesForm(request.POST, prefix=str(person.pk))
     if not form.is_valid():
         return _users(request, "A Role Is One of the Five Roles")
-    asked = code_page(request, f"Save Roles of {person.full_name}", "a Change of Roles")
+    asked = code_page(request, f"Save Roles of {person.full_name}", "a Change of Roles", full=True)
     if asked is not None:
         return asked
     try:
@@ -151,6 +140,7 @@ def set_active(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
         request,
         f"Make {person.full_name} {'Active' if active else 'Inactive'}",
         "Making a User Active or Inactive",
+        full=True,
     )
     if asked is not None:
         return asked
@@ -162,28 +152,40 @@ def set_active(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
 
 
 def code_page(
-    request: HttpRequest, what: str, at: str, back: tuple[str, str] = ("users", "Back to Users")
+    request: HttpRequest,
+    what: str,
+    at: str,
+    back: tuple[str, str] = ("users", "Back to Users"),
+    *,
+    full: bool = False,
 ) -> HttpResponse | None:
-    """Ask for a code before a change to users, to how someone signs in, or to sessions.
-
-    Used by the Staff page too, for a change of the name of a person who
-    has a sign-in: that name is the sign-in's (independent review of
-    24 November 2026, finding 2).
-
-    Nothing is asked within 5 minutes of sign-in. After that the change is
-    made only with a code from the authenticator application of whoever is
-    making it (OWASP ASVS 5.0, 7.5.1, 7.5.2; threat TH-002). Every change on
-    the Users page asks: adding an Administrator, or giving the role, would
-    otherwise be a way round the code before a reset. Returns the page that
-    asks, or nothing when the change may go ahead. The page carries what was
-    sent, so that it is sent again with the code.
-    """
-    if _just_signed_in(request):
+    """Use recent verification or ask for a passkey or the authenticator fallback."""
+    if recently_verified(request.session):
         return None
     code = request.POST.get("code", "")
-    if code and sign_in.confirm_code(_user(request), code, address_of(request), at=at):
-        return None
-    message = "The Code From Your Authenticator Application Is Not Right" if code else ""
+    if code:
+        user = User.objects.select_for_update().get(pk=_user(request).pk)
+        address = address_of(request)
+        current_session = (
+            user.is_active and request.session.get(HASH_SESSION_KEY) == user.get_session_auth_hash()
+        )
+        password = request.POST.get("verification_password", "")
+        if current_session and full and sign_in._refuse_if_locked(user.username, address):
+            current_session = False
+        if current_session and full and not check_password(password, user.password):
+            sign_in.log_account_event(
+                AccessKind.SIGN_IN_FAILED, user, detail=f"Wrong Password at {at}", address=address
+            )
+        elif current_session and sign_in.confirm_code(user, code, address, at=at):
+            if full:
+                request.session.cycle_key()
+                request.session[VERIFIED_AT_KEY] = sign_in.current_time().isoformat()
+            return None
+    if full:
+        refused = "Password or Authenticator Code Is Not Right"
+    else:
+        refused = "The Code From Your Authenticator Application Is Not Right"
+    message = refused if code else ""
     return render(
         request,
         "accounts/confirm_code.html",
@@ -191,10 +193,12 @@ def code_page(
             "what": what,
             "action": request.path,
             "message": message,
+            "full_verification": full,
+            "passkey_available": bool(_user(request).passkeys),
             "carried": [
                 (name, value)
                 for name in request.POST
-                if name not in ("csrfmiddlewaretoken", "code")
+                if name not in ("csrfmiddlewaretoken", "code", "verification_password")
                 for value in request.POST.getlist(name)
             ],
             "back": back[0],
@@ -210,7 +214,7 @@ def reset_password(request: HttpRequest, user_id: uuid.UUID) -> HttpResponse:
     """Give a user a new first password, made by the system and shown once."""
     person = get_object_or_404(User, pk=user_id)
     asked = code_page(
-        request, f"Give {person.full_name} a New First Password", "a New First Password"
+        request, f"Give {person.full_name} a New First Password", "a New First Password", full=True
     )
     if asked is not None:
         return asked
@@ -228,7 +232,10 @@ def reset_second_factor(request: HttpRequest, user_id: uuid.UUID) -> HttpRespons
     """Clear a user's second factor so that they set one up again."""
     person = get_object_or_404(User, pk=user_id)
     asked = code_page(
-        request, f"Reset Second Factor of {person.full_name}", "a Reset of a Second Factor"
+        request,
+        f"Reset Second Factor of {person.full_name}",
+        "a Reset of a Second Factor",
+        full=True,
     )
     if asked is not None:
         return asked
@@ -295,7 +302,7 @@ def change_password(request: HttpRequest) -> HttpResponse:
     signed in within the last 5 minutes (OWASP ASVS 5.0, 7.5.1).
     """
     user = _user(request)
-    fresh = _just_signed_in(request)
+    fresh = recently_verified(request.session)
     message = ""
     if request.method == "POST":
         form = ChangePasswordForm(request.POST)
@@ -319,6 +326,7 @@ def change_password(request: HttpRequest) -> HttpResponse:
             "message": message,
             "must": user.password_must_change,
             "code_needed": not fresh,
+            "passkey_available": bool(user.passkeys),
             "sessions": sessions.live_sessions(user, request.session.session_key),
         },
     )

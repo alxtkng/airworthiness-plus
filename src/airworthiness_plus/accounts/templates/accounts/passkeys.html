@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block scripts %}<script src="{% static 'interface/passkeys.js' %}" defer></script>{% endblock %}
+{% block title %}Passkeys{% endblock %}
+{% block content %}
+<h1>Passkeys</h1>
+<p>Use your fingerprint, device PIN or security key to sign in. On a shared computer, use your own security key or phone.</p>
+{% if passkeys %}
+<ul>{% for identifier, passkey in passkeys.items %}
+<li>{{ passkey.name }} · {{ passkey.rp_id }}
+<form method="post" action="{% url 'remove_passkey' %}">
+{% csrf_token %}
+<input type="hidden" name="passkey" value="{{ identifier }}">
+<button type="submit">Remove {{ passkey.name }}</button>
+</form></li>
+{% endfor %}</ul>
+{% endif %}
+{% if verification_needed %}
+<form method="post" action="{% url 'passkey_settings' %}">
+{% csrf_token %}
+<button type="submit">Verify Your Identity to Add a Passkey</button>
+</form>
+{% else %}
+<form>
+{% csrf_token %}
+<p><label for="passkey-name">Passkey Name</label><br>
+<input id="passkey-name" name="name" type="text" placeholder="For example, Work Security Key" autocomplete="off" maxlength="80" required></p>
+<p><button type="button" class="primary" data-passkey="register" data-url="{% url 'add_passkey' %}" hidden>Add Passkey</button></p>
+<p data-passkey-message role="alert" hidden></p>
+</form>
+{% endif %}
+<p>Keep your authenticator app available in case you lose access to a passkey.</p>
+{% endblock %}

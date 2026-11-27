@@ -8,15 +8,19 @@ import sys
 import time
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime, timedelta
 from functools import partial
 from pathlib import Path
 from typing import Any
 
 import psycopg
 import pytest
+from django.contrib.sessions.backends.db import SessionStore
+from django.core import signing
 from playwright.sync_api import Browser, sync_playwright
 from psycopg import sql
 
+from airworthiness_plus.accounts.middleware import VERIFIED_AT_KEY
 from airworthiness_plus.accounts.roles import Role
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -88,7 +92,7 @@ def seeded_database(
         AIRWORTHINESS_DATABASE_NAME=template,
         AIRWORTHINESS_DATABASE_HOST=host,
         AIRWORTHINESS_DATABASE_PORT=str(params.get("port") or "5432"),
-        AIRWORTHINESS_ALLOWED_HOSTS="127.0.0.1",
+        AIRWORTHINESS_ALLOWED_HOSTS="127.0.0.1,localhost",
         AIRWORTHINESS_DEBUG="false",
         AIRWORTHINESS_BEHIND_PROXY="false",
         AIRWORTHINESS_SECRET_KEY=secrets.token_urlsafe(50),
@@ -145,8 +149,32 @@ def seeded_database(
                 admin.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(ident(name)))
 
 
+@dataclass(frozen=True)
+class RunningSite:
+    address: str
+    name: str
+    database: Database
+
+    def advance_verification_age(self, session_key: str) -> None:
+        """Move the test session beyond the fresh-verification window."""
+        env = self.database.env
+        with psycopg.connect(self.database.admin.info.dsn, dbname=self.name) as connection:
+            row = connection.execute(
+                "SELECT session_data FROM django_session WHERE session_key = %s", (session_key,)
+            ).fetchone()
+            assert row is not None
+            key, salt = env["AIRWORTHINESS_SECRET_KEY"], SessionStore().key_salt
+            data = signing.loads(row[0], key=key, salt=salt, fallback_keys=[])
+            data[VERIFIED_AT_KEY] = (datetime.now(UTC) - timedelta(minutes=6)).isoformat()
+            encoded = signing.dumps(data, key=key, salt=salt, compress=True)
+            connection.execute(
+                "UPDATE django_session SET session_data = %s WHERE session_key = %s",
+                (encoded, session_key),
+            )
+
+
 @pytest.fixture
-def live_site(seeded_database: Database, tmp_path: Path) -> Iterator[str]:
+def running_site(seeded_database: Database, tmp_path: Path) -> Iterator[RunningSite]:
     database = seeded_database
     name = database.template.replace("_seed", f"_{secrets.token_hex(4)}")
     database.admin.execute(
@@ -164,7 +192,7 @@ def live_site(seeded_database: Database, tmp_path: Path) -> Iterator[str]:
                 deadline = time.monotonic() + 15
                 while server.poll() is None and time.monotonic() < deadline:
                     if ready.is_file() and (address := ready.read_text()):
-                        yield address
+                        yield RunningSite(address, name, database)
                         return
                     time.sleep(0.05)
                 pytest.fail("The loopback application did not start")
@@ -180,6 +208,11 @@ def live_site(seeded_database: Database, tmp_path: Path) -> Iterator[str]:
         database.admin.execute(
             sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name))
         )
+
+
+@pytest.fixture
+def live_site(running_site: RunningSite) -> str:
+    return running_site.address
 
 
 @pytest.fixture(scope="session")

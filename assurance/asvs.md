@@ -185,21 +185,21 @@ The level is not yet met. It is met when every row below is Met or Not Applicabl
 
 | Requirement | Level | Result | Evidence or Reason |
 |---|---|---|---|
-| 7.1.1 | 2 | Met | Decisions.md: 30 minutes without a request, 12 hours whatever happens. NIST SP 800-63B was read on 19 November 2026 for a sign-in with two factors: revision 3 asks for 30 minutes and 12 hours, revision 4 for no more than 1 hour and 24 hours. Ours meet both; there is no deviation to justify |
+| 7.1.1 | 2 | Met | ADR-0005 sets 30 minutes idle, or 60 minutes in a managed-device-only deployment, and 12 hours overall. These are within NIST SP 800-63B-4 AAL2's recommended limits |
 | 7.1.2 | 2 | Met | Decisions.md, Security settings: not limited; a user can end the others |
 | 7.1.3 | 2 | Not Applicable | No federation |
 | 7.2.1 | 1 | Met | Sessions are held in the database and checked on every request |
 | 7.2.2 | 1 | Met | A reference token made at each sign-in |
 | 7.2.3 | 1 | Met | Django session keys: 32 characters of 36, from the operating system's random source |
-| 7.2.4 | 1 | Met | `test_sign_in: the_session_cookie_is_secure_and_changes_at_sign_in` |
-| 7.3.1 | 2 | Met | `test_sign_in: a_session_ends_after_30_minutes_without_a_request` |
+| 7.2.4 | 1 | Met | `test_sign_in: the_session_cookie_is_secure_and_changes_at_sign_in` and `test_passkeys: test_passkey_registration_and_revocation_need_recent_verification` cover session key rotation |
+| 7.3.1 | 2 | Met | `test_sign_in: a_session_ends_after_30_minutes_without_a_request` and `test_passkeys: test_idle_limits_are_server_side` |
 | 7.3.2 | 2 | Met | `test_sign_in: a_session_ends_12_hours_after_sign_in_however_busy` |
 | 7.4.1 | 1 | Met | `test_sign_in: sign_out_ends_the_session_on_the_server` |
 | 7.4.2 | 1 | Met | `test_users: a_user_made_inactive_is_signed_out_and_stays_in_the_record` |
-| 7.4.3 | 2 | Met | A change of password ends the user's other sessions without being asked; a reset of the second factor ends them all |
+| 7.4.3 | 2 | Met | Changing the password or removing a passkey ends other sessions. Resetting the second factor revokes all registered passkeys and ends every session |
 | 7.4.4 | 2 | Met | Sign Out is in the sidebar of every page |
 | 7.4.5 | 2 | Met | End Sessions of a user, on the Users page (`test_security: a_users_sessions_can_all_be_ended`) |
-| 7.5.1 | 2 | Met | A user cannot change their own user name or second factor. A change of password, and an Administrator's new first password or reset of a second factor, need a sign-in within the last 5 minutes or a code (`test_users: a_change_of_password_needs_a_code_unless_just_signed_in, the_administrator_gives_a_code_to_change_how_another_signs_in`) |
+| 7.5.1 | 2 | Met | Passkey changes and account recovery require recent full verification with a passkey or the password and an authenticator code. See ADR-0005, `test_passkeys` and `test_users` |
 | 7.5.2 | 2 | Met | The Change Password page lists the user's live sessions: when each began, when it was last used, where from and in what browser. One is ended, or every other, after a sign-in within the last 5 minutes or a code (`test_users: a_user_sees_their_sessions_and_ends_one, ending_a_session_needs_a_code_unless_just_signed_in`) |
 | 7.6.1 | 2 | Not Applicable | No identity provider |
 | 7.6.2 | 2 | Met | A session is made only by signing in |

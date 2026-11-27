@@ -528,12 +528,13 @@ def test_the_administrator_gives_a_code_to_change_how_another_signs_in(
         assert asked.status_code == 200
         assert f"<h1>{what}</h1>" in asked.content.decode()
         assert "Shown Once" not in asked.content.decode()
-        wrong = post(administrator, address, code="000000")
+        wrong = post(administrator, address, code="000000", verification_password=THIRD)
         assert "Is Not Right" in wrong.content.decode()
         assert ("Sign-In Failed", f"Wrong Code at {at}") in log_of(second)
         assert logged not in [kind for kind, _ in log_of(new_user)]
         clock.advance(seconds=31)
-        done = post(administrator, address, code=code_now(name, clock))
+        done = post(administrator, address, code=code_now(name, clock), verification_password=THIRD)
+        clock.advance(minutes=6)
         assert "Is Not Right" not in done.content.decode()
         assert logged in [kind for kind, _ in log_of(new_user)]
     with as_owner():
@@ -597,8 +598,10 @@ def test_every_change_on_the_users_page_needs_a_code_unless_just_signed_in(
     assert "Sessions Ended" not in [kind for kind, _ in log_of(new_user)]
     # With the code, and what was sent, each is done.
     for path, values, _ in changes:
-        clock.advance(seconds=31)
-        done = post(administrator, path, **values, code=code_now(name, clock))
+        clock.advance(minutes=6)
+        done = post(
+            administrator, path, **values, code=code_now(name, clock), verification_password=THIRD
+        )
         assert "Is Not Right" not in done.content.decode(), path
         assert "Code From Your Authenticator Application" not in done.content.decode(), path
     with as_owner():
@@ -677,16 +680,21 @@ def test_guesses_at_the_code_are_locked_like_guesses_at_sign_in(
     administrator, second, name = stale_administrator(sample, clock)
     path = f"/users/{new_user.id}/second-factor/"
     for _ in range(5):
-        assert "Is Not Right" in post(administrator, path, code="000000").content.decode()
+        assert (
+            "Is Not Right"
+            in post(
+                administrator, path, code="000000", verification_password=THIRD
+            ).content.decode()
+        )
     clock.advance(seconds=31)
-    refused = post(administrator, path, code=code_now(name, clock))
+    refused = post(administrator, path, code=code_now(name, clock), verification_password=THIRD)
     assert refused.status_code == 200
     assert "Is Not Right" in refused.content.decode()
     assert "Sign-In Refused While Locked" in [kind for kind, _ in log_of(second)]
     assert "Second Factor Reset" not in [kind for kind, _ in log_of(new_user)]
     # After the 15 minutes the right code works.
     clock.advance(minutes=16)
-    done = post(administrator, path, code=code_now(name, clock))
+    done = post(administrator, path, code=code_now(name, clock), verification_password=THIRD)
     assert (done.status_code, done["Location"]) == (302, "/users/")
 
 

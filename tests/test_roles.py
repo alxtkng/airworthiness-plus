@@ -226,7 +226,7 @@ def test_every_form_belongs_to_an_address_that_sets_something() -> None:
         "Full Name of a New Person",
         "User Name",
         "Roles",
-        "Code From the Administrator's Authenticator Application",
+        "Password and Authenticator Code",
     )
 
 

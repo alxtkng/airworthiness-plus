@@ -37,6 +37,7 @@ from tests.support import (
     post,
     signed_in,
 )
+from tests.test_passkeys import set_times
 
 pytestmark = pytest.mark.django_db
 D = Decimal
@@ -400,6 +401,12 @@ def test_g_ejkl_certificate_is_extended_within_30_days(
     refused = post(client, path, **partial)
     assert "ML.A.901(c): Every Condition for an Extension Is Confirmed" in refused.content.decode()
 
+    set_times(client)
+    challenge = post(client, path, **CONDITIONS)
+    assert b"Your Current Password" in challenge.content
+    with working_for(sample.ours.id, sample.lucy.id):
+        assert not Extension.objects.filter(certificate=certificate).exists()
+    client = signed_in(sample.lucy)
     assert post(client, path, **CONDITIONS).status_code == 302
     body = page(client, f"/aircraft/{ejkl.id}/review/")
     for text in (
