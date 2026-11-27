@@ -268,6 +268,9 @@ class Review(Record):
     aircraft = models.ForeignKey(Aircraft, on_delete=models.PROTECT, related_name="+")
     staff = models.ForeignKey(ReviewStaff, on_delete=models.PROTECT, related_name="reviews")
     started_on = models.DateField("Started")
+    confirmed_authorisation_scope = models.CharField(
+        "Confirmed Authorisation Scope", max_length=400, blank=True
+    )
     # ML.A.903(b): staff not qualified under Part-66 are assisted at the survey.
     assisted_by = models.CharField("Assisted at the Survey By", max_length=200, blank=True)
     airframe_hours = models.DecimalField(

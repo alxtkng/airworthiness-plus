@@ -24,6 +24,7 @@ from airworthiness_plus.people.models import (
     ExperienceKind,
     ExperienceWithdrawal,
     MaintenanceAuthorisation,
+    MaintenanceAuthorisationWithdrawal,
     Person,
     RecurrentTraining,
     StaffGroup,
@@ -349,14 +350,23 @@ def record_maintenance_authorisation(
         raise RefusedError("Valid To Cannot Be Before Valid From")
     if not reference.strip() or not scope.strip():
         raise RefusedError("Give the Authorisation Reference and Scope")
-    if MaintenanceAuthorisation.objects.filter(
-        person=person, reference=reference.strip(), valid_from=valid_from
-    ).exists():
+    previous = (
+        MaintenanceAuthorisation.objects.filter(
+            person=person,
+            reference=reference.strip(),
+            valid_from=valid_from,
+            replacement__isnull=True,
+        )
+        .select_related("withdrawal")
+        .first()
+    )
+    if previous is not None and previous.withdrawn_on is None:
         raise RefusedError("This Authorisation Is Already Recorded")
     return MaintenanceAuthorisation.objects.create(
         organisation_id=person.organisation_id,
         person=person,
         reference=reference.strip(),
+        supersedes=previous,
         scope=scope.strip(),
         valid_from=valid_from,
         valid_to=valid_to,
@@ -514,9 +524,62 @@ def withdraw_experience_evidence(evidence: ExperienceEvidence, *, reason: str) -
     )
 
 
-def contradicts_known_maintenance_term(person: Person, on: date) -> bool:
-    """Return whether recorded maintenance terms rule out the supplied date."""
-    terms = list(person.maintenance_authorisations.order_by().values_list("valid_from", "valid_to"))
-    return bool(terms) and not any(
-        first <= on and (last is None or on <= last) for first, last in terms
+def check_certification_evidence(
+    *,
+    person: Person | None,
+    on: date,
+    today: date,
+    authorisation: MaintenanceAuthorisation | None,
+    scope_confirmed: bool,
+    legacy_evidence: str,
+) -> None:
+    """Check the authorisation recorded for a certification decision."""
+    if person is None:
+        if authorisation is not None or scope_confirmed or legacy_evidence:
+            raise RefusedError(
+                "Authorisation Evidence Applies to Certifying Staff of the Organisation"
+            )
+        return
+    if legacy_evidence:
+        if authorisation is not None or scope_confirmed:
+            raise RefusedError("Choose Verified Authorisation or Signed Legacy Evidence")
+        if on >= today:
+            raise RefusedError("Signed Legacy Evidence Must Predate Today")
+        return
+    if authorisation is None or not scope_confirmed:
+        raise RefusedError(
+            "Record the Maintenance Authorisation and Confirm Its Scope Covers This Activity"
+        )
+    authorisation = (
+        MaintenanceAuthorisation.objects.select_related("withdrawal")
+        .filter(pk=authorisation.pk)
+        .first()
+    )
+    if (
+        authorisation is None
+        or authorisation.person_id != person.pk
+        or authorisation.organisation_id != person.organisation_id
+    ):
+        raise RefusedError(
+            "The Maintenance Authorisation Must Belong to the Named Certifying Staff"
+        )
+    if authorisation.term_on(on) != "Within Recorded Dates":
+        raise RefusedError("No Recorded Maintenance Authorisation Covers the Activity Date")
+
+
+@transaction.atomic
+def withdraw_maintenance_authorisation(
+    authorisation: MaintenanceAuthorisation, *, withdrawn_from: date, reason: str
+) -> None:
+    """Retain a withdrawal and prevent use of the authorisation from that date."""
+    Person.objects.select_for_update().get(pk=authorisation.person_id)
+    if MaintenanceAuthorisationWithdrawal.objects.filter(authorisation=authorisation).exists():
+        raise RefusedError("This Authorisation Is Already Withdrawn")
+    if not reason.strip():
+        raise RefusedError("Give a Reason for the Withdrawal")
+    MaintenanceAuthorisationWithdrawal.objects.create(
+        organisation_id=authorisation.organisation_id,
+        authorisation=authorisation,
+        withdrawn_from=withdrawn_from,
+        reason=reason.strip(),
     )

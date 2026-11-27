@@ -562,6 +562,14 @@ def test_administrator_records_maintenance_authorisation(
         expect(reveal(evidence)).to_contain_text("Wrong employment dates")
         page.get_by_role("link", name="Recency", exact=True).click()
         expect(assessed).to_contain_text("Further Evidence Needed")
+        assessed.get_by_role("link", name="TEST-CA-42").click()
+        save(
+            page,
+            "Withdraw Authorisation",
+            {"withdrawn_from": "2026-11-18", "reason": "Authorisation superseded"},
+            "Authorisation superseded",
+        )
+        expect(page.locator("main")).to_contain_text("Withdrawn From")
 
 
 def test_administrator_records_recurrent_training(
@@ -738,3 +746,72 @@ def test_configuration_position_is_saved_before_baseline(
         expect(row).to_contain_text("TEST-12")
         expect(row).to_contain_text("Test inspection")
         expect(page.get_by_role("button", name="Sign Configuration Baseline")).to_have_count(0)
+
+
+def test_certifying_staff_evidence_is_retained_with_release_and_deferral(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    admin, _, _, planner, _ = personas["your-organisation"]
+    scope = "G-ABCD Airframe, Inspection and Deferral"
+    with signed_in(chromium, live_site, admin) as page:
+        page.goto("/staff/")
+        page.get_by_role("link", name="Sam Patel", exact=True).click()
+        page.get_by_role("link", name="Record Maintenance Authorisation").click()
+        save(
+            page,
+            "Save Authorisation",
+            {"reference": "TEST-CA-81", "scope": scope, "valid_from": "2026-11-01"},
+            "TEST-CA-81",
+        )
+    evidence = {
+        "maintenance_authorisation": f"Sam Patel, TEST-CA-81, {scope}, From 1 November 2026",
+        "scope_confirmed": "on",
+    }
+    with signed_in(chromium, live_site, planner) as page:
+        page.goto("/defects/")
+        page.get_by_role("link", name="Record a Defect", exact=True).click()
+        save(
+            page,
+            "Record Defect",
+            {
+                **evidence,
+                "aircraft": "G-ABCD",
+                "title": "Test certified light deferral",
+                "found_on": "2026-11-18",
+                "chapter": "33",
+                "system": "Lights",
+                "decision": "Deferred",
+                "basis": "Certifying Staff",
+                "decided_on": "2026-11-18",
+                "decided_by": "Sam Patel",
+            },
+            "Test certified light deferral",
+        )
+        assert definition(page, "Certification Evidence") == "TEST-CA-81, Scope Confirmed"
+
+        choose_aircraft(page, "G-ABCD", "Maintenance Programme")
+        page.get_by_role("link", name="Record Work Done", exact=True).click()
+        work = "Inspection covered by TEST-CA-81"
+        save(
+            page,
+            "Record Work",
+            {"description": work, "dated": "2026-11-18", "hours": "6412.6", "cycles": "0"},
+            work,
+        )
+        row = page.locator("main tr:not(.detail)").filter(has_text=work)
+        reveal(row).get_by_role("link", name="Record Certificate of Release to Service").click()
+        save(
+            page,
+            "Record Certificate",
+            {
+                **evidence,
+                "reference": "TEST-RELEASE-81",
+                "kind": "Organisation Certifying Staff",
+                "issued_by": "Sam Patel",
+                "issued_on": "2026-11-18",
+            },
+            "Sam Patel",
+        )
+        page.goto("/release-to-service/")
+        expect(reveal(row)).to_contain_text("TEST-CA-81, Scope Confirmed")
+        expect(page.locator("main")).to_contain_text("Unverified Historical Evidence")

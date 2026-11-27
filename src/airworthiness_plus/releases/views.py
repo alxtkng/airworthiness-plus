@@ -19,6 +19,7 @@ from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases import services
 from airworthiness_plus.releases.forms import CertificateForm
+from airworthiness_plus.releases.models import Release
 
 
 def _user(request: HttpRequest) -> User:
@@ -42,6 +43,16 @@ def release_to_service(request: HttpRequest) -> HttpResponse:
             "may_record": _user(request).may(Action.RECORD_RELEASE_CERTIFICATE),
         },
     )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def release_certificate(request: HttpRequest, release_id: uuid.UUID) -> HttpResponse:
+    """Show the retained release and any certification evidence (REQ-302)."""
+    certificate = get_object_or_404(
+        Release.objects.select_related("work", "maintenance_authorisation"), pk=release_id
+    )
+    return render(request, "releases/certificate.html", {"certificate": certificate})
 
 
 @never_cache

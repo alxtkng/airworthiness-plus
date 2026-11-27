@@ -7,6 +7,7 @@
 <p>{{ authorisation.person.full_name }}, {{ authorisation.reference }}</p>
 <dl>
 <dt>Scope and Limitations</dt><dd>{{ authorisation.scope }}</dd>
+{% if authorisation.withdrawal %}<dt>Withdrawn From</dt><dd>{{ authorisation.withdrawn_on|long_date }}, {{ authorisation.withdrawal.reason }}</dd>{% endif %}
 <dt>Assessment Window</dt><dd>{{ start|long_date }} to Before {{ assessment_on|long_date }}</dd>
 <dt>Days Credited</dt><dd>{{ result.days }}, Including {{ result.substitute_days }} Substitute Days</dd>
 <dt>Complete Months</dt><dd>{{ result.full_months }}</dd>
@@ -36,6 +37,14 @@
 {% csrf_token %}
 {{ form.as_p }}
 <button type="submit">Save Evidence</button>
+</form>
+{% endif %}
+{% if authorisation_form and not authorisation.withdrawal %}
+<h2>Withdraw Authorisation</h2>
+<form method="post" action="{% url 'withdraw_maintenance_authorisation' authorisation.id %}">
+{% csrf_token %}
+{{ authorisation_form.as_p }}
+<button type="submit">Withdraw Authorisation</button>
 </form>
 {% endif %}
 {% endblock %}

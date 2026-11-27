@@ -20,7 +20,7 @@ from airworthiness_plus.defects.models import Decision, Defect
 from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import ApprovalType, Organisation, Privilege
 from airworthiness_plus.people import services as people_services
-from airworthiness_plus.people.models import Person, StaffGroup
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import WorkDone
@@ -67,6 +67,9 @@ def record_certificate(
     incomplete: bool = False,
     limitations: str = "",
     recorded_on: date | None = None,
+    maintenance_authorisation: MaintenanceAuthorisation | None = None,
+    scope_confirmed: bool = False,
+    legacy_evidence: str = "",
 ) -> Release:
     """Record the certificate of release to service for work done (REQ-260 to REQ-263).
 
@@ -124,8 +127,6 @@ def record_certificate(
             raise RefusedError("The Person Named Had Left by the Day of Issue")
         if issuer_name or licence:
             raise RefusedError("The Name and Licence of Certifying Staff Come From Their Record")
-        if people_services.contradicts_known_maintenance_term(issued_by, issued_on):
-            raise RefusedError("No Recorded Maintenance Authorisation Covers the Issue Date")
     else:
         if issued_by is not None:
             raise RefusedError(
@@ -135,6 +136,18 @@ def record_certificate(
             raise RefusedError("A Certificate Names Who Issued It, ML.A.801(e)(3)")
         if kind == IssuedBy.PILOT_OWNER and not licence:
             raise RefusedError("A Pilot-Owner Gives the Pilot Licence Number, ML.A.803(d)")
+    legacy_evidence = legacy_evidence.strip()
+    try:
+        people_services.check_certification_evidence(
+            person=issued_by if kind == IssuedBy.ORGANISATION else None,
+            on=issued_on,
+            today=today,
+            authorisation=maintenance_authorisation,
+            scope_confirmed=scope_confirmed,
+            legacy_evidence=legacy_evidence,
+        )
+    except people_services.RefusedError as error:
+        raise RefusedError(str(error)) from error
     if incomplete and not limitations:
         raise RefusedError(
             "Incomplete Maintenance Is Released With Its Limitations Stated, ML.A.801(f)"
@@ -157,6 +170,9 @@ def record_certificate(
         reference=reference,
         kind=kind,
         issued_by=issued_by,
+        maintenance_authorisation=maintenance_authorisation,
+        scope_confirmed=scope_confirmed,
+        legacy_evidence=legacy_evidence,
         issuer_name=issuer_name,
         licence=licence,
         issued_on=issued_on,
@@ -230,7 +246,8 @@ def release_lines(today: date) -> list[ReleaseLine]:
     then the work completed in the last 30 days, the latest first.
     """
     certificates = {
-        release.work_id: release for release in Release.objects.select_related("issued_by")
+        release.work_id: release
+        for release in Release.objects.select_related("issued_by", "maintenance_authorisation")
     }
     lines = []
     for aircraft in Aircraft.objects.all():

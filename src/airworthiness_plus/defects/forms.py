@@ -7,12 +7,13 @@ from django import forms
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.defects.models import Basis, Decision
 from airworthiness_plus.interface.forms import Form
+from airworthiness_plus.people.forms import CertificationEvidenceForm
 from airworthiness_plus.people.models import Person, StaffGroup
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_rules.defects import FIRST_CHAPTER, LAST_CHAPTER
 
 
-class DefectForm(Form):
+class DefectForm(CertificationEvidenceForm, Form):
     """Record a defect and what was decided of it (ML.A.403)."""
 
     aircraft = forms.ModelChoiceField(

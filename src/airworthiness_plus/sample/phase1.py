@@ -128,6 +128,9 @@ def add_defects(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> lis
                     basis=basis,
                     decided_on=decided_on,
                     decided_by=_certifying(staff) if staff else None,
+                    legacy_evidence="[Signed Defect Record]"
+                    if basis == Basis.CERTIFYING_STAFF
+                    else "",
                     rectification=rectification,
                     closed_on=closed_on,
                     work_done=work,
@@ -221,6 +224,7 @@ def add_releases(ours: Organisation, by: User, fleet: dict[str, Aircraft]) -> li
                     issued_by=chris,
                     issued_on=date(2026, 11, 4),
                     recorded_on=date(2026, 11, 5),
+                    legacy_evidence=CDEF_REFERENCE,
                 )
             )
     return added

@@ -4,8 +4,15 @@ from typing import Any
 
 from django import forms
 
+from airworthiness_plus.interface.formatting import long_date
 from airworthiness_plus.interface.forms import Form
-from airworthiness_plus.people.models import Employment, ExperienceKind, Person, StaffGroup
+from airworthiness_plus.people.models import (
+    Employment,
+    ExperienceKind,
+    MaintenanceAuthorisation,
+    Person,
+    StaffGroup,
+)
 
 
 class PersonForm(Form):
@@ -86,4 +93,45 @@ class ExperienceEvidenceForm(Form):
 
 
 class ExperienceWithdrawalForm(Form):
+    reason = forms.CharField(label="Reason", max_length=400)
+
+
+class MaintenanceAuthorisationChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
+    def label_from_instance(self, obj: MaintenanceAuthorisation) -> str:
+        label = f"{obj.person.full_name}, {obj.reference}, {obj.scope}"
+        label += f", From {long_date(obj.valid_from)}"
+        if obj.valid_to is not None:
+            label += f" to {long_date(obj.valid_to)}"
+        if obj.withdrawn_on is not None:
+            label += f", Withdrawn From {long_date(obj.withdrawn_on)}"
+        return label
+
+
+class CertificationEvidenceForm(forms.Form):
+    """Evidence for an externally signed release or defect deferral."""
+
+    maintenance_authorisation = MaintenanceAuthorisationChoice(
+        label="Maintenance Authorisation",
+        queryset=MaintenanceAuthorisation.objects.none(),
+        required=False,
+    )
+    scope_confirmed = forms.BooleanField(
+        label="Confirm the Authorisation Covers This Aircraft and Activity", required=False
+    )
+    legacy_evidence = forms.CharField(
+        label="Signed Legacy Evidence Reference",
+        help_text="Give the signed record reference if its authorisation evidence is unavailable.",
+        required=False,
+        max_length=160,
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["maintenance_authorisation"].queryset = (  # type: ignore[attr-defined]
+            MaintenanceAuthorisation.objects.select_related("person", "withdrawal")
+        )
+
+
+class MaintenanceAuthorisationWithdrawalForm(Form):
+    withdrawn_from = forms.DateField(label="Withdrawn From")
     reason = forms.CharField(label="Reason", max_length=400)

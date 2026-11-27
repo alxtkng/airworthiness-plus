@@ -1039,11 +1039,32 @@ def test_review_authorisation_records_scope_and_refuses_issue_after_its_end(
     )
     with working_for(sample.ours.id, sample.lucy.id):
         assert services.may_issue(ReviewStaff.objects.get(pk=reviews.lucy.pk), day.today)
+        with pytest.raises(services.RefusedError, match="Confirm the Review Authorisation"):
+            services.start_review(fleet["G-EJKL"], staff=reviews.lucy)
+        draft = services.start_review(fleet["G-EJKL"], staff=reviews.lucy, scope_confirmed=True)
+        assert draft.confirmed_authorisation_scope == "Part-ML aeroplanes under the CAE"
         issued = services.issue_certificate(
             fleet["G-EJKL"], staff=reviews.lucy, issued_on=day.today
         )
         assert issued.review_staff_scope == "Part-ML aeroplanes under the CAE"
         assert issued.review_staff_valid_to == day.today
         day.today = date(2026, 11, 19)
+        with pytest.raises(services.RefusedError, match="Does Not Cover the Review Start Date"):
+            services.start_review(fleet["G-EJKL"], staff=reviews.lucy)
         with pytest.raises(services.RefusedError, match="Review Authorisation Ended"):
             services.issue_certificate(fleet["G-EJKL"], staff=reviews.lucy, issued_on=day.today)
+
+
+def test_management_experience_snapshot_ages_out_of_review_recency(
+    sample: Sample,
+    reviews: SampleReviews,
+    day: Day,
+) -> None:
+    day.today = date(2027, 12, 3)
+    with working_for(sample.ours.id, sample.administrator.id):
+        ReviewStaff.objects.filter(pk=reviews.reviewer.pk).update(
+            months_involved=6, months_recorded_on=date(2025, 12, 3)
+        )
+        reviews.reviewer.refresh_from_db()
+        assert not services.may_issue(reviews.reviewer, day.today)
+        assert services.staff_line(reviews.reviewer, day.today).months_usable == 0

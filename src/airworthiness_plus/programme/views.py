@@ -76,6 +76,7 @@ def programme_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse
             "work": due.work_lines(aircraft, today),
             "today": today,
             "may_record_work": user.may(Action.RECORD_ACCOMPLISHMENT),
+            "may_record_release": user.may(Action.RECORD_RELEASE_CERTIFICATE),
             "may_change": user.may(Action.CHANGE_MAINTENANCE_PROGRAMME),
             **_review_parts(request, programme),
         },

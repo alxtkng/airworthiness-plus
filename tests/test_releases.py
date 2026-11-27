@@ -318,7 +318,15 @@ def test_who_issues_a_certificate_for_the_organisation(
     left = post(lucy, path, **staff, issued_by=str(sam.id))
     assert "Had Left by the Day of Issue" in left.content.decode()
     chris = person(sample, "Chris Moore")
-    assert post(lucy, path, **staff, issued_by=str(chris.id)).status_code == 302
+    assert (
+        post(
+            lucy, path, **staff, issued_by=str(chris.id), legacy_evidence="[Signed Certificate]"
+        ).status_code
+        == 302
+    )
+    assert "Unverified Historical Evidence, [Signed Certificate]" in page(
+        signed_in(sample.reader), "/release-to-service/"
+    )
     # An independent certificate may have no licence number: ML.A.801(e)(3), if applicable.
     other = work_on(sample, fleet["G-EJKL"], description="[Other Work]")
     assert record(sample, other).identity_text == ""
@@ -435,6 +443,7 @@ def test_a_certificate_keeps_what_it_said_and_is_never_changed(
             registration="G-FAKE",
             maintenance="[Other Work]",
             completed_on=date(2020, 1, 1),
+            legacy_evidence="[Original Signed Release]",
         )
         made.refresh_from_db()
         assert (made.issuer_name, made.licence, made.approval_reference) == (
@@ -620,20 +629,48 @@ def test_the_dashboard_links_a_release_not_yet_in_the_records_to_this_page(
     assert row not in page(reader, "/dashboard/")
 
 
-def test_cannot_record_staff_release_outside_their_known_authorisation_dates(
+def test_new_staff_release_needs_in_force_authorisation_and_confirmation(
     sample: Sample, fleet: dict[str, Aircraft]
 ) -> None:
     certifier = person(sample, "Sam Patel")
-    work = work_on(sample, fleet["G-EJKL"])
+    work = work_on(sample, fleet["G-EJKL"], dated=TODAY)
     with working_for(sample.ours.id, sample.administrator.id):
-        granter = dict(person=certifier, scope="Part-ML aircraft", valid_from=date(2026, 1, 1))
-        people_services.record_maintenance_authorisation(
-            **granter, reference="TEST-OLD", valid_to=date(2026, 11, 9)
+        old = people_services.record_maintenance_authorisation(
+            certifier,
+            scope="Part-ML aircraft",
+            valid_from=date(2026, 1, 1),
+            reference="TEST-OLD",
+            valid_to=date(2026, 11, 17),
+        )
+        current = people_services.record_maintenance_authorisation(
+            certifier,
+            scope="Part-ML aircraft",
+            valid_from=date(2026, 1, 1),
+            reference="TEST-NEW",
+            valid_to=TODAY,
+        )
+    details = dict(kind=IssuedBy.ORGANISATION, issuer_name="", issued_by=certifier)
+    with pytest.raises(services.RefusedError, match="Record the Maintenance Authorisation"):
+        record(sample, work, **details)
+    with pytest.raises(services.RefusedError, match="Signed Legacy Evidence Must Predate Today"):
+        record(sample, work, **details, legacy_evidence="Today's signed release")
+    with pytest.raises(services.RefusedError, match="No Recorded Maintenance Authorisation Covers"):
+        record(sample, work, **details, maintenance_authorisation=old, scope_confirmed=True)
+    verified = record(
+        sample, work, **details, maintenance_authorisation=current, scope_confirmed=True
+    )
+    assert verified.maintenance_authorisation_id == current.pk and verified.scope_confirmed
+    later_work = work_on(sample, fleet["G-EJKL"], dated=TODAY, description="A second inspection")
+    with working_for(sample.ours.id, sample.administrator.id):
+        people_services.withdraw_maintenance_authorisation(
+            current, withdrawn_from=TODAY, reason="Grant entered in error"
         )
     with pytest.raises(services.RefusedError, match="No Recorded Maintenance Authorisation Covers"):
-        record(sample, work, kind=IssuedBy.ORGANISATION, issuer_name="", issued_by=certifier)
-    with working_for(sample.ours.id, sample.administrator.id):
-        people_services.record_maintenance_authorisation(
-            **granter, reference="TEST-NEW", valid_to=work.dated
+        record(
+            sample, later_work, **details, maintenance_authorisation=current, scope_confirmed=True
         )
-    assert record(sample, work, kind=IssuedBy.ORGANISATION, issuer_name="", issued_by=certifier)
+    review = signed_in(sample.reader)
+    evidence = page(review, f"/release-to-service/certificates/{verified.pk}/")
+    assert "TEST-NEW, Scope Confirmed" in evidence
+    programme = page(review, f"/aircraft/{work.aircraft_id}/programme/")
+    assert f"/release-to-service/certificates/{verified.pk}/" in programme

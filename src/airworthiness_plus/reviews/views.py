@@ -39,6 +39,7 @@ from airworthiness_plus.reviews.forms import (
     RestorationForm,
     ReviewAuthorisationForm,
     ReviewStaffForm,
+    ReviewStartForm,
     VoidForm,
 )
 from airworthiness_plus.reviews.models import (
@@ -99,6 +100,12 @@ def _aircraft_page(
 ) -> HttpResponse:
     today = aircraft_services.today()
     line = services.schedule_line(aircraft, today)
+    user = _user(request)
+    start_staff = (
+        ReviewStaff.objects.filter(user=user, left_on__isnull=True).first()
+        if user.may(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
+        else None
+    )
     return render(
         request,
         "reviews/aircraft.html",
@@ -112,6 +119,8 @@ def _aircraft_page(
             ],
             "reviews": Review.objects.filter(aircraft=aircraft).select_related("staff__user"),
             "certificate_form": form,
+            "start_scope": start_staff.authorisation_scope if start_staff else "",
+            "start_form": ReviewStartForm(),
             "extension_form": ExtensionForm(),
             "copy_form": CopySentForm(),
             "message": message,
@@ -246,10 +255,14 @@ def recency_page(request: HttpRequest) -> HttpResponse:
     review_staff = ReviewStaff.objects.filter(left_on__isnull=True).select_related(
         "user", "organisation"
     )
-    certifying_people = Person.objects.filter(
-        Q(staff_group=StaffGroup.CERTIFYING) | Q(maintenance_authorisations__isnull=False),
-        left_on__isnull=True,
-    ).distinct()
+    certifying_people = (
+        Person.objects.filter(
+            Q(staff_group=StaffGroup.CERTIFYING) | Q(maintenance_authorisations__isnull=False),
+            left_on__isnull=True,
+        )
+        .distinct()
+        .prefetch_related("maintenance_authorisations")
+    )
     within_employment = Q(performed_by__joined_on__isnull=True) | Q(
         dated__gte=F("performed_by__joined_on")
     )
@@ -265,7 +278,7 @@ def recency_page(request: HttpRequest) -> HttpResponse:
     }
     authorisations = (
         MaintenanceAuthorisation.objects.filter(person__in=certifying_people)
-        .select_related("person")
+        .select_related("person", "withdrawal")
         .prefetch_related("experience_evidence__withdrawal")
     )
     assessments = []
@@ -416,8 +429,14 @@ def start_review(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     staff = ReviewStaff.objects.filter(user=_user(request), left_on__isnull=True).first()
     if staff is None:
         raise ActionRefusedError(Action.CARRY_OUT_AIRWORTHINESS_REVIEW)
-    review = services.start_review(aircraft, staff=staff)
-    return redirect("review", review_id=review.id)
+    form = ReviewStartForm(request.POST)
+    if form.is_valid():
+        try:
+            review = services.start_review(aircraft, staff=staff, **form.cleaned_data)
+        except services.RefusedError as error:
+            return _aircraft_page(request, aircraft, CertificateForm(), str(error))
+        return redirect("review", review_id=review.id)
+    return _aircraft_page(request, aircraft, CertificateForm(), "Confirm the Review Scope")
 
 
 @never_cache

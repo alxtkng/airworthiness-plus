@@ -113,6 +113,9 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             licence_subcategory="",
         )
         people_services.withdraw_experience_evidence(evidence, reason="Sample correction")
+        people_services.withdraw_maintenance_authorisation(
+            authorisation, withdrawn_from=TODAY, reason="Sample withdrawal"
+        )
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     reviews = add_sample_reviews(sample, fleet)

@@ -603,7 +603,7 @@ def test_g_abcd_release_to_service_deadline_is_shown_and_flagged(
     )
     assert released.status_code == 302
     body = page(client, path)
-    assert "[Release Reference 3], Recorded 25 November 2026, After the 30 Days" in body
+    assert "[Release Reference 3]</a>, Recorded 25 November 2026, After the 30 Days" in body
     assert "Pilot-Owner Maintenance, Organisation Told 25 November 2026, After the 30 Days" in body
     assert "To Be Recorded by" not in body
 

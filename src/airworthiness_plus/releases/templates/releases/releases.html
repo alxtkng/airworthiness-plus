@@ -9,7 +9,7 @@
 {% if lines %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Maintenance</th><th>Issued By</th><th>Completed</th><th>In Records</th><th>Status</th><th>Limitations</th><th data-detail>Approval Reference or Licence</th><th data-detail>Certificate Reference</th><th data-detail>Issued</th><th data-detail>Organisation Told</th><th data-detail>How It Was Calculated</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+<tr><th>Aircraft Registration</th><th>Maintenance</th><th>Issued By</th><th>Completed</th><th>In Records</th><th>Status</th><th>Limitations</th><th data-detail>Approval Reference or Licence</th><th data-detail>Certificate Reference</th><th data-detail>Issued</th><th data-detail>Organisation Told</th><th data-detail>How It Was Calculated</th>{% if may_record %}<th data-detail>Record</th>{% endif %}<th data-detail>Certification Evidence</th></tr>
 </thead>
 <tbody>
 {% for one in lines %}
@@ -22,11 +22,12 @@
 <td>{{ one.status|status }}</td>
 <td>{% if one.certificate %}{{ one.certificate.limitations_text }}{% endif %}</td>
 <td>{{ one.certificate.identity_text }}</td>
-<td>{% if one.certificate %}{{ one.certificate.reference }}{% else %}{{ one.work.release_reference }}{% endif %}</td>
+<td>{% if one.certificate %}<a href="{% url 'release_certificate' one.certificate.id %}">{{ one.certificate.reference }}</a>{% else %}{{ one.work.release_reference }}{% endif %}</td>
 <td>{{ one.certificate.issued_on|long_date }}</td>
 <td>{{ one.work.pilot_owner_told_on|long_date }}</td>
 <td>{% for item in one.line.workings %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}</td>
 {% if may_record %}<td>{% if not one.certificate %}<a href="{% url 'record_release_certificate' one.work.id %}">Record the Certificate, {{ one.work.aircraft.registration }}, {{ one.work.description }}</a>{% endif %}</td>{% endif %}
+<td>{% if one.certificate.kind == "Organisation Certifying Staff" %}{% if one.certificate.maintenance_authorisation %}{{ one.certificate.maintenance_authorisation.reference }}, Scope Confirmed{% else %}Unverified Historical Evidence{% if one.certificate.legacy_evidence %}, {{ one.certificate.legacy_evidence }}{% endif %}{% endif %}{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>
