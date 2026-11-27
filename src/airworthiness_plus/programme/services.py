@@ -236,19 +236,30 @@ def record_work(
     )
 
 
+@transaction.atomic
 def record_release(work: WorkDone, reference: str, recorded_on: date | None = None) -> None:
     """Record that the certificate of release to service is in the records (REQ-051)."""
     if not reference:
         raise RefusedError("A Release Has a Reference")
+    saved = WorkDone.objects.select_for_update().get(pk=work.pk)
+    if saved.release_reference:
+        raise RefusedError("A Release Is Already Recorded for This Work")
+    recorded_on = recorded_on or aircraft_services.today()
+    if not saved.dated <= recorded_on <= aircraft_services.today():
+        raise RefusedError("A Release Is Entered Between the Day of the Work and Today")
     work.release_reference = reference
-    work.release_recorded_on = recorded_on or aircraft_services.today()
+    work.release_recorded_on = recorded_on
     work.save(update_fields=["release_reference", "release_recorded_on"])
 
 
+@transaction.atomic
 def record_review(programme: Programme, reviewed_on: date) -> None:
     """Record the annual review of the programme, ML.A.302(c)(9) (REQ-053)."""
     if reviewed_on > aircraft_services.today():
         raise RefusedError("A Review Cannot Be Dated After Today")
+    latest = Programme.objects.select_for_update().get(pk=programme.pk).last_reviewed
+    if latest is not None and reviewed_on < latest:
+        raise RefusedError("A Review Is Not Dated Before the Last Review Recorded")
     programme.last_reviewed = reviewed_on
     programme.save(update_fields=["last_reviewed"])
 

@@ -365,6 +365,40 @@ def test_an_aircraft_is_not_moved_to_the_fleet_with_an_item_still_open(
             services.start_transfer(Aircraft.objects.get(pk=hklm.pk))
 
 
+def test_transfer_requires_the_management_contract_to_still_be_in_force(
+    sample: Sample, hklm: Aircraft
+) -> None:
+    from airworthiness_plus.contracts import services as contract_services
+    from airworthiness_plus.contracts.models import EndReason
+
+    close_every_open_item(sample, hklm)
+    with working_for(sample.ours.id, sample.lucy.id):
+        aircraft = Aircraft.objects.get(pk=hklm.pk)
+        services.sign_baseline(aircraft, by=sample.lucy)
+        programme_services.set_up_programme(
+            aircraft, basis=Basis.INSTRUCTIONS, reference="[Reference]"
+        )
+        aircraft_services.record_received(aircraft, 18)
+        for number in range(5, 11):
+            services.set_item(item(sample, hklm, number), state=ItemState.COMPLETE)
+        contract = contract_services.in_force_on(aircraft, TODAY)
+        assert contract is not None
+        contract_services.end_contract(
+            contract, ended_on=date(2026, 11, 17), end_reason=EndReason.OTHER
+        )
+
+    response = post(
+        signed_in(sample.lucy),
+        f"/aircraft/{hklm.id}/records-received/",
+        received="18",
+        complete="Yes",
+    )
+    assert response.status_code == 409
+    assert "Management Contract, No Contract in Force" in response.content.decode()
+    with working_for(sample.ours.id, sample.lucy.id):
+        assert Aircraft.objects.get(pk=hklm.pk).stage == Stage.TRANSFER_IN
+
+
 def test_a_checklist_is_started_once_and_an_aircraft_without_one_moves_as_before(
     sample: Sample, fleet: dict[str, Aircraft]
 ) -> None:
@@ -532,6 +566,38 @@ def test_a_baseline_is_not_signed_with_items_still_open(
         with pytest.raises(services.RefusedError, match="No Component Recorded"):
             services.sign_baseline(Aircraft.objects.get(pk=hklm.pk), by=sample.lucy)
         assert Baseline.objects.count() == 0
+
+
+def test_a_baseline_requires_a_component_for_untracked_major_positions(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    with working_for(sample.ours.id, sample.lucy.id):
+        aircraft = fleet["G-ABCD"]
+        services.add_position(
+            aircraft, product=Product.ENGINE, chapter=72, name="Engine", major=True
+        )
+        with pytest.raises(services.RefusedError, match="Engine, No Component Recorded"):
+            services.sign_baseline(aircraft, by=sample.lucy)
+
+
+def test_a_removed_propeller_cannot_be_signed_as_fitted(sample: Sample, hklm: Aircraft) -> None:
+    close_every_open_item(sample, hklm)
+    with working_for(sample.ours.id, sample.lucy.id):
+        propeller = position(sample, hklm, "Propeller, Fixed Pitch").component
+        assert propeller is not None
+        fitting = component_services.current_installation(propeller)
+        assert fitting is not None
+        component_services.remove_component(
+            fitting,
+            removed_on=TODAY,
+            airframe_hours_removed=D("3410.0"),
+            removal_reason="Removed for Maintenance",
+        )
+        with pytest.raises(services.RefusedError, match="Component No Longer Fitted"):
+            services.sign_baseline(hklm, by=sample.lucy)
+    assert "Component No Longer Fitted" in page(
+        signed_in(sample.reader), f"/aircraft/{hklm.id}/configuration/"
+    )
 
 
 def test_a_signed_baseline_keeps_what_it_showed(sample: Sample, hklm: Aircraft) -> None:

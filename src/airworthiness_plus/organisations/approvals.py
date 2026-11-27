@@ -41,6 +41,23 @@ def types_held(organisation: Organisation) -> set[str]:
     return {one.approval for one in held(organisation)}
 
 
+def may_act_on(
+    organisation: Organisation, day: date, approval_type: ApprovalType, cao_privilege: Privilege
+) -> bool:
+    """Check whether a recorded approval and privilege cover an action on the given day."""
+    return any(
+        approval.held_on(day)
+        and (
+            approval.approval == approval_type
+            or (
+                approval.approval == ApprovalType.PART_CAO
+                and cao_privilege in organisation.privileges
+            )
+        )
+        for approval in every(organisation)
+    )
+
+
 # Why an organisation is not offered airworthiness review. CAO.A.095(c) gives
 # the privilege to a Part-CAO whose approval includes it.
 REVIEW_NOT_OPEN = (

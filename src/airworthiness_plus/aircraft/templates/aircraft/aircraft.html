@@ -14,18 +14,19 @@
 <dt>Owned By</dt><dd>{{ aircraft.owner }}</dd>
 <dt>Customer</dt><dd><a href="{% url 'customer' aircraft.customer.id %}">{{ aircraft.customer.name }}</a></dd>
 <dt>Regime</dt><dd>{{ aircraft.regime }}</dd>
-<dt>Status</dt><dd>{{ aircraft.status|status }}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
+<dt>Status</dt><dd>{% if aircraft.status == "Serviceable" %}{{ aircraft.status }}{% else %}{{ aircraft.status|status }}{% endif %}{% if aircraft.unserviceable_reason %}, {{ aircraft.unserviceable_reason }}, Since {{ aircraft.unserviceable_since|long_date }}{% endif %}</dd>
 {% if aircraft.stage == "Transfer In" %}<dt>Transfer In</dt><dd>Records {{ aircraft.records_received }} of {{ aircraft.records_expected }} Received</dd>{% endif %}
 </dl>
 {% if aircraft.regime == "Non-Part 21" %}<p>Calculations Not Yet Supported for Non-Part 21 Aircraft</p>{% endif %}
 {% if aircraft.stage == "Transfer In" %}<p>No Due Items Until Records Are Complete</p>{% endif %}
-<p>
-<a href="{% url 'enter_utilisation' aircraft.id %}">Enter Hours and Cycles</a>
+{% if may_enter_utilisation or may_change_aircraft %}<p>
+{% if may_enter_utilisation %}<a href="{% url 'enter_utilisation' aircraft.id %}">Enter Hours and Cycles</a>{% endif %}
+{% if may_change_aircraft %}
 <a href="{% url 'add_counter' aircraft.id %}">Add an Engine or Propeller</a>
-{% if aircraft.status == "Serviceable" %}<a href="{% url 'make_unserviceable' aircraft.id %}">Record as Unserviceable</a>{% endif %}
-</p>
+{% if aircraft.status == "Serviceable" %}<a href="{% url 'make_unserviceable' aircraft.id %}">Record as Unserviceable</a>{% endif %}{% endif %}
+</p>{% endif %}
 {% if problem %}<p role="alert">{{ problem }}</p>{% endif %}
-{% if aircraft.status == "Unserviceable" %}
+{% if may_change_aircraft and aircraft.status == "Unserviceable" %}
 <form method="post" action="{% url 'make_serviceable' aircraft.id %}">
 {% csrf_token %}
 <button type="submit">Record as Serviceable</button>
@@ -51,7 +52,7 @@
 {% else %}
 <p>No Open Defects</p>
 {% endif %}
-<h2>Details of {{ aircraft.registration }}</h2>
+{% if may_change_aircraft %}<h2>Details of {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'aircraft_details' aircraft.id %}">
 {% csrf_token %}
 {% for field in details_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>
@@ -60,9 +61,11 @@
 <h2>Owner of {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'change_owner' aircraft.id %}">
 {% csrf_token %}
+{% if owner_form.non_field_errors %}<p role="alert">{{ owner_form.non_field_errors|join:", " }}</p>{% endif %}
 {% for field in owner_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Save the Owner of {{ aircraft.registration }}</button></p>
 </form>
+{% endif %}
 {% for counter, current, entries in counters %}
 <h2>{{ counter }}</h2>
 <dl>

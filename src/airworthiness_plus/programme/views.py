@@ -26,7 +26,6 @@ from airworthiness_plus.programme.forms import (
     DepartureDateForm,
     DepartureForm,
     ProgrammeForm,
-    ReleaseForm,
     ReviewForm,
     TaskForm,
     WorkForm,
@@ -64,6 +63,8 @@ def programme_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse
         if programme
         else None
     )
+    user = request.user
+    assert isinstance(user, User)  # noqa: S101  guaranteed by ``requires``
     return render(
         request,
         "programme/programme.html",
@@ -74,6 +75,8 @@ def programme_page(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse
             "review": review,
             "work": due.work_lines(aircraft, today),
             "today": today,
+            "may_record_work": user.may(Action.RECORD_ACCOMPLISHMENT),
+            "may_change": user.may(Action.CHANGE_MAINTENANCE_PROGRAMME),
             **_review_parts(request, programme),
         },
     )
@@ -100,7 +103,6 @@ def _review_parts(request: HttpRequest, programme: Programme | None) -> dict[str
         "completed_reviews": AnnualReview.objects.filter(
             programme=programme, completed_on__isnull=False
         ).order_by("-completed_on"),
-        "may_change": user.may(Action.CHANGE_MAINTENANCE_PROGRAMME),
         "may_review": user.may(Action.RECORD_MAINTENANCE_PROGRAMME_REVIEW),
     }
 
@@ -212,11 +214,12 @@ def record_review(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
     aircraft = get_object_or_404(Aircraft, pk=aircraft_id)
     programme = get_object_or_404(Programme, aircraft=aircraft)
     form = ReviewForm(request.POST)
-    if form.is_valid():
-        try:
-            services.record_review(programme, form.cleaned_data["reviewed_on"])
-        except services.RefusedError:
-            pass
+    if not form.is_valid():
+        return _refused(request, aircraft, "Give the Day the Programme Was Reviewed")
+    try:
+        services.record_review(programme, form.cleaned_data["reviewed_on"])
+    except services.RefusedError as error:
+        return _refused(request, aircraft, str(error))
     return redirect("programme", aircraft_id=aircraft.id)
 
 
@@ -237,8 +240,6 @@ def record_work(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
                 dated=data["dated"],
                 hours=data["hours"],
                 cycles=data["cycles"],
-                release_reference=data["release_reference"],
-                release_recorded_on=data["release_recorded_on"],
                 by_pilot_owner=data["by_pilot_owner"],
                 pilot_owner_told_on=data["pilot_owner_told_on"],
             )
@@ -256,12 +257,9 @@ def record_work(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
 @requires(Action.RECORD_ACCOMPLISHMENT)
 @require_POST
 def record_release(request: HttpRequest, work_id: uuid.UUID) -> HttpResponse:
-    """Record that the certificate of release to service is in the records (REQ-051)."""
+    """Open the certificate of release to service form (REQ-051)."""
     work = get_object_or_404(WorkDone, pk=work_id)
-    form = ReleaseForm(request.POST)
-    if form.is_valid():
-        services.record_release(work, form.cleaned_data["release_reference"])
-    return redirect("programme", aircraft_id=work.aircraft_id)
+    return redirect("record_release_certificate", work_id=work.id)
 
 
 @never_cache

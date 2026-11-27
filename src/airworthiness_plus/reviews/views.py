@@ -205,10 +205,15 @@ def _staff_page(request: HttpRequest, form: ReviewStaffForm, message: str = "") 
         request,
         "reviews/staff.html",
         {
-            "lines": lines,
+            "lines": [
+                (
+                    line,
+                    InvolvementForm(auto_id=f"involvement-{line.staff.id}-%s"),
+                    RestorationForm(auto_id=f"restoration-{line.staff.id}-%s"),
+                )
+                for line in lines
+            ],
             "form": form,
-            "involvement_form": InvolvementForm(),
-            "restoration_form": RestorationForm(),
             "message": message,
             "refusal": _refusal(request),
         },
@@ -296,10 +301,15 @@ def _review_page(request: HttpRequest, review: Review, message: str = "") -> Htt
         {
             "review": review,
             "aircraft": review.aircraft,
-            "items": list(review.items.all()),
+            "items": [
+                (
+                    item,
+                    ItemForm(auto_id=f"review-{item.id}-%s", may_not_apply=item.may_not_apply),
+                    ClosureForm(auto_id=f"closure-{item.id}-%s"),
+                )
+                for item in review.items.all()
+            ],
             "outstanding": services.outstanding(review, today) if not review.certificate else [],
-            "item_form": ItemForm(),
-            "closure_form": ClosureForm(),
             "details_form": DetailsForm(
                 initial={
                     "assisted_by": review.assisted_by,

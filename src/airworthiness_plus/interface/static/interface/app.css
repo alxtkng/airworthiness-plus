@@ -674,6 +674,11 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .tabs {
+    flex-wrap: wrap;
+    gap: 0 var(--space-4);
+  }
+
   .sidebar {
     border-right: 0;
     border-bottom: var(--hairline) solid var(--gray-400);

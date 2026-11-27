@@ -10,7 +10,7 @@
 <tr><th>Name</th><th data-detail>Authorisation Reference</th><th data-detail>Accepted</th><th>Last Review</th><th data-detail>Months in the 2-Year Period</th><th data-detail>Recency Rests On</th><th>Recency Lapses</th><th>Status</th><th data-detail>How It Was Worked Out</th><th>Record</th></tr>
 </thead>
 <tbody>
-{% for line in lines %}
+{% for line, involvement_form, restoration_form in lines %}
 <tr>
 <td>{{ line.staff.user.full_name }}</td>
 <td>{{ line.staff.authorisation_reference }}</td>

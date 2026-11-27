@@ -135,6 +135,21 @@ def test_what_cannot_be_placed_or_calculated_is_said_and_not_left_out(
     assert "Nothing to Forecast" in hklm and "<table>" not in hklm.split("<main", 1)[1]
 
 
+def test_forecast_places_a_passed_calendar_limit_on_today(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    today = date(2026, 12, 7)
+    with working_for(sample.ours.id, sample.reader.id):
+        lines = forecast.forecast_lines(fleet["G-EJKL"], today)
+    certificate = next(
+        row for row in lines if row.item == "Airworthiness Review Certificate Expires"
+    )
+    assert certificate.due == "6 December 2026"
+    assert certificate.forecast == today
+    assert certificate.status == "Overdue"
+    assert certificate in forecast.next_days(lines, today)
+
+
 # The configuration view
 
 

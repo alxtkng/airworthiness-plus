@@ -26,9 +26,9 @@
 {% endfor %}<p><button type="submit">Load File</button></p>
 </form>
 <h2>How a File Is Written</h2>
-<p>A file is CSV in UTF-8. Its first row is the column headings, exactly as below. A date is written 2026-11-18 or 18 November 2026. Hours have at most one decimal place and no comma. Cycles are whole numbers. A file is loaded whole, or not at all.</p>
-<table data-plain>
-<thead><tr><th>What the File Holds</th><th>Column Headings</th><th>May Be Left Empty</th></tr></thead>
+<p>Use a comma-separated values file (.csv) with UTF-8 encoding. Its first row is the column headings, exactly as below. A date is written 2026-11-18 or 18 November 2026. Hours have at most one decimal place and no comma. Cycles are whole numbers. A file is loaded whole, or not at all.</p>
+<table>
+<thead><tr><th>What the File Holds</th><th data-detail>Column Headings</th><th data-detail>May Be Left Empty</th></tr></thead>
 <tbody>
 {% for kind, columns, optional in layouts %}
 <tr><td>{{ kind }}</td><td>{{ columns }}</td><td>{{ optional }}</td></tr>

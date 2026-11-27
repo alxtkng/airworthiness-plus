@@ -68,12 +68,6 @@ class ComplianceForm(Form):
     dated = forms.DateField(label="Completed")
     hours = forms.DecimalField(label="Hours", max_digits=8, decimal_places=1, min_value=0)
     cycles = forms.IntegerField(label="Cycles", min_value=0)
-    release_reference = forms.CharField(
-        label="Certificate of Release to Service", max_length=100, required=False
-    )
-    release_recorded_on = forms.DateField(
-        label="Release Entered in the Records, If Before Today", required=False
-    )
 
 
 class TerminationForm(Form):

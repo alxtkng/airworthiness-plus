@@ -200,7 +200,7 @@ def test_unserviceable_carries_a_reason_and_a_date(
                 Aircraft.objects.filter(pk=dghi.pk).update(**values)
 
     assert post(client, f"/aircraft/{dghi.id}/serviceable/").status_code == 302
-    assert f"<dd>{dot('Serviceable')}</dd>" in get(client, f"/aircraft/{dghi.id}/").content.decode()
+    assert "<dd>Serviceable</dd>" in get(client, f"/aircraft/{dghi.id}/").content.decode()
     with working_for(sample.ours.id, sample.lucy.id):
         last = Event.of(dghi).last()
     assert last is not None

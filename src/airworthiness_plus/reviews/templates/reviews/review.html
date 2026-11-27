@@ -1,15 +1,21 @@
 {% extends "base.html" %}
 {% load writing %}
-{% block title %}{{ aircraft.registration }}, Airworthiness Review{% endblock %}
+{% block title %}{% if review.certificate %}{{ review.certificate.aircraft_registration }}{% else %}{{ aircraft.registration }}{% endif %}, Airworthiness Review{% endblock %}
 {% block tabs %}{% include "interface/aircraft_tabs.html" with active="Airworthiness Review" %}{% endblock %}
 {% block content %}
+{% if review.certificate %}
+<h1>{{ review.certificate.aircraft_registration }}</h1>
+<p>{{ review.certificate.aircraft_type_rating }}</p>
+<h2>Airworthiness Review of {{ review.certificate.aircraft_registration }}</h2>
+{% else %}
 <h1>{{ aircraft.registration }}</h1>
 <p>{{ aircraft.type_rating }}</p>
 <h2>Airworthiness Review of {{ aircraft.registration }}</h2>
+{% endif %}
 {% if refusal %}<p role="alert">{{ refusal }}</p>{% endif %}
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <dl>
-<dt>Review Staff</dt><dd>{{ review.staff.user.full_name }}, {{ review.staff.authorisation_reference }}</dd>
+<dt>Review Staff</dt><dd>{% if review.certificate %}{{ review.certificate.review_staff_name }}, {{ review.certificate.review_staff_authorisation }}{% else %}{{ review.staff.user.full_name }}, {{ review.staff.authorisation_reference }}{% endif %}</dd>
 <dt>Started</dt><dd>{{ review.started_on|long_date }}</dd>
 <dt>Assisted at the Survey By</dt><dd>{{ review.assisted_by }}</dd>
 <dt>Airframe Flight Hours at the Review</dt><dd>{{ review.airframe_hours|hours }}</dd>
@@ -21,7 +27,7 @@
 <tr><th>Point</th><th>To Be Verified</th><th>Result</th><th>Evidence Sampled</th><th>Finding</th><th>Record</th></tr>
 </thead>
 <tbody>
-{% for item in items %}
+{% for item, item_form, closure_form in items %}
 <tr>
 <td>{{ item.reference }}</td>
 <td>{{ item.label }}</td>

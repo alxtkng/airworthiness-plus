@@ -585,7 +585,22 @@ def test_g_abcd_release_to_service_deadline_is_shown_and_flagged(
         work = WorkDone.objects.get(description="Right Main Tyre Replaced")
         work.pilot_owner_told_on = date(2026, 11, 25)
         work.save(update_fields=["pilot_owner_told_on"])
-    released = post(client, f"/work/{work.id}/release/", release_reference="[Release Reference 3]")
+    legacy = post(client, f"/work/{work.id}/release/", release_reference="[Release Reference 3]")
+    assert legacy.status_code == 302
+    endpoint = f"/release-to-service/{work.id}/record/"
+    assert legacy["Location"] == endpoint
+    with working_for(sample.ours.id, sample.planner.id):
+        work.refresh_from_db()
+        assert not work.release_reference
+    released = post(
+        client,
+        endpoint,
+        reference="[Release Reference 3]",
+        kind="Pilot-Owner",
+        issuer_name="[Pilot Owner]",
+        licence="[Pilot Licence]",
+        issued_on="2026-10-22",
+    )
     assert released.status_code == 302
     body = page(client, path)
     assert "[Release Reference 3], Recorded 25 November 2026, After the 30 Days" in body
@@ -685,6 +700,21 @@ AIRCRAFT_PAGES = (
 )
 
 
+def test_future_and_older_programme_reviews_are_refused_with_reasons(
+    sample: Sample, fleet: dict[str, Aircraft], tasks: dict[str, Task]
+) -> None:
+    aircraft = fleet["G-CDEF"]
+    path = f"/aircraft/{aircraft.id}/programme/review/"
+    manager = signed_in(sample.lucy)
+    assert post(manager, path, reviewed_on="2026-11-18").status_code == 302
+    for day, reason in (("2026-11-19", "After Today"), ("2026-11-01", "Before the Last Review")):
+        refused = post(manager, path, reviewed_on=day)
+        assert refused.status_code == 409
+        assert reason in refused.content.decode()
+    with working_for(sample.ours.id, sample.reader.id):
+        assert Programme.objects.get(aircraft=aircraft).last_reviewed == TODAY
+
+
 def addresses(aircraft: Aircraft, task: Task, work: WorkDone) -> list[tuple[str, str, Action]]:
     pages = [(m, f"/aircraft/{aircraft.id}{tail}", a) for m, tail, a in AIRCRAFT_PAGES]
     pages.append(("POST", f"/tasks/{task.id}/retire/", Action.CHANGE_MAINTENANCE_PROGRAMME))
@@ -724,7 +754,10 @@ def test_every_programme_page_follows_the_role_matrix(
     work = one_work(sample, tasks["G-FMNO"])
     refusals = 0
     for method, path, action in addresses(fleet["G-FMNO"], tasks["G-FMNO"], work):
-        status = call(client, method, path).status_code
+        if action is Action.RECORD_MAINTENANCE_PROGRAMME_REVIEW:
+            status = post(client, path, reviewed_on="2026-11-18").status_code
+        else:
+            status = call(client, method, path).status_code
         if permitted(user.roles, action):
             assert status in (200, 302), f"{role} {method} {path}"
         else:
