@@ -14,7 +14,7 @@
 {% for line in lines %}
 <tr>
 <td><a href="{% url 'aircraft' line.defect.aircraft.id %}">{{ line.defect.aircraft.registration }}</a></td>
-<td><a href="{% url 'defect' line.defect.id %}">{{ line.defect.title }}</a></td>
+<td><a href="{% url 'defect' line.defect.id %}">{{ line.defect.title }}</a>{% for package in line.defect.work_packages.all %}, <a href="{% url 'work_package' package.id %}">{{ package.reference }}</a>{% endfor %}</td>
 <td>{{ line.defect.decision }}</td>
 <td>{{ line.limit_text }}</td>
 <td class="number">{{ line.remaining_text }}</td>
@@ -43,7 +43,7 @@
 {% for defect in closed %}
 <tr>
 <td><a href="{% url 'aircraft' defect.aircraft.id %}">{{ defect.aircraft.registration }}</a></td>
-<td><a href="{% url 'defect' defect.id %}">{{ defect.title }}</a></td>
+<td><a href="{% url 'defect' defect.id %}">{{ defect.title }}</a>{% for package in defect.work_packages.all %}, <a href="{% url 'work_package' package.id %}">{{ package.reference }}</a>{% endfor %}</td>
 <td>{{ defect.rectification }}</td>
 <td>{{ defect.closed_on|long_date }}</td>
 <td>{% if defect.work_done %}{{ defect.work_done.description }}{% if defect.work_done.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}{% endif %}</td>

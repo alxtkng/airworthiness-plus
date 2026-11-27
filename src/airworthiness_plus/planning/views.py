@@ -18,10 +18,10 @@ from airworthiness_plus.planning.models import WorkCard, WorkPackage
 from airworthiness_plus.releases.services import maintains
 
 
-def _user(request: HttpRequest) -> User:
+def _user(request: HttpRequest, *, write: bool = True) -> User:
     user = request.user
     assert isinstance(user, User)  # noqa: S101
-    if not maintains(user.organisation):
+    if write and not maintains(user.organisation):
         raise Http404
     return user
 
@@ -58,20 +58,24 @@ def _form(
 @never_cache
 @requires(Action.VIEW_RECORDS)
 def work_packages(request: HttpRequest) -> HttpResponse:
-    user = _user(request)
+    user = _user(request, write=False)
     packages = WorkPackage.objects.select_related("aircraft", "order").prefetch_related("cards")
     return render(
         request,
         "planning/work_packages.html",
-        {"packages": packages, "may_plan": user.may(Action.PLAN_WORK_PACKAGE)},
+        {
+            "packages": packages,
+            "may_plan": maintains(user.organisation) and user.may(Action.PLAN_WORK_PACKAGE),
+        },
     )
 
 
 @never_cache
 @requires(Action.VIEW_RECORDS)
 def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
-    user = _user(request)
+    user = _user(request, write=False)
     package = _package(package_id)
+    may_maintain = maintains(user.organisation)
     cards = list(
         package.cards.select_related(
             "data_set",
@@ -94,9 +98,9 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             ),
             "planned": sum((card.planned_hours for card in cards), Decimal("0.0")),
             "inspection": sum((card.inspection_hours for card in cards), Decimal("0.0")),
-            "may_plan": user.may(Action.PLAN_WORK_PACKAGE),
-            "may_record": user.may(Action.RECORD_WORK_CARD),
-            "may_release": user.may(Action.RECORD_RELEASE_CERTIFICATE),
+            "may_plan": may_maintain and user.may(Action.PLAN_WORK_PACKAGE),
+            "may_record": may_maintain and user.may(Action.RECORD_WORK_CARD),
+            "may_release": may_maintain and user.may(Action.RECORD_RELEASE_CERTIFICATE),
         },
     )
 

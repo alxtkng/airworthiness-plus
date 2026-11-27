@@ -1,0 +1,12 @@
+{% load writing %}
+{% if crews %}
+<h2>Part-145 Maintenance Crews</h2>
+<table>
+<thead><tr><th>Date</th><th>Area and Shift</th><th>Starts</th><th>Ends</th><th>Employed</th><th>Contracted</th><th>Employed Share</th><th>Status</th><th data-detail>Civil Aviation Authority Permission</th></tr></thead>
+<tbody>
+{% for crew in crews %}
+<tr><td>{{ crew.date|long_date }}</td><td>{{ crew.area }}, {{ crew.name }}</td><td>{{ crew.starts|date:"H:i" }}</td><td>{{ crew.ends|date:"H:i" }}</td><td>{{ crew.employed }}</td><td>{{ crew.contracted }}</td><td>{{ crew.percent|default_if_none:"—" }}{% if crew.percent is not None %}%{% endif %}</td><td>{% if crew.percent is None %}No Available Staff{% elif crew.below_half %}{% if crew.permissions %}Permission Reference Recorded{% else %}Below Half{% endif %}{% elif crew.employed == crew.contracted %}At Limit{% else %}Within Rule{% endif %}</td><td>{{ crew.permissions|join:", " }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}

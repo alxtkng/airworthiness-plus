@@ -10,13 +10,13 @@ from django.urls import reverse
 
 from airworthiness_plus.aircraft.models import Aircraft, Stage
 from airworthiness_plus.configuration.forecast import expected_days
-from airworthiness_plus.contracts.models import WorkOrder
+from airworthiness_plus.contracts.models import Outcome, WorkOrder
 from airworthiness_plus.defects.models import Defect
 from airworthiness_plus.planning.models import WorkCard, WorkPackage
 from airworthiness_plus.programme import due
 from airworthiness_plus.reviews.services import current_valid_to
 from airworthiness_plus.staffing import roster
-from airworthiness_plus.staffing.roster_models import Settings
+from airworthiness_plus.staffing.roster_models import BankHoliday, Settings
 from airworthiness_plus.staffing.roster_rules import week_of, workload
 from airworthiness_rules.forecast import forecast_date
 from airworthiness_rules.programme import Flag
@@ -53,10 +53,19 @@ def weekly_loads(first: date, weeks: int, settings: Settings) -> list[WeekLoad]:
     """Allocate planned hours once to each package's planned start week."""
     end = first + timedelta(days=7 * weeks)
     packages: dict[date, list[WorkPackage]] = defaultdict(list)
-    for package in WorkPackage.objects.filter(
-        starts_on__gte=first, starts_on__lt=end
-    ).prefetch_related("cards"):
+    for package in (
+        WorkPackage.objects.filter(starts_on__gte=first, starts_on__lt=end)
+        .exclude(order__outcome=Outcome.WITHDRAWN)
+        .prefetch_related("cards")
+    ):
         packages[week_of(package.starts_on)].append(package)
+    holidays = {
+        day
+        for day in BankHoliday.objects.filter(on__gte=first, on__lt=end).values_list(
+            "on", flat=True
+        )
+        if day.weekday() < 5
+    }
     rows = []
     for index in range(weeks):
         week = first + timedelta(days=index * 7)
@@ -69,28 +78,26 @@ def weekly_loads(first: date, weeks: int, settings: Settings) -> list[WeekLoad]:
             Decimal("0.0"),
         )
         minutes = sum(
-            line.minutes
+            line.minutes_this_week
             for line in roster.check_shifts(week, settings)
-            if line.shift.maintenance and "Staff Absence" not in line.flags
+            if line.shift.maintenance and line.available
         )
         available = Decimal(minutes) / 60
-        percent, warns = workload(
-            hours, settings.other_hours_weekly, available, settings.load_margin_percent
-        )
-        rows.append(
-            WeekLoad(
-                week, packages[week], hours, settings.other_hours_weekly, available, percent, warns
-            )
-        )
+        open_days = 5 - sum(week <= day < week + timedelta(days=7) for day in holidays)
+        other = Decimal(settings.other_hours_weekly) * open_days / 5
+        percent, warns = workload(hours, other, available, settings.load_margin_percent)
+        rows.append(WeekLoad(week, packages[week], hours, other, available, percent, warns))
     return rows
 
 
 def work_not_planned(today: date, end: date) -> list[Unplanned]:
     """Find outstanding tasks, defects and orders using their own evidence and due rules."""
-    active = WorkPackage.objects.filter(released_on__isnull=True)
+    active = WorkPackage.objects.filter(released_on__isnull=True).exclude(
+        order__outcome=Outcome.WITHDRAWN
+    )
     orders = set(active.filter(order_id__isnull=False).values_list("order_id", flat=True))
     defects = set(active.filter(defect_id__isnull=False).values_list("defect_id", flat=True))
-    cards = WorkCard.objects.filter(package__released_on__isnull=True)
+    cards = WorkCard.objects.filter(package__in=active, package__issued_on__isnull=False)
     tasks: set[UUID | None] = set(cards.values_list("task_id", flat=True))
     tasks.update(cards.values_list("directive__task_id", flat=True))
     candidates = []

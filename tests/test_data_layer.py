@@ -219,6 +219,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "staffing_report": ["INSERT", "SELECT"],
         "staffing_absence": ["INSERT", "SELECT"],
         "staffing_publishedroster": ["INSERT", "SELECT"],
+        "staffing_publishedshift": ["INSERT", "SELECT"],
         # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
         "configuration_transfer": ["INSERT", "SELECT"],
         "configuration_baseline": ["INSERT", "SELECT"],
@@ -252,8 +253,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         "staffing_handover": {"handover_rules"},
         "staffing_shift": {"roster_shift_rules"},
         "staffing_publishedroster": {"publication_rules"},
+        "staffing_publishedshift": {"published_shift_week"},
         "planning_workpackage": {"work_package_evidence"},
-        "planning_workcard": {"work_card_evidence"},
+        "planning_workcard": {"work_card_evidence", "work_card_amendment_evidence"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
         "releases_release": {
             "release_rules",

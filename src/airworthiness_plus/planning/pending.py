@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import date
 
-from django.db.models import Count, Max, Q
+from django.db.models import Min, Q
 
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.planning.models import WorkPackage
@@ -20,21 +20,19 @@ class PendingRelease:
 
 
 def releases_waiting(today: date, aircraft: Aircraft | None = None) -> list[PendingRelease]:
-    """Show readiness and the deadline based on the latest recorded completion."""
+    """Show readiness and the deadline based on the earliest signed completion."""
     packages = WorkPackage.objects.filter(issued_on__isnull=False, released_on__isnull=True)
     if aircraft is not None:
         packages = packages.filter(aircraft=aircraft)
     finished = (
         packages.select_related("aircraft")
         .annotate(
-            completion=Max("cards__completed_on"),
-            outstanding=Count(
-                "cards",
-                filter=Q(cards__completed_on__isnull=True)
-                | Q(cards__critical=True, cards__inspected_on__isnull=True),
+            completion=Min(
+                "cards__completed_on",
+                filter=Q(cards__critical=False) | Q(cards__inspected_on__isnull=False),
             ),
         )
-        .filter(completion__isnull=False, outstanding=0)
+        .filter(completion__isnull=False)
         .order_by("completion", "reference")
     )
     waiting = []

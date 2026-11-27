@@ -312,17 +312,27 @@ def test_release_closes_the_package_and_reuses_certifying_staff_checks(
 
 
 def test_the_test_site_adds_a_draft_work_package_once(setup: tuple[Sample, Aircraft]) -> None:
+    from airworthiness_plus.planning import services
     from airworthiness_plus.planning.models import WorkPackage
     from airworthiness_plus.sample.management.commands.prepare_test_site import bring_work_packages
 
-    sample, _ = setup
+    sample, aircraft = setup
+    with working_for(sample.ours.id, sample.planner.id):
+        services.build_package(
+            aircraft,
+            reference="WP-OTHER",
+            title="Other draft",
+            location="Bay 1",
+            starts_on=TODAY,
+            ends_on=TODAY,
+        )
     assert (
         bring_work_packages(sample.administrator)
         == "Work Packages of the Sample Added, 1 Work Package"
     )
     assert bring_work_packages(sample.administrator) == ""
     with working_for(sample.ours.id, sample.reader.id):
-        draft = WorkPackage.objects.get()
+        draft = WorkPackage.objects.get(reference="WP-2026-048")
         assert draft.reference == "WP-2026-048" and draft.status == "Draft"
         assert draft.aircraft.registration == "G-EJKL"
         assert draft.cards.get().planned_hours == Decimal("32.0")

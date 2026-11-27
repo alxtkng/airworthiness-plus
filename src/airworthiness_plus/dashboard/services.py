@@ -22,6 +22,7 @@ from airworthiness_plus.aircraft.models import Aircraft, Regime, Stage, Status
 from airworthiness_plus.components import services as component_services
 from airworthiness_plus.configuration import services as configuration_services
 from airworthiness_plus.contracts import services as contract_services
+from airworthiness_plus.contracts.models import WorkOrder
 from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.defects.models import Decision
 from airworthiness_plus.directives import services as directive_services
@@ -30,6 +31,7 @@ from airworthiness_plus.interface import formatting
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.modifications import services as modification_services
 from airworthiness_plus.organisations.models import Organisation
+from airworthiness_plus.planning.models import WorkPackage
 from airworthiness_plus.planning.pending import releases_waiting
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
@@ -613,6 +615,30 @@ def continuing_airworthiness(organisation: Organisation, today: date) -> Panel:
     return Panel("Continuing Airworthiness", "Aircraft Registration", _ordered(rows))
 
 
+def planning(organisation: Organisation, today: date) -> Panel:
+    """Show work orders still awaiting a work package."""
+    from airworthiness_plus.releases.services import maintains
+
+    if not maintains(organisation):
+        return Panel("Planning", "Aircraft Registration", ())
+    planned = WorkPackage.objects.filter(order__isnull=False).values("order_id")
+    orders = WorkOrder.objects.filter(closed_on__isnull=True).exclude(pk__in=planned)
+    rows = [
+        Row(
+            order.aircraft.registration,
+            "Work Order Not Planned",
+            order.work,
+            "",
+            "",
+            "",
+            "Load and Capacity",
+            reverse("load_and_capacity"),
+        )
+        for order in orders.select_related("aircraft")
+    ]
+    return Panel("Planning", "Aircraft Registration", _ordered(rows))
+
+
 def people(organisation: Organisation, today: date) -> Panel:
     """Return the review staff whose recency lapses soon or has lapsed (REQ-113, REQ-217)."""
     rows = []
@@ -760,6 +786,7 @@ def _ordered(rows: list[Row]) -> tuple[Row, ...]:
 # phase that builds a section adds its panel here.
 PANELS: tuple[Callable[[Organisation, date], Panel], ...] = (
     continuing_airworthiness,
+    planning,
     people,
     documentation,
     organisation_records,

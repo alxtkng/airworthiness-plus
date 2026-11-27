@@ -227,6 +227,7 @@ def _aircraft_page(
     request: HttpRequest, aircraft: Aircraft, owner_form: OwnerForm, problem: str = ""
 ) -> HttpResponse:
     """Show an aircraft. An owner form that was refused is shown again with the reason."""
+    from airworthiness_plus.contracts.models import Outcome
     from airworthiness_plus.defects import services as defect_services
 
     user = request.user
@@ -249,6 +250,10 @@ def _aircraft_page(
             "aircraft": aircraft,
             "counters": counters,
             "details_form": details,
+            "next_package": aircraft.work_packages.filter(released_on__isnull=True)
+            .exclude(order__outcome=Outcome.WITHDRAWN)
+            .order_by("starts_on", "reference")
+            .first(),
             "owner_form": owner_form,
             "may_change_aircraft": user.may(Action.ADD_OR_CHANGE_AIRCRAFT),
             "may_enter_utilisation": user.may(Action.ENTER_UTILISATION),

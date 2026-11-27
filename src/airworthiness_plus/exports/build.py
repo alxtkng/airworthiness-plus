@@ -32,6 +32,7 @@ from airworthiness_plus.planning.models import WorkCard
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases.models import Release
 from airworthiness_plus.reviews.models import ReviewStaff
+from airworthiness_plus.staffing.roster_models import Handover
 from airworthiness_rules.dates import utc_now
 
 FORMAT = "Airworthiness+ Records Export"
@@ -207,6 +208,16 @@ def build(organisation: Organisation, *, by: User, aircraft: Aircraft | None = N
                         | Q(
                             pk__in=WorkCard.objects.filter(package__aircraft=aircraft).values(
                                 "inspector_id"
+                            )
+                        )
+                        | Q(
+                            pk__in=Handover.objects.filter(package__aircraft=aircraft).values(
+                                "outgoing_id"
+                            )
+                        )
+                        | Q(
+                            pk__in=Handover.objects.filter(package__aircraft=aircraft).values(
+                                "incoming_id"
                             )
                         )
                     ).order_by("pk")

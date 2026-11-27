@@ -40,7 +40,7 @@
 {% for order in orders %}
 <tr>
 <td><a href="{% url 'aircraft' order.aircraft.id %}">{{ order.aircraft.registration }}</a></td>
-<td>{{ order.work }}</td>
+<td>{{ order.work }}{% for package in order.packages.all %}, <a href="{% url 'work_package' package.id %}">{{ package.reference }}</a>{% endfor %}</td>
 <td>{{ order.ordered_by_text }}</td>
 <td>{{ order.agreed_on|long_date }}</td>
 <td>{% if order.outcome %}{{ order.outcome }}{% else %}Open{% endif %}</td>

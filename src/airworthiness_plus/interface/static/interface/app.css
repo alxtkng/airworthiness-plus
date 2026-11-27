@@ -696,6 +696,7 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
   .sidebar,
   .topbar,
   .tabs,
+  [data-print],
   form,
   .skip {
     display: none;

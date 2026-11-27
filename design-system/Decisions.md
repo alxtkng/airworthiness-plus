@@ -203,6 +203,8 @@ Not decided here, and so not built until Alex King says: the per-flight technica
 - Alex King confirmed on 27 November 2026 that all approval types need adequate staff and asked for current terminology. Use Staffing Plan and Staffing and Capacity in the interface. Apply approval-specific sources and show Part-145 thresholds under Part-145.
 - Organisation planning defaults are 85% inclusive for the load warning and 50.0 other hours per week. The longest shift is 10 working hours, rest is 11 elapsed hours and the weekly allowance is 48 hours including declared other work. Publish 14 days ahead and plan 15 minutes of handover overlap. The normal break is 30 minutes. These are the organisation's settings.
 - Load allocates each package's hours to its planned start week. The roster supplies maintenance capacity and absences. The capacity comparison is a plan and the board keeps the due calculation from the underlying aircraft records.
+- A published roster identifies each included shift. Later changes remain visible and await republication. Crew shares use actual staffed time intervals. A declared absence, recorded departure or ended approval makes a roster entry unavailable.
+- For a completed card, apply amendment-check evidence effective on the day of work. Show outstanding release records from the earliest signed card in a package.
 - Internal findings live in Compliance Monitoring; findings raised by the Civil Aviation Authority live in Organisation, Oversight. Both use Level 1 and Level 2.
 - Form pages (Report a Safety Issue, Competency Assessment Form) link back to their list in the breadcrumb.
 - References: N- notices, E- enquiries, Q- quotes, INV- invoices, SR- safety reports, OR- occurrence reports, WP- work packages, F- findings.

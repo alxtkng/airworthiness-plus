@@ -199,7 +199,7 @@ Sign in as Planning and Records and open **Planning → Work Packages → WP-202
 
 ## Staffing Plan
 
-Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staffing Plan**. Each approval uses its own plan. In the Part-145 sample organisation, enter December certifying staff demand of 290 hours and availability of 192 hours to see the report needed at 34%. Record the report, then add 88 contracted hours to show the remaining 3% shortfall.
+Sign in as Planning and Records and open **Planning → Staffing and Capacity → Staffing Plan**. Each approval uses its own plan. In the Part-145 sample organisation the December report preserves 290 hours needed and 192 hours available, a 34% shortfall before cover. The current plan shows 88 hours of forecast contracted cover and a 3% shortfall.
 
 
 ## Staff Roster and Load and Capacity

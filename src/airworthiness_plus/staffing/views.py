@@ -89,6 +89,12 @@ def staffing_plan(request: HttpRequest) -> HttpResponse:
     reviews: dict[UUID, Review] = {}
     for review in Review.objects.all():
         reviews.setdefault(review.approval_id, review)
+    from airworthiness_plus.aircraft import services as aircraft_services
+    from airworthiness_plus.staffing import roster
+    from airworthiness_plus.staffing.roster_rules import week_of
+
+    week = week_of(aircraft_services.today())
+    checked = roster.check_shifts(week, roster.settings_for(user.organisation))
     return render(
         request,
         "staffing/plan.html",
@@ -101,6 +107,7 @@ def staffing_plan(request: HttpRequest) -> HttpResponse:
             "reports": Report.objects.select_related("demand__approval", "reported_by"),
             "absences": Absence.objects.select_related("person"),
             "may_staff": user.may(Action.RECORD_STAFFING_PLAN),
+            "crews": roster.crews(checked),
         },
     )
 

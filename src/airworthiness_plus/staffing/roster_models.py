@@ -8,6 +8,9 @@ from airworthiness_plus.history.models import Record
 
 class Settings(Record):
     organisation = models.OneToOneField("organisations.Organisation", on_delete=models.PROTECT)
+    annual_leave_days = models.PositiveSmallIntegerField(
+        "Annual Leave Allowance in Days", default=25
+    )
     load_margin_percent = models.PositiveSmallIntegerField("Load Warning Percentage", default=85)
     other_hours_weekly = models.DecimalField(
         "Other Hours per Week", max_digits=6, decimal_places=1, default=50
@@ -109,6 +112,21 @@ class Shift(Record):
         ]
 
 
+class PublishedShift(Record):
+    organisation = models.ForeignKey("organisations.Organisation", on_delete=models.PROTECT)
+    publication = models.ForeignKey(
+        PublishedRoster, on_delete=models.PROTECT, related_name="entries"
+    )
+    shift = models.ForeignKey(Shift, on_delete=models.PROTECT)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["publication", "shift"], name="staffing_shift_in_publication_once"
+            ),
+        ]
+
+
 class Handover(Record):
     organisation = models.ForeignKey("organisations.Organisation", on_delete=models.PROTECT)
     package = models.ForeignKey("planning.WorkPackage", on_delete=models.PROTECT, null=True)
@@ -117,6 +135,10 @@ class Handover(Record):
     handed_at = models.DateTimeField("Handed Over")
     stage = models.CharField("Stage Reached and Open Tasks", max_length=500)
     parts = models.CharField("Parts, Tools and Warnings", max_length=500)
+    overlap = models.PositiveSmallIntegerField("Planned Overlap in Minutes", null=True)
+    overlap_target = models.PositiveSmallIntegerField(
+        "Planned Overlap Target in Minutes", null=True
+    )
     acknowledged_at = models.DateTimeField("Acknowledged", null=True)
     actor = models.ForeignKey(
         "accounts.User", on_delete=models.PROTECT, null=True, related_name="+"
@@ -134,5 +156,63 @@ class Handover(Record):
                     | Q(acknowledged_at__gte=F("handed_at"), actor__isnull=False)
                 ),
                 name="staffing_handover_identifies_people_and_state",
+            ),
+        ]
+
+
+class BankHoliday(Record):
+    organisation = models.ForeignKey("organisations.Organisation", on_delete=models.PROTECT)
+    on = models.DateField("Date")
+    name = models.CharField("Bank Holiday", max_length=120)
+
+    class Meta:
+        ordering = ["on"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organisation", "on"], name="staffing_one_holiday_per_day"
+            ),
+            models.CheckConstraint(condition=~Q(name=""), name="staffing_holiday_is_named"),
+        ]
+
+
+class ShiftPattern(Record):
+    organisation = models.ForeignKey("organisations.Organisation", on_delete=models.PROTECT)
+    name = models.CharField("Shift Pattern", max_length=100)
+    area = models.CharField("Area", max_length=100)
+    days = models.CharField("Days", max_length=120)
+    starts_at = models.TimeField("Starts")
+    ends_at = models.TimeField("Ends")
+    break_minutes = models.PositiveSmallIntegerField("Break in Minutes")
+
+    class Meta:
+        ordering = ["name", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organisation", "name"], name="staffing_one_pattern_per_name"
+            ),
+            models.CheckConstraint(
+                condition=~Q(name="") & ~Q(area="") & ~Q(days=""),
+                name="staffing_shift_pattern_is_named",
+            ),
+        ]
+
+
+class StaffingMinimum(Record):
+    organisation = models.ForeignKey("organisations.Organisation", on_delete=models.PROTECT)
+    approval = models.ForeignKey("organisations.Approval", on_delete=models.PROTECT)
+    function = models.CharField("Function", max_length=40)
+    minimum = models.PositiveSmallIntegerField("Minimum")
+    normal = models.PositiveSmallIntegerField("Normal")
+    applies_on = models.CharField("Applies On", max_length=200)
+
+    class Meta:
+        ordering = ["approval__approval", "function"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["approval", "function"], name="staffing_one_minimum_per_function"
+            ),
+            models.CheckConstraint(
+                condition=(Q(normal__gte=F("minimum")) & ~Q(applies_on="")),
+                name="staffing_minimum_does_not_exceed_normal",
             ),
         ]
