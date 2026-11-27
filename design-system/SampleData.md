@@ -66,6 +66,11 @@ The basis of each aircraft's maintenance programme is not yet recorded here. The
 - G-BXYZ: the tolerance ends at 3,369.0 hours (51.0 hours remaining) or on 30 August 2027 (285 days). The review certificate is valid to 2 August 2027, so the calendar tolerance ends after it.
 - G-FMNO: the tolerance ends at 5,022.0 hours (71.8 hours remaining) or on 4 March 2027 (106 days), before the review certificate's 27 April 2027.
 
+Added on 27 November 2026 for the Maintenance Programmes list. The Maintenance Programmes board contradicts what is recorded above, and is not taken until Alex King says which is right:
+
+- The board gives G-ABCD's programme as Owner Declared, Issue 3, based on the Minimum Inspection Programme and the manufacturer's instructions, with its annual review due 2 March 2027; G-BXYZ's as Organisation Approved, Issue 5, on the manufacturer's instructions, due 15 January 2027; G-CDEF's as Organisation Approved, Issue 2, due 8 April 2027. The record above has G-ABCD and G-CDEF on the design approval holder's instructions, G-BXYZ and G-FMNO on the Minimum Inspection Programme, and one annual review recorded: G-CDEF's, on 11 November 2026, so next by 11 November 2027.
+- Who declared or approved a programme, its issue, its departures from the manufacturer's instructions and the six-item annual review are not recorded yet.
+
 ## Work in Progress
 
 - WP-2026-046, G-DGHI, stabilator trim cable rectification, 5 of 7 tasks closed.

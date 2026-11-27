@@ -45,6 +45,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
         releases.record_release_certificate,
         name="record_release_certificate",
     ),
+    path("programmes/", programme.programmes_page, name="programmes"),
     path("defects/", defects.defects_page, name="defects"),
     path("defects/record/", defects.record_defect, name="record_defect"),
     path("defects/repeat/", defects.repeat_defects, name="repeat_defects"),

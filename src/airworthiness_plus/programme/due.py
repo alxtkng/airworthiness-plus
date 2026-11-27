@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.aircraft.models import Aircraft, Stage
 from airworthiness_plus.interface import formatting
 from airworthiness_plus.interface.working import Working
 from airworthiness_plus.organisations.models import Organisation
@@ -542,3 +542,42 @@ def review_line(programme: Programme, today: date, thresholds: Thresholds) -> Re
     due = programme_review_due(programme.last_reviewed)
     flag = limit_flag(Limit(Unit.CALENDAR, due, days_between(today, due)), thresholds)
     return ReviewLine(programme.last_reviewed, due, flag)
+
+
+@dataclass(frozen=True)
+class ProgrammeLine:
+    """One aircraft of the Fleet, its programme and where the annual review stands."""
+
+    aircraft: Aircraft
+    programme: Programme | None
+    tasks: int
+    review: ReviewLine | None
+    today: date
+
+    @property
+    def remaining(self) -> str:
+        """Return what remains to the annual review: 358 Days, or 1 Day Overdue."""
+        if self.review is None or self.review.due is None:
+            return ""
+        days = days_between(self.today, self.review.due)
+        if days < 0:
+            return f"{formatting.amount(Unit.CALENDAR, -days)} Overdue"
+        return formatting.amount(Unit.CALENDAR, days)
+
+
+def programme_lines(today: date) -> list[ProgrammeLine]:
+    """Return every aircraft of the Fleet with its programme, by Aircraft Registration (REQ-283).
+
+    An aircraft with no programme set up is listed and says so: it has
+    nothing that can fall due (hazard H-018).
+    """
+    lines = []
+    for aircraft in Aircraft.objects.filter(stage=Stage.FLEET).order_by("registration"):
+        programme = Programme.objects.filter(aircraft=aircraft).first()
+        if programme is None:
+            lines.append(ProgrammeLine(aircraft, None, 0, None, today))
+            continue
+        review = review_line(programme, today, thresholds_of(aircraft.organisation))
+        tasks = programme.tasks.filter(retired=False).count()
+        lines.append(ProgrammeLine(aircraft, programme, tasks, review, today))
+    return lines

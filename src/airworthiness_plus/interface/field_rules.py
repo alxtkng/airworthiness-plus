@@ -129,6 +129,7 @@ READS = frozenset(
         "contracts",
         "contract",
         "release_to_service",
+        "programmes",
         "defects",
         "defect",
         "repeat_defects",
