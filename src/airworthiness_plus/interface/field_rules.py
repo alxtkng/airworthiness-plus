@@ -104,6 +104,7 @@ WRITES: dict[str, Sets] = {
     "add_person": (people.PersonForm,),
     "change_person": (people.PersonForm,),
     "add_review_staff": (reviews.ReviewStaffForm,),
+    "record_review_authorisation": (reviews.ReviewAuthorisationForm,),
     "update_involvement": (reviews.InvolvementForm,),
     "record_restoration": (reviews.RestorationForm,),
     "record_certificate": (reviews.CertificateForm,),

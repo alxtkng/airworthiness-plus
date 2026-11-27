@@ -28,7 +28,7 @@
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <table>
 <thead>
-<tr><th>Name</th><th data-detail>Authorisation Reference</th><th data-detail>Accepted</th><th>Last Review</th><th data-detail>Months in the 2-Year Period</th><th data-detail>Recency Rests On</th><th>Recency Lapses</th><th>Status</th><th data-detail>How It Was Worked Out</th><th>Record</th></tr>
+<tr><th>Name</th><th data-detail>Authorisation Reference</th><th data-detail>Accepted</th><th>Last Review</th><th data-detail>Months in the 2-Year Period</th><th data-detail>Recency Rests On</th><th>Recency Lapses</th><th>Recency Status</th><th data-detail>How It Was Worked Out</th><th>Record</th><th data-detail>Scope and Limitations</th><th>Authorisation Term</th></tr>
 </thead>
 <tbody>
 {% for line, involvement_form, restoration_form in lines %}
@@ -43,9 +43,12 @@
 <td>{{ line.state }}{% if line.staff.restored_on %}, Restored {{ line.staff.restored_on|long_date }} Under {{ line.staff.restored_under }}{% endif %}</td>
 <td>{% with item=line.working %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endwith %}</td>
 <td>{% if not refusal %}
+{% if may_manage_review_staff %}<p><a href="{% url 'record_review_authorisation' line.staff.id %}">Record Review Authorisation</a></p>{% endif %}
 <form method="post" action="{% url 'update_involvement' line.staff.id %}">{% csrf_token %}{% for field in involvement_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Save</button></form>
 {% if not line.current %}<form method="post" action="{% url 'record_restoration' line.staff.id %}">{% csrf_token %}{% for field in restoration_form %}{{ field.label_tag }} {{ field }} {% endfor %}<button type="submit">Record Restoration</button></form>{% endif %}
 {% endif %}</td>
+<td>{{ line.staff.authorisation_scope|default:"Scope Not Recorded" }}</td>
+<td>{{ line.authorisation_date_status }}</td>
 </tr>
 {% endfor %}
 </tbody>

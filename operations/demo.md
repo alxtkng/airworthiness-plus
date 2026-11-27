@@ -187,4 +187,4 @@ The per-flight technical log (Issue 7), choosing the type from the SRG1782 list 
 1. Open Staff and select Organisation Chart to see the current reporting lines and management personnel.
 2. Open a staff record to see any recurrent training evidence. A freshly seeded sample shows Sam Patel’s Human Factors completion and 6 December 2026 renewal date.
 3. Use the Administrator role to record a completed course from its reference. Return to Staff to see the latest completion for the subject.
-4. Open Authorisations. Use the Recency tab to see review staff recency alongside the most recent attributed work for certifying staff. The work is evidence for a later qualifying experience assessment.
+4. Open Authorisations. Use the Recency tab to see review staff recency alongside the most recent attributed work for certifying staff. Open a maintenance authorisation to record assessed work or approved maintenance employment against its scope. The Recency tab shows the resulting duration. Withdraw a mistaken assessment with a reason to retain the evidence and remove it from the total.

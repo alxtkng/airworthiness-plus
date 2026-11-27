@@ -1009,3 +1009,41 @@ def test_review_pages_need_sign_in_and_refuse_forged_writes(
     for method, path, _ in pages:
         if method == "POST":
             assert post(forged, path).status_code == 403, path
+
+
+def test_review_authorisation_records_scope_and_refuses_issue_after_its_end(
+    sample: Sample, fleet: dict[str, Aircraft], reviews: SampleReviews, day: Day
+) -> None:
+    path = f"/review-staff/{reviews.lucy.id}/authorisation/"
+    details = {
+        "version": services.review_authorisation_version(reviews.lucy),
+        "authorisation_scope": "Part-ML aeroplanes under the CAE",
+        "authorisation_valid_to": "2026-11-18",
+    }
+    assert post(signed_in(sample.reader), path, **details).status_code == 403
+    assert post(signed_in(sample.administrator), path, **details).status_code == 302
+    stale = post(
+        signed_in(sample.administrator),
+        path,
+        **{
+            **details,
+            "authorisation_scope": "Scope from another editor",
+            "authorisation_valid_to": "",
+        },
+    )
+    assert "Authorisation Changed" in stale.content.decode()
+    board = page(signed_in(sample.reader), "/review-staff/")
+    assert "Part-ML aeroplanes under the CAE" in board
+    assert "Part-ML aeroplanes under the CAE" not in page(
+        signed_in(sample.stranger), "/review-staff/"
+    )
+    with working_for(sample.ours.id, sample.lucy.id):
+        assert services.may_issue(ReviewStaff.objects.get(pk=reviews.lucy.pk), day.today)
+        issued = services.issue_certificate(
+            fleet["G-EJKL"], staff=reviews.lucy, issued_on=day.today
+        )
+        assert issued.review_staff_scope == "Part-ML aeroplanes under the CAE"
+        assert issued.review_staff_valid_to == day.today
+        day.today = date(2026, 11, 19)
+        with pytest.raises(services.RefusedError, match="Review Authorisation Ended"):
+            services.issue_certificate(fleet["G-EJKL"], staff=reviews.lucy, issued_on=day.today)

@@ -91,6 +91,17 @@ class ReviewStaffForm(Form):
         )
 
 
+class ReviewAuthorisationForm(Form):
+    """Record the scope and term stated on a review authorisation."""
+
+    authorisation_scope = forms.CharField(
+        label="Scope and Limitations", max_length=400, widget=forms.Textarea
+    )
+    authorisation_valid_to = forms.DateField(label="Authorisation Valid To", required=False)
+    remove_end_date = forms.BooleanField(label="Confirm Removal of the End Date", required=False)
+    version = forms.CharField(widget=forms.HiddenInput, max_length=64)
+
+
 class InvolvementForm(Form):
     """Change the recorded months of involvement or the last review before these records."""
 
