@@ -13,7 +13,7 @@
 <dt>Decision</dt><dd>{{ defect.decision }}</dd>
 <dt>Decided By</dt><dd>{{ defect.decided_by_text }}</dd>
 <dt>Decided</dt><dd>{{ defect.decided_on|long_date }}</dd>
-{% if defect.basis == "Certifying Staff" %}<dt>Certification Evidence</dt><dd>{% if defect.maintenance_authorisation %}{{ defect.maintenance_authorisation.reference }}, Scope Confirmed{% else %}Unverified Historical Evidence{% if defect.legacy_evidence %}, {{ defect.legacy_evidence }}{% endif %}{% endif %}</dd>{% endif %}
+{% if defect.basis == "Certifying Staff" %}<dt>Certification Evidence</dt><dd>{% if defect.maintenance_authorisation %}{{ defect.maintenance_authorisation.reference }}, Scope Confirmed{% if defect.maintenance_authorisation.withdrawn_on and defect.maintenance_authorisation.withdrawn_on <= defect.decided_on %}. Later Withdrawal Effective {{ defect.maintenance_authorisation.withdrawn_on|long_date }}{% endif %}{% else %}Unverified Historical Evidence{% if defect.legacy_evidence %}, {{ defect.legacy_evidence }}{% endif %}{% endif %}</dd>{% endif %}
 <dt>Point</dt><dd>{{ defect.point }}</dd>
 {% if defect.open %}
 <dt>Limit</dt><dd>{{ line.limit_text }}</dd>

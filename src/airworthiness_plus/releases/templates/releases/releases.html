@@ -27,7 +27,7 @@
 <td>{{ one.work.pilot_owner_told_on|long_date }}</td>
 <td>{% for item in one.line.workings %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}</td>
 {% if may_record %}<td>{% if not one.certificate %}<a href="{% url 'record_release_certificate' one.work.id %}">Record the Certificate, {{ one.work.aircraft.registration }}, {{ one.work.description }}</a>{% endif %}</td>{% endif %}
-<td>{% if one.certificate.kind == "Organisation Certifying Staff" %}{% if one.certificate.maintenance_authorisation %}{{ one.certificate.maintenance_authorisation.reference }}, Scope Confirmed{% else %}Unverified Historical Evidence{% if one.certificate.legacy_evidence %}, {{ one.certificate.legacy_evidence }}{% endif %}{% endif %}{% endif %}</td>
+<td>{% if one.certificate.kind == "Organisation Certifying Staff" %}{% if one.certificate.maintenance_authorisation %}{{ one.certificate.maintenance_authorisation.reference }}, Scope Confirmed{% if one.certificate.maintenance_authorisation.withdrawn_on and one.certificate.maintenance_authorisation.withdrawn_on <= one.certificate.issued_on %}. Later Withdrawal Effective {{ one.certificate.maintenance_authorisation.withdrawn_on|long_date }}{% endif %}{% else %}Unverified Historical Evidence{% if one.certificate.legacy_evidence %}, {{ one.certificate.legacy_evidence }}{% endif %}{% endif %}{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>

@@ -50,7 +50,8 @@ def release_to_service(request: HttpRequest) -> HttpResponse:
 def release_certificate(request: HttpRequest, release_id: uuid.UUID) -> HttpResponse:
     """Show the retained release and any certification evidence (REQ-302)."""
     certificate = get_object_or_404(
-        Release.objects.select_related("work", "maintenance_authorisation"), pk=release_id
+        Release.objects.select_related("work", "maintenance_authorisation__withdrawal"),
+        pk=release_id,
     )
     return render(request, "releases/certificate.html", {"certificate": certificate})
 

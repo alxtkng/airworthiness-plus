@@ -120,7 +120,11 @@ def _aircraft_page(
             "reviews": Review.objects.filter(aircraft=aircraft).select_related("staff__user"),
             "certificate_form": form,
             "start_scope": start_staff.authorisation_scope if start_staff else "",
-            "start_form": ReviewStartForm(),
+            "start_form": ReviewStartForm(
+                initial={"scope_version": services.review_authorisation_version(start_staff)}
+                if start_staff
+                else None
+            ),
             "extension_form": ExtensionForm(),
             "copy_form": CopySentForm(),
             "message": message,

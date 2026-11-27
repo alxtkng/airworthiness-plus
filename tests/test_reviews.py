@@ -1041,7 +1041,20 @@ def test_review_authorisation_records_scope_and_refuses_issue_after_its_end(
         assert services.may_issue(ReviewStaff.objects.get(pk=reviews.lucy.pk), day.today)
         with pytest.raises(services.RefusedError, match="Confirm the Review Authorisation"):
             services.start_review(fleet["G-EJKL"], staff=reviews.lucy)
-        draft = services.start_review(fleet["G-EJKL"], staff=reviews.lucy, scope_confirmed=True)
+        active_staff = ReviewStaff.objects.get(pk=reviews.lucy.pk)
+        with pytest.raises(services.RefusedError, match="Review Authorisation Changed"):
+            services.start_review(
+                fleet["G-EJKL"],
+                staff=reviews.lucy,
+                scope_confirmed=True,
+                scope_version=services.review_authorisation_version(reviews.lucy),
+            )
+        draft = services.start_review(
+            fleet["G-EJKL"],
+            staff=active_staff,
+            scope_confirmed=True,
+            scope_version=services.review_authorisation_version(active_staff),
+        )
         assert draft.confirmed_authorisation_scope == "Part-ML aeroplanes under the CAE"
         issued = services.issue_certificate(
             fleet["G-EJKL"], staff=reviews.lucy, issued_on=day.today

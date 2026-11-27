@@ -28,7 +28,7 @@ from airworthiness_plus.reviews.models import (
     ReviewItem,
     ReviewStaff,
 )
-from airworthiness_rules.dates import add_years, days_between
+from airworthiness_rules.dates import days_between
 from airworthiness_rules.intervals import Limit, Unit
 from airworthiness_rules.programme import Flag, deadline_flag, limit_flag
 from airworthiness_rules.review import (
@@ -193,6 +193,7 @@ class StaffLine:
     flag: Flag
     authorisation_date_status: str
     months_usable: int
+    involvement_needs_confirmation: bool
 
     @property
     def state(self) -> str:
@@ -200,13 +201,19 @@ class StaffLine:
             return "Left"
         if self.restoration_needed:
             return "Lapsed, Restoration Needed"
-        return "Current" if self.recent else "Lapsed, Restoration Needed"
+        if self.recent:
+            return "Current"
+        if self.involvement_needs_confirmation:
+            return "Experience Evidence Needs Reassessment"
+        return "Lapsed, Restoration Needed"
 
     @property
     def basis(self) -> str:
         """Return what recency rests on, so that a missing date is never read as all clear."""
         if self.months_usable >= 6:
             return "6 Months of Continuing Airworthiness Management in the 2-Year Period"
+        if self.involvement_needs_confirmation and not self.recent:
+            return "Management Experience Was Assessed on an Earlier Date"
         if self.last_review is not None:
             return "A Review in the Last 12 Months"
         return "No Review and Less Than 6 Months of Continuing Airworthiness Management"
@@ -253,10 +260,8 @@ class StaffLine:
 
 
 def _months_usable(staff: ReviewStaff, today: date) -> int:
-    """A two-year evidence snapshot cannot support a later two-year window once it has aged out."""
-    if staff.months_recorded_on <= today < add_years(staff.months_recorded_on, 2):
-        return staff.months_involved
-    return 0
+    """An aggregate with no underlying dates supports its assessment day only."""
+    return staff.months_involved if staff.months_recorded_on == today else 0
 
 
 def _recent_by_rule(staff: ReviewStaff, today: date) -> bool:
@@ -301,6 +306,7 @@ def staff_line(staff: ReviewStaff, today: date) -> StaffLine:
         flag,
         authorisation_date_status,
         months,
+        staff.months_involved >= 6 and staff.months_recorded_on < today,
     )
 
 
@@ -315,6 +321,10 @@ def note_lapse(staff: ReviewStaff, today: date) -> bool:
         return True
     if _recent_by_rule(staff, today):
         return False
+    if staff.months_involved >= 6 and staff.months_recorded_on < today:
+        # Earlier evidence is inconclusive for this day. Refuse issue without
+        # recording a regulatory lapse that a new assessment may disprove.
+        return True
     staff.lapsed_on = today
     staff.save(update_fields=["lapsed_on"])
     return True
@@ -900,6 +910,7 @@ def start_review(
     staff: ReviewStaff,
     started_on: date | None = None,
     scope_confirmed: bool = False,
+    scope_version: str = "",
 ) -> Review:
     """Start a review, with every point of ML.A.903(a) and (c) to be verified (REQ-107, REQ-108)."""
     _open_to(aircraft.organisation_id)
@@ -911,8 +922,11 @@ def start_review(
     staff = ReviewStaff.objects.select_for_update(of=("self",)).get(pk=staff.pk)
     if _authorisation_date_refusal(staff, on):
         raise RefusedError("The Review Authorisation Does Not Cover the Review Start Date")
-    if staff.authorisation_scope and not scope_confirmed:
-        raise RefusedError("Confirm the Review Authorisation Covers This Aircraft and Review")
+    if staff.authorisation_scope:
+        if not scope_confirmed:
+            raise RefusedError("Confirm the Review Authorisation Covers This Aircraft and Review")
+        if scope_version != review_authorisation_version(staff):
+            raise RefusedError("The Review Authorisation Changed. Check the Scope and Start Again")
     review = Review.objects.create(
         organisation_id=aircraft.organisation_id,
         aircraft=aircraft,
@@ -1062,6 +1076,11 @@ def issue_from_review(review: Review) -> Certificate:
     review = Review.objects.select_for_update().get(pk=review.pk)
     _open(review)
     today = aircraft_services.today()
+    review.staff = (
+        ReviewStaff.objects.select_for_update(of=("self",))
+        .select_related("user")
+        .get(pk=review.staff_id)
+    )
     reasons = outstanding(review, today)
     if reasons:
         raise RefusedError("; ".join(reasons))

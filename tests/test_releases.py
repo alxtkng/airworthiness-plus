@@ -672,5 +672,6 @@ def test_new_staff_release_needs_in_force_authorisation_and_confirmation(
     review = signed_in(sample.reader)
     evidence = page(review, f"/release-to-service/certificates/{verified.pk}/")
     assert "TEST-NEW, Scope Confirmed" in evidence
+    assert "Later Withdrawal Effective 18 November 2026" in evidence
     programme = page(review, f"/aircraft/{work.aircraft_id}/programme/")
     assert f"/release-to-service/certificates/{verified.pk}/" in programme

@@ -5,8 +5,8 @@
 | Finding | Resolution |
 |---|---|
 | A withdrawn or narrowed open-ended maintenance authorisation can remain usable | Record a dated withdrawal without changing the grant. Application and database use the withdrawal date. A correction for the same source retains the old grant and links the replacement |
-| Stored review experience can stay current indefinitely | Exclude a management experience assessment outside its supported two-year range. Evaluate already-conducted reviews as of the date being assessed. Evidence can need reassessment sooner depending on the actual dates of the underlying activities |
-| Review terms apply only when issuing a certificate | Check dates at the start and at issue. Where scope terms are recorded, the reviewer confirms coverage at the start. The scope stays on the review and is compared with the applicable terms at issue |
+| Stored review experience can stay current indefinitely | Use a management experience aggregate for its assessment date. Evaluate already-conducted reviews as of the date being assessed. Inconclusive historical aggregate evidence calls for reassessment without recording an unproven lapse |
+| Review terms apply only when issuing a certificate | Check dates at the start and at issue. Where scope terms are recorded, the reviewer confirms coverage at the start. A version check ties confirmation to the terms the reviewer saw. The scope stays on the review and is compared with the applicable terms under lock at issue |
 | Older release evidence is inaccessible through the normal interface | Link releases from Work Done to a read page. Keep the record action available for an older reference-only entry |
 | Renewals with identical reference and scope are indistinguishable | Display the term and any withdrawal in the choices |
 | Missing maintenance authorisation evidence disappears from Recency | Identify missing authority on the person's row independently of attributed work |

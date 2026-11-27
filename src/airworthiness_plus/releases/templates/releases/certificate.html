@@ -14,7 +14,7 @@
 {% if certificate.limitations_text %}<dt>Limitations</dt><dd>{{ certificate.limitations_text }}</dd>{% endif %}
 {% if certificate.kind == "Organisation Certifying Staff" %}
 <dt>Certification Evidence</dt>
-<dd>{% if certificate.maintenance_authorisation %}{{ certificate.maintenance_authorisation.reference }}, Scope Confirmed{% else %}Unverified Historical Evidence{% if certificate.legacy_evidence %}, {{ certificate.legacy_evidence }}{% endif %}{% endif %}</dd>
+<dd>{% if certificate.maintenance_authorisation %}{{ certificate.maintenance_authorisation.reference }}, Scope Confirmed{% if certificate.maintenance_authorisation.withdrawn_on and certificate.maintenance_authorisation.withdrawn_on <= certificate.issued_on %}. Later Withdrawal Effective {{ certificate.maintenance_authorisation.withdrawn_on|long_date }}{% endif %}{% else %}Unverified Historical Evidence{% if certificate.legacy_evidence %}, {{ certificate.legacy_evidence }}{% endif %}{% endif %}</dd>
 {% if certificate.maintenance_authorisation %}<dt>Authorisation Scope</dt><dd>{{ certificate.maintenance_authorisation.scope }}</dd>{% endif %}
 {% endif %}
 </dl>

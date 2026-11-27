@@ -247,7 +247,9 @@ def release_lines(today: date) -> list[ReleaseLine]:
     """
     certificates = {
         release.work_id: release
-        for release in Release.objects.select_related("issued_by", "maintenance_authorisation")
+        for release in Release.objects.select_related(
+            "issued_by", "maintenance_authorisation__withdrawal"
+        )
     }
     lines = []
     for aircraft in Aircraft.objects.all():

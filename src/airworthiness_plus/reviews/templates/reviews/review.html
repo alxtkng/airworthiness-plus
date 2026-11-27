@@ -55,6 +55,7 @@
 <ul>
 {% for reason in outstanding %}<li>{{ reason }}</li>
 {% endfor %}</ul>
+{% if review.staff.authorisation_scope != review.confirmed_authorisation_scope %}<p><a href="{% url 'aircraft_review' aircraft.id %}">Start a New Review With the Current Authorisation</a></p>{% endif %}
 {% else %}
 <form method="post" action="{% url 'issue_certificate' review.id %}">
 {% csrf_token %}
