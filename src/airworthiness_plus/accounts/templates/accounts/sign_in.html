@@ -9,7 +9,7 @@
 {% csrf_token %}
 <p><label for="username">User Name</label><br>
 <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" autofocus required maxlength="254"></p>
-<p><button type="button" class="primary" data-passkey="sign-in" data-url="{% url 'passkey_sign_in' %}" hidden>Sign In with a Passkey</button></p>
+<p><button type="button" class="primary" data-passkey="sign-in" data-url="{% url 'passkey_sign_in' %}" hidden>Sign in with a Passkey</button></p>
 <p data-passkey-message role="alert" hidden></p>
 <h2>Use a Password and Authenticator Code</h2>
 <p><label for="password">Password</label><br>

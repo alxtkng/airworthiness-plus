@@ -131,7 +131,7 @@ def test_passkey_enrolment_sign_in_and_revocation(
 
         submit(page, page.get_by_role("button", name="Sign Out"))
         page.get_by_label("User Name").fill(account.username)
-        submit(page, page.get_by_role("button", name="Sign In with a Passkey"))
+        submit(page, page.get_by_role("button", name="Sign in with a Passkey"))
         expect(page.locator("aside .roles")).to_have_text(str(account.role))
         page.reload()
         expect(page.locator("aside .roles")).to_have_text(str(account.role))
@@ -150,6 +150,6 @@ def test_passkey_enrolment_sign_in_and_revocation(
         expect(remove).to_have_count(0)
         submit(page, page.get_by_role("button", name="Sign Out"))
         page.get_by_label("User Name").fill(account.username)
-        page.get_by_role("button", name="Sign In with a Passkey").click()
+        page.get_by_role("button", name="Sign in with a Passkey").click()
         expect(page.get_by_role("alert")).to_have_text("Passkey Not Accepted")
         sign_in_again(page, account, authenticator)
