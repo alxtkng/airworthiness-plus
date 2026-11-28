@@ -211,8 +211,7 @@ def test_stores_posting_works_by_keyboard_at_320_pixels(
         assert "Quarantine Tag Not Recorded" in blockers
         page.get_by_role("link", name="Record Posting Evidence", exact=True).click()
         form = page.locator("main form")
-        form.get_by_label("Unit", exact=True).focus()
-        page.keyboard.press("ArrowDown")  # Each
+        form.get_by_label("Unit", exact=True).select_option(label="Each")
         form.get_by_label("Quantity", exact=True).fill("1")
         form.get_by_label("Location", exact=True).select_option(
             label="QUAR-1, Quarantine Store, Locked"
