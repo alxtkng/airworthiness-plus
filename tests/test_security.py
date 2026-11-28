@@ -47,6 +47,7 @@ def routes() -> list[tuple[str, str]]:
         assert isinstance(pattern, URLPattern), "every address is listed in one place"
         assert pattern.name, "every address has a name"
         path = "/" + re.sub(r"<uuid:[a-z_]+>", str(uuid.uuid4()), str(pattern.pattern))
+        path = re.sub(r"<int:[a-z_]+>", "1", path)
         found.append((pattern.name, path))
     return found
 
