@@ -1181,7 +1181,18 @@ def test_work_package_from_draft_to_release(
             },
             "Awaiting Inspection",
         )
-        page.get_by_role("link", name="Record Independent Inspection").click()
+        review = page.locator(".package-review")
+        expect(review).to_contain_text("1 Awaiting Inspection")
+        expect(review).to_contain_text("Awaiting Signed Evidence")
+        review.get_by_role("link", name="Review Tool Issues and Returns").press("Enter")
+        expect(page.locator("#tool-accountability:target")).to_be_visible()
+        expect(page.locator("section[aria-labelledby=tool-accountability]")).to_contain_text(
+            "Issued at"
+        )
+        review.get_by_role("link", name="Test Landing Light Card", exact=True).press("Enter")
+        row = page.locator("tr:target")
+        expect(row).to_contain_text("Awaiting Inspection")
+        row.get_by_role("link", name="Record Independent Inspection").click()
         save(
             page,
             "Record Independent Inspection",
@@ -1191,7 +1202,11 @@ def test_work_package_from_draft_to_release(
                 "qualification": "Test inspection authorisation",
                 "evidence": "Function checked",
             },
-            "1 of 1 Signed",
+            "1 of 1 Cards",
+        )
+        expect(review.get_by_text("1 Awaiting Inspection")).to_have_count(0)
+        expect(page.get_by_role("row").filter(has_text="Test Landing Light Card")).to_contain_text(
+            "Signed"
         )
         release_values = {
             "reference": "TEST-PACKAGE-CRS",
@@ -1229,6 +1244,19 @@ def test_work_package_from_draft_to_release(
         )
         page.get_by_role("link", name="Record Package Release").click()
         save(page, "Record Package Release", release_values, "Released")
+        expect(review).to_contain_text("Signed fixture inspection after maintenance")
+        expect(review).to_contain_text("Fixture issue accepted into quarantine custody")
+        expect(page.locator("section[aria-labelledby=tool-accountability]")).to_contain_text(
+            "Returned to Quarantine bench"
+        )
+        icons = page.locator('head link[rel="icon"]').evaluate_all(
+            "(links) => links.map((link) => link.href)"
+        )
+        assert len(icons) == 3
+        for url in icons:
+            response = page.request.get(url)
+            assert response.ok
+            assert "image/" in response.headers["content-type"]
         page.get_by_role("link", name="Release Certificate", exact=True).click()
         expect(page.get_by_role("heading", name="TEST-PACKAGE-CRS")).to_be_visible()
 

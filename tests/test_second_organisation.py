@@ -379,7 +379,9 @@ def test_a_new_test_site_is_given_both_organisations(given: None) -> None:
     """REQ-218. An empty database, as after a remake (Issue 100)."""
     with as_owner():
         mark_the_database()
-        assert prepare() == [
+        lines = prepare()
+        assert lines[3].startswith("Counterfoil Sample Added /work-packages/")
+        assert lines[:3] + lines[4:] == [
             "Service Role Made",
             "Sample Organisation Set Up",
             f"Administrator {ADMINISTRATOR}",
@@ -387,5 +389,5 @@ def test_a_new_test_site_is_given_both_organisations(given: None) -> None:
             f"Administrator {second.ADMINISTRATOR}",
         ]
         assert Organisation.objects.count() == 2
-        assert Person.objects.count() == 15 + 5
+        assert Person.objects.count() == 16 + 5
         assert Customer.objects.count() == 7 + 2

@@ -241,6 +241,14 @@ def test_the_owners_work_names_a_value_it_was_not_given(
         prepare()
 
 
+def startup_with_counterfoil(output: str) -> list[str]:
+    lines = output.splitlines()
+    (review_line,) = (line for line in lines if line.startswith("Counterfoil Sample Added "))
+    assert review_line.removeprefix("Counterfoil Sample Added ").startswith("/work-packages/")
+    lines.remove(review_line)
+    return lines
+
+
 @pytest.mark.django_db
 def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neither(
     given: None,
@@ -249,7 +257,7 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
         mark_the_database()
         with CaptureQueriesContext(connection) as sent:
             first = prepare()
-        assert first.splitlines() == [
+        assert startup_with_counterfoil(first) == [
             "Service Role Made",
             "Sample Organisation Set Up",
             f"Administrator {ADMINISTRATOR}",
@@ -341,7 +349,7 @@ def test_the_second_organisation_is_not_set_up_without_a_first_password_of_its_o
     with as_owner():
         mark_the_database()
         first = prepare()
-        assert first.splitlines() == [
+        assert startup_with_counterfoil(first) == [
             "Service Role Made",
             "Sample Organisation Set Up",
             f"Administrator {ADMINISTRATOR}",
@@ -391,7 +399,7 @@ def test_a_start_never_fails_because_a_user_name_of_the_second_sample_is_taken(
                 "Second Sample Organisation Not Set Up: One of Its User Names Is Already Taken",
             ]
         assert one("SELECT count(*) FROM organisations_organisation") == 1
-        assert one("SELECT count(*) FROM people_person") == 16
+        assert one("SELECT count(*) FROM people_person") == 17
 
 
 @pytest.mark.django_db

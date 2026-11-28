@@ -3,7 +3,7 @@
 {% block content %}
 <header class="page-heading">
 <h1>{{ package.reference }}</h1>
-<p><a href="{% url 'work_packages' %}">Work Packages</a></p>
+<p>Work Package</p>
 </header>
 <dl>
 <dt>Aircraft Registration</dt><dd><a href="{% url 'aircraft' package.aircraft_id %}">{{ package.aircraft.registration }}</a></dd>
@@ -27,23 +27,67 @@
 <a class="button" href="{% url 'add_work_card' package.id %}">Add Work Card</a>
 <a class="button" href="{% url 'issue_work_package' package.id %}">Issue Work Package</a></p>
 {% endif %}
-{% if tool_issues %}
-<section>
-<h2>Tool Accountability</h2>
+<div class="package-review">
+<section aria-labelledby="work-performed-heading">
+<h2 id="work-performed-heading">Work Performed</h2>
+<p class="reference">{{ package.reference }}</p>
+<dl>
+<dt>Work Recorded</dt><dd>{{ completed }} of {{ cards|length }} Cards</dd>
+<dt>Signed</dt><dd>{{ signed }} of {{ cards|length }} Cards</dd>
+<dt>Work Still Planned</dt><dd>{{ open_hours }} of {{ planned }} Hours
+{% if open_cards %}<ul>{% for card in open_cards %}<li><a href="#work-card-{{ card.id }}">{{ card.title }}</a></li>{% endfor %}</ul>{% endif %}</dd>
+</dl>
+<p><a href="#work-cards">Review Work Cards</a></p>
+</section>
+<section aria-labelledby="release-heading">
+<h2 id="release-heading">Release to Service</h2>
+<p class="reference">{{ package.reference }}</p>
+<dl>
+<dt>Critical Cards Awaiting Inspection</dt>
+<dd>{% if awaiting_inspection %}<span class="status status-due">{{ awaiting_inspection|length }} Awaiting Inspection</span>
+<ul>{% for card in awaiting_inspection %}<li><a href="#work-card-{{ card.id }}">{{ card.title }}</a></li>{% endfor %}</ul>
+{% else %}None{% endif %}</dd>
+<dt>Critical Cards Without Recorded Inspection</dt><dd>{{ missing_inspections|default:"None" }} Outstanding</dd>
+<dt>Planned Inspection Hours</dt><dd>{{ inspection }}</dd>
+<dt>Tool Accountability</dt><dd><a href="#tool-accountability">Review Tool Issues and Returns</a></dd>
+<dt>Signed General Verification</dt>
+<dd>{% if package.release.general_verification %}
+{% with verification=package.release.general_verification %}
+{{ verification.signed_evidence }}
+<ul>
+<li>{{ verification.performed_on|date:"j F Y" }} · {{ verification.approval_reference }}</li>
+<li>{{ verification.panels }}</li>
+<li>{{ verification.accountability }}</li>
+</ul>
+{% endwith %}
+{% elif package.verification %}Earlier Release Evidence: {{ package.verification }}
+{% else %}Awaiting Signed Evidence{% endif %}</dd>
+{% if package.defect %}
+<dt>Defect</dt><dd><a href="{% url 'defect' package.defect_id %}">{{ package.defect }}</a>, {% if package.defect.closed_on %}Closed{% else %}Open{% endif %}</dd>
+{% endif %}
+{% if has_structured_pilot %}<dt>Synthetic Structured Work Cards</dt><dd>Cannot Be Used for a Release Certificate</dd>{% endif %}
+<dt>Certifying Staff Authorisation</dt><dd>{% if package.released_on %}Recorded in the Release Certificates{% else %}Checked at Release{% endif %}</dd>
+</dl>
+{% if may_release and package.issued_on and not package.released_on %}
+<p><a class="button" href="{% url 'release_work_package' package.id %}">Record Package Release</a></p>
+{% endif %}
+</section>
+</div>
+<section aria-labelledby="tool-accountability">
+<h2 id="tool-accountability" tabindex="-1">Tool Accountability</h2>
 {% for issue in tool_issues %}
-<p><a href="{% url 'tool_issue' issue.id %}">{{ issue.tool }}</a> · {{ issue.custodian }} · {% if issue.return_record %}Returned to {{ issue.return_record.location }}{% else %}Issued at {{ issue.location }}{% endif %}</p>
+<p><a href="{% url 'tool_issue' issue.id %}">{{ issue.tool }}</a> · {{ issue.custodian }} · {% if issue.return_record %}Returned to {{ issue.return_record.location }} · {{ issue.return_record.condition }}{% else %}<span class="status status-due">Issued at {{ issue.location }}</span>{% endif %}</p>
+{% empty %}<p>No Tool Issues Recorded for This Package</p>
 {% endfor %}
 </section>
-{% endif %}
-<h2>Work Cards</h2>
+<h2 id="work-cards" tabindex="-1">Work Cards</h2>
 <button type="button" data-print hidden>Print Work Cards</button>
-<p>{{ signed }} of {{ cards|length }} Signed, {{ planned }} Planned Hours, {{ inspection }} Planned Inspection Hours</p>
-<div class="table-wrap">
+<div class="table-wrap work-card-table" role="region" aria-label="Work Cards Table" tabindex="0">
 <table>
 <thead><tr><th>Task</th><th>Maintenance Data</th><th>Critical Task</th><th>Performed By</th><th>Independent Inspection</th><th>Planned Hours</th><th>Status</th><th>Actions</th></tr></thead>
 <tbody>
 {% for card in cards %}
-<tr>
+<tr id="work-card-{{ card.id }}" tabindex="-1">
 <td><a href="#card-{{ card.id }}">{{ card.title }}</a>{% for entry in card.tool_uses.all %}<br><a href="{% url 'tool_issue' entry.issue_id %}">{{ entry.issue.tool }}</a> · {{ entry.delegation.person }} · {{ entry.evidence }}{% endfor %}</td>
 <td><a href="{% url 'data_set' card.data_set_id %}">{{ card.data_set }}</a>{% if card.revision %}, Revision {{ card.revision }}{% endif %}</td>
 <td>{{ card.critical|yesno:"Yes,No" }}</td>
@@ -111,18 +155,4 @@
 </dl>
 </details>
 {% endfor %}
-<h2>Release to Service</h2>
-<ul>
-<li>Signed Work Cards, {{ signed }} of {{ cards|length }}</li>
-<li>Independent Inspections{% if missing_inspections %}, {{ missing_inspections }} Outstanding{% else %}, None Outstanding{% endif %}</li>
-{% if has_structured_pilot %}<li>Synthetic Structured Work Cards Cannot Be Used for a Release Certificate</li>{% endif %}
-<li>General Verification, {{ package.verification|default:"Awaiting Evidence" }}</li>
-{% if package.defect %}
-<li>Defect <a href="{% url 'defect' package.defect_id %}">{{ package.defect }}</a>, {% if package.defect.closed_on %}Closed{% else %}Open{% endif %}</li>
-{% endif %}
-<li>Certifying Staff Authorisation, {% if package.released_on %}Recorded in the Release Certificates{% else %}Checked at Release{% endif %}</li>
-</ul>
-{% if may_release and package.issued_on and not package.released_on %}
-<p><a class="button" href="{% url 'release_work_package' package.id %}">Record Package Release</a></p>
-{% endif %}
 {% endblock %}
