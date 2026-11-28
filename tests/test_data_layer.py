@@ -234,6 +234,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "logistics_stockposting": ["INSERT", "SELECT"],
         "logistics_stockmovement": ["INSERT", "SELECT"],
         "logistics_stockallocation": ["INSERT", "SELECT"],
+        "logistics_stocksubstitution": ["INSERT", "SELECT"],
         "logistics_stockcount": ["INSERT", "SELECT"],
         "tooling_tool": ["INSERT", "SELECT"],
         "tooling_toolserviceproviderauthorisation": ["INSERT", "SELECT"],
@@ -291,6 +292,7 @@ def test_every_table_is_under_the_record_rules() -> None:
             "stores_movement_reservations",
         },
         "logistics_stockallocation": {"history_refuse_update", "stores_allocation_rules"},
+        "logistics_stocksubstitution": {"history_refuse_update", "stores_stock_substitution_rules"},
         "logistics_stockcount": {"history_refuse_update", "stores_count_rules"},
         "tooling_tool": {"history_refuse_update", "tooling_tool_a_check_evidence"},
         "tooling_toolserviceproviderauthorisation": {

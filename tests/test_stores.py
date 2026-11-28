@@ -26,12 +26,12 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.contracts import services as contracts
-from airworthiness_plus.contracts.models import OrderedBy
+from airworthiness_plus.contracts.models import OrderedBy, Outcome
 from airworthiness_plus.exports.build import build
 from airworthiness_plus.exports.verify import verify
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
-from airworthiness_plus.logistics import allocations, stores
+from airworthiness_plus.logistics import allocations, stores, substitutions
 from airworthiness_plus.logistics.models import (
     AllocationKind,
     ItemClass,
@@ -47,6 +47,7 @@ from airworthiness_plus.logistics.models import (
     StockEntry,
     StockMovement,
     StockPosting,
+    StockSubstitution,
     StockUnit,
     StoresAction,
     StoresAppointment,
@@ -55,7 +56,8 @@ from airworthiness_plus.logistics.models import (
 from airworthiness_plus.logistics.services import RefusedError
 from airworthiness_plus.maintenance_data import services as data
 from airworthiness_plus.maintenance_data.models import Kind
-from airworthiness_plus.people.models import Person
+from airworthiness_plus.people import services as staff
+from airworthiness_plus.people.models import Person, StaffGroup
 from airworthiness_plus.planning import services as planning
 from airworthiness_plus.planning.models import WorkCard
 from airworthiness_plus.sample import goods_in
@@ -1505,3 +1507,162 @@ def test_real_ledger_reconciles_zrh_stores_and_network_totals(stocked: Sample) -
     assert "ZRH-MAIN, ZRH Main" in body
     assert "ZRH-LINE, ZRH Line" in body
     assert "Bay B, Standard Parts Drawers" not in body
+
+
+def test_alternate_approval_requires_certifying_scope_and_stays_bound_to_issued_revision(
+    stocked: Sample,
+    day: Day,
+) -> None:
+    _grant_allocation_actions(stocked)
+    aircraft = add_sample_fleet(stocked)["G-ABCD"]
+    card = _allocation_card(stocked, aircraft)
+    with working_for(stocked.ours.pk, stocked.administrator.pk):
+        person = Person.objects.get(user=stocked.lucy)
+        person.staff_group = StaffGroup.CERTIFYING
+        person.save(update_fields=["staff_group"])
+        grant = staff.record_maintenance_authorisation(
+            person,
+            reference="SYN-ALTERNATE",
+            scope="Part substitution approval for G-ABCD",
+            valid_from=TODAY,
+            valid_to=TODAY,
+        )
+        unrelated = staff.record_maintenance_authorisation(
+            person,
+            reference="SYN-OTHER",
+            scope="Part substitution approval for G-EJKL",
+            valid_from=TODAY,
+            valid_to=TODAY,
+        )
+    with working_for(stocked.ours.pk, stocked.lucy.pk):
+        user = stocked.lucy
+        bolts = lot("RX-007")
+        reserve: dict[str, Any] = {
+            "card": card,
+            "source": place("BAY-B"),
+            "quantity": Decimal(1),
+            "required_identity": "OLD-BOLT",
+            "applicable_source": "Synthetic IPC revision 7",
+            "evidence": "Workshop requisition",
+        }
+        approval: dict[str, Any] = {
+            "card": card,
+            "required_identity": "OLD-BOLT",
+            "applicable_source": "Synthetic IPC revision 7",
+            "evidence": "Figure 19 approval covers the requested and substitute part exactly",
+            "scope_confirmed": True,
+        }
+        with pytest.raises(RefusedError, match="Authorisation That Names This Aircraft"):
+            substitutions.approve(
+                user, bolts, request_id=uuid4(), authorisation=unrelated, **approval
+            )
+        with pytest.raises(RefusedError, match="Unfinished Card on an Issued Package"):
+            substitutions.approve(user, bolts, request_id=uuid4(), authorisation=grant, **approval)
+        planning.issue_package(card.package)
+        with pytest.raises(RefusedError, match="Must Match the Received Lot"):
+            allocations.record(user, bolts, AllocationKind.RESERVE, request_id=uuid4(), **reserve)
+        approved = substitutions.approve(
+            user, bolts, request_id=uuid4(), authorisation=grant, **approval
+        )
+        assert approved.substitute_identity == "[BOLT STANDARD]"
+        assert substitutions.available(bolts, TODAY).get() == approved
+        with pytest.raises(RefusedError, match="Alternate Approval Must Match"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.RESERVE,
+                request_id=uuid4(),
+                substitution=approved,
+                **{**reserve, "applicable_source": "Different revision"},
+            )
+        booked = allocations.record(
+            user,
+            bolts,
+            AllocationKind.RESERVE,
+            request_id=uuid4(),
+            substitution=approved,
+            **reserve,
+        )
+        day.today += timedelta(days=1)
+        assert not substitutions.available(bolts, day.today).exists()
+        with pytest.raises(RefusedError, match="Maintenance Authorisation Has Expired"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.ISSUE,
+                request_id=uuid4(),
+                preceding=booked,
+                evidence="Attempt against expired alternate approval",
+            )
+        day.today = TODAY
+        issued = allocations.record(
+            user,
+            bolts,
+            AllocationKind.ISSUE,
+            request_id=uuid4(),
+            preceding=booked,
+            evidence="Approved substitute went to the workshop",
+        )
+        booked_again = allocations.record(
+            user,
+            bolts,
+            AllocationKind.RESERVE,
+            request_id=uuid4(),
+            substitution=approved,
+            **reserve,
+        )
+        data.add_revision(card.data_set, revision="2", revision_date=TODAY)
+        assert not substitutions.available(bolts, TODAY).exists()
+        with pytest.raises(RefusedError, match="Stale Work Card Revision"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.ISSUE,
+                request_id=uuid4(),
+                preceding=booked_again,
+                evidence="Previous revision no longer applicable",
+            )
+        card.package.refresh_from_db(fields=["order"])
+        order = card.package.order
+        assert order is not None
+        contracts.close_work_order(order, closed_on=TODAY, outcome=Outcome.WITHDRAWN)
+        with pytest.raises(RefusedError, match="Unfinished Card on an Issued Package"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.ISSUE,
+                request_id=uuid4(),
+                preceding=booked_again,
+                evidence="The written work order was withdrawn",
+            )
+        assert StockAllocation.objects.filter(posting=bolts, kind=AllocationKind.ISSUE).count() == 1
+        exported = build(stocked.ours, by=user)
+        assert verify(exported.content).problems == ()
+        archived = opened(exported.content)
+        assert (
+            archived["records/logistics_stocksubstitution.json"][0]["required_identity"]
+            == "OLD-BOLT"
+        )
+        assert any(
+            row["id"] == str(issued.pk) and row["substitution_id"] == str(approved.pk)
+            for row in archived["records/logistics_stockallocation.json"]
+        )
+        assert Event.of(approved).get().actor_id == user.pk
+    with working_for(stocked.ours.pk, stocked.planner.pk):
+        with pytest.raises(DatabaseError), transaction.atomic():
+            StockSubstitution.objects.create(
+                organisation_id=stocked.ours.pk,
+                posting_id=bolts.pk,
+                card_id=card.pk,
+                revision_id=approved.revision_id,
+                recorded_on=TODAY,
+                authorisation_id=grant.pk,
+                submission=uuid4(),
+                scope_confirmed=True,
+                substitute_identity="[BOLT STANDARD]",
+                **{
+                    key: value
+                    for key, value in approval.items()
+                    if key not in ("scope_confirmed", "card")
+                },
+            )

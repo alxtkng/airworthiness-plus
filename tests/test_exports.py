@@ -529,8 +529,8 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
             ["password", "second_factor_secret", "passkeys"] if one.table == "accounts_user" else []
         )
         held = rows(one.table, column, sample.ours.id, omitted)
-        # The synthetic pilot has its own populated export test and is off by default.
-        if one.table != "planning_workcardattestation":
+        # Authorised alternates and the signed card pilot have their own populated export tests.
+        if one.table not in {"planning_workcardattestation", "logistics_stocksubstitution"}:
             assert held, one.table
         assert files[f"records/{one.table}.json"] == held, one.table
         with as_owner():
@@ -608,7 +608,9 @@ def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history
         }
         Person.objects.filter(pk=chris.id).update(full_name="Chris Moore Updated")
         Person.objects.filter(pk=sam.id).update(full_name="Sam Patel Updated")
-    with as_owner_who_is_not_a_superuser(functions=("logistics_stock_on_hand(uuid, uuid)",)):
+    with as_owner_who_is_not_a_superuser(
+        functions=("logistics_stock_on_hand(uuid, uuid)", "logistics_stock_allocation_rules()"),
+    ):
         MigrationExecutor(connection).migrate(latest)
 
     client = signed_in(sample.planner)

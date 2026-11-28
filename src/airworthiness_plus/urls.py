@@ -74,6 +74,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         stores.post_disposition,
         name="post_disposition",
     ),
+    path(
+        "stores/lots/<uuid:posting_id>/approve-alternate/",
+        allocation_views.approve_substitution,
+        name="approve_stock_substitution",
+    ),
     path("stores/lots/<uuid:posting_id>/move/", stores.move_stock, name="move_stock"),
     path(
         "stores/lots/<uuid:posting_id>/reserve/",

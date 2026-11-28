@@ -313,6 +313,7 @@ BOARD: tuple[Group, ...] = (
                         "post_disposition",
                         "move_stock",
                         "reserve_stock",
+                        "approve_stock_substitution",
                         "release_stock_reservation",
                         "issue_reserved_stock",
                         "return_issued_stock",

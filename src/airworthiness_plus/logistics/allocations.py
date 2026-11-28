@@ -17,6 +17,7 @@ from airworthiness_plus.logistics.models import (
     PostingKind,
     StockAllocation,
     StockPosting,
+    StockSubstitution,
     StoresAction,
     StoresLocation,
 )
@@ -24,9 +25,9 @@ from airworthiness_plus.logistics.services import RefusedError
 from airworthiness_plus.planning.models import WorkCard, WorkPackage
 
 
-def _check_work(card: WorkCard, today: date) -> None:
+def check_eligible_work(card: WorkCard, today: date) -> WorkCard:
     package = WorkPackage.objects.select_for_update(no_key=True).get(pk=card.package_id)
-    current = WorkCard.objects.get(pk=card.pk)
+    current = WorkCard.objects.select_related("revision").get(pk=card.pk)
     order = (
         WorkOrder.objects.select_for_update(no_key=True).get(pk=package.order_id)
         if package.order_id is not None
@@ -47,21 +48,48 @@ def _check_work(card: WorkCard, today: date) -> None:
             "Choose an Unfinished Card on an Issued Package With an Open Written Order"
         )
 
+    return current
 
-def _check_serviceable(
-    posting: StockPosting, source: StoresLocation, required_identity: str, today: date
-) -> None:
+
+def _check_serviceable(posting: StockPosting, source: StoresLocation, today: date) -> str:
     receipt = posting.disposition.receipt
     if not stores.accepts(source, PostingKind.STOCK, receipt.classification, today):
         raise RefusedError("This Location Does Not Hold Serviceable Stock for Issue")
     if not stores.shelf_of(posting.evidence, today).usable:
         raise RefusedError("The Lot's Shelf Life Blocks Issue")
+    return (posting.evidence.part_number or posting.evidence.specification).strip().upper()
+
+
+def check_substitution(
+    approval: StockSubstitution,
+    card: WorkCard,
+    posting: StockPosting,
+    identity: str,
+    required: str,
+    reference: str,
+    on: date,
+) -> None:
     if (
-        not required_identity
-        or required_identity
-        != (posting.evidence.part_number or posting.evidence.specification).strip().upper()
+        approval.posting_id != posting.pk
+        or approval.card_id != card.pk
+        or approval.required_identity != required
+        or approval.substitute_identity != identity
+        or approval.applicable_source != reference
+        or approval.recorded_on > on
     ):
-        raise RefusedError("The Required Part Number or Specification Must Match the Received Lot")
+        raise RefusedError(
+            "The Alternate Approval Must Match This Work Card, Lot and Applicable Data"
+        )
+    if (
+        card.revision is None
+        or approval.revision_id != card.revision_id
+        or not card.revision.current
+    ):
+        raise RefusedError("The Approved Alternate Belongs to a Stale Work Card Revision")
+    if approval.authorisation.term_on(on) != "Within Recorded Dates":
+        raise RefusedError(
+            "The Alternate's Maintenance Authorisation Has Expired or Been Withdrawn"
+        )
 
 
 def appointment_action(kind: AllocationKind) -> StoresAction:
@@ -80,6 +108,7 @@ def record(
     destination: StoresLocation | None = None,
     card: WorkCard | None = None,
     preceding: StockAllocation | None = None,
+    substitution: StockSubstitution | None = None,
     quantity: Decimal | None = None,
     required_identity: str = "",
     applicable_source: str = "",
@@ -90,7 +119,7 @@ def record(
     organisation = user.organisation_id
     if any(
         one is not None and one.organisation_id != organisation
-        for one in (posting, preceding, source, destination, card)
+        for one in (posting, preceding, source, destination, card, substitution)
     ):
         raise RefusedError("Choose Records of This Organisation")
     if preceding is not None:
@@ -100,6 +129,7 @@ def record(
         quantity = preceding.quantity
         source = preceding.source if kind != AllocationKind.RETURN else None
         card = preceding.card
+        substitution = preceding.substitution
         required_identity = preceding.required_identity
         applicable_source = preceding.applicable_source
     evidence = evidence.strip()
@@ -120,6 +150,7 @@ def record(
             or existing.source_id != (source.pk if source else None)
             or existing.destination_id != (destination.pk if destination else None)
             or existing.card_id != (card.pk if card else None)
+            or existing.substitution_id != (substitution.pk if substitution else None)
             or existing.quantity != quantity
             or existing.required_identity != required_identity
             or existing.applicable_source != applicable_source
@@ -138,8 +169,26 @@ def record(
     if kind in (AllocationKind.RESERVE, AllocationKind.ISSUE):
         if source is None or card is None or not applicable_source:
             raise RefusedError("Identify the Source, Work Card and Applicable Parts Data")
-        _check_serviceable(posting, source, required_identity, today)
-        _check_work(card, today)
+        identity = _check_serviceable(posting, source, today)
+        current_card = check_eligible_work(card, today)
+        if substitution is None:
+            if not identity or identity != required_identity:
+                raise RefusedError(
+                    "The Required Part Number or Specification Must Match the Received Lot"
+                )
+        else:
+            substitution = StockSubstitution.objects.select_related(
+                "authorisation__withdrawal"
+            ).get(pk=substitution.pk)
+            check_substitution(
+                substitution,
+                current_card,
+                posting,
+                identity,
+                required_identity,
+                applicable_source,
+                today,
+            )
     if kind in (AllocationKind.RESERVE, AllocationKind.QUARANTINE):
         if source is None or stores.unreserved(posting, source) < quantity:
             raise RefusedError("The Source Holds Less Unreserved Stock Than This Quantity")
@@ -163,6 +212,7 @@ def record(
                 destination=destination,
                 card=card,
                 preceding=preceding,
+                substitution=substitution,
                 required_identity=required_identity,
                 applicable_source=applicable_source,
                 quantity=quantity,
