@@ -12,9 +12,10 @@
 @font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
 body{margin:0}
 a{text-decoration:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 </style>
 </helmet>
-<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; display: flex; align-items: center; min-height: 48px; margin: -16px -40px 0; padding: 0 40px 4px; border-bottom: {{rule}}">
+<div style="--focus: {{t.text}}; font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; display: flex; align-items: center; min-height: 48px; margin: -16px -40px 0; padding: 0 40px 4px; border-bottom: {{rule}}">
   <nav aria-label="Breadcrumb">
     <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px; font-size: 14px; line-height: 20px; font-weight: 400">
       <sc-for list="{{crumbs}}" as="c" hint-placeholder-count="2">

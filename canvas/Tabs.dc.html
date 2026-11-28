@@ -12,9 +12,10 @@
 @font-face{font-family:"Geist Sans Embedded";src:url("/_blob/d039f9457dfa163de154da5ccb5ef1ce") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
 body{margin:0}
 a{text-decoration:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 </style>
 </helmet>
-<nav aria-label="{{label}}" style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; margin-top: {{gap}}; display: flex; flex-wrap: wrap; column-gap: 4px; row-gap: 4px; box-shadow: {{rule}}">
+<nav aria-label="{{label}}" style="--focus: {{t.text}}; font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; margin-top: {{gap}}; display: flex; flex-wrap: wrap; column-gap: 4px; row-gap: 4px; box-shadow: {{rule}}">
   <sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
     <a href="{{tab.href}}" aria-current="{{tab.current}}" style="display: inline-flex; align-items: center; height: 44px; padding: 0 12px; font-size: 14px; line-height: 20px; font-weight: {{tab.weight}}; color: {{tab.colour}}; box-shadow: {{tab.bar}}">{{tab.label}}</a>
   </sc-for>
@@ -81,7 +82,8 @@ class Component extends DCLogic {
       ] },
       settings: { label: 'Settings views', tabs: [
         ['org', 'Organisation', 'Settings.dc.html'],
-        ['plansettings', 'Planning', 'PlanSettings.dc.html']
+        ['plansettings', 'Planning', 'PlanSettings.dc.html'],
+        ['display', 'Display', 'Display.dc.html']
       ] }
     };
     const active = this.props.active || '';
