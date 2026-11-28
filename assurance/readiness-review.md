@@ -19,6 +19,7 @@ As written on 19 November 2026: The private beta slice is built and tested. Thre
 | 7 | Every hazard mitigated and verified, or accepted by Alex King | In Part |
 | 8 | The threat model reviewed | Met, by its author; the independent review is the penetration test |
 | 9 | Contract documents drafted | Met, as drafts for a solicitor |
+| 10 | Every page meets WCAG 2.2 Level AA, with the manual pass done and the conformance report and statement completed | In Part: automated checks pass on every page; the manual pass is not done; SC 2.2.1 needs a decision |
 
 ## 1. Every Requirement Traced and Tested
 
