@@ -663,7 +663,7 @@ def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history
         }
         Person.objects.filter(pk=chris.id).update(full_name="Chris Moore Updated")
         Person.objects.filter(pk=sam.id).update(full_name="Sam Patel Updated")
-    with as_owner_who_is_not_a_superuser():
+    with as_owner_who_is_not_a_superuser(functions=("logistics_stock_balance(uuid, uuid)",)):
         MigrationExecutor(connection).migrate(latest)
 
     client = signed_in(sample.planner)

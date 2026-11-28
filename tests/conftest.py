@@ -61,7 +61,10 @@ OWNER_WITHOUT_POWERS = "airworthiness_test_owner"
 
 
 @contextmanager
-def as_owner_who_is_not_a_superuser() -> Iterator[None]:
+def as_owner_who_is_not_a_superuser(
+    *,
+    functions: tuple[str, ...] = (),
+) -> Iterator[None]:
     """Do the enclosed work as an owner of every table who is not a superuser.
 
     The tests build the database as the connecting user, who is a superuser:
@@ -71,7 +74,8 @@ def as_owner_who_is_not_a_superuser() -> Iterator[None]:
     independent review of 24 November 2026). Here every table is given, for
     the length of the work, to a role with no power but owning them. The
     change of owner is undone afterwards, and is within the test's own
-    transaction in any case.
+    transaction in any case. A migration replacing a function can include
+    that function's fixed signature in the transfer.
     """
     role = connection.ops.quote_name(OWNER_WITHOUT_POWERS)
     with connection.cursor() as cursor:
@@ -93,6 +97,12 @@ def as_owner_who_is_not_a_superuser() -> Iterator[None]:
             cursor.execute(f"ALTER TABLE {table} OWNER TO {role}")
         # An owner makes tables of its own, as a migration does.
         cursor.execute(f"GRANT CREATE ON SCHEMA public TO {role}")
+        transferred = []
+        for function in functions:
+            cursor.execute("SELECT to_regprocedure(%s)", [function])
+            if cursor.fetchone()[0] is not None:
+                cursor.execute(f"ALTER FUNCTION {function} OWNER TO {role}")
+                transferred.append(function)
         cursor.execute(f"SET ROLE {role}")
     try:
         yield
@@ -103,6 +113,10 @@ def as_owner_who_is_not_a_superuser() -> Iterator[None]:
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED")
             for table in tables:
                 cursor.execute(f"ALTER TABLE {table} OWNER TO {connection.ops.quote_name(builder)}")
+            for function in transferred:
+                cursor.execute(
+                    f"ALTER FUNCTION {function} OWNER TO {connection.ops.quote_name(builder)}"
+                )
             cursor.execute(f"SET ROLE {APPLICATION_ROLE}")
 
 
