@@ -1,5 +1,6 @@
 """Issue local RFC 3161 responses for the synthetic handover rehearsal."""
 
+import base64
 import secrets
 import shutil
 import subprocess
@@ -7,12 +8,14 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
+FORMAT = "Airworthiness+ Synthetic Reading Timestamps"
 POLICY_OID = "1.3.6.1.4.1.32473.1.1"
 
 _CONFIGURATION = f"""\
@@ -194,3 +197,34 @@ def issue_timestamp(authority: SyntheticTimestampAuthority, signature_bytes: byt
             "empty-ca",
         )
         return (directory / "response.tsr").read_bytes()
+
+
+def timestamp_signature(
+    authority: SyntheticTimestampAuthority, signature: dict[str, Any]
+) -> dict[str, str]:
+    """Timestamp a detached signature and retain its existing claim's record ID."""
+    try:
+        record_id = signature["claim"]["record_id"]
+        encoded = signature["signature"]
+        if not isinstance(record_id, str) or not record_id.strip() or not isinstance(encoded, str):
+            raise ValueError
+        raw = base64.b64decode(encoded, validate=True)
+        if base64.b64encode(raw).decode("ascii") != encoded:
+            raise ValueError
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError(
+            "Expected a record ID and a canonical Base64 detached signature"
+        ) from error
+    response = issue_timestamp(authority, raw)
+    return {"record_id": record_id, "response": base64.b64encode(response).decode("ascii")}
+
+
+def timestamp_envelope(
+    authority: SyntheticTimestampAuthority, signatures: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Timestamp a list of retained detached signatures and return the transfer envelope."""
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "timestamps": [timestamp_signature(authority, signature) for signature in signatures],
+    }
