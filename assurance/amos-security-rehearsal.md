@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Reporter | Supplies a synthetic report that an authenticated receiver may have seen someone else's aircraft export. | Rehearsal reference AMOS-SYNTHETIC-010. Scope is the code and the two sample organisations. |
 | Security owner | Classifies the report against TH-020, REQ-003 and REQ-132 and sets the release decision for the exercise. | Cross-organisation record access would rate High. Release remains held pending verification. Plan reporter acknowledgement and first assessment using the times in SECURITY.md. |
-| Release owner | Requests existing isolation, export and authority checks on the candidate. | Exercise uses the normal regression selection with synthetic data. See the validation record for actual revision and results. |
+| Release owner | Requests existing isolation, export and authority checks on the candidate. | All 18 checks in `tests/test_security.py` passed on integrated revision `6e2f78b`. The same selection passed the database record rules and the maintenance history browser check that refuses a foreign aircraft route. See the validation record for the full candidate results. |
 | Security owner | Drafts a decision after retest. | Existing checks provide scoped evidence. Preserve the report and drill result. A real subscriber communication would describe impact and correction after confirmation. This exercise creates no real disclosure or confirmed vulnerability. |
 
 The independent assessment, scope and deployment evidence remain with Airworthiness Limited and the commissioned assessor. [Independent assessment issue 40](https://github.com/alxtkng/airworthiness-plus/issues/40)

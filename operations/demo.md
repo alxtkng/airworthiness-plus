@@ -222,3 +222,12 @@ As the Administrator, open **Tool Delegations** to review the sample procedure a
 ## What Cannot Be Shown Yet
 
 The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: further Stores and tooling workflows, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+
+## AMOS workflow rehearsal
+
+Open **Maintenance History** from an aircraft or **Work Packages** to search by
+aircraft, chapter or section, date and status. Use the **Report Text** and
+**Corrective Action** fields to locate the corresponding evidence. From
+**Stores**, open **Practise Stock Lookup** and compare ZRH Main, ZRH and the
+network totals. The checkpoint follows the session. For the two-organisation
+stop and fallback scenario, use the [parallel handover protocol](amos-parallel-handover.md).

@@ -8,7 +8,7 @@ You are taking over Airworthiness+ after its private beta slice was built. The s
 
 Read this brief, then `prompts/private-beta.md`. That brief still holds for everything this one does not change.
 
-Use the [AMOS workflow assessment and validation plan](../research/amos-workflow-assessment.md) when planning stock by location, maintenance history, electronic work cards and aircraft records handover. Its screenshot cases supply acceptance scenarios for the relevant phases, with execution evidence in the [local trial record](../assurance/amos-workflow-trial.md).
+Use the [AMOS workflow assessment and validation plan](../research/amos-workflow-assessment.md) when planning stock by location, maintenance history, electronic work cards and aircraft records handover. Its screenshot cases supply acceptance scenarios for the relevant phases, with execution evidence in the [local trial record](../assurance/amos-workflow-trial.md). The [18-case evidence matrix](../assurance/amos-evidence-matrix.md) records implementation status and open dependencies.
 
 ## Part 1. Where the Project Stands
 

@@ -72,3 +72,13 @@ preservation of the original records date.
 When adding a journey, browse through the form, check the saved value after a
 reload, and check what survives any refusal. Add or update the scenario in the
 inventory and the relevant row in `requirements/traceability.csv`.
+
+## AMOS workflow checks
+
+`test_maintenance_history.py` exercises the aircraft and planning entry points,
+chapter and section filtering, separate text searches, keyboard navigation and
+tenant isolation. `test_stores_exercise.py` follows the sample lookup from Stores
+and resumes its checkpoint. `test_parallel_handover.py` uses the two sample
+organisations to rehearse a stop and compare the source records after fallback.
+The mobile synthetic attestation journey is in `test_records.py`.
+[Case evidence and scope](../../assurance/amos-evidence-matrix.md)

@@ -44,3 +44,30 @@ The current selection also includes the new handover test. To rerun only that ca
 ```sh
 uv run pytest -q tests/test_exports.py::test_handover_archive_preserves_deferral_inspection_and_correction
 ```
+
+## Rebased baseline and local delivery
+
+The historical Phase 4 Stores worktree remains at `9eb703b` with its local records. Remote `main` was verified at `d1da03fe508109a5f123c20ee3e86cee7c559725`. The locked environment ran the selection above on a detached checkout of `142dda6`, which carries the earlier handover regression onto that main revision. **226 passed, with zero failures or skips**, in 259.27 seconds. The result includes the existing unsigned utilisation correction and belongs separately to the baseline.
+
+| Revision | Increment | Local evidence |
+| --- | --- | --- |
+| `f48ea98`, with integration fixes at `6e2f78b` | Faceted history from Aircraft and Work Packages | Browser search joins aircraft, ATA, date and state. Chapter 25 includes 25-21 and 25-22, exact section narrows, report and rectification searches are separate, and keyboard navigation opens the source. Django exercises related defect, original written order and package links. |
+| `bd7d083` | Stores training | 245 selected checks on source branch `e0b2036`. The guided exercise verifies Main 7, station 8 and network 10, two availability deductions and preserved custody. [Stores evidence](stores-lookup-exercise.md) |
+| `f69a90c` | Synthetic work-card attestation, source branch `958a947` | 305 selected checks on the source branch, including the 390-pixel review, step-up and cancellation, duplicate completion, failed archive rollback and retry, evidence export and release regression. [Attestation evidence](amos-synthetic-attestation.md) |
+| `5f6d8d9` | Parallel handover and fallback | Browser records and escalates a known deferred-limit discrepancy in the receiving organisation, which cannot browse the source aircraft. The sender returns to its forecast and the second archive's record and history files match byte for byte. [Procedure](../operations/amos-parallel-handover.md) |
+
+The focused pre-integration rerun passed all 254 selected checks. The first versions of the fallback check assumed the Problem Log status stayed **Open** after escalation, selected both the export row and its new log row, and tried to decode the CSV members as JSON. The corrected run checks **Action Taken**, selects the actual aircraft record and compares archive members as bytes. The first full integrated Django run found four failures in the aircraft tab expectation, added trigger inventory, sidebar placement and heading style, plus one browser launch skip. These were investigated against the final revision below.
+
+## Populated upgrade and database fallback
+
+Disposable PostgreSQL 16.14. The pre-cutover database ran `142dda6`, with a synthetic organisation seeded through the existing sample builder. The candidate migrations were run from `f69a90c`. Both `defects.0005_ata_section` and `planning.0005_workcardattestation` applied successfully. Django reported no model changes requiring a migration. The original and migrated databases agreed on 280 history events with the same ordered hash fingerprint, seven aircraft, four open defects and three pending orders. `check_records` reported zero chain problems and zero record type mismatches.
+
+PostgreSQL's native backup and restore utilities recovered the pre-cutover copy into a separate database in 0.64 seconds. Reopening that copy with the prior application revision produced the same counts, hash fingerprint and `check_records` verdict. This local run used a private disposable directory and native database utilities. The encrypted backup pipeline and a hosted rollback are separate evidence.
+
+## Integrated trial status
+
+The unsigned sender archive comparison and local fallback passed. The synthetic work-card attestation pilot retains explicit version-bound consent and an archive in the source app. The three-record trial remains open for independently trusted signed original and correction, receiving import and replay, and reconciliation of all three records in the receiver. See the [18-case matrix](amos-evidence-matrix.md) for per-case results, expected outcomes and owners.
+
+## Candidate validation
+
+The combined code revision is `6e2f78b`. Ruff lint and formatting and mypy passed. The traceability checker found 237 requirements and 237 traced entries. The complete suite outside the live browser directory passed **1,386 checks**, with no failures or skips. This includes the standalone browser checks. The focused rerun passed **25 of 26** checks, including the schema and navigation regressions, security, maintenance history, Stores and fallback. The remaining case timed out during the signing journey's existing work-card setup. The signing branch's dedicated 305-check pass and its browser rerun outcomes remain visible in the [pilot evidence](amos-synthetic-attestation.md).
