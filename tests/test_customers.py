@@ -314,7 +314,7 @@ def test_an_aircraft_always_has_a_customer_of_its_own_organisation(
         refused = post(lucy, f"/aircraft/{fleet['G-ABCD'].id}/owner/", customer=chosen)
         assert refused.status_code == 200, chosen
         owner = refused.content.decode().split("<h2>Owner of G-ABCD</h2>", 1)[1]
-        said = owner.split('<span role="alert">', 1)[1].split("</span>", 1)[0]
+        said = owner.split('<span class="field-error"', 1)[1].split("</span>", 2)[1]
         assert reason in said, chosen
     assert aircraft_of(sample, "G-ABCD").customer.name == "[Owner Name G-ABCD]"
     added = post(

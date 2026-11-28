@@ -591,7 +591,7 @@ def test_the_reweigh_threshold_is_the_organisations_own_with_no_default(sample: 
     assert "No Reweigh Threshold Set" in page(admin, "/settings/")
     for value in ("0", "0.05", "1000", "-1"):
         refused = post(admin, "/settings/reweigh-threshold/", threshold=value)
-        assert refused.status_code == 200 and 'role="alert"' in refused.content.decode()
+        assert refused.status_code == 200 and 'class="field-error"' in refused.content.decode()
     assert post(admin, "/settings/reweigh-threshold/", threshold="2.5").status_code == 302
     assert "Reweigh Threshold 2.5 Kilograms" in page(signed_in(sample.reader), "/settings/")
     with working_for(sample.ours.id, sample.administrator.id):
