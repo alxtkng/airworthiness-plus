@@ -107,7 +107,7 @@ def _evaluate(request: HttpRequest, supplier_id: UUID | None = None) -> HttpResp
 @requires(Action.RECORD_SUBCONTRACTOR_ASSESSMENT)
 @require_http_methods(["GET", "POST"])
 def assess_subcontractor(request: HttpRequest, supplier_id: UUID) -> HttpResponse:
-    """Record the maintenance subcontractor controls for a supplier (REQ-344)."""
+    """Record the maintenance subcontractor controls for a supplier (REQ-348)."""
     _maintenance_access(request, Action.RECORD_SUBCONTRACTOR_ASSESSMENT, aircraft_services.today())
     supplier_record = get_object_or_404(Supplier, pk=supplier_id)
     form = SubcontractorAssessmentForm(request.POST if request.method == "POST" else None)

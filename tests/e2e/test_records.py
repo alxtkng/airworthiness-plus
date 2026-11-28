@@ -1134,30 +1134,74 @@ def test_supplier_register_and_evaluation_history(
         expect(row.get_by_text("Suspended", exact=True)).to_be_visible()
 
 
+@pytest.mark.parametrize(
+    ("organisation", "approval", "exposition_reference", "pre_audit_reference"),
+    [
+        ("your-organisation", "Part-CAO", "CAE B.7 Revision 4", ""),
+        ("second-organisation", "Part-145", "MOE 2.1 Revision 4", "Pre-Audit 12"),
+    ],
+)
 def test_subcontractor_controls_on_a_supplier(
-    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+    chromium: Browser,
+    live_site: str,
+    personas: dict[str, tuple[Account, ...]],
+    organisation: str,
+    approval: str,
+    exposition_reference: str,
+    pre_audit_reference: str,
 ) -> None:
-    with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
+    with signed_in(chromium, live_site, personas[organisation][1]) as page:
         page.goto("/suppliers/")
-        page.get_by_role("link", name="[Propeller Organisation]", exact=True).click()
-        page.get_by_role("link", name="Record Subcontractor Assessment", exact=True).click()
+        page.get_by_role("link", name="Evaluate a Supplier", exact=True).click()
         save(
             page,
-            "Record Assessment",
+            "Record Evaluation",
             {
-                "approval": "Part-CAO",
-                "assessed_on": "2026-11-18",
-                "scope": "Test Steel Inspection",
-                "exposition_reference": "CAE B.7 Revision 4",
-                "qualification_evidence": "Qualification Register Entry 7",
-                "controls": "Review Test Report",
-                "outcome": "Controls Recorded",
+                "name": "Test Workshop",
+                "approval": approval,
+                "supplies": "Standard Parts",
+                "release_documents": "Certificate of Conformity",
+                "evaluated_on": "2026-11-18",
+                "next_evaluation_on": "2026-12-18",
+                "status": "Approved",
+                "evidence": "Initial Browser Evaluation",
             },
-            "Test Steel Inspection",
+            "Test Workshop",
         )
+        assessment = page.get_by_role("link", name="Record Subcontractor Assessment", exact=True)
+        assessment.click()
+        fields = {
+            "approval": approval,
+            "assessed_on": "2026-11-18",
+            "scope": "Test Steel Inspection",
+            "exposition_reference": exposition_reference,
+            "qualification_evidence": "Qualification Register Entry 7",
+            "pre_audit_reference": pre_audit_reference,
+            "controls": "Review Test Report",
+            "outcome": "Controls Recorded",
+        }
+        save(page, "Record Assessment", fields, "Test Steel Inspection")
+        assessment.click()
+        fields.update(
+            exposition_reference="",
+            qualification_evidence="",
+            pre_audit_reference="",
+            controls="Qualification Withdrawn",
+            outcome="Suspended",
+        )
+        save(page, "Record Assessment", fields, "Test Steel Inspection")
+        page.reload()
         expect(
             page.get_by_role("heading", name="Maintenance Subcontracting Evidence")
         ).to_be_visible()
-        row = page.get_by_role("row").filter(has_text="Test Steel Inspection")
-        expect(row.get_by_text("Controls Recorded", exact=True)).to_be_visible()
-        expect(reveal(row)).to_contain_text("Review Test Report")
+        assessments = page.locator("main tr:not(.detail)").filter(has_text="Test Steel Inspection")
+        expect(assessments).to_have_count(2)
+        expect(assessments.first.get_by_text("Suspended", exact=True)).to_be_visible()
+        expect(reveal(assessments.first)).to_contain_text("Qualification Withdrawn")
+        original = assessments.last
+        expect(original.get_by_text("Controls Recorded", exact=True)).to_be_visible()
+        evidence = reveal(original)
+        expect(evidence).to_contain_text("Review Test Report")
+        if pre_audit_reference:
+            expect(evidence).to_contain_text(pre_audit_reference)
+        expect(page.get_by_role("row").get_by_text("Approved", exact=True)).to_be_visible()

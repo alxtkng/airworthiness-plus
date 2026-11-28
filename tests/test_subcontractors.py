@@ -3,11 +3,16 @@
 from datetime import timedelta
 
 import pytest
+from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
 
 from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.logistics.models import SupplierEvaluation
 from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import ApprovalType
+from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import Sample, get, post, signed_in
 from tests.test_suppliers import SAMPLE
 
@@ -74,3 +79,32 @@ def test_part_145_controls_need_pre_audit_and_a_held_approval(sample: Sample) ->
         b"Cannot Be Dated in the Future"
         in post(manager, form, **dict(fields, assessed_on=tomorrow)).content
     )
+
+
+def test_subcontractor_migration_preserves_existing_supplier_evidence(sample: Sample) -> None:
+    """Add subcontractor evidence without rewriting existing supplier history."""
+    with as_owner():
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        executor.migrate([("logistics", "0002_supplier_record_rules")])
+
+    manager = signed_in(sample.lucy)
+    created = post(manager, "/suppliers/evaluate/", **SAMPLE)
+    assert created.status_code == 302
+    with working_for(sample.ours.id, sample.lucy.id):
+        evaluation = SupplierEvaluation.objects.get()
+        original_event = Event.of(evaluation).values().get()
+
+    with as_owner_who_is_not_a_superuser():
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        MigrationExecutor(connection).migrate(latest)
+
+    with working_for(sample.ours.id, sample.lucy.id):
+        assert SupplierEvaluation.objects.get() == evaluation
+        evaluation.refresh_from_db()
+        assert evaluation.evidence == SAMPLE["evidence"]
+        assert Event.of(evaluation).values().get() == original_event
+    address = created["Location"]
+    assert post(manager, address + "subcontracting/", **assessment()).status_code == 302
+    assert b"Controls Recorded" in get(manager, address).content

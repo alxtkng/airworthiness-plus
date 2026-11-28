@@ -150,6 +150,17 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             pre_audit_reference="",
             outcome=SubcontractorOutcome.CONTROLS_RECORDED,
         )
+        logistics_services.assess_subcontractor(
+            workshop,
+            approval=ApprovalType.PART_CAO,
+            assessed_on=TODAY,
+            scope="Specialised Inspection",
+            exposition_reference="",
+            qualification_evidence="",
+            controls="Qualification Withdrawn",
+            pre_audit_reference="",
+            outcome=SubcontractorOutcome.SUSPENDED,
+        )
 
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
