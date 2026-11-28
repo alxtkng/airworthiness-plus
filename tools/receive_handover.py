@@ -186,6 +186,10 @@ def main() -> None:
     parser.add_argument("--tsa-root-sha256", help="TSA root digest supplied independently")
     parser.add_argument("--tsa-crl", type=Path, help="Complete issuer-signed TSA revocation list")
     parser.add_argument("--tsa-evaluated-at", help="Explicit UTC TSA status evaluation instant")
+    parser.add_argument("--renewals", type=Path, help="Renewal responses for both timestamps")
+    parser.add_argument("--renewal-tsa-root", type=Path, help="Independent renewal TSA root")
+    parser.add_argument("--renewal-tsa-root-sha256", help="Independently supplied renewal root pin")
+    parser.add_argument("--renewal-tsa-crl", type=Path, help="Complete renewal TSA revocation list")
     options = parser.parse_args()
     signing = (options.signatures, options.trust, options.trust_sha256)
     if any(value is not None for value in signing) and not all(signing):
@@ -200,6 +204,19 @@ def main() -> None:
         parser.error("TSA status evaluation requires timestamped evidence")
     if options.tsa_crl and not options.tsa_evaluated_at:
         parser.error("A TSA CRL requires --tsa-evaluated-at")
+    renewal = (
+        options.renewals,
+        options.renewal_tsa_root,
+        options.renewal_tsa_root_sha256,
+        options.renewal_tsa_crl,
+    )
+    if any(value is not None for value in renewal) and (
+        not all(renewal) or not all(timing) or not options.tsa_evaluated_at
+    ):
+        parser.error(
+            "Renewal verification requires both timestamp envelopes, both TSA roots and pins, "
+            "the renewal TSA CRL and --tsa-evaluated-at"
+        )
     try:
         received = read_transfer(
             options.archive.read_bytes(),
@@ -220,7 +237,24 @@ def main() -> None:
                     options.trust_sha256,
                 )
             )
-        if options.timestamps is not None:
+        if options.renewals is not None:
+            from verify_handover_timestamps import verify_renewals
+
+            received.update(
+                verify_renewals(
+                    received,
+                    options.timestamps.read_bytes(),
+                    options.tsa_root.read_bytes(),
+                    options.tsa_root_sha256,
+                    options.tsa_crl.read_bytes() if options.tsa_crl else None,
+                    options.renewals.read_bytes(),
+                    options.renewal_tsa_root.read_bytes(),
+                    options.renewal_tsa_root_sha256,
+                    options.renewal_tsa_crl.read_bytes(),
+                    options.tsa_evaluated_at,
+                )
+            )
+        elif options.timestamps is not None:
             from verify_handover_timestamps import verify_timestamps
 
             received.update(
