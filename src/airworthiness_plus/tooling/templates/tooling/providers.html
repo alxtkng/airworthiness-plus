@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Service Providers{% endblock %}
+{% block content %}
+<h1>Service Providers</h1>
+<p>{% if may_provider %}<a class="button" href="{% url 'authorise_tool_provider' %}">Record Provider Scope</a>{% endif %} <a href="{% url 'suppliers' %}">Suppliers</a></p>
+<h2>Calibration Orders</h2>
+<table data-search="always">
+<thead><tr><th scope="col">Order</th><th scope="col">Tool</th><th scope="col">Provider</th><th scope="col">Despatched</th><th scope="col">Expected Return</th><th scope="col">Returned</th></tr></thead>
+<tbody>
+{% for order, sent, returned in orders %}
+<tr><th scope="row"><a href="{% url 'calibration_order' order.id %}">{{ order.reference }}</a></th><td>{{ order.tool }}</td><td>{{ order.provider.supplier }}</td><td>{{ sent.occurred_on|long_date }}</td><td>{{ sent.expected_on|long_date }}</td><td>{{ returned.occurred_on|long_date }}</td></tr>
+{% empty %}<tr><td colspan="6">No calibration orders recorded.</td></tr>{% endfor %}
+</tbody>
+</table>
+<h2>Provider Scope History</h2>
+<table data-search="always">
+<thead><tr><th scope="col">Supplier</th><th scope="col">Laboratory Facility</th><th scope="col">Scope</th><th scope="col">Approval</th><th scope="col">Valid To</th><th scope="col">Recorded Decision</th></tr></thead>
+<tbody>
+{% for scope in scopes %}
+<tr><th scope="row"><a href="{% url 'tool_provider' scope.id %}">{{ scope.supplier }}</a></th><td>{{ scope.facility }}</td><td>{{ scope.get_service_display }}, {{ scope.measurement }}{% if scope.range_from is not None %}, {{ scope.range_from|floatformat:"-6" }} to {{ scope.range_to|floatformat:"-6" }} {{ scope.unit }}{% endif %}</td><td>{{ scope.delegation.approval_reference }}</td><td>{{ scope.valid_to|long_date }}</td><td>{{ scope.get_status_display }}</td></tr>
+{% empty %}<tr><td colspan="6">No tooling provider scopes recorded.</td></tr>{% endfor %}
+</tbody>
+</table>
+{% endblock %}

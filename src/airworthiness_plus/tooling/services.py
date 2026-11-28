@@ -14,6 +14,7 @@ from airworthiness_plus.logistics.services import maintenance_approvals
 from airworthiness_plus.organisations.models import Approval, Organisation
 from airworthiness_plus.people.models import Person
 from airworthiness_plus.tooling import status
+from airworthiness_plus.tooling.calibration_status import holding_order
 from airworthiness_plus.tooling.models import (
     ControlKind,
     EventKind,
@@ -355,6 +356,10 @@ def record_event(
         return existing
     if occurred_on > today:
         raise RefusedError("Evidence cannot be dated in the future")
+    if event_kind == EventKind.CALIBRATED and holding_order(tool, today):
+        raise RefusedError(
+            "Use the open calibration order to accept evidence and reinstate the tool"
+        )
     _check_condition(tool, grant, event_kind, occurred_on, today)
     if control_kind := CONTROL_FOR_EVENT.get(event_kind):
         controls = status.active_controls(tool, grant.approval, grant.approval_reference, today)

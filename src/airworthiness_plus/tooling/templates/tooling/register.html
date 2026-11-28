@@ -14,7 +14,8 @@
 <ul>
 {% for item in attention %}
 <li><a href="{% url 'tool_record' item.tool.id %}{% if selected %}?approval={{ selected.approval }}{% endif %}">{{ item.tool }}</a>
-{% if item.restricted %}<strong>{{ item.condition.get_kind_display|status }}</strong>. {{ item.condition.evidence }}<br>{% endif %}{{ item.control_status|status }}
+{% if item.calibration_hold %}<strong>Calibration hold</strong> · {% endif %}
+{% if item.condition and item.restricted %}<strong>{{ item.condition.get_kind_display|status }}</strong>. {{ item.condition.evidence }}<br>{% endif %}{{ item.control_status|status }}
 {% if item.next_due %} · {{ item.next_due|date:"j F Y" }}{% endif %}</li>
 {% endfor %}
 </ul>
@@ -29,7 +30,7 @@
 <tr>
   <th scope="row"><a href="{% url 'tool_record' item.tool.id %}{% if selected %}?approval={{ selected.approval }}{% endif %}">{{ item.tool }}</a></th>
   <td>{{ item.tool.site }} · {{ item.tool.location }}</td>
-  <td>{% if item.condition %}{{ item.condition.get_kind_display|status }}{% else %}No restriction recorded{% endif %}</td>
+  <td>{% if item.calibration_hold %}Calibration hold<br>{% endif %}{% if item.condition %}{{ item.condition.get_kind_display|status }}{% else %}No restriction recorded{% endif %}</td>
   <td>{{ item.control_status|status }}{% for line in item.controls %}{% if line.revision.interval_months %}<br>{{ line.revision.get_kind_display }} every {{ line.revision.interval_months }} months{% elif item.control_status != line.status %}<br>{{ line.status }}{% endif %}{% endfor %}</td>
   <td>{% if item.next_due %}{{ item.next_due|date:"j F Y" }}{% endif %}</td>
 </tr>

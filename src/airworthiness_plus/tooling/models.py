@@ -12,6 +12,11 @@ class ToolAction(models.TextChoices):
     CONTROL = "Control", "Approve a Control Basis"
     EVIDENCE = "Evidence", "Accept Control Evidence"
     CONDITION = "Condition", "Record Tool Condition"
+    PROVIDER = "Provider", "Authorise a Tool Service Provider"
+    ORDER = "Order", "Place a Calibration Order"
+    RECEIPT = "Receipt", "Record Calibration Custody"
+    RESULT = "Result", "Record a Calibration Result"
+    CERTIFICATE = "Certificate", "Decide Certificate Acceptance"
     REINSTATE = "Reinstate", "Authorise Return to Use"
 
 
@@ -222,3 +227,7 @@ class ToolControlEvent(SubmittedToolRecord):
                 name="tooling_interim_has_measurement_evidence",
             ),
         ]
+
+
+# Django discovers the associated calibration records with the tooling app.
+from airworthiness_plus.tooling import calibration_models  # noqa: E402, F401

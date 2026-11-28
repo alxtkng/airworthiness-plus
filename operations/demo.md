@@ -219,6 +219,8 @@ Open **Logistics → Tools and Equipment** in the fictitious Part-CAO organisati
 
 As the Administrator, open **Tool Delegations** to review the sample procedure and action coverage. As Lucy Grant, register a fictitious asset at the Hangar, record its control basis, and use **Record Tool Event** to select the matching revision and add completion evidence. Try a restriction, completed repair and authorised return using the fictitious procedure and evidence references. The marked sample site adds missing examples on upgrade. Its existing tool records are preserved.
 
+Open **Tools and Equipment → Service Providers**. Compare C07's expected return, the previously reported deadline and the blank physical return. C06 has a physical return with a missing-traceability rejection and a calibration hold. Its order links to the original certificate revision. Record any trial certificate or point results against a new fictitious order. The order keeps prospective reinstatement separate from the open affected-work case.
+
 ## What Cannot Be Shown Yet
 
 The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: further Stores and tooling workflows, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
