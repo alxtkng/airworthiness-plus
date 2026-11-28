@@ -225,6 +225,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="attest_work_card",
     ),
     path(
+        "work-packages/<uuid:package_id>/cards/<uuid:card_id>/steps/<int:number>/",
+        planning.sign_work_card_step,
+        name="sign_work_card_step",
+    ),
+    path(
         "work-packages/<uuid:package_id>/cards/<uuid:card_id>/inspection/",
         planning.inspect_work_card,
         name="inspect_work_card",

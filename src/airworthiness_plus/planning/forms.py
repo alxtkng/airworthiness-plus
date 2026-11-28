@@ -13,6 +13,7 @@ from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.maintenance_data.models import DataSet, Revision
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
 from airworthiness_plus.planning.models import WorkCard, WorkPackage
+from airworthiness_plus.planning.services import synthetic_available
 from airworthiness_plus.programme.models import Task
 from airworthiness_rules.intervals import TaskKind
 
@@ -73,8 +74,18 @@ class WorkCardForm(Form):
         required=False,
     )
 
+    structured_steps = forms.CharField(
+        label="Synthetic Step Instructions",
+        widget=forms.Textarea,
+        help_text="Enter one training instruction per line. Prefix a critical step with *.",
+        max_length=6000,
+        required=False,
+    )
+
     def __init__(self, data: Any = None, *, package: WorkPackage) -> None:
         super().__init__(data)
+        if not synthetic_available(package):
+            del self.fields["structured_steps"]
         cast("forms.ModelChoiceField[Task]", self.fields["task"]).queryset = Task.objects.filter(
             programme__aircraft_id=package.aircraft_id,
             retired=False,
@@ -139,3 +150,8 @@ class PackageReleaseForm(Form):
 class AttestationForm(Form):
     consent = forms.BooleanField(label="Consent to the Reviewed Synthetic Attestation")
     intent = forms.CharField(widget=forms.HiddenInput, max_length=256)
+
+
+class StepSignOffForm(Form):
+    evidence = forms.CharField(label="Step Result", widget=forms.Textarea, max_length=500)
+    consent = forms.BooleanField(label="I completed this synthetic step as shown")

@@ -54,6 +54,7 @@ from airworthiness_plus.planning.models import (
     WorkCard,
     WorkCardAttestation,
     WorkCardSigningJob,
+    WorkCardStepSignOff,
     WorkPackage,
 )
 from airworthiness_plus.programme.models import (
@@ -175,6 +176,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(WorkCard, _by("package__aircraft")),
     Exported(WorkCardAttestation, _by("card__package__aircraft")),
     Exported(WorkCardSigningJob, _by("card__package__aircraft")),
+    Exported(WorkCardStepSignOff, _by("card__package__aircraft")),
     Exported(Defect, _by("aircraft")),
     # What was done about the same defect on the aircraft's type.
     Exported(RepeatAction, lambda aircraft: Q(type_rating=aircraft.type_rating)),

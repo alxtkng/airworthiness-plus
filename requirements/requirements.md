@@ -369,7 +369,7 @@ These block verification of the requirements named, not the start of building.
 
 | Identifier | Requirement | Source | Priority | Verification |
 |---|---|---|---|---|
-| REQ-380 | In the synthetic pilot, archive the named performer's explicit consent to the reviewed work card version after recent identity verification and a current action and aircraft-type authorisation check. Retain that evidence in the aircraft export. Synthetic authority cannot be used for operational certification. | ADR-0011 (D) | Must | Test |
+| REQ-380 | In the synthetic pilot, archive the named performer's explicit consent to the reviewed work card version after recent identity verification and a current action and aircraft-type authorisation check. Persist the exact request, check provider evidence against the signer and version, and confirm archival with safe retry. Pin structured instructions to the issued revision, retain ordered step sign-offs and require qualified independent inspection for critical work. Retain the evidence and history in the aircraft export. Synthetic authority cannot be used for operational certification. | ADR-0011 (D) | Must | Test |
 
 ## Maintenance history
 

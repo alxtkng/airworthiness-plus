@@ -526,7 +526,11 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
         )
         held = rows(one.table, column, sample.ours.id, omitted)
         # The synthetic pilot has its own populated export test and is off by default.
-        if one.table != "planning_workcardattestation":
+        if one.table not in {
+            "planning_workcardattestation",
+            "planning_workcardsigningjob",
+            "planning_workcardstepsignoff",
+        }:
             assert held, one.table
         assert files[f"records/{one.table}.json"] == held, one.table
         with as_owner():

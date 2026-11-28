@@ -835,7 +835,12 @@ def test_certifying_staff_evidence_is_retained_with_release_and_deferral(
 
 
 def _record_critical_card_completion(
-    page: Page, reference: str, performer: str, *, with_dispatch_card: bool = False
+    page: Page,
+    reference: str,
+    performer: str,
+    *,
+    with_dispatch_card: bool = False,
+    structured: bool = False,
 ) -> None:
     page.goto("/maintenance-data/add/")
     save(
@@ -878,6 +883,7 @@ def _record_critical_card_completion(
         "Landing Light Replacement",
     )
     page.get_by_role("link", name="Add Work Card").click()
+    extra = {"structured_steps": "Check test indicator\n*Verify test return"} if structured else {}
     save(
         page,
         "Add Work Card",
@@ -888,6 +894,7 @@ def _record_critical_card_completion(
             "planned_hours": "2.0",
             "critical": "on",
             "inspection_hours": "0.5",
+            **extra,
         },
         "Test Landing Light Card",
     )
@@ -906,6 +913,16 @@ def _record_critical_card_completion(
         )
     page.get_by_role("link", name="Issue Work Package").click()
     save(page, "Issue Work Package", {}, "Revision 1")
+    if structured:
+        for step in (1, 2):
+            page.get_by_text("Test Landing Light Card", exact=True).last.click()
+            page.get_by_role("link", name=f"Sign Step {step}").click()
+            save(
+                page,
+                f"Sign Step {step}",
+                {"evidence": f"Test result for step {step}", "consent": "on"},
+                reference,
+            )
     if with_dispatch_card:
         page.get_by_role("row").filter(has_text="Test Landing Light Card").get_by_role(
             "link", name="Record Signed Work"
@@ -1002,7 +1019,7 @@ def test_synthetic_work_card_attestation_at_mobile_width(
 
     with browser_page(chromium, running_site.address, width=390) as page:
         authenticator = sign_in(page, accounts[3])
-        _record_critical_card_completion(page, "WP-SYNTHETIC-2026-TEST", name)
+        _record_critical_card_completion(page, "WP-SYNTHETIC-2026-TEST", name, structured=True)
         package_url = page.url
 
         def open_preview() -> None:
@@ -1013,6 +1030,7 @@ def test_synthetic_work_card_attestation_at_mobile_width(
             ).to_be_visible()
             expect(page.get_by_text("Pending", exact=True)).to_be_visible()
             expect(page.get_by_text("Person Attesting")).to_be_visible()
+            expect(page.get_by_text("Verify test return (Critical)", exact=False)).to_be_visible()
             assert page.locator("html").evaluate("e => e.scrollWidth <= e.clientWidth")
             page.get_by_role("checkbox").check()
 
