@@ -430,11 +430,12 @@ def test_the_maintenance_data_is_that_of_the_sample(
     """SampleData.md, Documentation, Maintenance data."""
     data = {row[0]: row for row in rows(reader, "/maintenance-data/")}
     grob = data["Grob G 115 Maintenance Manual"]
-    assert (grob[9], grob[10], grob[11]) == (
-        "2 November 2026, [Planning and Records Name]",
+    assert grob[9:13] == [
+        "2 November 2026",
+        "[Planning and Records Name]",
         "20 November 2026",
         "Due Soon",
-    )
+    ]
     cap = data["CAP 747 Mandatory Requirements for Airworthiness"]
     assert cap[9].startswith("16 November 2026")
     assert data["Piper PA-38 Series Maintenance Manual"][6] == "Not Held"
