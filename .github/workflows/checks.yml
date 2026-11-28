@@ -20,7 +20,8 @@ jobs:
   checks:
     name: Tests, Types, Lint, Dependencies, Secrets
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # The full main-branch browser walk runs after the database suite.
+    timeout-minutes: 20
     services:
       postgres:
         # Pinned to a digest, not a moving tag (threat TH-061). No password is
