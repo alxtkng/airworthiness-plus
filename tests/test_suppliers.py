@@ -1,6 +1,6 @@
 """Phase 4 Suppliers, using the sample organisation and its normal record pages."""
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -98,37 +98,48 @@ def test_supplier_dates_and_duplicate_identity_are_refused(sample: Sample) -> No
         assert Event.objects.filter(record_type="logistics_supplierevaluation").count() == 1
 
 
-def test_each_approval_has_its_own_supplier_decision(
-    sample: Sample, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_each_approval_has_its_own_supplier_decision(sample: Sample) -> None:
     """REQ-340 and REQ-342. A new approval reference cannot borrow an older decision."""
-    monkeypatch.setattr(aircraft_services, "today", lambda: date(2026, 11, 27))
+    # Approval renewal is dated using the real database clock, so dates in this case
+    # are relative to the same UK day used by the application.
+    today = aircraft_services.today()
+    first_evaluation = dict(
+        SAMPLE,
+        evaluated_on=(today - timedelta(days=9)).isoformat(),
+        next_evaluation_on=(today + timedelta(days=3)).isoformat(),
+    )
     with working_for(sample.ours.id, sample.administrator.id):
         second_approval = approvals.record(
             sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[First]"
         )
     manager = signed_in(sample.lucy)
-    created = post(manager, "/suppliers/evaluate/", **SAMPLE)
+    created = post(manager, "/suppliers/evaluate/", **first_evaluation)
     assert created.status_code == 302
     register = get(manager, "/suppliers/")
     assert b"No Current Evaluation" in register.content
     assert b"Due Soon" in register.content
     address = created["Location"]
-    next_evaluation = {key: value for key, value in SAMPLE.items() if key != "name"}
+    next_evaluation = dict(first_evaluation)
+    next_evaluation.pop("name")
     next_evaluation["approval"] = ApprovalType.PART_145
     assert post(manager, address + "evaluate/", **next_evaluation).status_code == 302
     assert b"No Current Evaluation" not in get(manager, "/suppliers/").content
     with working_for(sample.ours.id, sample.administrator.id):
-        approvals.end(second_approval, on=date(2026, 11, 19))
+        approvals.end(second_approval, on=today - timedelta(days=8))
         approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[New]")
     assert b"No Current Evaluation" in get(manager, "/suppliers/").content
     assert b"UK.145.[First]" in get(manager, address).content
-    gap = post(manager, address + "evaluate/", **dict(next_evaluation, evaluated_on="2026-11-20"))
+    gap_day = (today - timedelta(days=7)).isoformat()
+    gap = post(manager, address + "evaluate/", **dict(next_evaluation, evaluated_on=gap_day))
     assert b"The Organisation Held No Part-145 Maintenance Approval" in gap.content
     backdated = post(
         manager,
         address + "evaluate/",
-        **dict(next_evaluation, evaluated_on="2026-11-17", evidence="Earlier Part-145 Evaluation"),
+        **dict(
+            next_evaluation,
+            evaluated_on=(today - timedelta(days=10)).isoformat(),
+            evidence="Earlier Part-145 Evaluation",
+        ),
     )
     assert backdated.status_code == 302
     history = get(manager, address).content
