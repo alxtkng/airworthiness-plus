@@ -63,6 +63,11 @@ def _tools(user: User) -> QuerySet[Tool]:
         Tool.objects.filter(organisation_id=user.organisation_id)
         .prefetch_related(Prefetch("control_revisions", queryset=revisions))
         .prefetch_related(Prefetch("control_events", queryset=events))
+        .prefetch_related(
+            "calibration_orders__movements",
+            "calibration_orders__certificates__decisions__reinstatement",
+            "calibration_orders__impact_case__trigger__certificate",
+        )
     )
 
 
@@ -116,6 +121,7 @@ def tool_record(request: HttpRequest, tool_id: UUID) -> HttpResponse:
             "reference": reference,
             "may_control": bool(selected) and user.may(Action.RECORD_TOOL_CONTROL),
             "may_record": bool(selected) and user.may(Action.RECORD_TOOL_EVENT),
+            "may_calibrate": bool(selected) and user.may(Action.RECORD_TOOL_CALIBRATION),
         },
     )
 

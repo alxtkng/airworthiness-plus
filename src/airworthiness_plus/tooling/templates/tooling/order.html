@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ order.reference }}{% endblock %}
+{% block content %}
+<h1>{{ order.reference }}</h1>
+<p><a href="{% url 'tool_record' order.tool_id %}">{{ order.tool }}</a> · <a href="{% url 'tool_provider' order.provider_id %}">{{ order.provider.supplier }}</a></p>
+<p>{% if may_record and open_order %}
+{% if not returned %}<a class="button" href="{% url 'calibration_movement' order.id %}">Record Calibration Custody</a>{% endif %}
+{% if may_reinstate %}<a class="button" href="{% url 'reinstate_calibrated_tool' order.id %}">Authorise Return to Use</a>{% endif %}
+{% endif %}
+{% if may_record and sent %}<a class="button" href="{% url 'record_calibration_certificate' order.id %}">Record Certificate Version</a>{% endif %}</p>
+<dl>
+<dt>Tool Serial</dt><dd>{{ order.serial }}{% if order.component_ids %}, {{ order.component_ids }}{% endif %}</dd>
+<dt>Approval and Standard</dt><dd>{{ order.delegation.approval_reference }}, {{ order.control.standard }}</dd>
+<dt>Ordered Scope</dt><dd>{{ order.measurement }}, {{ order.points|join:", " }} {{ order.unit }}, {{ order.configuration }}</dd>
+<dt>Method and Revision</dt><dd>{{ order.provider.method }}</dd>
+<dt>Limits and Source</dt><dd>±{{ order.error_limit|floatformat:"-6" }} {{ order.error_unit }}, {{ order.limits_source }}</dd>
+{% if order.uncertainty_required %}<dt>Measurement Uncertainty</dt><dd>Required</dd>{% endif %}
+{% if order.requested_rule %}<dt>Requested Decision Rule</dt><dd>{{ order.requested_rule }}</dd>{% endif %}
+<dt>Despatched</dt><dd>{{ sent.occurred_on|long_date }}{% if sent %} · {{ sent.evidence }}{% endif %}</dd>
+<dt>Expected Return</dt><dd>{{ sent.expected_on|long_date }}</dd>
+<dt>Physical Return</dt><dd>{{ returned.occurred_on|long_date }}{% if returned %} · {{ returned.evidence }}{% endif %}</dd>
+<dt>Calibration Due</dt><dd>{{ calibration_due|long_date }}</dd>
+{% if order.reported_due_on %}<dt>Prior Label Deadline</dt><dd>{{ order.reported_due_on|long_date }} · {{ order.reported_label_source }}</dd>{% endif %}
+{% if ready %}<dt>Reinstatement</dt><dd>{{ ready.signed_on|long_date }}, {{ ready.delegation.person }}, {{ ready.delegation.procedure }}<br>{{ ready.evidence }}</dd>
+{% elif sent %}<dt>Technical Status</dt><dd>Calibration hold</dd>{% endif %}
+</dl>
+{% if order.impact_case %}
+<section aria-labelledby="impact-case">
+<h2 id="impact-case">Affected-Work Review</h2>
+<p><strong>Open affected-work case</strong> · {{ order.impact_case.opened_on|long_date }}{% if order.impact_case.provisional %} · Provisional finding{% endif %}</p>
+<p>{{ order.impact_case.trigger.get_phase_display }} at {{ order.impact_case.trigger.reference_value|floatformat:"-6" }} {{ order.unit }}, signed error {{ order.impact_case.trigger.error|floatformat:"-6" }} {{ order.error_unit }} · <a href="{% url 'calibration_certificate' order.id order.impact_case.trigger.certificate_id %}">Original Finding</a></p>
+<p>Review previous work from the last defensible in-tolerance evidence through removal from use. Include unresolved history and conflicting custody dates.</p>
+</section>
+{% endif %}
+<h2>Certificate History</h2>
+{% for cert in order.certificates.all %}
+<p><a href="{% url 'calibration_certificate' order.id cert.id %}">{{ cert }}</a>{% if cert != latest %} · Superseded{% endif %}{% for decision in cert.decisions.all %}<br>{{ decision.get_outcome_display }}, {{ decision.signed_on|long_date }}, {{ decision.reason }}{% endfor %}</p>
+{% empty %}<p>No certificate evidence recorded.</p>{% endfor %}
+{% endblock %}

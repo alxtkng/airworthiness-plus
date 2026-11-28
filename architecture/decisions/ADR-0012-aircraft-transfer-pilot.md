@@ -1,4 +1,4 @@
-# ADR-0010 Aircraft transfer pilot
+# ADR-0012 Aircraft transfer pilot
 
 Status: Proposed. Applies to synthetic trial data until the sending and receiving records leads agree the ownership and reconciliation rules.
 

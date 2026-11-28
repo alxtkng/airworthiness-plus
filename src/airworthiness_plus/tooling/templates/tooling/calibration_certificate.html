@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ certificate }}{% endblock %}
+{% block content %}
+<h1>{{ certificate }}</h1>
+<p><a href="{% url 'calibration_order' order.id %}">{{ order.reference }}</a>{% if not current %} · Superseded{% endif %}</p>
+<p>{% if may_result %}<a class="button" href="{% url 'record_calibration_result' order.id certificate.id %}">Record Calibration Result</a>{% endif %}
+{% if may_decide %}<a class="button" href="{% url 'decide_calibration_certificate' order.id certificate.id %}">Decide Certificate Acceptance</a>{% endif %}</p>
+<dl>
+<dt>Source</dt><dd>{{ certificate.source }}</dd>
+<dt>Calibration Date</dt><dd>{{ certificate.calibrated_on|long_date }}</dd>
+<dt>Certificate Receipt Date</dt><dd>{{ certificate.received_on|long_date }}</dd>
+<dt>Serial and Components Shown</dt><dd>{{ certificate.serial }} {{ certificate.component_ids }}</dd>
+<dt>Performing Facility</dt><dd>{{ certificate.facility }}</dd>
+<dt>Standard, Method and Configuration</dt><dd>{{ certificate.standard }}, {{ certificate.method }}, {{ certificate.configuration }}</dd>
+<dt>Metrological Traceability</dt><dd>{{ certificate.traceability|default:"Evidence needed" }}</dd>
+<dt>Laboratory Decision Rule</dt><dd>{{ certificate.rule|default:"No rule recorded" }}</dd>
+{% if certificate.adjustment %}<dt>Adjustment</dt><dd>{{ certificate.adjustment }}</dd>{% endif %}
+</dl>
+<h2>Result Evidence</h2>
+{% if found_gap %}<p>As-found evidence needs triage. One or more ordered points lack a conclusive signed result.</p>{% endif %}
+<table>
+<thead><tr><th scope="col">Phase</th><th scope="col">Reference and Reading</th><th scope="col">Signed Error</th><th scope="col">Uncertainty</th><th scope="col">Reported Statement</th></tr></thead>
+<tbody>
+{% for point in certificate.results.all %}
+<tr><th scope="row">{{ point.get_phase_display }}</th><td>{{ point.reference_value|floatformat:"-6" }}{% if point.measured_value is not None %}, {{ point.measured_value|floatformat:"-6" }}{% endif %} {{ order.unit }}</td><td>{% if point.error is not None %}{{ point.error|floatformat:"-6" }} {{ order.error_unit }}{% endif %}<br>{{ point.convention }}</td><td>{% if point.uncertainty is not None %}{{ point.uncertainty|floatformat:"-6" }} {{ order.error_unit }}{% endif %}<br>{{ point.coverage }}</td><td>{{ point.get_statement_display }}</td></tr>
+{% empty %}<tr><td colspan="5">Result evidence needed.</td></tr>{% endfor %}
+</tbody>
+</table>
+<h2>Acceptance History</h2>
+{% for decision in certificate.decisions.all %}
+<p><strong>{{ decision.get_outcome_display }}</strong> · {{ decision.signed_on|long_date }} · {{ decision.delegation.person }}, {{ decision.delegation.approval_reference }}, {{ decision.delegation.procedure }}<br>{{ decision.reason }}{% if decision.internal_rule %}<br>{{ decision.internal_rule }}{% endif %}</p>
+{% empty %}<p>Awaiting certificate decision.</p>{% endfor %}
+{% endblock %}

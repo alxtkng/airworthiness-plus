@@ -35,7 +35,7 @@ The receiver authenticates the direct complete CRL against the pinned root, chec
 
 ## Reproduction and evidence
 
-Use the [signed timestamp receiver command](../architecture/decisions/ADR-0010-aircraft-transfer-pilot.md#signed-reading-rehearsal) and add either an explicit assessment time or that time plus its complete issuer CRL. Use a fresh SQLite path for a different scenario.
+Use the [signed timestamp receiver command](../architecture/decisions/ADR-0012-aircraft-transfer-pilot.md#signed-reading-rehearsal) and add either an explicit assessment time or that time plus its complete issuer CRL. Use a fresh SQLite path for a different scenario.
 
 ```sh
 --tsa-evaluated-at "$evaluation_utc" --tsa-crl "$issuer_crl"

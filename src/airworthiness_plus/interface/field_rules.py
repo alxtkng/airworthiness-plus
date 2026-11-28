@@ -36,6 +36,7 @@ from airworthiness_plus.releases import forms as releases
 from airworthiness_plus.reviews import forms as reviews
 from airworthiness_plus.staffing import forms as staffing
 from airworthiness_plus.staffing import roster_forms as roster
+from airworthiness_plus.tooling import calibration_forms as calibration
 from airworthiness_plus.tooling import forms as tooling
 
 Sets = tuple[type[forms.Form] | str, ...]
@@ -43,6 +44,13 @@ Sets = tuple[type[forms.Form] | str, ...]
 # Every address that changes something, by its name, with what it may set: the
 # fields of a form, or a value named in words where the address takes it itself.
 WRITES: dict[str, Sets] = {
+    "authorise_tool_provider": (calibration.ProviderForm,),
+    "place_calibration_order": (calibration.OrderForm,),
+    "calibration_movement": (calibration.MovementForm,),
+    "record_calibration_certificate": (calibration.CertificateForm,),
+    "record_calibration_result": (calibration.ResultForm,),
+    "decide_calibration_certificate": (calibration.DecisionForm,),
+    "reinstate_calibrated_tool": (calibration.ReinstateForm,),
     "add_tool": (tooling.RegistrationForm,),
     "add_tool_control": (tooling.ControlForm,),
     "add_tool_event": (tooling.EventForm,),
@@ -212,6 +220,10 @@ READS = frozenset(
         "stores_stock",
         "stock_entry",
         "tool_register",
+        "tool_providers",
+        "tool_provider",
+        "calibration_order",
+        "calibration_certificate",
         "tool_record",
         "tool_delegations",
         "supplier",

@@ -321,6 +321,7 @@ def test_a_test_site_seeded_before_the_canvas_build_is_given_what_is_missing(
             "Suppliers of the Sample Added, 5 Suppliers",
             "Goods In of the Sample Added, 5 Receipts",
             "Tools of the Sample Added, 5 Tools",
+            "Calibration Orders of the Sample Added, 2 Orders",
             "Second Sample Organisation Set Up",
             f"Administrator {second.ADMINISTRATOR}",
         ]

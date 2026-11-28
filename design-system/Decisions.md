@@ -269,6 +269,8 @@ Recorded 27 November 2026 as ours. The plan gives each phase the next block of 2
 - The balancing kit stays **Control basis to verify** with neither a control interval nor a date until the verified documents and actual kit and sensor identities are recorded. The 0142 chronology, recheck scope and no-effect evidence gaps stay visible in the sample record.
 - PR 2 records the open affected-work case and restricts the tool when it records an out-of-limits result. PR 4 records the investigation, dispositions and closure.
 
+- Calibration uses a dated facility-specific provider scope and a separate acceptance and reinstatement decision. The order keeps the actual movement dates separate from the expected return and from control dates. The first recorded out-of-limits result opens a case and applies a hold in the same database transaction. Incomplete evidence remains provisional and later certificate versions retain the original trigger. See ADR-0010.
+
 ## Interface
 
 - Geist, applied by its own rules. Restrained colour. No AI slop.
@@ -420,6 +422,8 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Manage Tool Delegation Records | Yes | No | No | No | No |
 | Register a Tool | No | Yes | No | Yes | No |
 | Record Tool Control Basis | No | Yes | No | Yes | No |
+| Record Tool Provider Scope | No | Yes | No | Yes | No |
+| Record Tool Calibration | No | Yes | No | Yes | No |
 | Record Tool Control Evidence and Condition | No | Yes | No | Yes | No |
 | Record Subcontractor Assessment | No | Yes | No | No | No |
 | Record Supplier Evaluation | No | Yes | No | No | No |

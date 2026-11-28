@@ -306,11 +306,22 @@ BOARD: tuple[Group, ...] = (
                 shown_for=MAINTAINS,
                 tabs=(
                     Tab("Register", "tool_register"),
-                    *_tabs("Service Providers", "Alternative Tooling", "Tooling Need Evaluations"),
+                    Tab("Service Providers", "tool_providers"),
+                    *_tabs("Alternative Tooling", "Tooling Need Evaluations"),
                 ),
                 inside=frozenset(
                     {
                         "tool_record",
+                        "tool_provider",
+                        "authorise_tool_provider",
+                        "calibration_order",
+                        "calibration_movement",
+                        "place_calibration_order",
+                        "calibration_certificate",
+                        "record_calibration_certificate",
+                        "record_calibration_result",
+                        "decide_calibration_certificate",
+                        "reinstate_calibrated_tool",
                         "add_tool",
                         "add_tool_control",
                         "add_tool_event",

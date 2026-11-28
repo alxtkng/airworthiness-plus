@@ -95,7 +95,7 @@ missing defect and a missing programme dependency. The receiving database
 still contains the original reconciled snapshot after those refusals. The
 receiver code is at `a306259`. The complete export suite passed all 22 checks
 and mypy passed on 465 files with that code.
-[Receiver workflow and reproduction](../architecture/decisions/ADR-0010-aircraft-transfer-pilot.md)
+[Receiver workflow and reproduction](../architecture/decisions/ADR-0012-aircraft-transfer-pilot.md)
 
 The receiver displays the signed record status as unsigned and issuer trust as
 indeterminate. The integrated trial still requires independently trusted

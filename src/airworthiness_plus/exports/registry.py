@@ -71,6 +71,16 @@ from airworthiness_plus.staffing.roster_models import (
     ShiftPattern,
     StaffingMinimum,
 )
+from airworthiness_plus.tooling.calibration_models import (
+    CalibrationCertificate,
+    CalibrationMovement,
+    CalibrationOrder,
+    CalibrationReinstatement,
+    CalibrationResult,
+    CertificateDecision,
+    ToolImpactCase,
+    ToolServiceProviderAuthorisation,
+)
 from airworthiness_plus.tooling.models import (
     Tool,
     ToolControlEvent,
@@ -194,6 +204,14 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(StockEntry, None),
     Exported(SubcontractorAssessment, None),
     Exported(Tool, None),
+    Exported(ToolServiceProviderAuthorisation, None),
+    Exported(CalibrationOrder, None),
+    Exported(CalibrationMovement, None),
+    Exported(CalibrationCertificate, None),
+    Exported(CalibrationResult, None),
+    Exported(CertificateDecision, None),
+    Exported(ToolImpactCase, None),
+    Exported(CalibrationReinstatement, None),
     Exported(ToolControlRevision, None),
     Exported(ToolControlEvent, None),
     Exported(ToolDelegation, None),

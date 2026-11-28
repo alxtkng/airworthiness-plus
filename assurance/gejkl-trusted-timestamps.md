@@ -18,7 +18,7 @@ PYTHONPATH=src uv run pytest -q \
   tests/test_exports.py::test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline
 ```
 
-For retained artifacts, use a fresh SQLite path and add these receiver arguments to the [signed import command](../architecture/decisions/ADR-0010-aircraft-transfer-pilot.md#signed-reading-rehearsal). Supply the TSA root and its pin independently of the sender bundle.
+For retained artifacts, use a fresh SQLite path and add these receiver arguments to the [signed import command](../architecture/decisions/ADR-0012-aircraft-transfer-pilot.md#signed-reading-rehearsal). Supply the TSA root and its pin independently of the sender bundle.
 
 ```sh
 --timestamps sender/03-timestamps.json --tsa-root custodian/tsa-root.pem \

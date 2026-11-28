@@ -22,7 +22,7 @@ PYTHONPATH=src uv run pytest -q \
   tests/test_exports.py::test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline
 ```
 
-The detached signature and trust file format and receiver command are documented in the [transfer ADR](../architecture/decisions/ADR-0010-aircraft-transfer-pilot.md).
+The detached signature and trust file format and receiver command are documented in the [transfer ADR](../architecture/decisions/ADR-0012-aircraft-transfer-pilot.md).
 
 ## Recorded result
 

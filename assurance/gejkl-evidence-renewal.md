@@ -36,7 +36,7 @@ PYTHONPATH=src uv run pytest -q tests/test_offline_tsa_renewal.py \
   tests/test_offline_tsa_status.py tests/test_exports.py tests/test_security.py
 ```
 
-For the public artifacts, use a fresh SQLite path with the [timestamped receiver command](../architecture/decisions/ADR-0010-aircraft-transfer-pilot.md#trusted-timestamp-evidence). Add the final evaluation instant and the renewal envelope, independent root, root pin and CRL. In the complete arm also supply the frozen predecessor CRL as `--tsa-crl`.
+For the public artifacts, use a fresh SQLite path with the [timestamped receiver command](../architecture/decisions/ADR-0012-aircraft-transfer-pilot.md#trusted-timestamp-evidence). Add the final evaluation instant and the renewal envelope, independent root, root pin and CRL. In the complete arm also supply the frozen predecessor CRL as `--tsa-crl`.
 
 ```sh
 --tsa-evaluated-at "$evaluation_utc" --renewals sender/04-renewals.json \

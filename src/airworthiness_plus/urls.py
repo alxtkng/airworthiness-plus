@@ -28,6 +28,7 @@ from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
 from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
+from airworthiness_plus.tooling import calibration_views as calibration
 from airworthiness_plus.tooling import views as tooling
 
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -49,6 +50,45 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "stores/lookup-exercise/", logistics.stores_lookup_exercise, name="stores_lookup_exercise"
     ),
     path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
+    path("tools/providers/", calibration.providers, name="tool_providers"),
+    path(
+        "tools/providers/authorise/", calibration.authorise_provider, name="authorise_tool_provider"
+    ),
+    path("tools/providers/<uuid:provider_id>/", calibration.provider, name="tool_provider"),
+    path("tools/orders/<uuid:order_id>/", calibration.order, name="calibration_order"),
+    path(
+        "tools/orders/<uuid:order_id>/movement/",
+        calibration.record_movement,
+        name="calibration_movement",
+    ),
+    path(
+        "tools/orders/<uuid:order_id>/certificate/",
+        calibration.record_certificate,
+        name="record_calibration_certificate",
+    ),
+    path(
+        "tools/orders/<uuid:order_id>/reinstate/",
+        calibration.reinstate,
+        name="reinstate_calibrated_tool",
+    ),
+    path(
+        "tools/orders/<uuid:order_id>/certificates/<uuid:certificate_id>/",
+        calibration.certificate,
+        name="calibration_certificate",
+    ),
+    path(
+        "tools/orders/<uuid:order_id>/certificates/<uuid:certificate_id>/result/",
+        calibration.record_result,
+        name="record_calibration_result",
+    ),
+    path(
+        "tools/orders/<uuid:order_id>/certificates/<uuid:certificate_id>/decision/",
+        calibration.decide_certificate,
+        name="decide_calibration_certificate",
+    ),
+    path(
+        "tools/<uuid:tool_id>/calibration/", calibration.place_order, name="place_calibration_order"
+    ),
     path("tools/", tooling.tool_register, name="tool_register"),
     path("tools/add/", tooling.add_tool, name="add_tool"),
     path("tools/delegations/", tooling.tool_delegations, name="tool_delegations"),
