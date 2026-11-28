@@ -329,6 +329,54 @@ dd {
   font-weight: 500;
 }
 
+/* Work package review: work performed and its release evidence share a rule. */
+
+.package-review {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr));
+  border: var(--hairline) solid var(--gray-400);
+  border-radius: var(--material-base);
+  gap: var(--hairline);
+  background: var(--gray-400);
+  margin-block: var(--space-10);
+  overflow: hidden;
+}
+
+.package-review > section {
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--background-100);
+}
+
+.package-review h2,
+.package-review section > p:last-child {
+  margin: 0;
+}
+
+.package-review .reference {
+  margin-block: var(--space-1) 0;
+  color: var(--gray-900);
+}
+
+.package-review dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.package-review dd ul {
+  padding-inline-start: var(--space-4);
+  margin-block: var(--space-2) 0;
+}
+
+.work-card-table {
+  overflow-x: auto;
+}
+
+.work-card-table tr:target {
+  background: var(--background-200);
+  outline: var(--hairline) solid var(--gray-1000);
+  outline-offset: calc(-1 * var(--hairline));
+}
+
 /* Status: a round dot and a word that says the same thing */
 
 .status {

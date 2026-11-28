@@ -86,6 +86,8 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "work__certificate",
         )
     )
+    open_cards = [card for card in cards if card.completed_on is None]
+    awaiting_inspection = [card for card in cards if card.completed_on and not card.signed]
     return render(
         request,
         "planning/work_package.html",
@@ -93,6 +95,10 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "package": package,
             "cards": cards,
             "signed": sum(card.signed for card in cards),
+            "completed": len(cards) - len(open_cards),
+            "open_cards": open_cards,
+            "open_hours": sum((card.planned_hours for card in open_cards), Decimal("0.0")),
+            "awaiting_inspection": awaiting_inspection,
             "missing_inspections": sum(
                 card.critical and card.inspected_on is None for card in cards
             ),
