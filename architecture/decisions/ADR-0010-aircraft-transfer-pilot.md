@@ -57,3 +57,15 @@ PYTHONPATH=src uv run python tools/receive_handover.py sender/02-corrected.zip r
 ```
 
 The archive values and identifiers come from the sender route. Supply the trust pin from the separate custody route. Record versions and the scoped synthetic grant can be verified offline. Regulated issuance, operational status infrastructure and a trusted signature timestamp remain open.
+
+## Trusted timestamp evidence
+
+The synthetic receiver optionally verifies a timestamp envelope of format
+`Airworthiness+ Synthetic Reading Timestamps`, integer version 1 and two
+`record_id`/Base64 DER `response` entries. It uses three additional arguments,
+`--timestamps`, `--tsa-root` and `--tsa-root-sha256`. Apply them together with
+the signed reading flags. Each response must bind the raw detached signature
+and chain to the separately pinned synthetic TSA root under the recorded
+policy. Timestamp verification precedes the SQLite transaction. The receiver
+keeps the TSA's proof-of-existence time separate from the asserted signing
+instant and the authority check. See the [retained rehearsal](../../assurance/gejkl-trusted-timestamps.md).

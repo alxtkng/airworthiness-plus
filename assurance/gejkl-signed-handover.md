@@ -43,3 +43,5 @@ The signed trial passed on code revision `9b46633`. The run used PostgreSQL 16.1
 Retained evidence is grouped into sender, custodian and receiver directories in the local `gejkl-signed-trial-2026-11-28` folder. The receiver verdict contains the verified claims and reconstructed records. Its case results file records each observed refusal. The sender bundle and the custodian bundle contain synthetic data and public verification material.
 
 The retained files were also imported and replayed in a fresh SQLite database under the same network guard. Its verdict matched the retained verdict and it contained one snapshot.
+
+The subsequent [trusted timestamp rehearsal](gejkl-trusted-timestamps.md) verifies RFC 3161 proof of existence for these same two signatures. The original asserted signing times and scope findings remain visible.
