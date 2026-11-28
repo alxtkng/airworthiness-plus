@@ -268,7 +268,7 @@ class StoreLocation(Record):
 
     organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
     name = models.CharField("Location", max_length=120)
-    station = models.CharField("Station", max_length=12, blank=True)
+    station = models.CharField("Station", max_length=12, blank=True, db_default="")
     kind = models.CharField("Kind", max_length=20, choices=LocationKind.choices)
     holds_components = models.BooleanField("Holds Components", default=False)
     holds_standard_parts = models.BooleanField("Holds Standard Parts", default=False)

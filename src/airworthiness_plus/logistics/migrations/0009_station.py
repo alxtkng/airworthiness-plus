@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="storelocation",
             name="station",
-            field=models.CharField("Station", max_length=12, blank=True),
+            field=models.CharField("Station", max_length=12, blank=True, db_default=""),
         ),
         migrations.AddConstraint(
             model_name="storelocation",
