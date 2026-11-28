@@ -30,6 +30,11 @@ from airworthiness_plus.staffing import views as staffing
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("suppliers/", logistics.suppliers, name="suppliers"),
+    path(
+        "suppliers/<uuid:supplier_id>/subcontracting/",
+        logistics.assess_subcontractor,
+        name="assess_subcontractor",
+    ),
     path("suppliers/evaluate/", logistics.add_supplier, name="add_supplier"),
     path("suppliers/<uuid:supplier_id>/", logistics.supplier, name="supplier"),
     path(

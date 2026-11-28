@@ -46,6 +46,8 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.imports import services as import_services
 from airworthiness_plus.imports.layouts import CERTIFICATES
 from airworthiness_plus.imports.models import LoadKind
+from airworthiness_plus.logistics import services as logistics_services
+from airworthiness_plus.logistics.models import SubcontractorOutcome, Supplier
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
 from airworthiness_plus.organisations.models import Approval, ApprovalType
@@ -135,6 +137,31 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             authorisation, withdrawn_from=TODAY, reason="Sample withdrawal"
         )
     assert suppliers.add(sample.ours, sample.lucy) == 5
+    with working_for(sample.ours.id, sample.lucy.id):
+        workshop = Supplier.objects.create(organisation=sample.ours, name="Sample Workshop")
+        logistics_services.assess_subcontractor(
+            workshop,
+            approval=ApprovalType.PART_CAO,
+            assessed_on=TODAY,
+            scope="Specialised Inspection",
+            exposition_reference="CAE B.7",
+            qualification_evidence="Qualification Record",
+            controls="Review each inspection report",
+            pre_audit_reference="",
+            outcome=SubcontractorOutcome.CONTROLS_RECORDED,
+        )
+        logistics_services.assess_subcontractor(
+            workshop,
+            approval=ApprovalType.PART_CAO,
+            assessed_on=TODAY,
+            scope="Specialised Inspection",
+            exposition_reference="",
+            qualification_evidence="",
+            controls="Qualification Withdrawn",
+            pre_audit_reference="",
+            outcome=SubcontractorOutcome.SUSPENDED,
+        )
+
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     reviews = add_sample_reviews(sample, fleet)
