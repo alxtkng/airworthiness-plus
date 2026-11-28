@@ -15,14 +15,19 @@ body{margin:0}
 a{text-decoration:none}
 tbody tr:last-child > td{border-bottom-color:transparent !important}
 ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !important}
+.skip{position:absolute;left:16px;top:-100px;z-index:1;padding:8px 16px;border-radius:6px;background:var(--focus);color:var(--skip-ink);font-size:14px;text-decoration:none}
+.skip:focus{top:8px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
 </style>
 </helmet>
-<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+<div style="--focus: {{t.text}}; --skip-ink: {{t.bg}}; font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <a class="skip" href="#main">Skip to Main Content</a>
   <div style="flex: 1 1 248px; max-width: 100%; display: flex">
     <dc-import name="Sidebar" active="aircraft" dark="{{dark}}" hint-size="248px,1900px"></dc-import>
   </div>
 
-  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 48px; display: flex; flex-direction: column; gap: 28px">
+  <main id="main" style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 48px; display: flex; flex-direction: column; gap: 28px">
     <dc-import name="TopBar" trail="Continuing Airworthiness=Fleet.dc.html|Aircraft=Fleet.dc.html" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
       <div style="display: flex; flex-direction: column; gap: 4px">
@@ -38,7 +43,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
       <sc-for list="{{facts}}" as="f" hint-placeholder-count="6">
         <div style="display: flex; flex-direction: column; gap: 4px">
           <span style="font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">{{f.label}}</span>
-          <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{f.colour}}; display: {{f.dot}}"></span>{{f.value}}</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{f.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{f.dot}}"></span>{{f.value}}</span>
           <span style="font-size: 13px; line-height: 18px; font-weight: 400; color: {{t.muted}}">{{f.note}}</span>
         </div>
       </sc-for>
@@ -59,7 +64,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
               <li style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
                 <span style="font-weight: 500">{{s.when}}</span>
                 <span style="display: flex; flex-direction: column; gap: 2px">
-                  <span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{s.colour}}; display: {{s.mark}}; flex: none"></span>{{s.what}}</span>
+                  <span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{s.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{s.mark}}; flex: none"></span>{{s.what}}</span>
                   <span style="color: {{t.body}}">{{s.note}}</span>
                 </span>
               </li>
@@ -88,7 +93,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
             <sc-for list="{{defects}}" as="d" hint-placeholder-count="2">
               <div style="display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 24px; row-gap: 8px; padding: 18px 0; border-bottom: 1px solid {{t.border}}">
                 <div style="flex: 999 1 420px; display: flex; flex-direction: column; gap: 4px">
-                  <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{d.colour}}; display: {{d.mark}}"></span>{{d.title}}</span>
+                  <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{d.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{d.mark}}"></span>{{d.title}}</span>
                   <span style="font-size: 14px; line-height: 20px; color: {{t.body}}">{{d.detail}}</span>
                 </div>
                 <div style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; text-align: right; font-size: 14px; line-height: 20px">
@@ -102,7 +107,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
         <section aria-labelledby="log-heading" style="display: flex; flex-direction: column; gap: 12px">
           <h2 id="log-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Technical Log</h2>
           <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
-            <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+            <table aria-labelledby="log-heading" style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
               <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th>
                 <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Date</th>
                 <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Pilot</th>
@@ -126,11 +131,11 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
     <sc-if value="{{show.forecast}}" hint-placeholder-val="{{false}}">
       <div style="display: flex; flex-direction: column; gap: 12px">
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px">
-          <h2 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Maintenance Programme, Owner Declared, Issue 3</h2>
+          <h2 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px" id="table-heading-1">Maintenance Programme, Owner Declared, Issue 3</h2>
           <a href="WorkPackages.dc.html" style="font-size: 14px; font-weight: 500; color: {{t.text}}; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: {{t.sBorder}}">Build a Work Package</a>
         </div>
         <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
-          <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+          <table aria-labelledby="table-heading-1" style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
             <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th>
               <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Task</th>
               <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Interval</th>
@@ -141,7 +146,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
             </tr></thead>
             <tbody>
               <sc-for list="{{programme}}" as="r" hint-placeholder-count="7">
-                <tr style="background: {{r.xBg}}"><td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{r.xLine}}"><button type="button" aria-expanded="{{r.xExp}}" aria-label="Show Details" onClick="{{r.xTog}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{r.xRot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{r.colour}}; display: {{r.mark}}; flex: none"></span>{{r.task}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.interval}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.last}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.next}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.remaining}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.forecast}}</td></tr><sc-if value="{{r.xOpen}}" hint-placeholder-val="{{false}}"><tr style="background: {{r.xBg}}"><td colspan="7" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}; white-space: normal"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px"><sc-for list="{{r.xFacts}}" as="xf" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{xf.label}}</span><span style="font-size: 14px; line-height: 20px">{{xf.value}}</span></div></sc-for></div></td></tr></sc-if>
+                <tr style="background: {{r.xBg}}"><td style="width: 40px; padding: 10px 0 10px 12px; border-bottom: 1px solid {{r.xLine}}"><button type="button" aria-expanded="{{r.xExp}}" aria-label="Show Details" onClick="{{r.xTog}}" style="font: inherit; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{r.xRot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg></button></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{r.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{r.mark}}; flex: none"></span>{{r.task}}</span></td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.interval}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.last}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.next}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.remaining}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{r.xLine}}; text-align: right; font-weight: 400; color: {{t.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px">{{r.forecast}}</td></tr><sc-if value="{{r.xOpen}}" hint-placeholder-val="{{false}}"><tr style="background: {{r.xBg}}"><td colspan="7" style="padding: 4px 16px 16px 52px; border-bottom: 1px solid {{t.row}}; white-space: normal"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 32px; row-gap: 14px"><sc-for list="{{r.xFacts}}" as="xf" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{xf.label}}</span><span style="font-size: 14px; line-height: 20px">{{xf.value}}</span></div></sc-for></div></td></tr></sc-if>
               </sc-for>
             </tbody>
           </table>
@@ -154,7 +159,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
         <section aria-labelledby="ad-heading" style="display: flex; flex-direction: column; gap: 12px">
           <h2 id="ad-heading" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Airworthiness Directives and Service Bulletins</h2>
           <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
-            <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+            <table aria-labelledby="ad-heading" style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
               <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="width: 40px; padding: 12px 0 12px 12px; border-bottom: 1px solid {{t.border}}"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Details</span></th>
                 <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Reference</th>
                 <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Type</th>
@@ -193,7 +198,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
             <h2 id="tree-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Product Structure</h2>
             <span style="font-size: 13px; line-height: 18px; color: {{t.muted}}">{{cfgCount}}</span>
           </div>
-          <input type="search" value="{{cfgQ}}" onChange="{{onCfgQ}}" aria-label="Find a Position" placeholder="Find a Position, Part or Serial Number" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 16px; color: {{t.muted}}"><span>Search</span><input type="search" value="{{cfgQ}}" onChange="{{onCfgQ}}" placeholder="Position, Part or Serial Number" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}"></label>
           <div role="group" aria-label="Show" style="display: inline-flex; flex-wrap: wrap; align-self: flex-start; padding: 3px; border-radius: 6px; background: {{t.empty}}; gap: 2px">
             <sc-for list="{{cfgFilters}}" as="f" hint-placeholder-count="5">
               <button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 10px; border-radius: 6px; border: 0; cursor: pointer; color: {{t.text}}; background: {{f.bg}}; box-shadow: {{f.shadow}}">{{f.label}} <span style="color: {{t.muted}}">{{f.count}}</span></button>
@@ -206,10 +211,10 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
                 <sc-if value="{{pr.open}}" hint-placeholder-val="{{true}}">
                   <sc-for list="{{pr.chapters}}" as="ch" hint-placeholder-count="4">
                     <div>
-                      <button type="button" aria-expanded="{{ch.expanded}}" onClick="{{ch.toggle}}" style="font: inherit; width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; border-radius: 6px; height: 34px; padding: 0 8px 0 28px; font-size: 14px; font-weight: 500"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none; transform: rotate({{ch.rot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg><span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 13px; color: {{t.muted}}; width: 22px">{{ch.ata}}</span><span style="flex: 1">{{ch.name}}</span><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{ch.colour}}; display: {{ch.mark}}; flex: none"></span><span style="font-size: 13px; font-weight: 400; color: {{t.muted}}">{{ch.count}}</span></button>
+                      <button type="button" aria-expanded="{{ch.expanded}}" onClick="{{ch.toggle}}" style="font: inherit; width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; border-radius: 6px; height: 34px; padding: 0 8px 0 28px; font-size: 14px; font-weight: 500"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none; transform: rotate({{ch.rot}}); color: {{t.muted}}"><path d="M9 6l6 6-6 6"></path></svg><span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 13px; color: {{t.muted}}; width: 22px">{{ch.ata}}</span><span style="flex: 1">{{ch.name}}</span><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{ch.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{ch.mark}}; flex: none"></span><span style="font-size: 13px; font-weight: 400; color: {{t.muted}}">{{ch.count}}</span></button>
                       <sc-if value="{{ch.open}}" hint-placeholder-val="{{false}}">
                         <sc-for list="{{ch.items}}" as="it" hint-placeholder-count="3">
-                          <button type="button" aria-pressed="{{it.pressed}}" onClick="{{it.pick}}" style="font: inherit; width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; border-radius: 6px; min-height: 34px; padding: 6px 8px 6px 80px; font-size: 14px; background: {{it.bg}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{it.colour}}; display: {{it.mark}}; flex: none"></span><span style="flex: 1">{{it.name}}</span><span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 12px; color: {{t.muted}}">{{it.sub}}</span></button>
+                          <button type="button" aria-pressed="{{it.pressed}}" onClick="{{it.pick}}" style="font: inherit; width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: {{t.text}}; cursor: pointer; text-align: left; border-radius: 6px; min-height: 34px; padding: 6px 8px 6px 80px; font-size: 14px; background: {{it.bg}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{it.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{it.mark}}; flex: none"></span><span style="flex: 1">{{it.name}}</span><span style="font-family: 'Geist Mono Embedded', 'Geist Mono', monospace; font-size: 12px; color: {{t.muted}}">{{it.sub}}</span></button>
                         </sc-for>
                       </sc-if>
                     </div>
@@ -253,12 +258,12 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
           </div>
           <div style="display: flex; flex-direction: column; gap: 8px">
             <h3 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px">Linked Records</h3>
-            <sc-for list="{{pos.links}}" as="l" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{l.colour}}; display: {{l.mark}}; flex: none"></span>{{l.text}}</span></sc-for>
+            <sc-for list="{{pos.links}}" as="l" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{l.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{l.mark}}; flex: none"></span>{{l.text}}</span></sc-for>
           </div>
           <div style="display: flex; flex-direction: column; gap: 8px">
             <h3 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.28px">Installation History</h3>
             <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
-              <table style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
+              <table aria-labelledby="pos-h" style="width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; line-height: 20px">
                 <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px; white-space: nowrap"><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Date</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Event</th><th scope="col" style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Reference</th></tr></thead>
                 <tbody><sc-for list="{{pos.history}}" as="h" hint-placeholder-count="2"><tr style="background: transparent"><td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px">{{h.date}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px">{{h.event}}</td><td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px">{{h.ref}}</td></tr></sc-for></tbody>
               </table>
@@ -299,7 +304,7 @@ ol > li:last-child, dl > div:last-child{border-bottom-color:transparent !importa
       <div style="border-top: 1px solid {{t.border}}">
         <sc-for list="{{documents}}" as="d" hint-placeholder-count="7">
           <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; column-gap: 24px; row-gap: 8px; padding: 14px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px">
-            <span style="flex: 999 1 360px; display: flex; flex-direction: column; gap: 2px"><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{d.colour}}; display: {{d.mark}}; flex: none"></span>{{d.name}}</span><span style="color: {{t.body}}">{{d.note}}</span></span>
+            <span style="flex: 999 1 360px; display: flex; flex-direction: column; gap: 2px"><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{d.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; display: {{d.mark}}; flex: none"></span>{{d.name}}</span><span style="color: {{t.body}}">{{d.note}}</span></span>
             <span style="flex: 1 1 200px; color: {{t.muted}}; text-align: right">{{d.valid}}</span>
             <button type="button" style="font: inherit; font-size: 14px; height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; cursor: pointer">View</button>
           </div>
@@ -327,8 +332,8 @@ class Component extends DCLogic {
   renderVals() {
     const dark = this.props.dark === true || this.props.dark === 'true';
     const t = dark
-      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E' }
-      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB' };
+      ? { dotEdge: 'transparent', scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#7C7C7C' }
+      : { dotEdge: 'rgba(0, 0, 0, 0.45)', scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#7D7D7D' };
     const c = { red: '#FF5A4E', amber: '#FFB224', green: '#1FCB6E', none: 'transparent' };
     const fact = (label, value, note, colour) => ({ label, value, note, colour: colour || c.none, dot: colour ? 'inline-block' : 'none' });
     const facts = [

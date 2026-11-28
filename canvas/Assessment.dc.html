@@ -15,13 +15,18 @@ body{margin:0}
 a{text-decoration:none}
 tbody tr:last-child > td{border-bottom-color:transparent !important}
 ol > li:last-child{border-bottom-color:transparent !important}
+.skip{position:absolute;left:16px;top:-100px;z-index:1;padding:8px 16px;border-radius:6px;background:var(--focus);color:var(--skip-ink);font-size:14px;text-decoration:none}
+.skip:focus{top:8px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
 </style>
 </helmet>
-<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+<div style="--focus: {{t.text}}; --skip-ink: {{t.bg}}; font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <a class="skip" href="#main">Skip to Main Content</a>
   <div style="flex: 1 1 248px; max-width: 100%; display: flex">
     <dc-import name="Sidebar" active="assessment" dark="{{dark}}" hint-size="248px,2500px"></dc-import>
   </div>
-  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
+  <main id="main" style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
     <dc-import name="TopBar" trail="Training=RecurrentTraining.dc.html|Competency Assessments=Competence.dc.html" dark="{{dark}}" hint-size="1100px,56px"></dc-import>
     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
       <div style="display: flex; flex-direction: column; gap: 4px">
@@ -33,7 +38,7 @@ ol > li:last-child{border-bottom-color:transparent !important}
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); column-gap: 32px; row-gap: 16px; padding: 16px 20px; border: 1px solid {{t.border}}; border-radius: 6px">
       <sc-for list="{{facts}}" as="f" hint-placeholder-count="5">
-        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{f.label}}</span><span style="font-size: 14px; line-height: 20px; font-weight: 500">{{f.value}}</span><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{f.dot}}; flex: none; display: {{f.dotShow}}"></span>{{f.sub}}</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><span style="font-size: 13px; line-height: 16px; color: {{t.muted}}">{{f.label}}</span><span style="font-size: 14px; line-height: 20px; font-weight: 500">{{f.value}}</span><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{f.dot}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; flex: none; display: {{f.dotShow}}"></span>{{f.sub}}</span></div>
       </sc-for>
     </div>
 
@@ -79,13 +84,13 @@ ol > li:last-child{border-bottom-color:transparent !important}
                       </span>
                     </sc-if>
                     <span style="display: inline-flex; align-items: center; gap: 16px; font-size: 13px; line-height: 18px; color: {{t.muted}}">
-                      <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; flex: none; display: {{q.lowShow}}"></span>{{q.note}}</span>
+                      <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; flex: none; display: {{q.lowShow}}"></span>{{q.note}}</span>
                       <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer"><input type="checkbox" checked="{{q.na}}" onChange="{{q.toggleNa}}" style="width: 16px; height: 16px; margin: 0; accent-color: {{t.text}}">Not Applicable to Scope</label>
                     </span>
                   </span>
                 </div>
                 <sc-if value="{{q.applicable}}" hint-placeholder-val="{{true}}">
-                  <input type="text" aria-label="Feedback for {{q.topic}}" placeholder="Feedback" value="{{q.feedback}}" style="margin-left: 40px; font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}">
+                  <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 16px; color: {{t.muted}}"><span>Feedback<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap"> for {{q.topic}}</span></span><input type="text" value="{{q.feedback}}" style="margin-left: 40px; font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}"></label>
                 </sc-if>
               </li>
             </sc-for>
@@ -108,7 +113,7 @@ ol > li:last-child{border-bottom-color:transparent !important}
                   <button type="button" aria-pressed="{{l.pressed}}" aria-label="Score {{l.n}}" onClick="{{l.pick}}" style="font: inherit; font-size: 13px; font-weight: 500; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; border: 1px solid {{l.border}}; background: {{l.bg}}; color: {{l.fg}}">{{l.n}}</button>
                 </sc-for>
               </span>
-              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; flex: none; display: {{job.lowShow}}"></span>{{job.note}}</span>
+              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; flex: none; display: {{job.lowShow}}"></span>{{job.note}}</span>
             </span>
           </div>
           <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Development Action<input type="text" value="Check Deferral Limits on the Defect Record Before Adding a Defect to a Package" style="font: inherit; font-size: 14px; height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}"></label>
@@ -118,7 +123,7 @@ ol > li:last-child{border-bottom-color:transparent !important}
       <sc-if value="{{isSummary}}" hint-placeholder-val="{{false}}">
         <section aria-label="Consolidated Assessment" style="display: flex; flex-direction: column; gap: 40px">
           <div style="overflow-x: auto; border: 1px solid {{t.border}}; border-radius: 6px">
-            <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; line-height: 20px">
+            <table aria-labelledby="checks-h" style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; line-height: 20px">
               <thead><tr style="background: {{t.sidebar}}; text-align: left; color: {{t.muted}}; font-size: 13px">
                 <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}">Section</th>
                 <th scope="col" style="padding: 12px 16px; font-weight: 500; border-bottom: 1px solid {{t.border}}; text-align: right; width: 120px">Scored</th>
@@ -133,7 +138,7 @@ ol > li:last-child{border-bottom-color:transparent !important}
                     <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; text-align: right; white-space: nowrap">{{s.scored}}</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; text-align: right; white-space: nowrap">{{s.average}}</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; text-align: right; white-space: nowrap">{{s.lowest}}</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{s.colour}}; flex: none"></span>{{s.below}}</span></td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid {{t.row}}; white-space: nowrap"><span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {{s.colour}}; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; flex: none"></span>{{s.below}}</span></td>
                   </tr>
                 </sc-for>
               </tbody>
@@ -144,7 +149,7 @@ ol > li:last-child{border-bottom-color:transparent !important}
             <h3 id="below-h" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.32px">Scores Below the Minimum of 5</h3>
             <ol style="margin: 0; padding: 0; list-style: none; border-top: 1px solid {{t.border}}">
               <sc-for list="{{belowList}}" as="b" hint-placeholder-count="2">
-                <li style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{b.topic}}</span><span style="color: {{t.muted}}">{{b.section}}</span></span><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; flex: none"></span>{{b.score}}</span></li>
+                <li style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid {{t.border}}; font-size: 14px; line-height: 20px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{b.topic}}</span><span style="color: {{t.muted}}">{{b.section}}</span></span><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FF5A4E; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; flex: none"></span>{{b.score}}</span></li>
               </sc-for>
             </ol>
             <sc-if value="{{noneBelow}}" hint-placeholder-val="{{false}}"><span style="font-size: 14px; color: {{t.muted}}">None</span></sc-if>
@@ -157,7 +162,7 @@ ol > li:last-child{border-bottom-color:transparent !important}
               <sc-for list="{{verdicts}}" as="v" hint-placeholder-count="2">
                 <label style="display: flex; gap: 10px; align-items: center; font-size: 14px; cursor: pointer"><input type="radio" name="verdict" checked="{{v.checked}}" onChange="{{v.pick}}" style="width: 16px; height: 16px; margin: 0; accent-color: {{t.text}}">{{v.label}}</label>
               </sc-for>
-              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FFB224; flex: none; display: {{verdictDot}}"></span>{{verdictHint}}</span>
+              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: {{t.muted}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: #FFB224; box-shadow: inset 0 0 0 1px {{t.dotEdge}}; flex: none; display: {{verdictDot}}"></span>{{verdictHint}}</span>
             </fieldset>
             <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 16px; color: {{t.muted}}">Support Measures<textarea rows="3" style="font: inherit; font-size: 14px; line-height: 20px; padding: 8px 12px; border-radius: 6px; border: 1px solid {{t.sBorder}}; background: {{t.bg}}; color: {{t.text}}; resize: vertical">Mentoring With the Continuing Airworthiness Manager on Forecasting Airworthiness Directives and Maintenance Programme Review, Work Packages Checked Before Issue Until Reassessed on 18 January 2027</textarea></label>
             <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
@@ -192,8 +197,8 @@ class Component extends DCLogic {
   renderVals() {
     const dark = this.props.dark === true || this.props.dark === 'true';
     const t = dark
-      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E', empty: '#1A1A1A', raised: '#2E2E2E' }
-      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB', empty: '#F2F2F2', raised: '#FFFFFF' };
+      ? { dotEdge: 'transparent', scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#7C7C7C', empty: '#1A1A1A', raised: '#2E2E2E' }
+      : { dotEdge: 'rgba(0, 0, 0, 0.45)', scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#7D7D7D', empty: '#F2F2F2', raised: '#FFFFFF' };
     const c = { red: '#FF5A4E', amber: '#FFB224', green: '#1FCB6E' };
     const S = [
       { key: 'reg', title: 'Regulatory', items: [
