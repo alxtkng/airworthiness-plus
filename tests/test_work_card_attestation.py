@@ -25,8 +25,13 @@ from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
 from airworthiness_plus.people import services as people_services
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
-from airworthiness_plus.planning import services
-from airworthiness_plus.planning.models import WorkCard, WorkCardAttestation
+from airworthiness_plus.planning import services, signing_provider
+from airworthiness_plus.planning.models import (
+    SigningState,
+    WorkCard,
+    WorkCardAttestation,
+    WorkCardSigningJob,
+)
 from tests.support import TODAY, Sample, add_sample_fleet, get, make_sample, post, signed_in
 
 pytestmark = pytest.mark.django_db
@@ -114,6 +119,14 @@ def test_consent_archives_exact_version_once_and_exports_it(
     assert post(client, path, intent=token).status_code == 409
     assert post(client, path, consent="yes", intent=token + "x").status_code == 409
     assert post(client, path, consent="yes", intent=token).status_code == 302
+    job = get(client, path).context["job"]
+    assert job.status == SigningState.PENDING
+    assert post(client, path, command="check", job=job.pk).status_code == 302
+    assert get(client, path).context["job"].status == SigningState.SIGNED
+    assert post(client, path, command="check", job=job.pk).status_code == 302
+    assert get(client, path).context["job"].status == SigningState.SIGNED
+    assert post(client, path, command="archive", job=job.pk).status_code == 302
+    assert post(client, path, command="archive", job=job.pk).status_code == 302
     assert post(client, path, consent="yes", intent=token).status_code == 302
 
     with working_for(sample.ours.id, sample.planner.id):
@@ -122,6 +135,15 @@ def test_consent_archives_exact_version_once_and_exports_it(
         reviewed = Event.of(card).last()
         assert reviewed is not None
         assert len(Event.of(record)) == 1
+        job.refresh_from_db()
+        assert [json.loads(event.after_json or "{}")["status"] for event in Event.of(job)] == [
+            SigningState.PENDING,
+            SigningState.SIGNED,
+            SigningState.ARCHIVED,
+        ]
+        assert job.document == record.evidence
+        assert job.sha256 == record.sha256
+        assert job.result["signer"] == str(sample.planner.pk)
         evidence = json.loads(record.evidence)
         assert evidence["reviewed_content"] == opened.context["content"]
         assert evidence["reviewed_content"]["card_version_hash"] == reviewed.hash
@@ -197,6 +219,9 @@ def test_failed_archive_write_rolls_back_and_retries(
     add_grant(sample, card)
     client, path = signed_in(sample.planner), path_for(card)
     token = client.get(path, secure=True).context["intent"]
+    assert post(client, path, consent="yes", intent=token).status_code == 302
+    job = get(client, path).context["job"]
+    assert post(client, path, command="check", job=job.pk).status_code == 302
     manager = WorkCardAttestation.objects
     create = manager.create
 
@@ -206,11 +231,72 @@ def test_failed_archive_write_rolls_back_and_retries(
 
     with monkeypatch.context() as patch:
         patch.setattr(manager, "create", fail_after_insert)
-        client.raise_request_exception = False
-        assert post(client, path, consent="yes", intent=token).status_code == 500
+        assert post(client, path, command="archive", job=job.pk).status_code == 302
+        response = get(client, path)
+        assert b"The archive write failed" in response.content
+        assert response.context["job"].status == SigningState.SIGNED
     with working_for(sample.ours.id, sample.planner.id):
         assert not manager.exists()
         assert not Event.objects.filter(record_type="planning_workcardattestation").exists()
-    assert post(client, path, consent="yes", intent=token).status_code == 302
+    assert post(client, path, command="archive", job=job.pk).status_code == 302
     with working_for(sample.ours.id, sample.planner.id):
         assert len(Event.of(manager.get(card=card))) == 1
+        assert WorkCardSigningJob.objects.get(pk=job.pk).status == SigningState.ARCHIVED
+
+
+@pytest.mark.parametrize(
+    "case, expected",
+    [
+        ("delay", SigningState.PENDING),
+        ("decline", SigningState.DECLINED),
+        ("document", SigningState.REJECTED),
+        ("signer", SigningState.REJECTED),
+        ("proof", SigningState.REJECTED),
+        ("cancel", SigningState.CANCELLED),
+        ("stale", SigningState.STALE),
+    ],
+)
+def test_pending_job_result_or_cancellation(
+    completed_card: tuple[Sample, WorkCard],
+    monkeypatch: pytest.MonkeyPatch,
+    case: str,
+    expected: SigningState,
+) -> None:
+    class Provider(signing_provider.SyntheticProvider):
+        def check(self, request: signing_provider.Request) -> signing_provider.Result:
+            if case == "delay":
+                return signing_provider.Result("pending")
+            if case == "decline":
+                return signing_provider.Result("declined", reference=request.reference)
+            from dataclasses import replace
+
+            if case == "signer":
+                return super().check(replace(request, signer="someone-else"))
+            if case == "document":
+                return super().check(replace(request, sha256="0" * 64))
+            if case == "proof":
+                return replace(super().check(request), proof="invalid")
+            return super().check(request)
+
+    monkeypatch.setattr(signing_provider, "provider", Provider)
+    sample, card = completed_card
+    add_grant(sample, card)
+    client, path = signed_in(sample.planner), path_for(card)
+    opened = get(client, path)
+    assert post(client, path, consent="yes", intent=opened.context["intent"]).status_code == 302
+    job = get(client, path).context["job"]
+    if case == "stale":
+        with working_for(sample.ours.id, sample.planner.id):
+            services.record_inspection(
+                card,
+                inspector=Person.objects.get(full_name="Chris Moore"),
+                inspected_on=TODAY,
+                qualification="Synthetic inspection authority",
+                evidence="Synthetic result satisfactory",
+            )
+    if case == "cancel":
+        assert post(client, path, command="cancel", job=job.pk).status_code == 302
+    assert post(client, path, command="check", job=job.pk).status_code == 302
+    assert get(client, path).context["job"].status == expected
+    with working_for(sample.ours.id, sample.planner.id):
+        assert not WorkCardAttestation.objects.filter(card=card).exists()

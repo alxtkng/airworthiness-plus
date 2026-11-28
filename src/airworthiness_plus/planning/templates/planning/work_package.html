@@ -63,7 +63,11 @@
 <dt>Counter Hours</dt><dd>{{ card.hours }}</dd>
 <dt>Counter Cycles</dt><dd>{{ card.cycles }}</dd>
 {% if card.attestation %}
-<dt>Synthetic Attestation</dt><dd>Archived. Evidence ID {{ card.attestation.id }}.</dd>
+<dt>Synthetic Attestation</dt><dd>Archived. Evidence ID {{ card.attestation.id }}.
+{% if may_attest and card.performed_by.user_id == actor_id and card.signing_jobs.all.0 %}<a href="{% url 'attest_work_card' package.id card.id %}">View Archive Confirmation</a>{% endif %}</dd>
+{% elif card.signing_jobs.all.0 %}
+<dt>Synthetic Attestation</dt><dd>{{ card.signing_jobs.all.0.get_status_display }}.
+{% if may_attest and card.performed_by.user_id == actor_id %}<a href="{% url 'attest_work_card' package.id card.id %}">Open Signature Request</a>{% endif %}</dd>
 {% elif may_attest and card.performed_by.user_id == actor_id %}
 <dt>Synthetic Attestation</dt><dd><a href="{% url 'attest_work_card' package.id card.id %}">Review Synthetic Attestation</a></dd>
 {% endif %}

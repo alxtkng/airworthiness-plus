@@ -86,7 +86,7 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "inspector",
             "work__certificate",
             "attestation",
-        )
+        ).prefetch_related("signing_jobs")
     )
     return render(
         request,
@@ -235,8 +235,15 @@ def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> H
     error = ""
     content = None
     token = ""
+    job = attestation.active_job(card, user)
     try:
         if request.method == "POST":
+            command = request.POST.get("command", "consent")
+            if command not in {"consent", "check", "cancel", "archive"}:
+                raise services.RefusedError("Select a Signature Request Action")
+            if command != "consent":
+                attestation.advance(card, user, request.POST.get("job", ""), command=command)
+                return redirect("attest_work_card", package_id=package_id, card_id=card_id)
             form = forms.AttestationForm(request.POST)
             if not form.is_valid() or request.POST.get("consent") != "yes":
                 raise services.RefusedError("Explicit Consent to the Reviewed Version Is Required")
@@ -249,7 +256,10 @@ def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> H
             )
             if prompt is not None:
                 return prompt
-            attestation.attest(card, user, form.cleaned_data["intent"], request.session)
+            attestation.enqueue(card, user, form.cleaned_data["intent"], request.session)
+            job = attestation.active_job(card, user)
+            if job is not None and job.status != "archived":
+                return redirect("attest_work_card", package_id=package_id, card_id=card_id)
             return redirect("work_package", package_id=package_id)
         content, _ = attestation.preview(card, user)
         token = attestation.intent(content)
@@ -263,6 +273,7 @@ def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> H
             "card": card,
             "content": content,
             "intent": token,
+            "job": job,
             "error": error,
         },
         status=409 if error else 200,

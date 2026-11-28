@@ -215,3 +215,49 @@ class WorkCardAttestation(Record):
     )
     evidence = models.TextField()
     sha256 = models.CharField(max_length=64)
+
+
+class SigningState(models.TextChoices):
+    PENDING = "pending", "Pending Signature"
+    SIGNED = "signed", "Signed, Awaiting Archive"
+    ARCHIVED = "archived", "Archive Confirmed"
+    CANCELLED = "cancelled", "Cancelled"
+    DECLINED = "declined", "Declined"
+    STALE = "stale", "Review Superseded"
+    REJECTED = "rejected", "Provider Evidence Rejected"
+
+
+class WorkCardSigningJob(Record):
+    """Exact application evidence and provider result, recoverable across requests."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    card = models.ForeignKey(WorkCard, on_delete=models.PROTECT, related_name="signing_jobs")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    provider = models.CharField(max_length=80)
+    document = models.TextField()
+    sha256 = models.CharField(max_length=64)
+    requested_at = models.DateTimeField()
+    status = models.CharField(max_length=12, choices=SigningState, default=SigningState.PENDING)
+    result = models.JSONField(default=dict)
+    archive_failed = models.BooleanField(default=False)
+    archive = models.OneToOneField(
+        WorkCardAttestation, on_delete=models.PROTECT, null=True, related_name="signing_job"
+    )
+
+    class Meta:
+        ordering = ["-requested_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["card"],
+                condition=Q(status__in=["pending", "signed", "archived"]),
+                name="one_active_work_card_signature",
+            ),
+            models.CheckConstraint(
+                condition=Q(status="archived", archive__isnull=False)
+                | (~Q(status="archived") & Q(archive__isnull=True)),
+                name="work_card_signature_archive_matches_state",
+            ),
+        ]
