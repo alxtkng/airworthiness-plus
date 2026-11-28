@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Stock Lookup Exercise{% endblock %}
+{% block content %}
+<h1>Stock Lookup Exercise</h1>
+<p>Use the sample trim cable balances to answer each question. Progress is saved in this signed-in session.</p>
+{% if after_holds %}
+<p>One cable at ZRH Main is reserved. A second cable moved from ZRH Main to Quarantine pending an identity check.</p>
+{% endif %}
+<table>
+<caption>Network and Station Balances</caption>
+<thead><tr><th scope="col">Location</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
+<tbody>
+<tr><th scope="row">Network</th><td>{{ network.on_hand }}</td><td>{{ network.reserved }}</td><td>{{ network.available }}</td></tr>
+{% for station, balance in stations %}
+<tr><th scope="row">{{ station }}</th><td>{{ balance.on_hand }}</td><td>{{ balance.reserved }}</td><td>{{ balance.available }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<table>
+<caption>Holdings by Store</caption>
+<thead><tr><th scope="col">Station and Store</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Condition</th></tr></thead>
+<tbody>
+{% for holding in holdings %}
+<tr>
+<th scope="row">{{ holding.station }} {{ holding.store }}</th>
+<td>{{ holding.quantity }}</td><td>{{ holding.reserved }}</td><td>{{ holding.available }}</td>
+<td>{{ holding.condition }}{% if holding.reason %} — {{ holding.reason }}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% if form %}
+<h2>{{ question }}</h2>
+<form method="post">
+{% csrf_token %}
+{{ form.question }}
+{% if form.question.errors %}<p role="alert">Reload the exercise and try again.</p>{% endif %}
+<p>{{ form.quantity.label_tag }} {{ form.quantity }}{% if form.quantity.errors %} <span role="alert">{{ form.quantity.errors|join:", " }}</span>{% endif %}</p>
+<p><button type="submit">Check Answer</button></p>
+</form>
+{% else %}
+<h2>Exercise Complete</h2>
+<p>Physical custody stayed at 10 items. One reserved item and one quarantined item reduce network availability to 8.</p>
+{% endif %}
+<p><a href="{% url 'stores_stock' %}">Back to Stock</a></p>
+{% endblock %}

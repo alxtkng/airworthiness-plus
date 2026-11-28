@@ -54,6 +54,7 @@ WRITES: dict[str, Sets] = {
     "receive_item": (logistics.ReceiptForm,),
     "record_receiving_check": (logistics.ReceivingCheckForm,),
     "record_receiving_disposition": (logistics.ReceivingDispositionForm,),
+    "stores_lookup_exercise": (logistics.StoresExerciseForm,),
     "add_roster_shift": (roster.ShiftForm,),
     "withdraw_roster_shift": (roster.WithdrawShiftForm,),
     "publish_roster": (roster.PublicationForm,),

@@ -45,6 +45,9 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="record_receiving_disposition",
     ),
     path("stores/", logistics.stores_stock, name="stores_stock"),
+    path(
+        "stores/lookup-exercise/", logistics.stores_lookup_exercise, name="stores_lookup_exercise"
+    ),
     path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
     path("tools/", tooling.tool_register, name="tool_register"),
     path("tools/add/", tooling.add_tool, name="add_tool"),

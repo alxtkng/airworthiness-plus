@@ -137,3 +137,8 @@ class ReceivingDispositionForm(Form):
         required=False,
         help_text="For material, give the supplier source stated on the conformity evidence.",
     )
+
+
+class StoresExerciseForm(Form):
+    question = forms.CharField(label="Exercise Question", widget=forms.HiddenInput)
+    quantity = forms.IntegerField(min_value=0, label="Quantity")
