@@ -11,7 +11,7 @@
 <h2>Findings</h2>
 {% if entries %}
 <table>
-<thead><tr><th>Finding</th><th>Physical Frame or Zone</th><th>Disposition</th><th>Drawing Revision</th></tr></thead>
+<thead><tr><th scope="col">Finding</th><th scope="col">Physical Frame or Zone</th><th scope="col">Disposition</th><th scope="col">Drawing Revision</th></tr></thead>
 <tbody>
 {% for entry in entries %}
 <tr><td><a href="{% url 'damage_entry' aircraft.id entry.id %}">{{ entry.title }}</a></td><td>{{ entry.frame_or_zone }}</td><td>{{ entry.disposition }}</td><td><a href="{% url 'damage_drawing' aircraft.id entry.drawing_id %}#marker-{{ entry.id }}">{{ entry.drawing }}</a></td></tr>

@@ -14,7 +14,7 @@
 </ul>
 <h2>Reports</h2>
 <form method="get" aria-label="Filter Flight Reports">
-{{ filter.as_p }}
+{% error_summary filter %}{{ filter.as_p }}
 <p><button type="submit">Filter Reports</button></p>
 </form>
 {% include "defects/technical_log_reports.html" %}
