@@ -1,7 +1,7 @@
 // Independent reader for the synthetic Airworthiness+ reconciliation format.
 // Requires Node 24 and Info-ZIP. Never extracts archive files onto the filesystem.
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, createPublicKey, verify } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -9,6 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const parse = bytes => JSON.parse(bytes.toString('utf8'));
+const PURPOSE = 'airworthiness-plus:synthetic-utilisation-reading:v1';
 
 function requireEvidence(condition, message) {
     if (!condition) throw new Error(message);
@@ -118,19 +119,110 @@ function store(path, owner, aircraft, manifestDigest, evidence) {
     }
 }
 
+function canonical(fields, isReading = false) {
+    const pairs = Object.keys(fields).sort().map(field => {
+        const value = fields[field];
+        const encoded = isReading && field === 'hours' ? value.toFixed(1) : JSON.stringify(value);
+        return `${JSON.stringify(field)}:${encoded}`;
+    });
+    return Buffer.from(`{${pairs.join(',')}}`);
+}
+
+function uniqueEntry(entries, field, reference, label) {
+    const matches = entries.filter(entry => entry[field] === reference);
+    requireEvidence(matches.length === 1, `${label} is absent or ambiguous in recipient trust`);
+    return matches[0];
+}
+
+function instant(value) {
+    requireEvidence(typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(value)
+        && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().replace('.000Z', 'Z') === value,
+    'Expected a valid UTC timestamp');
+    return Date.parse(value);
+}
+
+function authorityAt(entry, at, label) {
+    const start = instant(entry.valid_from);
+    const end = instant(entry.valid_to);
+    requireEvidence(start <= at && at < end, `${label} is outside its validity at claimed signing time`);
+    requireEvidence(entry.status_as_of !== null && instant(entry.status_as_of) >= at,
+        `${label} historical status is indeterminate`);
+    if (entry.revoked_at !== null) {
+        const revoked = instant(entry.revoked_at);
+        requireEvidence(revoked > at && revoked <= instant(entry.status_as_of), `${label} was revoked or has inconsistent status`);
+    }
+}
+
+function base64(value, length) {
+    const bytes = Buffer.from(value, 'base64');
+    requireEvidence(bytes.length === length && bytes.toString('base64') === value,
+        'Expected canonical Base64 of the required length');
+    return bytes;
+}
+
+function verifySignedReadings(values, signaturesPath, trustPath, pin) {
+    const trustBytes = readFileSync(trustPath);
+    requireEvidence(digest(trustBytes) === pin, 'Recipient trust digest differs');
+    const trust = parse(trustBytes);
+    const envelope = parse(readFileSync(signaturesPath));
+    requireEvidence(trust.format === 'Airworthiness+ Synthetic Reading Trust' && trust.version === 1
+        && envelope.format === 'Airworthiness+ Synthetic Reading Signatures' && envelope.version === 1
+        && envelope.signatures.length === 2, 'Unsupported trust or signature format or version');
+
+    function check(record) {
+        const matches = envelope.signatures.filter(row => row.claim.record_id === record.id);
+        requireEvidence(matches.length === 1, 'Expected one signed claim per reading');
+        const [{ claim, signature }] = matches;
+        requireEvidence(claim.purpose === PURPOSE && claim.organisation_id === values.actual.source_organisation_id
+            && claim.aircraft_id === values.aircraft.id && claim.record_sha256 === digest(canonical(record, true)),
+        'Signed claim differs from archived reading');
+        const key = uniqueEntry(trust.keys, 'key_id', claim.key_id, 'Issuer key');
+        requireEvidence(key.signer_id === claim.signer_id && key.organisation_id === claim.organisation_id,
+            'Issuer key does not cover signer and organisation');
+        const publicKey = createPublicKey({ key: { kty: 'OKP', crv: 'Ed25519',
+            x: base64(key.public_key, 32).toString('base64url') }, format: 'jwk' });
+        requireEvidence(verify(null, canonical(claim), publicKey, base64(signature, 64)),
+            'Invalid Ed25519 signature');
+        const authority = uniqueEntry(trust.authorities, 'authority_id', claim.authority_id, 'Maintenance authority');
+        requireEvidence(authority.signer_id === claim.signer_id && authority.organisation_id === claim.organisation_id
+            && authority.aircraft_id === claim.aircraft_id && authority.scope === PURPOSE,
+        'Maintenance authority does not cover signed evidence');
+        const at = instant(claim.signed_at);
+        authorityAt(key, at, 'Issuer key');
+        authorityAt(authority, at, 'Maintenance authority');
+        const events = values.history.aircraft_utilisationentry.filter(event => event.record_id === record.id);
+        requireEvidence(events.length === 1 && events[0].action === 'Created' && events[0].sequence === 1
+            && at >= Date.parse(events[0].at), 'Claim predates or lacks unique creation evidence');
+        return claim;
+    }
+
+    const original = check(values.original);
+    const corrected = check(values.corrected);
+    requireEvidence(original.supersedes_id === null && original.supersedes_claim_sha256 === null && original.reason === ''
+        && values.original.supersedes_id === null && corrected.supersedes_id === original.record_id
+        && corrected.supersedes_claim_sha256 === digest(canonical(original)) && corrected.reason.trim()
+        && instant(corrected.signed_at) >= instant(original.signed_at), 'Signed correction does not bind original');
+    return { issuer_trust: 'Verified against recipient-pinned synthetic trust',
+        content: 'Both detached reading signatures verified', signing_time: 'Signer-asserted',
+        maintenance_authority: 'Synthetic authority verified at claimed signing times', trust_sha256: pin };
+}
+
 try {
     const began = performance.now();
-    const [archivePath, expectedDigest, comparisonPath, databasePath] = process.argv.slice(2);
-    requireEvidence(databasePath, 'Usage: node tools/reconcile_handover.mjs ARCHIVE DIGEST COMPARISON SQLITE');
+    const [archivePath, expectedDigest, comparisonPath, databasePath, ...signing] = process.argv.slice(2);
+    requireEvidence(databasePath && (signing.length === 0 || signing.length === 3),
+        'Usage: node tools/reconcile_handover.mjs ARCHIVE DIGEST COMPARISON SQLITE [SIGNATURES TRUST TRUST_DIGEST]');
     const comparison = parse(readFileSync(comparisonPath));
     requireEvidence(comparison.format === 'Airworthiness+ Aircraft Handover Reconciliation'
         && comparison.version === 1, 'Unsupported reconciliation format or version');
     const values = readTrial(loadArchive(archivePath, expectedDigest), comparison.records);
+    const [signaturesPath, trustPath, pin] = signing;
+    const trust = signaturesPath ? verifySignedReadings(values, signaturesPath, trustPath, pin)
+        : { issuer_trust: 'Unverified', signing_time: 'Unverified', maintenance_authority: 'Unverified' };
     const imported = store(databasePath, values.actual.source_organisation_id, values.actual.aircraft_id,
-        expectedDigest, values);
+        expectedDigest, { ...values, trust });
     console.log(JSON.stringify({ imported, seconds: (performance.now() - began) / 1000,
-        checked: values.actual, rekeyed: 0, missing_or_changed: 0, issuer_trust: 'Unverified',
-        signing_time: 'Unverified', maintenance_authority: 'Unverified' }, null, 2));
+        checked: values.actual, rekeyed: 0, missing_or_changed: 0, ...trust }, null, 2));
 } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

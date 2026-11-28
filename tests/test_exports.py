@@ -1460,12 +1460,28 @@ def _exercise_independent_node_receiver(
     script = Path(__file__).resolve().parents[1] / "tools" / "reconcile_handover.mjs"
     database = receiver / "node-receiver.sqlite"
     results: dict[str, Any] = {}
+    signatures = archive.parent / "02-signatures.json"
+    trust = archive.parent.parent / "custodian/trust.json"
 
     def run(
-        path: Path, digest: str, sidecar: Path = comparison
+        path: Path,
+        digest: str,
+        sidecar: Path = comparison,
+        trust_path: Path = trust,
+        target: Path = database,
     ) -> subprocess.CompletedProcess[str]:
         return subprocess.run(  # noqa: S603  opted-in executable and fixed synthetic inputs
-            [node, str(script), str(path), digest, str(sidecar), str(database)],
+            [
+                node,
+                str(script),
+                str(path),
+                digest,
+                str(sidecar),
+                str(target),
+                str(signatures),
+                str(trust_path),
+                hashlib.sha256(trust_path.read_bytes()).hexdigest(),
+            ],
             capture_output=True,
             text=True,
             check=False,
@@ -1477,6 +1493,13 @@ def _exercise_independent_node_receiver(
         evidence = json.loads(result.stdout)
         assert evidence["imported"] is imported
         assert evidence["checked"] == json.loads(comparison.read_bytes())["records"]
+        assert evidence["issuer_trust"] == "Verified against recipient-pinned synthetic trust"
+        assert evidence["content"] == "Both detached reading signatures verified"
+        assert evidence["signing_time"] == "Signer-asserted"
+        assert (
+            evidence["maintenance_authority"]
+            == "Synthetic authority verified at claimed signing times"
+        )
         results[label] = evidence
 
     files = opened(export.content)
@@ -1515,6 +1538,42 @@ def _exercise_independent_node_receiver(
     result = run(archive, export.manifest_sha256, path)
     assert result.returncode == 1 and "Wrong organisation or aircraft" in result.stderr
     results["wrong_aircraft"] = result.stderr.strip()
+    held = json.loads(trust.read_bytes())
+    alternate = receiver / "node-trial-trust.json"
+    for label, replaced, reason in (
+        ("unknown_issuer", {**held, "keys": []}, "Issuer key is absent"),
+        ("absent_authority", {**held, "authorities": []}, "Maintenance authority is absent"),
+        (
+            "expired_authority",
+            {
+                **held,
+                "authorities": [
+                    {**grant, "valid_to": grant["valid_from"]} for grant in held["authorities"]
+                ],
+            },
+            "Maintenance authority is outside its validity",
+        ),
+    ):
+        alternate.write_bytes(_trial_json(replaced))
+        result = run(archive, export.manifest_sha256, trust_path=alternate)
+        assert result.returncode == 1 and reason in result.stderr, result.stderr
+        results[label] = result.stderr.strip()
+
+    updated_trust = deepcopy(held)
+    for entry in updated_trust["keys"] + updated_trust["authorities"]:
+        entry["status_as_of"] = _stamp(
+            datetime.fromisoformat(entry["status_as_of"]) + timedelta(seconds=10)
+        )
+    alternate.write_bytes(_trial_json(updated_trust))
+    result = run(
+        archive,
+        export.manifest_sha256,
+        trust_path=alternate,
+        target=receiver / "node-updated-trust.sqlite",
+    )
+    assert result.returncode == 0, result.stderr
+    results["updated_trust"] = json.loads(result.stdout)
+    assert results["updated_trust"]["trust_sha256"] != results["valid"]["trust_sha256"]
     replay = run(archive, export.manifest_sha256)
     assert replay.returncode == 0, replay.stderr
     results["replay_after_refusals"] = json.loads(replay.stdout)
