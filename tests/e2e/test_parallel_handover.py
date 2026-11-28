@@ -1,7 +1,11 @@
 """Rehearse a stop and fallback with the two synthetic organisations."""
 
 import json
+import os
+import subprocess
+import sys
 from io import BytesIO
+from pathlib import Path
 from zipfile import ZipFile
 
 from playwright.sync_api import Browser, Page, expect
@@ -9,6 +13,7 @@ from playwright.sync_api import Browser, Page, expect
 from airworthiness_plus.exports.verify import verify
 from tests.e2e.browser import choose_aircraft, fill, reveal, save, signed_in, submit
 from tests.e2e.conftest import Account
+from tests.test_exports import OFFLINE_RECEIVER, opened
 
 AIRCRAFT = "G-EJKL"
 DEFECT = "Right Headset Socket Crackle"
@@ -72,3 +77,128 @@ def test_parallel_handover_stops_and_returns_to_source_records(
             assert records == recovered
             for name in records:
                 assert before.read(name) == after.read(name), name
+
+
+def test_gejkl_completion_and_correction_transfer_from_normal_forms(
+    chromium: Browser,
+    live_site: str,
+    personas: dict[str, tuple[Account, ...]],
+    tmp_path: Path,
+) -> None:
+    """Record completion and both reading versions, then reconcile the aircraft export offline."""
+    title = "G-EJKL Trial Repeat Inspection"
+    instruction = "Synthetic applicable instruction AW-I-05"
+    measurements = "Clearance 1.2 mm"
+    readings_table = "records/aircraft_utilisationentry.json"
+    with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
+        choose_aircraft(page, AIRCRAFT, "Maintenance Programme")
+        page.get_by_role("link", name="Add a Task", exact=True).click()
+        page.get_by_label("Runs Against", exact=True).select_option(index=1)
+        save(
+            page,
+            "Add Task",
+            {
+                "title": title,
+                "kind": "Programme Task",
+                "source": instruction,
+                "interval_days": "30",
+            },
+            title,
+        )
+        page.get_by_role("link", name="Record Work Done", exact=True).click()
+        save(
+            page,
+            "Record Work",
+            {
+                "task": title,
+                "description": "G-EJKL Trial Completed Inspection",
+                "dated": "2026-11-18",
+                "hours": "11206.8",
+                "cycles": "0",
+                "instruction_reference": instruction,
+                "instruction_revision": "2",
+                "completion_measurements": measurements,
+            },
+            measurements,
+        )
+        choose_aircraft(page, AIRCRAFT)
+        page.get_by_role("link", name="Enter Hours and Cycles", exact=True).click()
+        page.get_by_label("Counter", exact=True).select_option(index=1)
+        save(
+            page,
+            f"Save Entry for {AIRCRAFT}",
+            {"dated": "2026-11-18", "hours": "11208.6", "cycles": "0"},
+            "11,208.6",
+        )
+        original_archive = opened(_aircraft_archive(page))
+        original = next(
+            item for item in original_archive[readings_table] if item["hours"] == 11208.6
+        )
+        choose_aircraft(page, AIRCRAFT)
+        page.get_by_role("link", name="Enter Hours and Cycles", exact=True).click()
+        page.get_by_label("Counter", exact=True).select_option(index=1)
+        page.get_by_label("Corrects an Earlier Entry", exact=True).select_option(
+            value=original["id"]
+        )
+        save(
+            page,
+            f"Save Entry for {AIRCRAFT}",
+            {"dated": "2026-11-18", "hours": "11207.0", "cycles": "0"},
+            "11,207.0",
+        )
+        choose_aircraft(page, AIRCRAFT, "Maintenance Forecast")
+        expect(page.locator("main")).to_contain_text(DEFECT)
+        expect(page.locator("main")).to_contain_text(title)
+        content = _aircraft_archive(page)
+
+    verdict = verify(content)
+    assert not verdict.problems
+    records = opened(content)
+    defect = next(
+        item for item in records["records/defects_defect.json"] if item["title"] == DEFECT
+    )
+    task = next(item for item in records["records/programme_task.json"] if item["title"] == title)
+    correction = next(
+        item for item in records[readings_table] if item["supersedes_id"] == original["id"]
+    )
+    aircraft_id = records["manifest.json"]["aircraft"]["id"]
+    archive = tmp_path / "browser-source.zip"
+    archive.write_bytes(content)
+    project = Path(__file__).resolve().parents[2]
+    command = [
+        sys.executable,
+        "-c",
+        OFFLINE_RECEIVER,
+        str(project / "tools/receive_handover.py"),
+        str(archive),
+        str(tmp_path / "receiver.sqlite"),
+        "--manifest-digest",
+        verdict.manifest_sha256,
+        "--aircraft-id",
+        aircraft_id,
+        "--defect-id",
+        defect["id"],
+        "--inspection-id",
+        task["id"],
+        "--correction-id",
+        correction["id"],
+    ]
+    for imported in (True, False):
+        receiver = subprocess.run(  # noqa: S603  fixed offline executable and synthetic archive
+            command,
+            env={**os.environ, "PYTHONPATH": str(project / "src")},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert receiver.returncode == 0, receiver.stderr
+        received = json.loads(receiver.stdout)
+        assert received["imported"] is imported
+        assert received["defect"]["limit_on"] == defect["limit_on"]
+        assert received["next_due"] == "2026-12-18"
+        assert received["inspection"]["source"] == instruction
+        assert received["last_completion"]["instruction_revision"] == "2"
+        assert received["last_completion"]["completion_measurements"] == measurements
+        assert received["original_reading"] == original
+        assert received["corrected_reading"] == correction
+    (tmp_path / "browser-reconciliation.json").write_text(json.dumps(received, indent=2) + "\n")
