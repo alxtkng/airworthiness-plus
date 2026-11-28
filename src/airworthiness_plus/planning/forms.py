@@ -154,4 +154,4 @@ class AttestationForm(Form):
 
 class StepSignOffForm(Form):
     evidence = forms.CharField(label="Step Result", widget=forms.Textarea, max_length=500)
-    consent = forms.BooleanField(label="I completed this synthetic step as shown")
+    consent = forms.BooleanField(label="I Completed This Synthetic Step as Shown")
