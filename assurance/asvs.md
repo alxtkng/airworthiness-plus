@@ -364,6 +364,8 @@ Maintenance subcontractor assessments use the role and field inventory (8.1.2), 
 
 Goods In uses the generated action and field inventory (8.1.2), server-side role checks and CSRF protection. PostgreSQL validates organisation scope and dates, serializes intake decisions per receipt, and retains append-only observations and disposition evidence in hashed history (16.2.2 and 16.4.2).
 
+Stores PR 1 (REQ-358) adds six write routes to the generated action and field inventory (8.1.2), each behind a server-side role check, CSRF protection and the maintenance approval check. Quantities are parsed as exact decimals and refused, never rounded, outside the unit scale and range (2.2.1). PostgreSQL enforces organisation scope and parent links, one posting per disposition, the lot lock and non-negative balances, and keeps every resolution, posting, count and movement append-only in hashed history (8.2.2, 16.2.2 and 16.4.2). Concurrent sessions are tested against committed PostgreSQL transactions (15.4.2).
+
 ### Tool register and control evidence
 
 REQ-360 to REQ-363 add the register, control and delegation surfaces. The field inventory maps each POST to its allowed values and role (8.1.2). The service checks the linked person, action, approval, dated authority and site. The database checks tenant boundaries and consistency of the tool, basis and delegation (8.2, 8.3). Session-bound CSRF validation applies to every write. Hashed, attributable record history and the existing export verification cover retained decisions and retries (16.2.2 and 16.4.2). The tooling service, database, browser and export tests exercise the new surface.

@@ -31,3 +31,43 @@ The migration gives existing accepted draft receipts a linked Stores entry using
 the original decision. Missing structured evidence stays blank and the original
 inspection record remains available. New acceptance requires an evidence reference
 and the class-specific evidence fields.
+
+## Stores PR 1: once-only posting and the location ledger
+
+28 November 2026. Alex King approved the receipt-to-stock contract, its legacy mapping
+rules and the REQ-357 clarification (`assurance/phase-4-stores-handoff.md`). REQ-358.
+
+- The `StockEntry` above stays the link to an acceptance. It credits nothing. An
+  accepted line with an entry shows **Awaiting Stock Posting**, every blocking reason
+  and zero available quantity until it is posted.
+- Stores records a dated `StockResolution` from the original evidence: unit (Each or
+  Litre), part number, serial, batch or lot and standard or specification as the class
+  requires, the location and the shelf-life basis and boundary. A correction appends a
+  later resolution. The receipt, the disposition and the entry are never changed. The
+  free-text destination stays as Goods In recorded it.
+- `StockPosting` is unique on the disposition. Its insert trigger takes the
+  disposition's transaction lock, copies the received quantity and the latest
+  resolution, checks the location's kind, class and state, the identity for the class,
+  the shelf-life basis against the receipt and that a serial has no other custody, and
+  refuses an acceptance whose structured evidence is blank. A second trigger writes the
+  opening intake movement in the same statement, so a failure leaves neither.
+- A quarantine decision posts to a secure quarantine location as blocked custody with
+  zero availability. A supplier return is never posted.
+- Balances are derived from `StockMovement`. Every movement takes the lot's
+  transaction lock and the database refuses an overspend, a wrong unit scale, a split
+  serial, an incompatible or withdrawn destination and a move of an open hold to
+  serviceable Stores. A `StockCount` reads the ledger quantity in the database and
+  changes nothing. An adjustment applies one current count's variance once, by the
+  Adjust Stock From a Count action.
+- All five tables are under ADR-0002: forced row-level security, same-organisation
+  parent checks, database-written hashed history and no update or delete, except that a
+  location can be withdrawn. They are in the organisation export.
+- Legacy acceptances use the same resolution and posting path. Reconciliation posts
+  each resolved, unblocked disposition and is safe to repeat.
+
+Not in PR 1: Goods In capturing unit and structured identity at receipt and choosing
+the location register entry at disposition (the producer side of the contract),
+reservations, work-package issue, final disposal and dated appointment records for
+Stores actions. Organisation procedures, appointments and the manufacturer's shelf-life
+convention stay **To Be Checked**. The warning lead time uses the organisation's Due
+Soon days.

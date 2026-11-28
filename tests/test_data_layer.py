@@ -224,6 +224,11 @@ def test_every_table_is_under_the_record_rules() -> None:
         "logistics_receivingcheck": ["INSERT", "SELECT"],
         "logistics_receivingdisposition": ["INSERT", "SELECT"],
         "logistics_stockentry": ["SELECT"],
+        # The Stores ledger is append-only. A location is withdrawn, never rewritten (REQ-358).
+        "logistics_stockresolution": ["INSERT", "SELECT"],
+        "logistics_stockposting": ["INSERT", "SELECT"],
+        "logistics_stockcount": ["INSERT", "SELECT"],
+        "logistics_stockmovement": ["INSERT", "SELECT"],
         "tooling_tool": ["INSERT", "SELECT"],
         "tooling_toolserviceproviderauthorisation": ["INSERT", "SELECT"],
         "tooling_calibrationorder": ["INSERT", "SELECT"],
@@ -260,6 +265,15 @@ def test_every_table_is_under_the_record_rules() -> None:
             "stock_from_acceptance",
         },
         "logistics_stockentry": {"history_refuse_update", "stock_requires_acceptance"},
+        "logistics_storelocation": {"store_location_rules"},
+        "logistics_stockresolution": {"history_refuse_update", "stock_resolution_rules"},
+        "logistics_stockposting": {
+            "history_refuse_update",
+            "stock_posting_rules",
+            "stock_posting_intake",
+        },
+        "logistics_stockcount": {"history_refuse_update", "stock_count_rules"},
+        "logistics_stockmovement": {"history_refuse_update", "stock_movement_rules"},
         "tooling_tool": {"history_refuse_update", "tooling_tool_a_check_evidence"},
         "tooling_toolserviceproviderauthorisation": {
             "history_refuse_update",
