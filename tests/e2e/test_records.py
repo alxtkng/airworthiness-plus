@@ -1181,7 +1181,12 @@ def test_work_package_from_draft_to_release(
             },
             "Awaiting Inspection",
         )
-        page.get_by_role("link", name="Record Independent Inspection").click()
+        review = page.locator(".package-review")
+        expect(review).to_contain_text("1 Awaiting Inspection")
+        review.get_by_role("link", name="Test Landing Light Card", exact=True).press("Enter")
+        row = page.locator("tr:target")
+        expect(row).to_contain_text("Awaiting Inspection")
+        row.get_by_role("link", name="Record Independent Inspection").click()
         save(
             page,
             "Record Independent Inspection",
@@ -1191,7 +1196,11 @@ def test_work_package_from_draft_to_release(
                 "qualification": "Test inspection authorisation",
                 "evidence": "Function checked",
             },
-            "1 of 1 Signed",
+            "1 of 1 Cards",
+        )
+        expect(review.get_by_text("1 Awaiting Inspection")).to_have_count(0)
+        expect(page.get_by_role("row").filter(has_text="Test Landing Light Card")).to_contain_text(
+            "Signed"
         )
         release_values = {
             "reference": "TEST-PACKAGE-CRS",
