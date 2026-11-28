@@ -209,11 +209,17 @@ def _back(decision: ReceivingDisposition) -> HttpResponse:
     return redirect("stores_disposition", disposition_id=decision.pk)
 
 
-def _form_page(request: HttpRequest, form: Any, heading: str, back: str) -> HttpResponse:
+def _form_page(
+    request: HttpRequest,
+    form: Any,
+    heading: str,
+    back: str,
+    source: ReceivingDisposition | None = None,
+) -> HttpResponse:
     return render(
         request,
         "logistics/stores_form.html",
-        {"form": form, "heading": heading, "button": heading, "back": back},
+        {"form": form, "heading": heading, "button": heading, "back": back, "source": source},
     )
 
 
@@ -275,6 +281,7 @@ def resolve_stock(request: HttpRequest, disposition_id: UUID) -> HttpResponse:
         form,
         f"Resolve {decision.receipt.delivery_reference} for Stock",
         _back(decision)["Location"],
+        source=decision,
     )
 
 

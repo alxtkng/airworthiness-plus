@@ -210,6 +210,12 @@ def test_s01_each_outcome_has_its_stock_state_and_no_other_organisation_data(
 
     lot = posted(accepted, actor, bay, serial_number="SN-1", batch_number="")
     assert (lot.quantity, lot.unit, lot.held) == (Decimal(1), StockUnit.EACH, False)
+    # The returned posting carries what the database recorded, not only what was sent.
+    assert (lot.serial_number, lot.part_number, lot.location_name) == (
+        "SN-1",
+        "PN-713",
+        "Synthetic Bay A",
+    )
     assert stores.available(accepted, TODAY, 30) == 1
     assert lot.movements.get().kind == MovementKind.INTAKE
 
@@ -926,3 +932,60 @@ def test_s09_the_database_refuses_an_overspend_that_bypasses_the_service(ours: S
     with pytest.raises(DatabaseError, match="permission denied"), transaction.atomic():
         StockMovement.objects.filter(lot=lot).update(quantity=Decimal(9))
     assert on_hand(lot, bay) == 2
+
+
+def test_s11_the_resolve_form_shows_the_source_text_it_resolves(ours: Sample) -> None:
+    """Exploratory finding, 28 November 2026: the form hid the free text being mapped."""
+    location(ours.ours, "Synthetic Bay S11")
+    decision = dispose(receipt(ours.ours, "S11-SOURCE", quantity=4))
+    page = get(signed_in(ours.planner), f"/stores/dispositions/{decision.pk}/resolve/").content
+    for text in (b"Synthetic reference S11-SOURCE", b"Synthetic destination text", b"4"):
+        assert text in page
+    assert b"---------" not in page
+    assert b'<option value="" selected>Not Yet Resolved</option>' in page
+
+
+def test_s11_a_serial_refusal_says_it_moves_as_one(ours: Sample) -> None:
+    actor = _lucy(ours)
+    bay, shelf = location(ours.ours, "Synthetic Bay T"), location(ours.ours, "Synthetic Shelf T")
+    lot = posted(
+        dispose(receipt(ours.ours, "S11-SERIAL")), actor, bay, serial_number="SN-T", batch_number=""
+    )
+    with pytest.raises(RefusedError, match="Exactly One Each"):
+        stores.move(
+            lot,
+            from_location=bay,
+            to_location=shelf,
+            quantity="2",
+            moved_on=TODAY,
+            actor=actor,
+            authority="ST-1",
+            evidence="Move",
+        )
+
+
+def test_the_sample_adds_its_two_locations_once_and_leaves_rx_002_to_post(
+    sample: Sample,
+) -> None:
+    """Demo data: the locations Goods In named exist, and posting is left to a person."""
+    from airworthiness_plus.sample import goods_in
+    from airworthiness_plus.sample import stores as sample_stores
+
+    assert goods_in.add(sample.ours, sample.administrator) == 5
+    assert sample_stores.add(sample.ours, sample.administrator) == 2
+    assert sample_stores.add(sample.ours, sample.administrator) == 0
+    assert sample_stores.add(sample.other, sample.stranger) == 0
+    with working_for(sample.ours.id, sample.lucy.id):
+        names = set(StoreLocation.objects.values_list("name", "kind"))
+        assert names == {
+            ("[Serviceable Stores Bay]", "Serviceable Stores"),
+            ("[Secure Quarantine Store]", "Quarantine"),
+        }
+        assert all(place.secure for place in StoreLocation.objects.all())
+        assert not StockPosting.objects.exists()
+    with working_for(sample.ours.id, sample.lucy.id):
+        entry = StockEntry.objects.filter(disposition__receipt__delivery_reference="RX-002")
+        page = get(signed_in(sample.reader), f"/stores/{entry.get().pk}/").content
+    assert b"Awaiting Stock Posting" in page
+    with working_for(sample.other.id, sample.stranger.id):
+        assert not StoreLocation.objects.exists()
