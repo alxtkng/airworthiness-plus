@@ -76,3 +76,14 @@ instant while native OpenSSL 3 validates the token path at `genTime`. Add
 The receiver evaluates the revocation date and reason separately, including
 an earlier invalidity date. The [historical exercise](../../assurance/gejkl-historical-timestamp-status.md)
 records both the retained-token expiry and the replacement-TSA CRL cases.
+
+## Timestamp renewal
+
+Add `--renewals`, `--renewal-tsa-root`, `--renewal-tsa-root-sha256` and
+`--renewal-tsa-crl` to the signed timestamp transfer. The evaluation instant
+applies to the renewal TSA. The receiver uses the renewal token time to check
+the frozen predecessor CRL. Omitting the predecessor CRL is represented as
+indeterminate, and omitting a CRL already bound into a renewal causes an
+imprint mismatch. Both generations of timestamp evidence and the verification
+findings are retained before the SQLite write. The [rehearsal record](../../assurance/gejkl-evidence-renewal.md)
+gives the exact versioned wire format and results.
