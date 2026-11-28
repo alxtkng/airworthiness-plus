@@ -17,11 +17,13 @@ from typing import Any
 
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.x509.oid import CRLEntryExtensionOID, ExtendedKeyUsageOID, ExtensionOID
 
 FORMAT = "Airworthiness+ Synthetic Reading Timestamps"
+RENEWAL_FORMAT = "Airworthiness+ Synthetic Timestamp Renewals"
+RENEWAL_PURPOSE = "airworthiness-plus:synthetic-rfc3161-renewal:v1"
 POLICY = "1.3.6.1.4.1.32473.1.1"
 SHA256 = re.compile(r"[0-9a-f]{64}")
 CLAIM_TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
@@ -69,20 +71,22 @@ def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _parse_envelope(content: bytes) -> dict[str, str]:
+def _parse_envelope(
+    content: bytes, *, expected_format: str = FORMAT, collection: str = "timestamps"
+) -> dict[str, str]:
     try:
         obj = json.loads(content.decode("utf-8"), object_pairs_hook=_unique_object)
     except (UnicodeError, json.JSONDecodeError, RecursionError) as error:
         raise TimestampError("Invalid", "Timestamp envelope is not valid UTF-8 JSON") from error
     if (
         not isinstance(obj, dict)
-        or obj.keys() != {"format", "version", "timestamps"}
-        or obj["format"] != FORMAT
+        or obj.keys() != {"format", "version", collection}
+        or obj["format"] != expected_format
         or type(obj["version"]) is not int
         or obj["version"] != 1
     ):
         raise TimestampError("Invalid", "Unsupported timestamp envelope format or version")
-    rows = obj["timestamps"]
+    rows = obj[collection]
     if not isinstance(rows, list) or len(rows) != 2:
         raise TimestampError("Invalid", "Expected exactly two timestamp responses")
     responses = {}
@@ -239,7 +243,7 @@ def _verify_token(
     environment: dict[str, str],
     libressl: bool,
     response: str,
-    signature: bytes,
+    payload: bytes,
 ) -> tuple[datetime, x509.Certificate, bool]:
     der = _b64(response, "Timestamp response")
     _check_der_sequence(der)
@@ -273,7 +277,7 @@ def _verify_token(
             "-in",
             str(token),
             "-digest",
-            hashlib.sha256(signature).hexdigest(),
+            hashlib.sha256(payload).hexdigest(),
             "-CAfile",
             str(workspace / "pinned.pem"),
             "-CApath",
@@ -284,7 +288,7 @@ def _verify_token(
     )
     if checked.returncode:
         raise TimestampError(
-            "Invalid", "RFC 3161 verification failed against the exact signature and pinned root"
+            "Invalid", "RFC 3161 verification failed against the exact payload and pinned root"
         )
     return gen_time, signer, accuracy_unspecified
 
@@ -492,20 +496,7 @@ def _certificate_evaluation(
     }
 
 
-def verify_timestamps(
-    signatures: list[dict[str, Any]],
-    timestamp_content: bytes,
-    tsa_root_pem: bytes,
-    expected_root_sha256: str,
-    *,
-    revocation_pem: bytes | None = None,
-    evaluated_at: str | None = None,
-) -> dict[str, Any]:
-    """Independently verify time of existence and any supplied historic TSA status."""
-    if revocation_pem is not None and evaluated_at is None:
-        raise TimestampError(
-            "Indeterminate", "A TSA CRL requires an explicit UTC evaluation instant"
-        )
+def _pinned_root(tsa_root_pem: bytes, expected_root_sha256: str) -> x509.Certificate:
     if not isinstance(expected_root_sha256, str) or not SHA256.fullmatch(expected_root_sha256):
         raise TimestampError(
             "Indeterminate", "A separately supplied TSA root SHA-256 pin is required"
@@ -513,14 +504,24 @@ def verify_timestamps(
     actual_pin = hashlib.sha256(tsa_root_pem).hexdigest()
     if not hmac.compare_digest(actual_pin, expected_root_sha256):
         raise TimestampError("Invalid", "TSA root digest differs from the separately supplied pin")
-    root = _load_root(tsa_root_pem)
-    responses = _parse_envelope(timestamp_content)
-    if len(signatures) != 2:
+    return _load_root(tsa_root_pem)
+
+
+def _claims(signatures: object) -> list[tuple[str, bytes, datetime]]:
+    if not isinstance(signatures, list) or len(signatures) != 2:
         raise TimestampError(
             "Invalid", "Expected a verified original and correction signature pair"
         )
-    claims = [_read_signature(row) for row in signatures]
-    if {record_id for record_id, _, _ in claims} != set(responses):
+    return [_read_signature(row) for row in signatures]
+
+
+def _verify_pair(
+    root: x509.Certificate,
+    tsa_root_pem: bytes,
+    responses: dict[str, str],
+    payloads: list[tuple[str, bytes, datetime]],
+) -> list[_VerifiedSigner]:
+    if {record_id for record_id, _, _ in payloads} != set(responses):
         raise TimestampError("Invalid", "Timestamp record IDs differ from the signed reading pair")
     executable = shutil.which("openssl")
     if executable is None:
@@ -541,49 +542,234 @@ def verify_timestamps(
             raise TimestampError(
                 "Indeterminate", "Timestamp verification requires LibreSSL or OpenSSL 3"
             )
-        timestamps = []
-        verified_signers = []
-        previous = None
-        for record_id, signature, signed_at in claims:
-            response = responses[record_id]
+        verified_signers: list[_VerifiedSigner] = []
+        for record_id, payload, earliest in payloads:
             gen_time, signer, accuracy_unspecified = _verify_token(
-                executable, root, workspace, environment, libressl, response, signature
+                executable, root, workspace, environment, libressl, responses[record_id], payload
             )
-            if gen_time < signed_at or (previous is not None and gen_time < previous):
+            if gen_time < earliest or (
+                verified_signers and gen_time < verified_signers[-1].gen_time
+            ):
                 raise TimestampError(
                     "Invalid", "Trusted genTime conflicts with the signed reading chronology"
                 )
-            previous = gen_time
             verified_signers.append(
                 _VerifiedSigner(record_id, gen_time, signer, accuracy_unspecified)
             )
-            timestamps.append(
-                {
-                    "record_id": record_id,
-                    "gen_time": _utc_label(gen_time),
-                    "response": response,
-                }
-            )
-    evidence: dict[str, Any] = {
-        "tsa_root_sha256": actual_pin,
-        "trusted_timestamps": timestamps,
+    return verified_signers
+
+
+def _timestamp_evidence(
+    root_pin: str, responses: dict[str, str], verified_signers: list[_VerifiedSigner]
+) -> dict[str, Any]:
+    return {
+        "tsa_root_sha256": root_pin,
+        "trusted_timestamps": [
+            {
+                "record_id": signer.record_id,
+                "gen_time": _utc_label(signer.gen_time),
+                "response": responses[signer.record_id],
+            }
+            for signer in verified_signers
+        ],
         "timestamp_assurance": (
             "The exact signature existed by each verified RFC 3161 genTime. "
             "The signing instant remains signer-asserted."
         ),
     }
-    if evaluated_at is not None:
-        evaluation = _read_evaluation(evaluated_at)
-        evidence["tsa_certificate_evaluation"] = _certificate_evaluation(
-            evaluation, verified_signers
+
+
+def _add_evaluation(
+    evidence: dict[str, Any],
+    root: x509.Certificate,
+    evaluation: datetime,
+    verified_signers: list[_VerifiedSigner],
+    revocation_pem: bytes | None,
+) -> None:
+    evidence["tsa_certificate_evaluation"] = _certificate_evaluation(evaluation, verified_signers)
+    evidence["tsa_revocation_status"] = (
+        _revocation_status(revocation_pem, root, evaluation, verified_signers)
+        if revocation_pem is not None
+        else {
+            "status": "Indeterminate",
+            "evaluated_at": _utc_label(evaluation),
+            "reason": "No independently supplied TSA CRL",
+        }
+    )
+
+
+def verify_timestamps(
+    signatures: list[dict[str, Any]],
+    timestamp_content: bytes,
+    tsa_root_pem: bytes,
+    expected_root_sha256: str,
+    *,
+    revocation_pem: bytes | None = None,
+    evaluated_at: str | None = None,
+) -> dict[str, Any]:
+    """Independently verify time of existence and any supplied historic TSA status."""
+    if revocation_pem is not None and evaluated_at is None:
+        raise TimestampError(
+            "Indeterminate", "A TSA CRL requires an explicit UTC evaluation instant"
         )
-        evidence["tsa_revocation_status"] = (
-            _revocation_status(revocation_pem, root, evaluation, verified_signers)
-            if revocation_pem is not None
-            else {
-                "status": "Indeterminate",
-                "evaluated_at": _utc_label(evaluation),
-                "reason": "No independently supplied TSA CRL",
-            }
+    root = _pinned_root(tsa_root_pem, expected_root_sha256)
+    responses = _parse_envelope(timestamp_content)
+    verified_signers = _verify_pair(root, tsa_root_pem, responses, _claims(signatures))
+    evidence = _timestamp_evidence(expected_root_sha256, responses, verified_signers)
+    if evaluated_at is not None:
+        _add_evaluation(
+            evidence, root, _read_evaluation(evaluated_at), verified_signers, revocation_pem
         )
     return evidence
+
+
+def _renewal_payload(
+    received: dict[str, Any],
+    record_id: str,
+    signature: bytes,
+    predecessor_response: str,
+    predecessor_root_pin: str,
+    predecessor_crl_sha256: str | None,
+) -> bytes:
+    manifest_sha256 = received.get("manifest_sha256")
+    reading_trust_sha256 = received.get("trust_sha256")
+    if any(
+        not isinstance(value, str) or not SHA256.fullmatch(value)
+        for value in (manifest_sha256, reading_trust_sha256)
+    ):
+        raise TimestampError(
+            "Invalid", "Renewal requires verified manifest and reading trust digests"
+        )
+    value = {
+        "purpose": RENEWAL_PURPOSE,
+        "record_id": record_id,
+        "signature_sha256": hashlib.sha256(signature).hexdigest(),
+        "archive_manifest_sha256": manifest_sha256,
+        "reading_trust_sha256": reading_trust_sha256,
+        "previous_tsa_root_sha256": predecessor_root_pin,
+        "previous_response_sha256": hashlib.sha256(
+            _b64(predecessor_response, "Predecessor response")
+        ).hexdigest(),
+        "previous_crl_sha256": predecessor_crl_sha256,
+    }
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode("utf-8")
+
+
+def _root_key(root: x509.Certificate) -> bytes:
+    return root.public_key().public_bytes(
+        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+
+def verify_renewals(
+    received: dict[str, Any],
+    original_timestamp_content: bytes,
+    original_root_pem: bytes,
+    original_root_pin: str,
+    original_crl: bytes | None,
+    renewal_content: bytes,
+    renewal_root_pem: bytes,
+    renewal_root_pin: str,
+    renewal_crl: bytes,
+    evaluated_at: str,
+) -> dict[str, Any]:
+    """Verify retention and timestamp takeover for the two synthetic readings."""
+    evaluation = _read_evaluation(evaluated_at)
+    if not isinstance(renewal_crl, bytes) or not renewal_crl:
+        raise TimestampError("Indeterminate", "A complete renewal TSA CRL is required")
+    original_root = _pinned_root(original_root_pem, original_root_pin)
+    renewal_root = _pinned_root(renewal_root_pem, renewal_root_pin)
+    if _root_key(original_root) == _root_key(renewal_root):
+        raise TimestampError("Inapplicable", "Renewal requires a distinct pinned TSA root key")
+    if not renewal_root.not_valid_before_utc <= evaluation <= renewal_root.not_valid_after_utc:
+        raise TimestampError("Inapplicable", "Renewal TSA root is outside validity at evaluation")
+
+    claims = _claims(received.get("signatures"))
+    original_responses = _parse_envelope(original_timestamp_content)
+    originals = _verify_pair(original_root, original_root_pem, original_responses, claims)
+    original_crl_digest = (
+        hashlib.sha256(original_crl).hexdigest() if original_crl is not None else None
+    )
+    renewal_responses = _parse_envelope(
+        renewal_content, expected_format=RENEWAL_FORMAT, collection="renewals"
+    )
+    payloads = [
+        (
+            record_id,
+            _renewal_payload(
+                received,
+                record_id,
+                signature,
+                original_responses[record_id],
+                original_root_pin,
+                original_crl_digest,
+            ),
+            previous.gen_time,
+        )
+        for (record_id, signature, _), previous in zip(claims, originals, strict=True)
+    ]
+    renewed = _verify_pair(renewal_root, renewal_root_pem, renewal_responses, payloads)
+    renewal_evaluation = _certificate_evaluation(evaluation, renewed)
+    if any(evaluation > signer.certificate.not_valid_after_utc for signer in renewed):
+        raise TimestampError("Inapplicable", "Renewal TSA certificate is expired at evaluation")
+    renewal_status = _revocation_status(renewal_crl, renewal_root, evaluation, renewed)
+    original_evidence = _timestamp_evidence(original_root_pin, original_responses, originals)
+    original_evidence["tsa_certificate_evaluation"] = _certificate_evaluation(evaluation, originals)
+    original_evidence["tsa_root_evaluation"] = {
+        "not_after": _utc_label(original_root.not_valid_after_utc),
+        "status": "Expired"
+        if evaluation > original_root.not_valid_after_utc
+        else "Within Validity",
+    }
+    findings = []
+    for previous, successor, (_, payload, _), successor_status in zip(
+        originals, renewed, payloads, renewal_status["findings"], strict=True
+    ):
+        expiry = min(previous.certificate.not_valid_after_utc, original_root.not_valid_after_utc)
+        if successor.gen_time >= expiry:
+            raise TimestampError(
+                "Inapplicable", "Renewal genTime is at or after predecessor TSA expiry"
+            )
+        predecessor_status = (
+            _revocation_status(original_crl, original_root, successor.gen_time, [previous])
+            if original_crl is not None
+            else {
+                "status": "Indeterminate",
+                "evaluated_at": _utc_label(successor.gen_time),
+                "reason": "No predecessor TSA CRL was bound into this renewal",
+            }
+        )
+        findings.append(
+            {
+                "record_id": successor.record_id,
+                "gen_time": _utc_label(successor.gen_time),
+                "response": renewal_responses[successor.record_id],
+                "payload_sha256": hashlib.sha256(payload).hexdigest(),
+                "previous_response_sha256": hashlib.sha256(
+                    _b64(original_responses[previous.record_id], "Predecessor response")
+                ).hexdigest(),
+                "previous_tsa_revocation": predecessor_status,
+                "renewal_tsa_revocation": successor_status,
+            }
+        )
+    return {
+        "renewal_chain_status": "Verified" if original_crl is not None else "Indeterminate",
+        "renewal_chain_reason": (
+            "Renewal binds the prior timestamp evidence and both TSA status checks passed"
+            if original_crl is not None
+            else "Predecessor timestamp is bound. Its revocation status is indeterminate"
+        ),
+        "evaluated_at": _utc_label(evaluation),
+        "archive_manifest_sha256": received["manifest_sha256"],
+        "reading_trust_sha256": received["trust_sha256"],
+        "previous_tsa_root_sha256": original_root_pin,
+        "renewal_tsa_root_sha256": renewal_root_pin,
+        "previous_crl_sha256": original_crl_digest,
+        "renewal_crl_sha256": renewal_status["crl_sha256"],
+        "original_timestamp_evidence": original_evidence,
+        "renewal_tsa_certificate_evaluation": renewal_evaluation,
+        "renewal_tsa_revocation_status": renewal_status,
+        "renewals": findings,
+    }
