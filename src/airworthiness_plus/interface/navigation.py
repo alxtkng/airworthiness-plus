@@ -311,7 +311,9 @@ BOARD: tuple[Group, ...] = (
                 "Suppliers",
                 "suppliers",
                 shown_for=MAINTAINS,
-                inside=frozenset({"supplier", "add_supplier", "evaluate_supplier"}),
+                inside=frozenset(
+                    {"supplier", "add_supplier", "evaluate_supplier", "assess_subcontractor"}
+                ),
             ),
         ),
     ),

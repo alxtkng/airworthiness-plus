@@ -9,6 +9,7 @@ from airworthiness_plus.logistics.models import (
     Destination,
     DocumentKind,
     ItemClass,
+    SubcontractorOutcome,
     SupplierStatus,
 )
 from airworthiness_plus.organisations.models import ApprovalType
@@ -31,6 +32,31 @@ class EvaluationForm(Form):
 class NewSupplierForm(EvaluationForm):
     name = forms.CharField(label="Supplier", max_length=200)
     field_order = ["name"]
+
+
+class SubcontractorAssessmentForm(Form):
+    approval = forms.ChoiceField(
+        label="Approval",
+        choices=[(kind, kind.label) for kind in (ApprovalType.PART_CAO, ApprovalType.PART_145)],
+    )
+    assessed_on = forms.DateField(label="Assessed On")
+    scope = forms.CharField(label="Scope of Work", max_length=240)
+    exposition_reference = forms.CharField(
+        label="Exposition Procedure and List Reference", max_length=160, required=False
+    )
+    qualification_evidence = forms.CharField(
+        label="Qualification Evidence", max_length=240, required=False
+    )
+    controls = forms.CharField(
+        label="Controls or Reasons for Suspension", max_length=2000, widget=forms.Textarea
+    )
+    pre_audit_reference = forms.CharField(
+        label="Pre-Audit Reference",
+        max_length=160,
+        required=False,
+        help_text="Required to record controls under Part-145.",
+    )
+    outcome = forms.ChoiceField(label="Outcome", choices=SubcontractorOutcome.choices)
 
 
 class ReceiptForm(Form):

@@ -42,6 +42,7 @@ Sets = tuple[type[forms.Form] | str, ...]
 # Every address that changes something, by its name, with what it may set: the
 # fields of a form, or a value named in words where the address takes it itself.
 WRITES: dict[str, Sets] = {
+    "assess_subcontractor": (logistics.SubcontractorAssessmentForm,),
     "add_supplier": (logistics.NewSupplierForm,),
     "evaluate_supplier": (logistics.EvaluationForm,),
     "receive_item": (logistics.ReceiptForm,),

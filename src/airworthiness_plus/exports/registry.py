@@ -27,6 +27,7 @@ from airworthiness_plus.logistics.models import (
     ReceivingCheck,
     ReceivingDisposition,
     StockEntry,
+    SubcontractorAssessment,
     Supplier,
     SupplierEvaluation,
 )
@@ -183,6 +184,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(ReceivingCheck, None),
     Exported(ReceivingDisposition, None),
     Exported(StockEntry, None),
+    Exported(SubcontractorAssessment, None),
     Exported(Report, None),
     Exported(Absence, None),
     Exported(BankHoliday, None),

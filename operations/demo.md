@@ -207,6 +207,8 @@ Sign in as Planning and Records and open **Planning → Staffing and Capacity �
 
 Sign in as the Continuing Airworthiness Manager and open **Logistics → Suppliers**. Find the propeller organisation and its 30 November 2026 evaluation date, and open the oil supplier to review its suspension evidence. Select **Evaluate a Supplier** to record a new sample supplier, then open that supplier and **Record an Evaluation** to append a decision. The register shows the latest decision and the supplier record retains both evaluations. Use a fictitious supplier on the test site.
 
+On a fictitious supplier record, choose **Record Subcontractor Assessment**. Enter a specialised maintenance scope, the organisation's exposition reference, the qualification evidence and the controls. Part-145 also asks for a pre-audit reference when recording controls. Save and expand the history row to see the supporting evidence. A later suspension remains in this history alongside the earlier assessment.
+
 ### Goods In and Receiving Inspection
 
 Open **Logistics → Goods In** as Planning and Records. Select the ELT battery to see two recorded checks and its pending disposition. Compare the two G-DGHI trim cable receipts. One was returned and the replacement was accepted. The oil receipt shows the inspection and return on consecutive dates. Open the owner-supplied alternator to see its failed check and quarantine evidence. On the accepted trim cable receipt, open **View Stores Entry**. Check the recorded location and release evidence, then follow the link back to the receipt. Open **Logistics → Stores → Stock** to find the same entry. Use **Receive an Item** with a fictitious delivery-line reference to try recording a receipt, checks and a disposition.

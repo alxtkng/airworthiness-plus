@@ -146,6 +146,7 @@ Hazards answered: H-005.
 | Sub-claim | Argument | Evidence | Status |
 |---|---|---|---|
 | C9.1 A supplier decision and its basis can be traced to the relevant approval | A shared supplier identity has approval-specific, dated decisions. The latest decision for the approval is shown while earlier evidence remains accessible. This is one input to the separate checks on a received item (H-034) | REQ-340 to REQ-343, `tests/test_suppliers.py` and the supplier browser journey | Available |
+| C9.2 Maintenance subcontractor evidence can be traced separately from supplier evaluation | Each entry carries the dated approval reference, controlled scope and evidence. New assessments and suspensions retain earlier evidence as history | REQ-348 and REQ-349, H-035, `tests/test_subcontractors.py` and the subcontractor browser journey | Available |
 | C9.3 The first disposition of an incoming item follows the receiving procedure | Receipt, dated checks and dated disposition remain traceable. Pending, non-serviceable, suspect and expired cases cannot enter accepted stores (H-037). The disposition captures the inspector, applicable approval and class-specific evidence. A single Stores entry links back to the retained decision and receipt (H-038) | REQ-353 to REQ-357, `tests/test_receiving.py`, database tests and the Goods In browser journey | Available |
 
 ## Maintaining This Case

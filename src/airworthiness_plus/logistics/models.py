@@ -63,6 +63,47 @@ class SupplierEvaluation(Record):
         ]
 
 
+class SubcontractorOutcome(models.TextChoices):
+    CONTROLS_RECORDED = "Controls Recorded", "Controls Recorded"
+    SUSPENDED = "Suspended", "Suspended"
+
+
+class SubcontractorAssessment(Record):
+    """The dated evidence for work under the receiving organisation's approval."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.PROTECT, related_name="subcontractor_assessments"
+    )
+    approval = models.ForeignKey(Approval, on_delete=models.PROTECT, related_name="+")
+    approval_reference = models.CharField("Approval Reference", max_length=40)
+    assessed_on = models.DateField("Assessed On")
+    scope = models.CharField("Scope of Work", max_length=240)
+    exposition_reference = models.CharField(
+        "Exposition Procedure and List Reference", max_length=160, blank=True
+    )
+    qualification_evidence = models.CharField("Qualification Evidence", max_length=240, blank=True)
+    controls = models.TextField("Controls or Reasons for Suspension", max_length=2000)
+    pre_audit_reference = models.CharField("Pre-Audit Reference", max_length=160, blank=True)
+    outcome = models.CharField("Outcome", max_length=20, choices=SubcontractorOutcome.choices)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-assessed_on", "-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(outcome__in=SubcontractorOutcome.values)
+                & ~Q(scope="")
+                & ~Q(controls="")
+                & (
+                    ~Q(outcome=SubcontractorOutcome.CONTROLS_RECORDED)
+                    | (~Q(exposition_reference="") & ~Q(qualification_evidence=""))
+                ),
+                name="subcontractor_assessment_has_evidence",
+            ),
+        ]
+
+
 class ItemClass(models.TextChoices):
     SERVICEABLE = "Serviceable Component", "Serviceable Component"
     UNSERVICEABLE = "Unserviceable Component", "Unserviceable Component"
