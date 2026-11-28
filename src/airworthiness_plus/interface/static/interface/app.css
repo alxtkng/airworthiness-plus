@@ -364,6 +364,13 @@ p {
   margin: var(--space-3) 0;
 }
 
+/* A link that is a list item, such as a line of the organisation chart, is 24 pixels high (SC 2.5.8). */
+
+main li > a:first-child {
+  display: inline-block;
+  padding-block: 2px;
+}
+
 /* Links set in a row of their own are targets of 24 pixels or more when they wrap (SC 2.5.8). */
 
 main > p > a,
@@ -515,6 +522,16 @@ td {
 .js table.compact .in-detail,
 .js table.compact tr.detail[hidden] {
   display: none;
+}
+
+/* A link in a one-line cell is clipped to its cell, so it never reaches into the next (SC 2.5.8). */
+
+.js table.compact td > a {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
 }
 
 .js table.compact td.disclosure {
