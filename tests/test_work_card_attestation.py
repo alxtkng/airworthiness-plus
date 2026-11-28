@@ -321,6 +321,19 @@ def test_pending_job_result_or_cancellation(
     assert client.get(path, secure=True).context["job"].status == expected
     with working_for(sample.ours.id, sample.planner.id):
         assert not WorkCardAttestation.objects.filter(card=card).exists()
+    monkeypatch.setattr(signing_provider, "provider", signing_provider.SyntheticProvider)
+    if case == "delay":
+        assert post(client, path, command="check", job=job.pk).status_code == 302
+        assert client.get(path, secure=True).context["job"].status == SigningState.SIGNED
+    if case in {"decline", "cancel", "stale"}:
+        preview = client.get(path, secure=True)
+        assert (
+            post(client, path, consent="yes", intent=preview.context["intent"]).status_code == 302
+        )
+        replacement = client.get(path, secure=True).context["job"]
+        assert replacement.pk != job.pk
+        assert post(client, path, command="check", job=job.pk).status_code == 409
+        assert client.get(path, secure=True).context["job"].status == SigningState.PENDING
 
 
 def test_structured_steps_pin_revision_and_require_independent_inspection(

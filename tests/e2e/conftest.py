@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from functools import partial
@@ -155,6 +156,24 @@ class RunningSite:
     address: str
     name: str
     database: Database
+
+    @contextmanager
+    def block_synthetic_archive_insert(self) -> Iterator[None]:
+        """Make PostgreSQL reject an archive insert in this test's disposable database."""
+        with psycopg.connect(
+            self.database.admin.info.dsn, dbname=self.name, autocommit=True
+        ) as connection:
+            connection.execute(
+                "ALTER TABLE planning_workcardattestation "
+                "ADD CONSTRAINT rehearsal_archive_unavailable CHECK (false) NOT VALID"
+            )
+            try:
+                yield
+            finally:
+                connection.execute(
+                    "ALTER TABLE planning_workcardattestation "
+                    "DROP CONSTRAINT rehearsal_archive_unavailable"
+                )
 
     def advance_verification_age(self, session_key: str) -> None:
         """Move the test session beyond the fresh-verification window."""
