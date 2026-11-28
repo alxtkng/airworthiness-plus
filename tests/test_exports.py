@@ -512,7 +512,26 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
     complete_results(writer, cert)
     submitted(writer, cert + "decision/", outcome="Accepted", reason="Fictitious verified scope")
     submitted(writer, order + "reinstate/", evidence="Fictitious restored tool")
+    from unittest.mock import patch
+    from uuid import uuid4
+
+    from airworthiness_plus.logistics import allocations
+    from airworthiness_plus.logistics.models import AllocationKind
+    from tests.test_stores import lot, place
+
     with working_for(sample.ours.id, sample.lucy.id):
+        posting = lot("RX-007")
+        with patch.object(aircraft_services, "today", return_value=posting.posted_on):
+            allocations.record(
+                sample.lucy,
+                posting,
+                AllocationKind.QUARANTINE,
+                request_id=uuid4(),
+                source=place("BAY-B"),
+                destination=place("QUAR-1"),
+                quantity=D("1"),
+                evidence="Synthetic quarantine evidence",
+            )
         export = build(sample.ours, by=sample.lucy)
     files = opened(export.content)
     manifest = files["manifest.json"]
@@ -614,7 +633,7 @@ def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history
         }
         Person.objects.filter(pk=chris.id).update(full_name="Chris Moore Updated")
         Person.objects.filter(pk=sam.id).update(full_name="Sam Patel Updated")
-    with as_owner_who_is_not_a_superuser():
+    with as_owner_who_is_not_a_superuser(functions=("logistics_stock_on_hand(uuid, uuid)",)):
         MigrationExecutor(connection).migrate(latest)
 
     client = signed_in(sample.planner)

@@ -92,6 +92,12 @@ def _controls(user: User, today: date) -> dict[str, bool]:
         "may_count": stores.may_act(user, Action.RECORD_STORES, StoresAction.COUNT, today),
         "may_adjust": stores.may_act(user, Action.ADJUST_STOCK, StoresAction.ADJUST, today),
         "may_locate": stores.may_act(user, Action.RECORD_STORES, StoresAction.LOCATIONS, today),
+        "may_reserve": stores.may_act(user, Action.RECORD_STORES, StoresAction.RESERVE, today),
+        "may_issue": stores.may_act(user, Action.RECORD_STORES, StoresAction.ISSUE, today),
+        "may_return": stores.may_act(user, Action.RECORD_STORES, StoresAction.RETURN, today),
+        "may_quarantine": stores.may_act(
+            user, Action.RECORD_STORES, StoresAction.QUARANTINE, today
+        ),
     }
 
 
@@ -170,6 +176,15 @@ def _detail(
             if posting
             else [],
             "quantity": stores.quantity_text,
+            "allocations": posting.allocations.select_related(
+                "source",
+                "destination",
+                "card__package",
+                "appointment__person",
+                "following",
+            )
+            if posting
+            else [],
         },
     )
 

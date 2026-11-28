@@ -373,6 +373,7 @@ These block verification of the requirements named, not the start of building.
 | REQ-356 | Give Goods In recording to authorised app roles under a maintenance approval. Keep receipt, observations and disposition in the organisation's tenancy. Preserve linked approval and inspector evidence, audit events and organisation export | Role matrix, ADR-0002 (D) | Must | Test |
 | REQ-357 | Create one auditable Stores entry in the same transaction as each accepted disposition. Keep the link between stock, disposition, receipt and inspection evidence. Retain the evidence for returned and quarantined receipts without creating stock | Receiving Inspection and Stores boards, ADR-0008 (D) | Must | Golden, Test |
 | REQ-358 | Use the immutable receiving disposition to post one evidenced quantity into the location ledger. Retain quarantined custody and block availability. Preserve the original evidence and show the blocking reasons where the unit, trace, destination or shelf-life basis remains unresolved. | Project decision under the proposed receipt-to-ledger contract. CAO.A.030 and CAO.A.050 apply to the supported Part-CAO scope. [Stores handoff](../assurance/phase-4-stores-handoff.md) | Must | Test |
+| REQ-359 | Derive custody, reserved and available balances from retained Stores records. Enforce dated Stores authority, check current issue eligibility and retain linked work-card, parts data, issue, return and quarantine evidence | Stores ledger and production planning trial (D) | Must | Golden, Test |
 
 ## Synthetic work card pilot
 

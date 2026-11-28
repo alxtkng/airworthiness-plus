@@ -267,6 +267,10 @@ class StoresAction(models.TextChoices):
     MOVE = "Move", "Move Stock"
     COUNT = "Count", "Count Stock"
     ADJUST = "Adjust", "Adjust Stock After a Count"
+    RESERVE = "Reserve", "Reserve Stock for a Work Card"
+    ISSUE = "Issue", "Issue Stock to Maintenance"
+    RETURN = "Return", "Accept Maintenance Returns to Quarantine"
+    QUARANTINE = "Quarantine", "Move Unreserved Stock to Quarantine"
 
 
 class LocationKind(models.TextChoices):
@@ -557,5 +561,94 @@ class StockMovement(StoresRecord):
                 )
                 & ~Q(source=F("destination")),
                 name="stores_movement_has_valid_ends",
+            ),
+        ]
+
+
+class AllocationKind(models.TextChoices):
+    RESERVE = "Reserve", "Reserved"
+    RELEASE = "Release", "Reservation Released"
+    ISSUE = "Issue", "Issued to Maintenance"
+    RETURN = "Return", "Returned to Quarantine"
+    QUARANTINE = "Quarantine", "Moved to Quarantine"
+
+
+class StockAllocation(StoresRecord):
+    """One append-only allocation or custody change against the lot ledger."""
+
+    posting = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="allocations")
+    kind = models.CharField(max_length=12, choices=AllocationKind.choices)
+    source = models.ForeignKey(
+        StoresLocation, null=True, on_delete=models.PROTECT, related_name="+"
+    )
+    destination = models.ForeignKey(
+        StoresLocation, null=True, on_delete=models.PROTECT, related_name="+"
+    )
+    card = models.ForeignKey(
+        "planning.WorkCard", null=True, on_delete=models.PROTECT, related_name="+"
+    )
+    preceding = models.OneToOneField(
+        "self", null=True, on_delete=models.PROTECT, related_name="following"
+    )
+    quantity = models.DecimalField(
+        "Quantity", max_digits=QUANTITY_DIGITS, decimal_places=QUANTITY_PLACES
+    )
+    required_identity = models.CharField(
+        "Required Part Number or Specification", max_length=100, blank=True
+    )
+    applicable_source = models.CharField(
+        "Applicable Parts Data Reference and Revision", max_length=300, blank=True
+    )
+    evidence = models.CharField("Custody Evidence", max_length=1000)
+    recorded_on = models.DateField()
+    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        ordering = ["recorded_on", "entered_at", "pk"]
+        constraints = [
+            _once("stores_allocation_once"),
+            models.CheckConstraint(
+                condition=Q(quantity__gt=0)
+                & ~Q(evidence="")
+                & (
+                    Q(
+                        kind=AllocationKind.RESERVE,
+                        preceding__isnull=True,
+                        card__isnull=False,
+                        source__isnull=False,
+                        destination__isnull=True,
+                    )
+                    & ~Q(required_identity="")
+                    & ~Q(applicable_source="")
+                    | Q(
+                        kind__in=[AllocationKind.RELEASE, AllocationKind.ISSUE],
+                        preceding__isnull=False,
+                        card__isnull=False,
+                        source__isnull=False,
+                        destination__isnull=True,
+                    )
+                    & ~Q(required_identity="")
+                    & ~Q(applicable_source="")
+                    | Q(
+                        kind=AllocationKind.RETURN,
+                        preceding__isnull=False,
+                        card__isnull=False,
+                        source__isnull=True,
+                        destination__isnull=False,
+                    )
+                    & ~Q(required_identity="")
+                    & ~Q(applicable_source="")
+                    | Q(
+                        kind=AllocationKind.QUARANTINE,
+                        preceding__isnull=True,
+                        card__isnull=True,
+                        source__isnull=False,
+                        destination__isnull=False,
+                        required_identity="",
+                        applicable_source="",
+                    )
+                    & ~Q(source=F("destination"))
+                ),
+                name="stores_allocation_has_scope_and_evidence",
             ),
         ]

@@ -23,6 +23,7 @@ from airworthiness_plus.logistics.models import (
 )
 from airworthiness_plus.organisations.models import ApprovalType
 from airworthiness_plus.people.models import Person
+from airworthiness_plus.planning.models import WorkCard
 
 
 class EvaluationForm(Form):
@@ -302,3 +303,55 @@ class StockAdjustmentForm(Form):
     evidence = forms.CharField(
         label="Adjustment Authority and Evidence", max_length=1000, widget=forms.Textarea
     )
+
+
+class AllocationForm(Form):
+    request_id = submission_field()
+    evidence = forms.CharField(label="Custody Evidence", max_length=1000, widget=forms.Textarea)
+
+
+class AllocationCardChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
+    def label_from_instance(self, obj: WorkCard) -> str:
+        return f"{obj.package.reference} · {obj.package.aircraft.registration} · {obj.title}"
+
+
+class ReserveAllocationForm(AllocationForm):
+    field_order = [
+        "source",
+        "card",
+        "quantity",
+        "required_identity",
+        "applicable_source",
+        "evidence",
+    ]
+
+    source = forms.ModelChoiceField(label="Source Location", queryset=StoresLocation.objects.all())
+    card = AllocationCardChoice(
+        label="Work Card",
+        queryset=WorkCard.objects.select_related("package__aircraft"),
+    )
+    quantity = quantity_field("Quantity to Reserve")
+    required_identity = forms.CharField(
+        label="Required Part Number or Specification", max_length=100
+    )
+    applicable_source = forms.CharField(
+        label="Applicable Parts Data Reference and Revision", max_length=300
+    )
+
+
+class ReturnAllocationForm(AllocationForm):
+    field_order = ["destination", "evidence"]
+
+    destination = forms.ModelChoiceField(
+        label="Secure Quarantine Location",
+        queryset=StoresLocation.objects.filter(
+            kind=LocationKind.QUARANTINE, secure=True, withdrawal__isnull=True
+        ),
+    )
+
+
+class QuarantineAllocationForm(ReturnAllocationForm):
+    field_order = ["source", "destination", "quantity", "evidence"]
+
+    source = forms.ModelChoiceField(label="Source Location", queryset=StoresLocation.objects.all())
+    quantity = quantity_field("Quantity to Quarantine")
