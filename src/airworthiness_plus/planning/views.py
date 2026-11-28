@@ -232,7 +232,7 @@ def release_work_package(request: HttpRequest, package_id: UUID) -> HttpResponse
 @requires(Action.RECORD_WORK_CARD)
 @require_http_methods(["GET", "POST"])
 def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> HttpResponse:
-    """Archive explicit consent to the reviewed synthetic completion version."""
+    """Request, check, cancel or archive a synthetic completion attestation."""
     user = _user(request)
     card = _card(package_id, card_id)
     if not services.synthetic_available(card.package):
@@ -296,6 +296,7 @@ def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> H
 def sign_work_card_step(
     request: HttpRequest, package_id: UUID, card_id: UUID, number: int
 ) -> HttpResponse:
+    """Record consent and the result of a pinned synthetic step."""
     user = _user(request)
     card = _card(package_id, card_id)
     if not services.synthetic_available(card.package) or not 1 <= number <= len(card.steps):
