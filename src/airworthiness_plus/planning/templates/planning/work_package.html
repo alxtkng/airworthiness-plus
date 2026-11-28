@@ -47,7 +47,7 @@
 <dd>{% if awaiting_inspection %}<span class="status status-due">{{ awaiting_inspection|length }} Awaiting Inspection</span>
 <ul>{% for card in awaiting_inspection %}<li><a href="#work-card-{{ card.id }}">{{ card.title }}</a></li>{% endfor %}</ul>
 {% else %}None{% endif %}</dd>
-<dt>Critical Cards Without Recorded Inspection</dt><dd>{{ missing_inspections }}</dd>
+<dt>Critical Cards Without Recorded Inspection</dt><dd>{{ missing_inspections|default:"None" }} Outstanding</dd>
 <dt>Planned Inspection Hours</dt><dd>{{ inspection }}</dd>
 <dt>Tool Accountability</dt><dd><a href="#tool-accountability">Review Tool Issues and Returns</a></dd>
 <dt>Signed General Verification</dt>
