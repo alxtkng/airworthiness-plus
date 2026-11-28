@@ -269,7 +269,7 @@ Recorded 27 November 2026 as ours. The plan gives each phase the next block of 2
 - The balancing kit stays **Control basis to verify** with neither a control interval nor a date until the verified documents and actual kit and sensor identities are recorded. The 0142 chronology, recheck scope and no-effect evidence gaps stay visible in the sample record.
 - PR 2 records the open affected-work case and restricts the tool when it records an out-of-limits result. PR 4 records the investigation, dispositions and closure.
 
-- Calibration uses a dated facility-specific provider scope and a separate acceptance and reinstatement decision. The order keeps the actual movement dates separate from the expected return and from control dates. The first recorded out-of-limits result opens a case and applies a hold in the same database transaction. Incomplete evidence remains provisional and later certificate versions retain the original trigger. See ADR-0010.
+- Calibration uses a dated facility-specific provider scope and a separate acceptance and reinstatement decision. When an order requires uncertainty, applicability to as-found claims of conformity and to as-left evidence is checked on acceptance. The order keeps the actual movement dates separate from the expected return and from control dates. The first recorded out-of-limits result opens a case and applies a hold in the same database transaction. Incomplete evidence remains provisional and later certificate versions retain the original trigger. See ADR-0010.
 
 ## Interface
 

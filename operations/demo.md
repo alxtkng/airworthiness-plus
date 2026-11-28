@@ -221,6 +221,8 @@ As the Administrator, open **Tool Delegations** to review the sample procedure a
 
 Open **Tools and Equipment → Service Providers**. Compare C07's expected return, the previously reported deadline and the blank physical return. C06 has a physical return with a missing-traceability rejection and a calibration hold. Its order links to the original certificate revision. Record any trial certificate or point results against a new fictitious order. The order keeps prospective reinstatement separate from the open affected-work case.
 
+On a fictitious calibration order that requires measurement uncertainty, enter an as-found conformity claim without uncertainty. Attempt acceptance and check that the form asks for uncertainty and coverage. Retain the original source and submit the supported evidence as a corrected certificate version.
+
 ## What Cannot Be Shown Yet
 
 The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: further Stores and tooling workflows, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

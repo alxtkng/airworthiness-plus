@@ -32,6 +32,7 @@ def setup_workshop(
     sample: Sample,
     monkeypatch: pytest.MonkeyPatch,
     asset: str,
+    **tool_fields: str,
 ) -> tuple[Client, str, str]:
     monkeypatch.setattr(aircraft_services, "today", lambda: date(2026, 11, 18))
     with working_for(sample.ours.id, sample.administrator.id):
@@ -62,7 +63,7 @@ def setup_workshop(
             authority="Fictitious signed delegation",
         )
     writer = signed_in(sample.lucy)
-    tool = register(writer, asset, "Torque Wrench", serial="TEST-0142")
+    tool = register(writer, asset, "Torque Tool", serial="TEST-0142", **tool_fields)
     basis(writer, tool, "Calibration", "6")
     return writer, tool, str(supplier.pk)
 
@@ -248,7 +249,7 @@ def create_custody(writer: Client, order: str) -> None:
     )
 
 
-def complete_results(writer: Client, cert: str) -> None:
+def complete_results(writer: Client, cert: str, *, found_uncertainty: str = "0.2") -> None:
     point(writer, cert)
     point(
         writer,
@@ -257,6 +258,7 @@ def complete_results(writer: Client, cert: str) -> None:
         reference_value="20",
         measured_value="20.2",
         error="1",
+        uncertainty=found_uncertainty,
         statement="Conforming",
     )
     for ref, raw in (("100", "101"), ("20", "20.2")):
@@ -335,6 +337,54 @@ def test_unsupported_certificate_cannot_be_accepted(
         reason="Fictitious review attempt",
     )
     assert response.status_code == 200 and message in response.content
+    assert b"Calibration hold" in get(writer, tool).content
+
+
+def test_ordered_uncertainty_required_for_as_found_conformity(
+    records: tuple[Client, str, str],
+) -> None:
+    writer, tool, _ = records
+    order = order_for(records)
+    create_custody(writer, order)
+    cert = certificate(writer, order)
+    complete_results(writer, cert, found_uncertainty="")
+    response = post(
+        writer,
+        cert + "decision/",
+        request_id=str(uuid4()),
+        outcome="Accepted",
+        reason="Fictitious review attempt",
+    )
+    assert response.status_code == 200
+    assert b"The ordered scope requires uncertainty and coverage" in response.content
+    assert b"Calibration hold" in get(writer, tool).content
+
+
+def test_certificate_with_wrong_vibration_sensor_cannot_be_accepted(
+    sample: Sample,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    records = setup_workshop(
+        sample,
+        monkeypatch,
+        "TEST-KIT",
+        is_assembly="on",
+        component_ids="Vibration sensor TEST-01",
+    )
+    writer, tool, _ = records
+    order = order_for(records)
+    create_custody(writer, order)
+    cert = certificate(writer, order, component_ids="Vibration sensor TEST-02")
+    complete_results(writer, cert)
+    response = post(
+        writer,
+        cert + "decision/",
+        request_id=str(uuid4()),
+        outcome="Accepted",
+        reason="Fictitious review attempt",
+    )
+    assert response.status_code == 200
+    assert b"serial or controlled components do not match" in response.content
     assert b"Calibration hold" in get(writer, tool).content
 
 
