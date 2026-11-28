@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth import HASH_SESSION_KEY
 from django.contrib.sessions.backends.base import SessionBase
 from django.core import signing
-from django.db import transaction
+from django.db import DatabaseError, transaction
 
 from airworthiness_plus.accounts import sign_in
 from airworthiness_plus.accounts.middleware import recent_verification
@@ -17,7 +17,14 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
-from airworthiness_plus.planning.models import WorkCard, WorkCardAttestation, WorkPackage
+from airworthiness_plus.planning import signing_provider
+from airworthiness_plus.planning.models import (
+    SigningState,
+    WorkCard,
+    WorkCardAttestation,
+    WorkCardSigningJob,
+    WorkPackage,
+)
 from airworthiness_plus.planning.services import RefusedError, _person_on
 
 POLICY = "synthetic-work-card-completion-1"
@@ -114,7 +121,7 @@ def intent(content: dict[str, Any]) -> str:
 
 
 @transaction.atomic
-def attest(card: WorkCard, actor: User, token: str, session: SessionBase) -> WorkCardAttestation:
+def enqueue(card: WorkCard, actor: User, token: str, session: SessionBase) -> None:
     actor = User.objects.select_for_update().get(pk=actor.pk)
     # Package changes and card evidence use the same package lock.
     WorkPackage.objects.select_for_update().get(pk=card.package_id)
@@ -137,7 +144,7 @@ def attest(card: WorkCard, actor: User, token: str, session: SessionBase) -> Wor
     if prior is not None:
         if json.loads(prior.evidence)["reviewed_content"] != content:
             raise RefusedError("The Work Card Already Has an Archived Synthetic Attestation")
-        return prior
+        return
     evidence = _json(
         {
             "reviewed_content": content,
@@ -145,11 +152,98 @@ def attest(card: WorkCard, actor: User, token: str, session: SessionBase) -> Wor
             "verified_at": verified_at.isoformat(),
         }
     )
-    return WorkCardAttestation.objects.create(
+    if WorkCardSigningJob.objects.filter(
+        card=card, status__in=[SigningState.PENDING, SigningState.SIGNED]
+    ).exists():
+        return
+    WorkCardSigningJob.objects.create(
         organisation_id=card.organisation_id,
         card=card,
         actor=actor,
         authorisation=grant,
-        evidence=evidence,
+        provider=signing_provider.provider().name,
+        document=evidence,
         sha256=_digest(evidence),
+        requested_at=sign_in.current_time(),
     )
+
+
+def active_job(card: WorkCard, actor: User) -> WorkCardSigningJob | None:
+    return WorkCardSigningJob.objects.filter(card=card, actor=actor).first()
+
+
+@transaction.atomic
+def advance(card: WorkCard, actor: User, job_id: str, *, command: str) -> None:
+    # The package lock orders processing with inspection and other version changes.
+    WorkPackage.objects.select_for_update().get(pk=card.package_id)
+    card = WorkCard.objects.get(pk=card.pk)
+    job = active_job(card, actor)
+    if job is None or str(job.pk) != job_id:
+        raise RefusedError("Select the Current Signature Request")
+    if job.status == SigningState.PENDING:
+        if command == "cancel":
+            job.status = SigningState.CANCELLED
+            job.save(update_fields=["status"])
+            return
+        if command == "check":
+            _check_provider(card, actor, job)
+        return
+    if job.status == SigningState.SIGNED and command == "archive":
+        try:
+            _archive(job)
+        except DatabaseError:
+            job.refresh_from_db()
+            if not job.archive_failed:
+                job.archive_failed = True
+                job.save(update_fields=["archive_failed"])
+
+
+def _check_provider(card: WorkCard, actor: User, job: WorkCardSigningJob) -> None:
+    try:
+        content, _ = preview(card, actor, lock=True)
+    except RefusedError:
+        job.status = SigningState.STALE
+    else:
+        if content != json.loads(job.document)["reviewed_content"]:
+            job.status = SigningState.STALE
+        else:
+            provider = signing_provider.provider()
+            if provider.name != job.provider:
+                raise RefusedError("The Original Signature Provider Is Unavailable")
+            request = signing_provider.Request(
+                str(job.pk), str(actor.pk), job.sha256, job.document.encode("utf-8")
+            )
+            result = provider.check(request)
+            if result.status == "pending":
+                return
+            job.result = result.evidence()
+            if result.status == "declined":
+                job.status = SigningState.DECLINED
+            elif (
+                result.status == "signed"
+                and result.reference == request.reference
+                and result.signer == request.signer
+                and result.sha256 == request.sha256
+                and _digest(job.document) == job.sha256
+                and provider.verifies(result)
+            ):
+                job.status = SigningState.SIGNED
+            else:
+                job.status = SigningState.REJECTED
+    job.save(update_fields=["status", "result"])
+
+
+@transaction.atomic
+def _archive(job: WorkCardSigningJob) -> None:
+    archive = WorkCardAttestation.objects.create(
+        organisation_id=job.organisation_id,
+        card_id=job.card_id,
+        actor_id=job.actor_id,
+        authorisation_id=job.authorisation_id,
+        evidence=job.document,
+        sha256=job.sha256,
+    )
+    job.archive = archive
+    job.status = SigningState.ARCHIVED
+    job.archive_failed = False
+    job.save(update_fields=["status", "archive", "archive_failed"])

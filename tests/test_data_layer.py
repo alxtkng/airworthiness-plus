@@ -317,6 +317,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "planning_workpackage": {"work_package_evidence"},
         "planning_workcard": {"work_card_evidence", "work_card_amendment_evidence"},
         "planning_workcardattestation": {"attestation_evidence", "attestation_refuse_update"},
+        "planning_workcardsigningjob": {"signing_job_evidence"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
         "releases_release": {
             "release_rules",
