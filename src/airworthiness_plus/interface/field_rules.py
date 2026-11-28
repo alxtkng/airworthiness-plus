@@ -73,6 +73,7 @@ WRITES: dict[str, Sets] = {
     "post_disposition": (logistics.StockPostingForm,),
     "move_stock": (logistics.StockMovementForm,),
     "reserve_stock": (logistics.ReserveAllocationForm,),
+    "approve_stock_substitution": (logistics.StockSubstitutionForm,),
     "release_stock_reservation": (logistics.AllocationForm,),
     "issue_reserved_stock": (logistics.AllocationForm,),
     "return_issued_stock": (logistics.ReturnAllocationForm,),

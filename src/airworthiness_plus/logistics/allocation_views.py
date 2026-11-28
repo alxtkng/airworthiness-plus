@@ -9,12 +9,13 @@ from django.views.decorators.http import require_http_methods
 
 from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
 from airworthiness_plus.accounts.roles import Action
-from airworthiness_plus.logistics import allocations, stores
+from airworthiness_plus.logistics import allocations, stores, substitutions
 from airworthiness_plus.logistics.forms import (
     AllocationForm,
     QuarantineAllocationForm,
     ReserveAllocationForm,
     ReturnAllocationForm,
+    StockSubstitutionForm,
 )
 from airworthiness_plus.logistics.models import AllocationKind, StockAllocation, StockPosting
 from airworthiness_plus.logistics.services import RefusedError
@@ -60,7 +61,12 @@ def change_custody(
     else:
         posting = get_object_or_404(postings, pk=posting_id)
     form_class, heading = FORMS[kind]
-    form = form_class(request.POST if request.method == "POST" else None)
+    data = request.POST if request.method == "POST" else None
+    form = (
+        ReserveAllocationForm(data, substitutes=substitutions.available(posting, today))
+        if kind == AllocationKind.RESERVE
+        else form_class(data)
+    )
     if not stores.may_act(user, Action.RECORD_STORES, action, today):
         raise ActionRefusedError(Action.RECORD_STORES)
     if request.method == "POST" and form.is_valid():
@@ -72,4 +78,36 @@ def change_custody(
             return _back(posting.disposition)
     return _render_form(
         request, form, heading, receipt=posting.disposition.receipt, custody=preceding
+    )
+
+
+@never_cache
+@requires(Action.RECORD_RELEASE_CERTIFICATE)
+@require_http_methods(["GET", "POST"])
+def approve_substitution(request: HttpRequest, posting_id: UUID) -> HttpResponse:
+    """Record authorised alternate part evidence for one stock lot and work card."""
+    user, today = _access(request, Action.RECORD_RELEASE_CERTIFICATE)
+    posting = get_object_or_404(
+        StockPosting.objects.filter(organisation=user.organisation).select_related(
+            "evidence", "disposition__receipt"
+        ),
+        pk=posting_id,
+    )
+    form = StockSubstitutionForm(
+        request.POST if request.method == "POST" else None,
+        authorisations=substitutions.authorisations(user, today),
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            substitutions.approve(user, posting, **form.cleaned_data)
+        except RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return _back(posting.disposition)
+    return _render_form(
+        request,
+        form,
+        "Approve an Alternate",
+        receipt=posting.disposition.receipt,
+        alternate_identity=posting.evidence.part_number or posting.evidence.specification,
     )

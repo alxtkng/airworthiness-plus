@@ -546,6 +546,7 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
         held = rows(one.table, column, sample.ours.id, omitted)
         # Individually seeded workflows have their own populated export tests.
         if one.table not in {
+            "logistics_stocksubstitution",
             "planning_workcardattestation",
             "defects_aircraftdrawing",
             "defects_damageentry",
@@ -633,7 +634,9 @@ def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history
         }
         Person.objects.filter(pk=chris.id).update(full_name="Chris Moore Updated")
         Person.objects.filter(pk=sam.id).update(full_name="Sam Patel Updated")
-    with as_owner_who_is_not_a_superuser(functions=("logistics_stock_on_hand(uuid, uuid)",)):
+    with as_owner_who_is_not_a_superuser(
+        functions=("logistics_stock_on_hand(uuid, uuid)", "logistics_stock_allocation_rules()"),
+    ):
         MigrationExecutor(connection).migrate(latest)
 
     client = signed_in(sample.planner)

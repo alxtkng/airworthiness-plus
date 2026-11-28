@@ -51,6 +51,22 @@
 {% if may_move or may_count %}<p>{% if may_move %}<a class="button" href="{% url 'move_stock' posting.id %}">Move Stock</a> {% endif %}{% if may_count %}<a class="button" href="{% url 'count_stock' posting.id %}">Count Stock</a>{% endif %}</p>{% endif %}
 {% endif %}
 
+{% if posting.kind == "Stock" and may_approve_substitution %}
+<p><a class="button" href="{% url 'approve_stock_substitution' posting.id %}">Approve an Alternate</a></p>
+{% endif %}
+{% if approved_alternates %}
+<h2>Applicable Approved Alternates</h2>
+<ul>
+{% for approval in approved_alternates %}
+<li>{{ approval.substitute_identity }} for {{ approval.required_identity }} on
+<a href="{% url 'work_package' approval.card.package_id %}#card-{{ approval.card_id }}">{{ approval.card.package }} · {{ approval.card }}</a>.
+{{ approval.applicable_source }}. Issued work card revision {{ approval.revision.revision }}.
+Approved by {{ approval.authorisation.person }} under {{ approval.authorisation.reference }} on {{ approval.recorded_on|long_date }}.
+{{ approval.evidence }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
 {% if allocations %}
 <h2>Reservations, Issues and Returns</h2>
 <table>
@@ -62,7 +78,7 @@
 <td>{% if event.card_id %}<a href="{% url 'work_package' event.card.package_id %}#card-{{ event.card_id }}">{{ event.card.package }} · {{ event.card }}</a>{% endif %}</td>
 <td>{% if event.source %}{{ event.source }}{% endif %}{% if event.destination %}{% if event.source %} to {% endif %}{{ event.destination }}{% endif %}</td>
 <td>{{ event.quantity|amount }} {{ posting.evidence.unit }}</td>
-<td>{% if event.required_identity %}{{ event.required_identity }} · {{ event.applicable_source }}<br>{% endif %}{{ event.evidence }}</td>
+<td>{% if event.required_identity %}{{ event.required_identity }} · {{ event.applicable_source }}<br>{% endif %}{{ event.evidence }}{% if event.substitution %}<br>Alternate {{ event.substitution.substitute_identity }} approved by {{ event.substitution.authorisation.person }} under {{ event.substitution.authorisation.reference }}{% endif %}</td>
 <td>{{ event.appointment.person.full_name }}, {{ event.recorded_on|long_date }}</td>
 <td>{% if not event.following %}
 {% if event.kind == "Reserve" %}{% if may_issue %}<a href="{% url 'issue_reserved_stock' event.id %}">Issue Reserved Stock</a>{% endif %}

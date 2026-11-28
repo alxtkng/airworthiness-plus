@@ -97,8 +97,12 @@ def as_owner_who_is_not_a_superuser(
             cursor.execute(f"ALTER TABLE {table} OWNER TO {role}")
         # An owner makes tables of its own, as a migration does.
         cursor.execute(f"GRANT CREATE ON SCHEMA public TO {role}")
+        transferred = []
         for function in functions:
-            cursor.execute(f"ALTER FUNCTION {function} OWNER TO {role}")
+            cursor.execute("SELECT to_regprocedure(%s)", [function])
+            if cursor.fetchone()[0] is not None:
+                cursor.execute(f"ALTER FUNCTION {function} OWNER TO {role}")
+                transferred.append(function)
         cursor.execute(f"SET ROLE {role}")
     try:
         yield
@@ -109,7 +113,7 @@ def as_owner_who_is_not_a_superuser(
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED")
             for table in tables:
                 cursor.execute(f"ALTER TABLE {table} OWNER TO {connection.ops.quote_name(builder)}")
-            for function in functions:
+            for function in transferred:
                 cursor.execute(
                     f"ALTER FUNCTION {function} OWNER TO {connection.ops.quote_name(builder)}"
                 )

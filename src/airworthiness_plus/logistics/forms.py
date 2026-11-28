@@ -15,6 +15,7 @@ from airworthiness_plus.logistics.models import (
     ItemClass,
     LocationKind,
     ShelfLifeBasis,
+    StockSubstitution,
     StockUnit,
     StoresAction,
     StoresLocation,
@@ -22,7 +23,7 @@ from airworthiness_plus.logistics.models import (
     SupplierStatus,
 )
 from airworthiness_plus.organisations.models import ApprovalType
-from airworthiness_plus.people.models import Person
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
 from airworthiness_plus.planning.models import WorkCard
 
 
@@ -323,6 +324,7 @@ class ReserveAllocationForm(AllocationForm):
         "quantity",
         "required_identity",
         "applicable_source",
+        "substitution",
         "evidence",
     ]
 
@@ -338,6 +340,59 @@ class ReserveAllocationForm(AllocationForm):
     applicable_source = forms.CharField(
         label="Applicable Parts Data Reference and Revision", max_length=300
     )
+
+    substitution = forms.ModelChoiceField(
+        label="Applicable Approved Alternate",
+        queryset=StockSubstitution.objects.none(),
+        required=False,
+        help_text="Select the recorded approval only when the received identity differs.",
+    )
+
+    def __init__(
+        self, *args: Any, substitutes: QuerySet[StockSubstitution] | None = None, **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        if substitutes is not None:
+            self.fields["substitution"].queryset = substitutes  # type: ignore[attr-defined]
+
+
+class SubstitutionAuthorisationChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
+    def label_from_instance(self, obj: MaintenanceAuthorisation) -> str:
+        return f"{obj.reference} · {obj.scope}"
+
+
+class StockSubstitutionForm(Form):
+    request_id = submission_field()
+    card = AllocationCardChoice(
+        label="Work Card",
+        queryset=WorkCard.objects.select_related("package__aircraft"),
+    )
+    required_identity = forms.CharField(
+        label="Required Part Number or Specification", max_length=100
+    )
+    applicable_source = forms.CharField(
+        label="Applicable Parts Data Reference and Revision", max_length=300
+    )
+    authorisation = SubstitutionAuthorisationChoice(
+        label="Maintenance Authorisation",
+        queryset=MaintenanceAuthorisation.objects.none(),
+    )
+    scope_confirmed = forms.BooleanField(
+        label="I Confirm My Recorded Scope Covers This Aircraft and Part Substitution"
+    )
+    evidence = forms.CharField(
+        label="Approval and Applicability Evidence", max_length=1000, widget=forms.Textarea
+    )
+
+    def __init__(
+        self,
+        *args: Any,
+        authorisations: QuerySet[MaintenanceAuthorisation] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        if authorisations is not None:
+            self.fields["authorisation"].queryset = authorisations  # type: ignore[attr-defined]
 
 
 class ReturnAllocationForm(AllocationForm):

@@ -252,6 +252,24 @@ def test_stores_reserves_issues_and_quarantines_a_maintenance_return(
             "Move Unreserved Stock to Quarantine",
         ):
             _appoint(page, action)
+        certifier = APPOINTMENT["person"]
+        page.goto("/staff/")
+        page.get_by_role("link", name=certifier, exact=True).click()
+        form = form_with(page, "staff_group")
+        fill(form, {"staff_group": "Certifying Staff"})
+        submit(page, form.get_by_role("button", name=f"Save the Record of {certifier}"))
+        page.get_by_role("link", name="Record Maintenance Authorisation").click()
+        save(
+            page,
+            "Save Authorisation",
+            {
+                "reference": "SYN-ALT-LIVE",
+                "scope": "Part substitution approval for G-ABCD",
+                "valid_from": "2026-11-18",
+                "valid_to": "2026-11-20",
+            },
+            "SYN-ALT-LIVE",
+        )
 
     with signed_in(chromium, live_site, ours[1]) as page:
         page.goto("/maintenance-data/add/")
@@ -371,8 +389,35 @@ def test_stores_reserves_issues_and_quarantines_a_maintenance_return(
             "Reservation Released",
         )
         assert definition(page, "Available Quantity") == "1"
+        page.get_by_role("link", name="Approve an Alternate", exact=True).click()
+        save(
+            page,
+            "Approve an Alternate",
+            {
+                "card": reserve["card"],
+                "required_identity": "ORIGINAL-PART",
+                "applicable_source": "Synthetic approved parts list revision 4",
+                "authorisation": "SYN-ALT-LIVE · Part substitution approval for G-ABCD",
+                "scope_confirmed": "on",
+                "evidence": "Figure 33 approves PN-TEST-713 for this work card and aircraft",
+            },
+            "Applicable Approved Alternates",
+        )
         page.get_by_role("link", name="Reserve Stock", exact=True).click()
-        save(page, "Reserve Stock", reserve, "Reserved · Open")
+        save(
+            page,
+            "Reserve Stock",
+            {
+                **reserve,
+                "required_identity": "ORIGINAL-PART",
+                "applicable_source": "Synthetic approved parts list revision 4",
+                "substitution": (
+                    "WP-STORES-LIVE · Synthetic Installation Card: PN-TEST-713 for ORIGINAL-PART"
+                ),
+            },
+            "Reserved · Open",
+        )
+        expect(page.get_by_text("Alternate PN-TEST-713 approved by", exact=False)).to_be_visible()
         issue = page.get_by_role("link", name="Issue Reserved Stock", exact=True)
         issue_url = issue.get_attribute("href")
         assert issue_url

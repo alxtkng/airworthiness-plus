@@ -574,6 +574,49 @@ class AllocationKind(models.TextChoices):
     QUARANTINE = "Quarantine", "Moved to Quarantine"
 
 
+class StockSubstitution(StoresRecord):
+    """A certifier's approval of one substitute for one issued card and traced lot."""
+
+    posting = models.ForeignKey(
+        StockPosting, on_delete=models.PROTECT, related_name="substitutions"
+    )
+    card = models.ForeignKey("planning.WorkCard", on_delete=models.PROTECT, related_name="+")
+    revision = models.ForeignKey(
+        "maintenance_data.Revision", on_delete=models.PROTECT, related_name="+"
+    )
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    required_identity = models.CharField("Required Part Number or Specification", max_length=100)
+    substitute_identity = models.CharField("Approved Alternate Identity", max_length=160)
+    applicable_source = models.CharField(
+        "Applicable Parts Data Reference and Revision", max_length=300
+    )
+    evidence = models.CharField("Approval and Applicability Evidence", max_length=1000)
+    scope_confirmed = models.BooleanField()
+    recorded_on = models.DateField()
+
+    class Meta:
+        ordering = ["-recorded_on", "-entered_at", "pk"]
+        constraints = [
+            _once("stores_substitution_once"),
+            models.CheckConstraint(
+                condition=Q(scope_confirmed=True)
+                & ~Q(required_identity__in=["", F("substitute_identity")])
+                & ~Q(substitute_identity="")
+                & ~Q(applicable_source="")
+                & ~Q(evidence=""),
+                name="stores_substitution_has_separate_identity_and_evidence",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"{self.card.package} · {self.card}: {self.substitute_identity} "
+            f"for {self.required_identity}"
+        )
+
+
 class StockAllocation(StoresRecord):
     """One append-only allocation or custody change against the lot ledger."""
 
@@ -590,6 +633,9 @@ class StockAllocation(StoresRecord):
     )
     preceding = models.OneToOneField(
         "self", null=True, on_delete=models.PROTECT, related_name="following"
+    )
+    substitution = models.ForeignKey(
+        StockSubstitution, null=True, on_delete=models.PROTECT, related_name="+"
     )
     quantity = models.DecimalField(
         "Quantity", max_digits=QUANTITY_DIGITS, decimal_places=QUANTITY_PLACES

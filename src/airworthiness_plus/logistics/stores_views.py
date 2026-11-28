@@ -14,7 +14,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.logistics import services, stores
+from airworthiness_plus.logistics import services, stores, substitutions
 from airworthiness_plus.logistics.forms import (
     PostingEvidenceForm,
     StockAdjustmentForm,
@@ -194,12 +194,18 @@ def _detail(
             if posting
             else [],
             "quantity": stores.quantity_text,
+            "may_approve_substitution": (
+                user.may(Action.RECORD_RELEASE_CERTIFICATE)
+                and substitutions.authorisations(user, today).exists()
+            ),
+            "approved_alternates": substitutions.available(posting, today) if posting else [],
             "allocations": posting.allocations.select_related(
                 "source",
                 "destination",
                 "card__package",
                 "appointment__person",
                 "following",
+                "substitution__authorisation__person",
             )
             if posting
             else [],
