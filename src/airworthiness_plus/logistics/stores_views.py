@@ -14,7 +14,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.logistics import services, stores
+from airworthiness_plus.logistics import services, station_stock, stores
 from airworthiness_plus.logistics.forms import (
     PostStockForm,
     StockAdjustmentForm,
@@ -98,7 +98,18 @@ def stores_stock(request: HttpRequest) -> HttpResponse:
     user = _access(request, Action.VIEW_RECORDS)
     today, lead = aircraft_services.today(), _lead(user)
     lines = [_line(decision, today, lead) for decision in _decisions(user)]
+    identity = request.GET.get("identity", "").strip()
+    if identity:
+        lines = [
+            line
+            for line in lines
+            if (record := line["lot"] or line["resolution"]) is not None
+            and station_stock.matches(record, line["receipt"].classification, identity)
+        ]
     lots = [line["lot"] for line in lines if line["lot"] is not None]
+    positions = stores.positions(lots, today, lead)
+    configured = StoreLocation.objects.filter(organisation=user.organisation, active=True)
+    summary = station_stock.summarise(positions, configured)
     return render(
         request,
         "logistics/stock.html",
@@ -106,7 +117,9 @@ def stores_stock(request: HttpRequest) -> HttpResponse:
             "entries": [line for line in lines if line["decision"].outcome == Destination.STORES],
             "holds": [line for line in lines if line["decision"].outcome == Destination.QUARANTINE],
             "returns": [line for line in lines if line["decision"].outcome == Destination.RETURN],
-            "positions": stores.positions(lots, today, lead),
+            "positions": positions,
+            "identity": identity,
+            "summary": summary,
             "display": stores.display,
         },
     )
