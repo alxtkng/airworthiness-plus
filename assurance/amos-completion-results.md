@@ -30,6 +30,23 @@ The full pre-port candidate `3c2e110` passed 1,498 non-live checks and 78 live b
 
 The published-state fixture provisions four actual stock postings and five movements with open legacy, quarantine and return states. For the station-only intermediate revision `8575fe8`, the fixture preserved every published record projection and the exact event identities and hashes through migration, normal signed-in reads and native restore. Both source and recovered copies reported zero record-chain discrepancies. The retained fixture checks main 7, station-prefix ZRH 8, network 10, physical quarantine 2 with zero available and tenant refusal. The separate station acceptance test uses configured station codes, with ZRH Line 1, BSL 1, LUG 1 and GVA 0 explicitly visible.
 
+The final code revision `523f094` applied `0009_station` and `0010_maintenance_custody` over actual published records. All 72 original Stores audit events and every published Stores record identifier matched before migration, after migration, after signed-in export and after restore. The identical projection digest was `b6885df7003f56e7b01ad15be96f6420727ac16623c25515e9f6b6a2f3e95f0c`. The manifest and history verifier accepted all three signed-in archives. The prior `5b18ede` populated cutover also passed against this revision and restored 280 previous history entries, seven aircraft, four open defects and three pending orders in 0.912 seconds. Both rehearsals reported zero record discrepancies. Reusable source and the exact logs are under `pr167-migration` and `pr167-original-prior-cutover.log` in the local evidence folder.
+
+The first published-main intermediate run at `8575fe8` reported 129 passes and one older signed-record upgrade test calling a retired test helper argument. Its targeted rerun passed. The next custody export selection at `da1554d` reported 28 passes and one failure in the same upgrade check because its restricted owner fixture transferred only table ownership. The final test gives the temporary migration owner the published balance function it replaces. The actual populated-schema migration and restore kept their existing migration owner throughout.
+
+## Final candidate checks
+
+| Selection at `523f094` | Result |
+| --- | --- |
+| Full non-live pytest suite in five disposable PostgreSQL shards | 1,492 passed, zero failures or skips |
+| Full live Playwright suite in five disposable PostgreSQL shards with exhaustive persona navigation | 78 passed, zero failures or skips |
+| Original baseline selection rerun on the final candidate | 230 passed, zero failures or skips |
+| Focused signed transfer and normal-form G-EJKL replay | Two passed. Both receivers matched all mapped fields and preserved the IDs. The measured import time was 0.017 seconds for Python and 2.072 seconds for JavaScript. JavaScript replay took 1.079 seconds and re-import against the separately updated synthetic trust took 1.967 seconds |
+| Retained renewal fixture replay | The complete chain verified. The exact retained predecessor tokens still have indeterminate revocation status |
+| Release checks | Ruff lint and format, strict mypy, all 249 traceability rows, locked environment and secret scan passed. Dependency audit found no known vulnerabilities and the SBOM was retained. A container runner is needed for the image build and smoke test |
+
+The final implementation is `523f094`. Later handoff commits update evidence and traceability. Logs prefixed `pr167-final-` identify the final candidate runs. The suite totals exclude the separately reported baseline, focused reruns and migration rehearsals.
+
 ## Release evidence boundaries
 
 The local release exercise uses disposable PostgreSQL 16.14, Python 3.13, Chromium 158, Node.js 24 and OpenSSL 3.5.9. The data set is synthetic. Raw logs, public verification material, the two receiver databases and reconciliation outputs are retained in the workspace folder `amos-completion-evidence-2026-11-28`. The locally stopped PostgreSQL cluster and the normal-form captures are separate from any hosted service. [Rehearsal procedure](../operations/amos-parallel-handover.md)
