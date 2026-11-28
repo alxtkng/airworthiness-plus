@@ -15,7 +15,7 @@
 </dl>
 <h2>Revisions</h2>
 <table>
-<thead><tr><th>Revision</th><th>Revision Date</th><th>Status</th></tr></thead>
+<thead><tr><th scope="col">Revision</th><th scope="col">Revision Date</th><th scope="col">Status</th></tr></thead>
 <tbody>
 {% for revision in revisions %}
 <tr><td>{{ revision.revision }}</td><td>{{ revision.revision_date|long_date }}</td><td>{% if revision.current %}Current{% else %}Superseded{% endif %}</td></tr>
@@ -29,7 +29,7 @@
 </form>
 <h2>Amendment Checks</h2>
 <table>
-<thead><tr><th>Checked</th><th>Checked By</th><th>Result</th></tr></thead>
+<thead><tr><th scope="col">Checked</th><th scope="col">Checked By</th><th scope="col">Result</th></tr></thead>
 <tbody>
 {% for check in checks %}
 <tr><td>{{ check.checked_on|long_date }}</td><td>{{ check.checked_by.full_name }}</td><td>{{ check.result }}</td></tr>

@@ -42,21 +42,49 @@ def properties(block: str) -> dict[str, str]:
 
 
 def test_every_colour_space_radius_and_line_is_a_token() -> None:
-    """REQ-196. The stylesheet's custom properties are the tokens, value for value."""
+    """REQ-196. The stylesheet's custom properties are the tokens, value for value.
+
+    A colour with two themes is written ``light-dark(light, dark)``, so the
+    browser's colour scheme, or the person's Appearance setting, chooses (REQ-405).
+    High contrast values are in the rule for ``data-contrast="high"`` and the same
+    under ``prefers-contrast: more`` (REQ-406). Display tokens carry their
+    variants in the rule for each setting.
+    """
     light = properties(STYLES.split(":root {", 1)[1].split("}", 1)[0])
-    after = STYLES.split("prefers-color-scheme: dark", 1)[1]
-    dark = properties(after.split(":root {", 1)[1].split("}", 1)[0])
+    high = properties(STYLES.split(':root[data-contrast="high"] {', 1)[1].split("}", 1)[0])
+    preferred = STYLES.split("@media (prefers-contrast: more) {", 1)[1].split("}\n}", 1)[0]
+    assert properties(preferred) == high
+    assert "prefers-color-scheme" not in STYLES
     for token in TOKENS["color"]["tokens"]:
         value = token["value"]
         if isinstance(value, str):
             assert light[token["name"]] == value, token["name"]
-            assert token["name"] not in dark
         else:
-            assert light[token["name"]] == value["light"], token["name"]
-            assert dark[token["name"]] == value["dark"], token["name"]
+            assert light[token["name"]] == f"light-dark({value['light']}, {value['dark']})", token[
+                "name"
+            ]
+        if "highContrast" in token:
+            pair = token["highContrast"]
+            assert high[token["name"]] == f"light-dark({pair['light']}, {pair['dark']})", token[
+                "name"
+            ]
+    named = {token["name"] for token in TOKENS["color"]["tokens"] if "highContrast" in token}
+    assert set(high) == named
     for group in ("spacing", "radius", "border"):
         for token in TOKENS[group]["tokens"]:
             assert light[token["name"]] == token["value"], token["name"]
+    rules = {
+        "large": ':root[data-text-size="large"]',
+        "larger": ':root[data-text-size="larger"]',
+        "comfortable": ':root[data-density="comfortable"]',
+        "reduced": ':root[data-reduce-motion="on"]',
+    }
+    for token in TOKENS["display"]["tokens"]:
+        assert light[token["name"]] == token["value"], token["name"]
+        for variant, selector in rules.items():
+            if variant in token:
+                rule = properties(STYLES.split(f"{selector} {{", 1)[1].split("}", 1)[0])
+                assert rule[token["name"]] == token[variant], (token["name"], variant)
     assert light["sans"] == TOKENS["type"]["families"]["sans"]
     assert light["mono"] == TOKENS["type"]["families"]["mono"]
 
@@ -231,7 +259,7 @@ def test_a_record_page_shows_the_record_its_type_and_its_own_tabs(
 def test_pages_before_sign_in_have_no_navigation() -> None:
     """Threat TH-001. Nothing of the application is shown to someone who has not signed in."""
     body = page(Client(), "/sign-in/")
-    assert '<main id="content" class="alone">' in body
+    assert '<main id="content" tabindex="-1" class="alone">' in body
     assert "Sections" not in body
     assert 'class="sidebar"' not in body
 

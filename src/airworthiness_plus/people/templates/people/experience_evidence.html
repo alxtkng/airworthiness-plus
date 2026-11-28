@@ -16,7 +16,7 @@
 <p>Source. AMC 66.A.20(b)(2). The organisation assesses scope and the evidence for each activity.</p>
 {% if withdrawal_message %}<p role="alert">{{ withdrawal_message }}</p>{% endif %}
 <table>
-<thead><tr><th>Reference</th><th>Date or First Day</th><th>Last Day</th><th>Evidence</th><th>Day Credit</th><th data-detail>Basis for Counting the Experience</th><th data-detail>Aircraft</th><th data-detail>Licence Category</th><th data-detail>Withdrawal</th></tr></thead>
+<thead><tr><th scope="col">Reference</th><th scope="col">Date or First Day</th><th scope="col">Last Day</th><th scope="col">Evidence</th><th scope="col">Day Credit</th><th scope="col" data-detail>Basis for Counting the Experience</th><th scope="col" data-detail>Aircraft</th><th scope="col" data-detail>Licence Category</th><th scope="col" data-detail>Withdrawal</th></tr></thead>
 <tbody>
 {% for item in evidence %}
 <tr><td>{{ item.evidence_reference }}</td><td>{{ item.starts_on|long_date }}</td><td>{{ item.ends_on|long_date }}</td><td>{{ item.get_kind_display }}</td><td>{{ item.days|default_if_none:"" }}</td><td>{{ item.qualification_basis }}</td><td>{{ item.aircraft_type }} {{ item.aircraft_registration }}</td><td>{{ item.licence_subcategory }}</td><td>
@@ -35,7 +35,7 @@
 <h2>Record Assessed Evidence</h2>
 <form method="post" action="{% url 'record_maintenance_experience' authorisation.id %}">
 {% csrf_token %}
-{{ form.as_p }}
+{% error_summary form %}{{ form.as_p }}
 <button type="submit">Save Evidence</button>
 </form>
 {% endif %}
@@ -43,7 +43,7 @@
 <h2>Withdraw Authorisation</h2>
 <form method="post" action="{% url 'withdraw_maintenance_authorisation' authorisation.id %}">
 {% csrf_token %}
-{{ authorisation_form.as_p }}
+{% error_summary authorisation_form %}{{ authorisation_form.as_p }}
 <button type="submit">Withdraw Authorisation</button>
 </form>
 {% endif %}

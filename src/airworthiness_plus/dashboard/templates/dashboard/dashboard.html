@@ -46,7 +46,7 @@
 {% if panel.rows %}
 <table data-search="always">
 <thead>
-<tr><th>{{ panel.subject }}</th><th>Item</th><th>Due</th><th class="number">Remaining</th><th>Status</th><th data-detail>Detail</th><th>Page</th></tr>
+<tr><th scope="col">{{ panel.subject }}</th><th scope="col">Item</th><th scope="col">Due</th><th scope="col" class="number">Remaining</th><th scope="col">Status</th><th scope="col" data-detail>Detail</th><th scope="col">Page</th></tr>
 </thead>
 <tbody>
 {% for row in panel.rows %}

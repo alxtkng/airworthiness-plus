@@ -199,14 +199,18 @@
     searches += 1;
     var box = document.createElement("p");
     box.className = "table-search";
+    // The visible label is Search; the rest of its name is for a screen reader,
+    // so the name starts with the words on the screen (WCAG 2.2 SC 2.5.3, REQ-396).
     var label = document.createElement("label");
-    label.className = "visually-hidden";
     label.htmlFor = "table-search-" + searches;
-    label.textContent = "Search This Table";
+    label.appendChild(document.createTextNode("Search"));
+    var rest = document.createElement("span");
+    rest.className = "visually-hidden";
+    rest.textContent = " This Table";
+    label.appendChild(rest);
     var input = document.createElement("input");
     input.type = "search";
     input.id = label.htmlFor;
-    input.placeholder = "Search";
     input.autocomplete = "off";
     box.appendChild(label);
     box.appendChild(input);
@@ -408,9 +412,68 @@
     });
   });
 
+  /* A table is named by the heading of its section (WCAG 2.2 SC 1.3.1, REQ-402),
+     unless it has a caption or a name of its own. */
+  var headings = 0;
+  function named(table) {
+    if (table.caption || table.hasAttribute("aria-label") || table.hasAttribute("aria-labelledby")) {
+      return;
+    }
+    var all = Array.prototype.slice.call(document.querySelectorAll("main h1, main h2, main h3"));
+    var heading = null;
+    all.forEach(function (candidate) {
+      if (candidate.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING) {
+        heading = candidate;
+      }
+    });
+    if (!heading) {
+      return;
+    }
+    if (!heading.id) {
+      headings += 1;
+      heading.id = "table-heading-" + headings;
+    }
+    table.setAttribute("aria-labelledby", heading.id);
+  }
+
+  /* A wide table scrolls inside its own box, never the page (WCAG 2.2 SC 1.4.10,
+     REQ-386). The box takes keyboard focus only while it has something to scroll. */
+  function contained(table) {
+    var box = document.createElement("div");
+    box.className = "table-scroll";
+    table.parentNode.insertBefore(box, table);
+    box.appendChild(table);
+    function fit() {
+      if (box.scrollWidth > box.clientWidth) {
+        box.tabIndex = 0;
+        box.setAttribute("role", "region");
+        if (table.hasAttribute("aria-labelledby")) {
+          box.setAttribute("aria-labelledby", table.getAttribute("aria-labelledby"));
+        } else {
+          box.setAttribute("aria-label", "Table");
+        }
+      } else {
+        box.removeAttribute("tabindex");
+        box.removeAttribute("role");
+        box.removeAttribute("aria-labelledby");
+        box.removeAttribute("aria-label");
+      }
+    }
+    fit();
+    window.addEventListener("resize", fit);
+  }
+
   document.documentElement.classList.add("js");
+  Array.prototype.forEach.call(document.querySelectorAll("main table"), named);
   Array.prototype.forEach.call(
     document.querySelectorAll("main table:not([data-plain])"),
     enhance
   );
+  Array.prototype.forEach.call(document.querySelectorAll("main table"), contained);
+
+  /* A form sent back with errors opens on its summary (REQ-397, the GOV.UK pattern). */
+  var summary = document.querySelector("[data-error-summary]");
+  if (summary) {
+    summary.focus();
+  }
 })();

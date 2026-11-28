@@ -5,7 +5,7 @@
 <h1 class="visually-hidden">Import</h1>
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <table>
-<thead><tr><th>Loaded</th><th>What the File Holds</th><th>Source Records</th><th>Rows</th><th>Checked Against Source</th><th>Differ From Source</th></tr></thead>
+<thead><tr><th scope="col">Loaded</th><th scope="col">What the File Holds</th><th scope="col">Source Records</th><th scope="col">Rows</th><th scope="col">Checked Against Source</th><th scope="col">Differ From Source</th></tr></thead>
 <tbody>
 {% for report in reports %}
 <tr>
@@ -28,7 +28,7 @@
 <h2>How a File Is Written</h2>
 <p>Use a comma-separated values file (.csv) with UTF-8 encoding. Its first row is the column headings, exactly as below. A date is written 2026-11-18 or 18 November 2026. Hours have at most one decimal place and no comma. Cycles are whole numbers. A file is loaded whole, or not at all.</p>
 <table>
-<thead><tr><th>What the File Holds</th><th data-detail>Column Headings</th><th data-detail>May Be Left Empty</th></tr></thead>
+<thead><tr><th scope="col">What the File Holds</th><th scope="col" data-detail>Column Headings</th><th scope="col" data-detail>May Be Left Empty</th></tr></thead>
 <tbody>
 {% for kind, columns, optional in layouts %}
 <tr><td>{{ kind }}</td><td>{{ columns }}</td><td>{{ optional }}</td></tr>

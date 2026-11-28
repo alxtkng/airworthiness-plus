@@ -24,7 +24,7 @@
 <h3>Timeline</h3>
 <p>A bar marks each two-hour block touched by the event. Exact times appear in Dispatch Details.</p>
 <table>
-<thead><tr><th>Event</th>{% for slot in board.slots %}<th>{{ slot|date:"H:i" }}</th>{% endfor %}</tr></thead>
+<thead><tr><th scope="col">Event</th>{% for slot in board.slots %}<th scope="col">{{ slot|date:"H:i" }}</th>{% endfor %}</tr></thead>
 <tbody>
 {% for event, cells in board.timeline %}
 <tr><th scope="row">{{ event.label }}</th>{% for occupied in cells %}<td>{% if occupied %}<span class="dispatch-block"></span>{% endif %}</td>{% endfor %}</tr>

@@ -10,7 +10,7 @@
 {% if any_position %}
 <p class="filter">{% for key, label, count, chosen in filters %}<a href="{% url 'aircraft_configuration' aircraft.id %}{% if key %}?show={{ key }}{% endif %}"{% if chosen %} aria-current="true"{% endif %}>{{ label }} {{ count }}</a> {% endfor %}</p>
 <table>
-<thead><tr><th>Position</th><th>Product</th><th class="number">Chapter</th><th>Part Number</th><th>Serial Number</th><th>Recorded</th><th>Limit</th><th>Remaining</th><th data-detail>Source</th><th data-detail>Required Equipment</th><th data-detail>Change or Repair</th></tr></thead>
+<thead><tr><th scope="col">Position</th><th scope="col">Product</th><th scope="col" class="number">Chapter</th><th scope="col">Part Number</th><th scope="col">Serial Number</th><th scope="col">Recorded</th><th scope="col">Limit</th><th scope="col">Remaining</th><th scope="col" data-detail>Source</th><th scope="col" data-detail>Required Equipment</th><th scope="col" data-detail>Change or Repair</th></tr></thead>
 <tbody>
 {% for line in positions %}
 <tr>
@@ -35,7 +35,7 @@
 <h2>Components Fitted</h2>
 {% if components %}
 <table>
-<thead><tr><th>Component</th><th>Position</th><th>Limit</th><th>Since New or Overhaul</th><th class="number">Remaining</th><th>Status</th></tr></thead>
+<thead><tr><th scope="col">Component</th><th scope="col">Position</th><th scope="col">Limit</th><th scope="col">Since New or Overhaul</th><th scope="col" class="number">Remaining</th><th scope="col">Status</th></tr></thead>
 <tbody>
 {% for line in components %}
 <tr><td><a href="{% url 'component' line.component.id %}">{{ line.component.name }}</a></td><td>{{ line.fitted_note }}</td><td>{{ line.limit_text }}</td><td>{{ line.since_text }}</td><td class="number">{{ line.remaining_text }}</td><td>{{ line.status|status }}</td></tr>
@@ -48,7 +48,7 @@
 <h2>Installation History</h2>
 {% if fittings %}
 <table>
-<thead><tr><th>Component</th><th>Position</th><th>Fitted</th><th>Removed</th><th data-detail>Release Document</th><th data-detail>Reason for Removal</th></tr></thead>
+<thead><tr><th scope="col">Component</th><th scope="col">Position</th><th scope="col">Fitted</th><th scope="col">Removed</th><th scope="col" data-detail>Release Document</th><th scope="col" data-detail>Reason for Removal</th></tr></thead>
 <tbody>
 {% for fitting in fittings %}
 <tr><td><a href="{% url 'component' fitting.component_id %}">{{ fitting.component.name }}</a></td><td>{{ fitting.position }}</td><td>{{ fitting.fitted_on|long_date }}</td><td>{% if fitting.removed_on %}{{ fitting.removed_on|long_date }}{% else %}Fitted{% endif %}</td><td>{{ fitting.release_document }}</td><td>{{ fitting.removal_reason }}</td></tr>
@@ -61,7 +61,7 @@
 <h2>Modifications and Repairs</h2>
 {% if changes %}
 <table>
-<thead><tr><th>Change or Repair</th><th>Approval Route</th><th class="number">Mass Effect</th><th>Embodied</th><th>Records</th></tr></thead>
+<thead><tr><th scope="col">Change or Repair</th><th scope="col">Approval Route</th><th scope="col" class="number">Mass Effect</th><th scope="col">Embodied</th><th scope="col">Records</th></tr></thead>
 <tbody>
 {% for line in changes %}
 <tr><td>{{ line.change.title }}</td><td>{{ line.change.route_text }}</td><td class="number">{{ line.mass_text }}</td><td>{{ line.embodied_text }}</td><td>{{ line.records }}</td></tr>

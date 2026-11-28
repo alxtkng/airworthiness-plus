@@ -16,7 +16,7 @@
 <form method="post" action="{% url 'check_import' report.load.id %}">
 {% csrf_token %}
 <table data-plain>
-<thead><tr><th>Row</th><th>Of</th><th>Value</th><th>Imported</th><th>Source</th><th>Status</th><th>Checked</th><th>Agrees with Source</th><th>Source Says</th></tr></thead>
+<thead><tr><th scope="col">Row</th><th scope="col">Of</th><th scope="col">Value</th><th scope="col">Imported</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Checked</th><th scope="col">Agrees with Source</th><th scope="col">Source Says</th></tr></thead>
 <tbody>
 {% for line in report.lines %}
 <tr>

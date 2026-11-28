@@ -14,7 +14,7 @@
 </dl>
 <h2>Positions</h2>
 <table>
-<thead><tr><th>Product</th><th class="number">Chapter</th><th>Position</th><th>Part Number</th><th>Serial Number</th><th>Source</th><th data-detail>Change or Repair</th></tr></thead>
+<thead><tr><th scope="col">Product</th><th scope="col" class="number">Chapter</th><th scope="col">Position</th><th scope="col">Part Number</th><th scope="col">Serial Number</th><th scope="col">Source</th><th scope="col" data-detail>Change or Repair</th></tr></thead>
 <tbody>
 {% for position in positions %}
 <tr><td>{{ position.product }}</td><td class="number">{{ position.chapter }}</td><td>{{ position.name }}</td><td>{{ position.part_number }}</td><td>{{ position.serial_number }}</td><td>{{ position.source }}</td><td>{{ position.change }}</td></tr>
@@ -24,7 +24,7 @@
 <h2>Modifications and Repairs Embodied</h2>
 {% if changes %}
 <table>
-<thead><tr><th>Change or Repair</th><th>Approval Route</th><th>Reference</th><th>Embodied</th></tr></thead>
+<thead><tr><th scope="col">Change or Repair</th><th scope="col">Approval Route</th><th scope="col">Reference</th><th scope="col">Embodied</th></tr></thead>
 <tbody>
 {% for change in changes %}
 <tr><td>{{ change.title }}</td><td>{{ change.route }}</td><td>{{ change.reference }}</td><td>{{ change.embodied_on }}</td></tr>

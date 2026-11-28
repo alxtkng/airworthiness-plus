@@ -6,7 +6,7 @@
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <h2>Export the Record of an Aircraft</h2>
 <table>
-<thead><tr><th>Aircraft Registration</th><th>Type Rating</th><th>Export</th></tr></thead>
+<thead><tr><th scope="col">Aircraft Registration</th><th scope="col">Type Rating</th><th scope="col">Export</th></tr></thead>
 <tbody>
 {% for one in aircraft %}
 <tr>
@@ -24,7 +24,7 @@
 </form>
 <h2>Exports Made</h2>
 <table>
-<thead><tr><th>When</th><th>By</th><th>Export and the SHA-256 of Its Manifest</th></tr></thead>
+<thead><tr><th scope="col">When</th><th scope="col">By</th><th scope="col">Export and the SHA-256 of Its Manifest</th></tr></thead>
 <tbody>
 {% for entry in made %}
 <tr>

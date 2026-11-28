@@ -5,7 +5,7 @@
 <p><a href="{% url back aircraft.id %}">{{ aircraft.registration }}</a>{% if subject %} · {{ subject }}{% endif %}</p>
 <form method="post">
 {% csrf_token %}
-{{ form.as_p }}
+{% error_summary form %}{{ form.as_p }}
 <p><button type="submit">{{ heading }}</button></p>
 </form>
 {% endblock %}

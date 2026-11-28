@@ -83,7 +83,7 @@ def test_the_fleet_page_shows_the_sample_fleet(sample: Sample, fleet: dict[str, 
         assert f"<td>{type_rating}</td>" in page
         assert f"<td>{owner}</td>" in page
         assert f'<td class="number">{formatting.hours(D(hours))}</td>' in page
-    assert "<th>Aircraft Registration</th>" in page
+    assert '<th scope="col">Aircraft Registration</th>' in page
     assert '<td class="number">9,874.3</td>' in page
     assert page.count("<td>18 November 2026</td>") == 6
     assert f"<td>{dot('Unserviceable')}, Stabilator Trim Cable</td>" in page

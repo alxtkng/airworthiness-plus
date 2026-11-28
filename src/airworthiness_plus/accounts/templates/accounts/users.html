@@ -5,7 +5,7 @@
 {% load writing %}{% if message %}<p role="alert">{{ message }}</p>{% endif %}
 {% if given %}<p role="status">First Password for {{ given.0.full_name }}, Shown Once: <code>{{ given.1 }}</code>. To Be Changed by {{ given_until|long_date }}</p>{% endif %}
 <table>
-<thead><tr><th>Full Name</th><th>User Name</th><th>Status</th><th>Second Factor</th><th>Roles</th><th>Change</th></tr></thead>
+<thead><tr><th scope="col">Full Name</th><th scope="col">User Name</th><th scope="col">Status</th><th scope="col">Second Factor</th><th scope="col">Roles</th><th scope="col">Change</th></tr></thead>
 <tbody>
 {% for person, roles_form in people %}
 <tr>

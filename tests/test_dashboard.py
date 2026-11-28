@@ -209,7 +209,7 @@ def test_the_overview_groups_the_sample_without_losing_register_items(sample: Sa
     )
     due_rows, remainder = remainder.split('id="needs-assessment"', 1)
     assessment, register = remainder.split('id="full-register"', 1)
-    assert "<title>Dashboard</title>" in body
+    assert "<title>Dashboard \N{EN DASH} Airworthiness+</title>" in body
     assert 'href="#full-register"' in body
     assert "G-DGHI" in restrictions and "Grounded Since 14 November 2026" in restrictions
     assert "Certificate of Release to Service Not Yet in Records" in due_rows

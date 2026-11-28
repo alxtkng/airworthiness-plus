@@ -18,7 +18,7 @@
 </dl>
 <h2>Recurrent Training</h2>
 <table>
-<thead><tr><th>Subject</th><th>Completed On</th><th>Renewal Due On</th><th>Evidence Reference</th></tr></thead>
+<thead><tr><th scope="col">Subject</th><th scope="col">Completed On</th><th scope="col">Renewal Due On</th><th scope="col">Evidence Reference</th></tr></thead>
 <tbody>
 {% for course in training_records %}
 <tr><td>{{ course.subject }}</td><td>{{ course.completed_on|long_date }}</td><td>{{ course.due_on|long_date }}</td><td>{{ course.evidence_reference }}</td></tr>
@@ -33,9 +33,9 @@
 <h2>Change the Record of {{ person.full_name }}</h2>
 <form method="post" action="{% url 'change_person' person.id %}">
 {% csrf_token %}
-{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% error_summary form %}{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
 {% for field in form %}
-<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}
 <p><button type="submit">Save the Record of {{ person.full_name }}</button></p>
 </form>

@@ -9,7 +9,7 @@
 {% if lines %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Owner</th><th>Tasks Contracted</th><th>Signed</th><th>Status</th><th data-detail>Status Detail</th><th data-detail>Type Rating</th><th data-detail>Type of Operation</th><th data-detail>Civil Aviation Authority Told</th></tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Owner</th><th scope="col">Tasks Contracted</th><th scope="col">Signed</th><th scope="col">Status</th><th scope="col" data-detail>Status Detail</th><th scope="col" data-detail>Type Rating</th><th scope="col" data-detail>Type of Operation</th><th scope="col" data-detail>Civil Aviation Authority Told</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -34,7 +34,7 @@
 {% if orders %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Work Ordered</th><th>Ordered By</th><th>Agreed</th><th>Outcome</th><th data-detail>Under Contract</th><th data-detail>Closed</th><th data-detail>Work Done</th>{% if may_order %}<th data-detail>Close</th>{% endif %}</tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Work Ordered</th><th scope="col">Ordered By</th><th scope="col">Agreed</th><th scope="col">Outcome</th><th scope="col" data-detail>Under Contract</th><th scope="col" data-detail>Closed</th><th scope="col" data-detail>Work Done</th>{% if may_order %}<th scope="col" data-detail>Close</th>{% endif %}</tr>
 </thead>
 <tbody>
 {% for order in orders %}

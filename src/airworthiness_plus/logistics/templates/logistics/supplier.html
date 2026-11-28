@@ -6,7 +6,7 @@
 {% if may_evaluate %}<p><a class="button" href="{% url 'evaluate_supplier' supplier.id %}">Record an Evaluation</a></p>{% endif %}
 <h2>Evaluation History</h2>
 <table>
-<thead><tr><th scope="col">Evaluated On</th><th scope="col">Approval</th><th scope="col">Supplies</th><th scope="col">Release Documents</th><th scope="col">Next Evaluation</th><th scope="col">Status</th><th data-detail>Evaluation Evidence</th></tr></thead>
+<thead><tr><th scope="col">Evaluated On</th><th scope="col">Approval</th><th scope="col">Supplies</th><th scope="col">Release Documents</th><th scope="col">Next Evaluation</th><th scope="col">Status</th><th scope="col" data-detail>Evaluation Evidence</th></tr></thead>
 <tbody>
 {% for row in evaluations %}
 <tr><td>{{ row.evaluated_on|long_date }}</td><td>{{ row.approval.approval }}, {{ row.approval_reference }}</td><td>{{ row.supplies }}</td><td>{{ row.release_documents }}</td><td>{{ row.next_evaluation_on|long_date }}</td><td>{{ row.status|status }}</td><td>{{ row.evidence }}</td></tr>
@@ -17,7 +17,7 @@
 {% if may_assess %}<p><a class="button" href="{% url 'assess_subcontractor' supplier.id %}">Record Subcontractor Assessment</a></p>{% endif %}
 {% if subcontracting %}
 <table>
-<thead><tr><th scope="col">Assessed On</th><th scope="col">Approval</th><th scope="col">Scope of Work</th><th scope="col">Outcome</th><th data-detail>Exposition Reference</th><th data-detail>Qualification Evidence</th><th data-detail>Pre-Audit Reference</th><th data-detail>Controls or Reasons for Suspension</th></tr></thead>
+<thead><tr><th scope="col">Assessed On</th><th scope="col">Approval</th><th scope="col">Scope of Work</th><th scope="col">Outcome</th><th scope="col" data-detail>Exposition Reference</th><th scope="col" data-detail>Qualification Evidence</th><th scope="col" data-detail>Pre-Audit Reference</th><th scope="col" data-detail>Controls or Reasons for Suspension</th></tr></thead>
 <tbody>
 {% for row in subcontracting %}
 <tr><td>{{ row.assessed_on|long_date }}</td><td>{{ row.approval.approval }}, {{ row.approval_reference }}</td><td>{{ row.scope }}</td><td>{{ row.outcome }}</td><td>{{ row.exposition_reference }}</td><td>{{ row.qualification_evidence }}</td><td>{{ row.pre_audit_reference }}</td><td>{{ row.controls }}</td></tr>

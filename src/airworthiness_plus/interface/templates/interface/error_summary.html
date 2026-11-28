@@ -1,0 +1,6 @@
+{% if items %}<div class="error-summary" tabindex="-1" data-error-summary aria-labelledby="{{ title }}">
+<h2 id="{{ title }}">There Is a Problem</h2>
+<ul>
+{% for item in items %}<li><a href="#{{ item.target }}">{{ item.label }}, {{ item.messages }}</a></li>
+{% endfor %}</ul>
+</div>{% endif %}

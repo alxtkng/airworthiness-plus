@@ -6,7 +6,7 @@
 {% if may_change %}<p><a href="{% url 'add_person' %}">Add a Person</a></p>{% endif %}
 <table>
 <thead>
-<tr><th>Name</th><th>Role</th><th>Reports To</th><th>Employment</th><th>Licence</th><th data-detail>Staff Group</th><th data-detail>Joined</th><th data-detail>Authorisations</th><th>Recurrent Training</th><th data-detail>Sign-In</th></tr>
+<tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Reports To</th><th scope="col">Employment</th><th scope="col">Licence</th><th scope="col" data-detail>Staff Group</th><th scope="col" data-detail>Joined</th><th scope="col" data-detail>Authorisations</th><th scope="col">Recurrent Training</th><th scope="col" data-detail>Sign-In</th></tr>
 </thead>
 <tbody>
 {% for person, training in staff_rows %}
@@ -34,7 +34,7 @@
 <h2>Former Staff</h2>
 <table>
 <thead>
-<tr><th>Name</th><th>Role</th><th>Left</th><th>Record Kept Until</th><th data-detail>How It Was Calculated</th></tr>
+<tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Left</th><th scope="col">Record Kept Until</th><th scope="col" data-detail>How It Was Calculated</th></tr>
 </thead>
 <tbody>
 {% for line in staff.former %}

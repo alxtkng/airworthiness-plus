@@ -31,14 +31,14 @@
 <ul>{% for report in flight_reports %}<li><a href="{% url 'technical_log_report' defect.aircraft_id report.id %}">{{ report.kind }} · {{ report.source_reference }}</a></li>{% endfor %}</ul>
 {% endif %}
 {% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}
-{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% error_summary form %}{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
 {% if defect.open and may_record %}
 <h2>Close {{ defect.title }}</h2>
 {% if defect.decision == "Not Deferrable" %}<p>The Aircraft Stays Unserviceable Until It Is Made Serviceable on Its Own Page</p>{% endif %}
 <form method="post" action="{% url 'close_defect' defect.id %}">
 {% csrf_token %}
 {% for field in form %}
-<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}
 <p><button type="submit">Close {{ defect.title }}</button></p>
 </form>

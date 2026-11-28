@@ -47,7 +47,7 @@ def rows(body: str, heading: str) -> list[list[str]]:
     table = next(
         part
         for part in body.split("<table>")[1:]
-        if part.lstrip().startswith(f"<thead>\n<tr><th>{heading}")
+        if part.lstrip().startswith(f'<thead>\n<tr><th scope="col">{heading}')
     )
     found = []
     for row in re.findall(r"<tr>\s*(<td>.*?)</tr>", table.split("</table>")[0], flags=re.S):
@@ -357,7 +357,7 @@ def test_the_staff_page_lists_everyone_and_those_who_have_left(sample: Sample) -
         "Contracted",
     ]
     assert by_name["[Accountable Manager]"][1] == ""
-    former = rows(body, "Name</th><th>Role</th><th>Left")
+    former = rows(body, 'Name</th><th scope="col">Role</th><th scope="col">Left')
     assert [row[:4] for row in former] == [
         [
             "[Former Review Name]",
@@ -397,7 +397,9 @@ def test_part_cao_gives_no_period_for_staff_who_are_not_review_staff(sample: Sam
         left_on="2026-11-18",
     )
     assert response.status_code == 302
-    former = rows(page(administrator, "/staff/"), "Name</th><th>Role</th><th>Left")
+    former = rows(
+        page(administrator, "/staff/"), 'Name</th><th scope="col">Role</th><th scope="col">Left'
+    )
     assert ["Ellie Ward", "Mechanic, Trainee", "18 November 2026"] in [row[:3] for row in former]
     assert next(row for row in former if row[0] == "Ellie Ward")[3] == "No Period Given in Part-CAO"
 
@@ -591,7 +593,10 @@ def test_a_person_whose_sign_in_is_inactive_can_be_recorded_as_having_left(
             joined_on=None,
             left_on=date(2026, 11, 17),
         )
-    former = rows(page(signed_in(sample.reader), "/staff/"), "Name</th><th>Role</th><th>Left")
+    former = rows(
+        page(signed_in(sample.reader), "/staff/"),
+        'Name</th><th scope="col">Role</th><th scope="col">Left',
+    )
     assert [
         "[Review Name]",
         "Airworthiness Review Staff",
@@ -692,7 +697,7 @@ def test_the_last_administrator_is_not_recorded_as_having_left(sample: Sample) -
 
 def former_row(sample: Sample, name: str) -> list[str]:
     body = page(signed_in(sample.reader), "/staff/")
-    former = rows(body, "Name</th><th>Role</th><th>Left")
+    former = rows(body, 'Name</th><th scope="col">Role</th><th scope="col">Left')
     return next(row for row in former if row[0] == name)
 
 
