@@ -1335,6 +1335,9 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
     assert "Completion measurements: Clearance 1.2 mm" in report_text
     assert "Operational maintenance authority: Unverified" in report_text
 
+    if (node := os.environ.get("AIRWORTHINESS_NODE24")) is not None:
+        _exercise_independent_node_receiver(node, receiver, archive, comparison, final)
+
     replay = run(command)
     assert replay.returncode == 0, replay.stderr
     assert json.loads(replay.stdout) == {**evidence, "imported": False}
@@ -1423,6 +1426,74 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
     _exercise_trial_timestamps(
         command, run, envelope["signatures"], evidence, receiver, sender, custodian
     )
+
+
+def _exercise_independent_node_receiver(
+    node: str, receiver: Path, archive: Path, comparison: Path, export: Any
+) -> None:
+    script = Path(__file__).resolve().parents[1] / "tools" / "reconcile_handover.mjs"
+    database = receiver / "node-receiver.sqlite"
+    results: dict[str, Any] = {}
+
+    def run(
+        path: Path, digest: str, sidecar: Path = comparison
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(  # noqa: S603  opted-in executable and fixed synthetic inputs
+            [node, str(script), str(path), digest, str(sidecar), str(database)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    for label, imported in (("valid", True), ("replay", False)):
+        result = run(archive, export.manifest_sha256)
+        assert result.returncode == 0, result.stderr
+        evidence = json.loads(result.stdout)
+        assert evidence["imported"] is imported
+        assert evidence["checked"] == json.loads(comparison.read_bytes())["records"]
+        results[label] = evidence
+
+    files = opened(export.content)
+    manifest = _trial_json({**files["manifest.json"], "version": 2})
+    table = "records/defects_defect.json"
+    defects = files[table]
+    assert defects
+    broken_tasks = deepcopy(files["records/programme_task.json"])
+    for row in broken_tasks:
+        row["programme_id"] = row["id"]
+    for label, changes, rehash, reason in (
+        ("unsupported", {"manifest.json": manifest}, False, "Unsupported archive"),
+        ("altered", {"README.txt": b"Altered"}, False, "Altered archive member"),
+        ("missing", {"records/programme_programme.json": b"[]"}, True, "broken dependency"),
+        ("duplicate", {table: _trial_json([*defects, defects[0]])}, True, "Duplicate record"),
+        (
+            "dangling",
+            {"records/programme_task.json": _trial_json(broken_tasks)},
+            True,
+            "broken dependency",
+        ),
+    ):
+        path = receiver / "node-refusal.zip"
+        content = rewritten(export.content, changes, fix_manifest=rehash)
+        path.write_bytes(content)
+        with zipfile.ZipFile(io.BytesIO(content)) as staged:
+            digest = hashlib.sha256(staged.read("manifest.json")).hexdigest()
+        result = run(path, digest)
+        assert result.returncode == 1 and reason in result.stderr, result.stderr
+        results[label] = result.stderr.strip()
+
+    wrong = json.loads(comparison.read_bytes())
+    wrong["records"]["aircraft_id"] = wrong["records"]["defect_id"]
+    path = receiver / "node-wrong-aircraft.json"
+    path.write_bytes(_trial_json(wrong))
+    result = run(archive, export.manifest_sha256, path)
+    assert result.returncode == 1 and "Wrong organisation or aircraft" in result.stderr
+    results["wrong_aircraft"] = result.stderr.strip()
+    replay = run(archive, export.manifest_sha256)
+    assert replay.returncode == 0, replay.stderr
+    results["replay_after_refusals"] = json.loads(replay.stdout)
+    assert results["replay_after_refusals"]["imported"] is False
+    (receiver / "node-results.json").write_bytes(_trial_json(results))
 
 
 # Verification (T-SEC-019)
