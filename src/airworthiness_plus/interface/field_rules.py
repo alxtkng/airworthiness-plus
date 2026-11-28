@@ -73,6 +73,7 @@ WRITES: dict[str, Sets] = {
     "add_work_card": (planning.WorkCardForm,),
     "issue_work_package": (),
     "complete_work_card": (planning.WorkCompletionForm,),
+    "attest_work_card": (planning.AttestationForm,),
     "inspect_work_card": (planning.InspectionForm,),
     "release_work_package": (planning.PackageReleaseForm,),
     "add_aircraft": (aircraft.AddAircraftForm,),

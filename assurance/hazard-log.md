@@ -70,6 +70,8 @@ Owner of every hazard in private beta: Alex King.
 | H-039 | A tool label shows current control on unsupported evidence | A date is anchored to an interim check, or an interval is assumed for a loan | Inaccurate or unsuitable tooling is used | High | Possible | Match completion to the revision, use the accepted completion date, keep before-use and unknown evidence explicit. Show condition and dates together | REQ-361, REQ-362, independent recomputation | Alex King | Register mitigation available. Issue and use enforcement open |
 | H-040 | An unauthorised decision clears a tooling restriction | A generic sign-in or a repair entry is treated as return-to-use authority | An unserviceable tool is returned to work | High | Possible | Require a matching, current tooling delegation and completed rectification. Retain the signer, dated restriction and history | REQ-363 and tooling tests | Alex King | Register mitigation available |
 
+| H-041 | Training attestation is relied on as authority for live maintenance | A synthetic grant or archive entry is mistaken for an operational signature | A release or deferral is recorded on the wrong basis | High | Possible | Training setting defaults off. A synthetic package, explicit version-bound consent and the named performer with a matching current grant are required. The service and database refuse synthetic grants for release and defect certification. | REQ-380 and ADR-0011, local automated and live browser tests | Alex King | Local mitigation. Operational policy and acceptance pending |
+
 ## Review
 
 The log is reviewed at each step's pull request and in full at the readiness review. Every hazard must be Verified, or Accepted by Alex King, before public beta.

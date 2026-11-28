@@ -117,6 +117,8 @@ class MaintenanceAuthorisation(Record):
             ),
         ]
 
+    SYNTHETIC_COMPLETION_SCOPE = "Synthetic work-card completion: "
+
     def term_on(self, on: date) -> str:
         """Distinguish the terms of the evidence from assessed experience."""
         if self.withdrawn_on is not None and self.withdrawn_on <= on:

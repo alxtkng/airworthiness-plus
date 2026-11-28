@@ -50,7 +50,11 @@ the programme departures, annual review checklist and directive sources
 added in pull request 134, plus the transfer checklist and configuration
 positions from pull request 135. Export tests download
 both archives, run `verify_export` and check the result against the page and
-selected archive contents. The fleet keyboard test operates a row at 390 pixels.
+selected archive contents. The fleet keyboard test operates a row at 390 pixels. The synthetic work card
+attestation journey uses a 390-pixel viewport. It exercises cancellation and
+password plus authenticator step-up, then checks the archive confirmation after
+reload while a critical inspection is still outstanding. The synthetic pilot is
+enabled for the disposable browser service.
 
 [Form coverage](form-coverage.tsv) maps each form route to a browser scenario.
 It includes the maintenance programme's retirement control and checks that

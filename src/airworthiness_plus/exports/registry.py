@@ -42,7 +42,7 @@ from airworthiness_plus.people.models import (
     Person,
     RecurrentTraining,
 )
-from airworthiness_plus.planning.models import WorkCard, WorkPackage
+from airworthiness_plus.planning.models import WorkCard, WorkCardAttestation, WorkPackage
 from airworthiness_plus.programme.models import (
     AnnualReview,
     Departure,
@@ -149,6 +149,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(WorkOrder, _by("aircraft")),
     Exported(WorkPackage, _by("aircraft")),
     Exported(WorkCard, _by("package__aircraft")),
+    Exported(WorkCardAttestation, _by("card__package__aircraft")),
     Exported(Defect, _by("aircraft")),
     # What was done about the same defect on the aircraft's type.
     Exported(RepeatAction, lambda aircraft: Q(type_rating=aircraft.type_rating)),

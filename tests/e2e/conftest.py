@@ -94,6 +94,7 @@ def seeded_database(
         AIRWORTHINESS_DATABASE_PORT=str(params.get("port") or "5432"),
         AIRWORTHINESS_ALLOWED_HOSTS="127.0.0.1,localhost",
         AIRWORTHINESS_DEBUG="false",
+        AIRWORTHINESS_SYNTHETIC_WORK_CARD_ATTESTATION="true",
         AIRWORTHINESS_BEHIND_PROXY="false",
         AIRWORTHINESS_SECRET_KEY=secrets.token_urlsafe(50),
         AIRWORTHINESS_STATIC_ROOT=str(tmp_path_factory.mktemp("e2e-static")),

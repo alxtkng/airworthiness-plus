@@ -12,8 +12,9 @@ from django.views.decorators.http import require_http_methods
 from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import requires
 from airworthiness_plus.accounts.roles import Action
+from airworthiness_plus.accounts.user_views import code_page
 from airworthiness_plus.interface.forms import Form
-from airworthiness_plus.planning import forms, services
+from airworthiness_plus.planning import attestation, forms, services
 from airworthiness_plus.planning.models import WorkCard, WorkPackage
 from airworthiness_plus.releases.services import maintains
 
@@ -84,6 +85,7 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "supervised_by",
             "inspector",
             "work__certificate",
+            "attestation",
         )
     )
     return render(
@@ -100,6 +102,12 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "inspection": sum((card.inspection_hours for card in cards), Decimal("0.0")),
             "may_plan": may_maintain and user.may(Action.PLAN_WORK_PACKAGE),
             "may_record": may_maintain and user.may(Action.RECORD_WORK_CARD),
+            "may_attest": (
+                may_maintain
+                and user.may(Action.RECORD_WORK_CARD)
+                and attestation.available(package)
+            ),
+            "actor_id": user.pk,
             "may_release": may_maintain and user.may(Action.RECORD_RELEASE_CERTIFICATE),
         },
     )
@@ -212,4 +220,50 @@ def release_work_package(request: HttpRequest, package_id: UUID) -> HttpResponse
         "Record Package Release",
         lambda **values: services.release_package(package, **values),
         package,
+    )
+
+
+@never_cache
+@requires(Action.RECORD_WORK_CARD)
+@require_http_methods(["GET", "POST"])
+def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> HttpResponse:
+    """Archive explicit consent to the reviewed synthetic completion version."""
+    user = _user(request)
+    card = _card(package_id, card_id)
+    if not attestation.available(card.package):
+        raise Http404
+    error = ""
+    content = None
+    token = ""
+    try:
+        if request.method == "POST":
+            form = forms.AttestationForm(request.POST)
+            if not form.is_valid() or request.POST.get("consent") != "yes":
+                raise services.RefusedError("Explicit Consent to the Reviewed Version Is Required")
+            prompt = code_page(
+                request,
+                "Confirm Synthetic Attestation",
+                "Synthetic Work Card Attestation",
+                ("work_packages", "Cancel and Return to Work Packages"),
+                full=True,
+            )
+            if prompt is not None:
+                return prompt
+            attestation.attest(card, user, form.cleaned_data["intent"], request.session)
+            return redirect("work_package", package_id=package_id)
+        content, _ = attestation.preview(card, user)
+        token = attestation.intent(content)
+    except services.RefusedError as refusal:
+        error = str(refusal)
+    return render(
+        request,
+        "planning/attestation.html",
+        {
+            "package": card.package,
+            "card": card,
+            "content": content,
+            "intent": token,
+            "error": error,
+        },
+        status=409 if error else 200,
     )

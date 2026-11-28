@@ -590,6 +590,9 @@ Source: CAP 562 Issue 4 Amendment 3 (January 2020), read in full. Its wording pr
 | Computerised records | Amendment history that cannot be deleted, write access by role, up to 100% check of directive and review data on migration, controlled certificate serials, 6-month parallel run, written approval to keep records outside logbooks | CAP 562 C-90 |
 | Parts release, Non-Part 21 | Civil Aviation Authority Approved Certificate | CAP 562 Chapter B |
 
+### Synthetic Work Card Attestation
+
+- The training-only action requires a synthetic package and a named performer with current authority for the task and aircraft type. The review shows the issued and used revisions, completion evidence, inspection status and authorisation. A successful submission records explicit consent and confirms archival on the work package. See ADR-0011 (REQ-380).
 
 ### Maintenance history
 

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Synthetic Work Card Attestation{% endblock %}
+{% block content %}
+<h1>Synthetic Work Card Attestation</h1>
+<p>Training evidence for the recorded completion. Independent inspection and release to service use their own procedures.</p>
+{% if error %}
+<p role="alert">{{ error }}</p>
+<p><a href="{% url 'attest_work_card' package.id card.id %}">Review Current Evidence</a></p>
+{% endif %}
+{% if content %}
+<dl>
+<dt>Work Package</dt><dd>{{ content.work_package }}</dd>
+<dt>Aircraft</dt><dd>{{ content.aircraft_registration }}, {{ content.aircraft_type }}</dd>
+<dt>Task and Instruction</dt><dd>{{ content.task }}. {{ content.instruction }}</dd>
+<dt>Work Card Version</dt><dd>{{ content.card_version }}</dd>
+<dt>Issued Revision</dt><dd>{{ content.issued_revision }}</dd>
+<dt>Revision Used</dt><dd>{{ content.used_revision }}</dd>
+<dt>Completion Date</dt><dd>{{ content.completed_on }}</dd>
+<dt>Source Evidence</dt><dd>{{ content.source_evidence }}</dd>
+<dt>Counter Hours and Cycles</dt><dd>{{ content.hours }} hours, {{ content.cycles }} cycles</dd>
+<dt>Independent Inspection</dt><dd>{{ content.inspection_status }}</dd>
+<dt>Person Attesting</dt><dd>{{ content.actor_name }}</dd>
+<dt>Authorisation</dt><dd>{{ content.authorisation_reference }}. {{ content.authorisation_scope }}.
+Valid from {{ content.authorisation_valid_from }}{% if content.authorisation_valid_to %} to {{ content.authorisation_valid_to }}{% endif %}.</dd>
+</dl>
+<form method="post">
+{% csrf_token %}
+<input type="hidden" name="intent" value="{{ intent }}">
+<p><label><input type="checkbox" name="consent" value="yes" required> {{ content.consent }}</label></p>
+<p><button class="primary" type="submit">Archive Synthetic Attestation</button></p>
+</form>
+{% endif %}
+<p><a href="{% url 'work_package' package.id %}">Return to Work Package</a></p>
+{% endblock %}

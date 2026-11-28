@@ -1,0 +1,216 @@
+"""Synthetic work card completion attestation through the normal form."""
+
+import hashlib
+import io
+import json
+import zipfile
+from datetime import date, timedelta
+from decimal import Decimal
+from typing import Any
+
+import pytest
+from django.db import DatabaseError
+from django.urls import reverse
+
+from airworthiness_plus.accounts import sign_in
+from airworthiness_plus.accounts.middleware import VERIFIED_AT_KEY
+from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.contracts import services as contract_services
+from airworthiness_plus.contracts.models import OrderedBy
+from airworthiness_plus.exports.build import build
+from airworthiness_plus.exports.verify import verify
+from airworthiness_plus.history.models import Event
+from airworthiness_plus.history.session import working_for
+from airworthiness_plus.maintenance_data import services as data_services
+from airworthiness_plus.maintenance_data.models import Kind
+from airworthiness_plus.people import services as people_services
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
+from airworthiness_plus.planning import services
+from airworthiness_plus.planning.models import WorkCard, WorkCardAttestation
+from tests.support import TODAY, Sample, add_sample_fleet, get, make_sample, post, signed_in
+
+pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture
+def completed_card(settings: Any, monkeypatch: pytest.MonkeyPatch) -> tuple[Sample, WorkCard]:
+    settings.SYNTHETIC_WORK_CARD_ATTESTATION = True
+    monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
+    sample = make_sample()
+    aircraft = add_sample_fleet(sample)["G-DGHI"]
+    with working_for(sample.ours.id, sample.administrator.id):
+        Person.objects.filter(user=sample.planner).update(staff_group=StaffGroup.CERTIFYING)
+    with working_for(sample.ours.id, sample.planner.id):
+        package = services.build_package(
+            aircraft,
+            reference="WP-SYNTHETIC-COMPLETION-1",
+            title="Synthetic Functional Check",
+            location="Training Bench",
+            starts_on=TODAY,
+            ends_on=TODAY,
+        )
+        order = contract_services.add_work_order(
+            aircraft, work=package.title, ordered_by=OrderedBy.MANAGER, agreed_on=TODAY
+        )
+        services.link_order(package, order)
+        manual = data_services.record_data(
+            organisation=sample.ours,
+            title="Synthetic Training Instructions",
+            author="Training Team",
+            kind=Kind.INSTRUCTIONS,
+            applies_to=[aircraft.type_rating],
+            revision="1",
+            revision_date=TODAY,
+            check_due=TODAY,
+        )
+        card = services.add_card(
+            package,
+            title="Check Indicator",
+            data_set=manual,
+            instruction="Synthetic step 1",
+            planned_hours=Decimal("1.0"),
+            critical=True,
+        )
+        services.issue_package(package)
+        services.record_completion(
+            card,
+            performed_by=Person.objects.get(user=sample.planner),
+            completed_on=TODAY,
+            sign_off_reference="SYNTHETIC-SOURCE",
+            hours=Decimal("0.0"),
+            cycles=0,
+        )
+    return sample, card
+
+
+def add_grant(
+    sample: Sample, card: WorkCard, *, valid_to: date | None = None, type_rating: str = ""
+) -> MaintenanceAuthorisation:
+    with working_for(sample.ours.id, sample.administrator.id):
+        rating = type_rating or card.package.aircraft.type_rating
+        return people_services.record_maintenance_authorisation(
+            Person.objects.get(user=sample.planner),
+            reference=f"SYNTHETIC-GRANT-{valid_to or rating}",
+            scope=MaintenanceAuthorisation.SYNTHETIC_COMPLETION_SCOPE + rating,
+            valid_from=TODAY - timedelta(days=2),
+            valid_to=valid_to,
+        )
+
+
+def path_for(card: WorkCard) -> str:
+    return reverse("attest_work_card", args=[card.package_id, card.pk])
+
+
+def test_consent_archives_exact_version_once_and_exports_it(
+    completed_card: tuple[Sample, WorkCard],
+) -> None:
+    sample, card = completed_card
+    grant = add_grant(sample, card)
+    client, path = signed_in(sample.planner), path_for(card)
+    opened = client.get(path, secure=True)
+    assert opened.status_code == 200
+    assert opened.context["content"]["inspection_status"] == "Pending"
+    token = opened.context["intent"]
+    assert post(client, path, intent=token).status_code == 409
+    assert post(client, path, consent="yes", intent=token + "x").status_code == 409
+    assert post(client, path, consent="yes", intent=token).status_code == 302
+    assert post(client, path, consent="yes", intent=token).status_code == 302
+
+    with working_for(sample.ours.id, sample.planner.id):
+        record = WorkCardAttestation.objects.get(card=card)
+        card.refresh_from_db()
+        reviewed = Event.of(card).last()
+        assert reviewed is not None
+        assert len(Event.of(record)) == 1
+        evidence = json.loads(record.evidence)
+        assert evidence["reviewed_content"] == opened.context["content"]
+        assert evidence["reviewed_content"]["card_version_hash"] == reviewed.hash
+        assert hashlib.sha256(record.evidence.encode()).hexdigest() == record.sha256
+        archive = build(sample.ours, by=sample.planner, aircraft=card.package.aircraft)
+        assert verify(archive.content).problems == ()
+        with zipfile.ZipFile(io.BytesIO(archive.content)) as bundle:
+            retained = json.loads(bundle.read("records/planning_workcardattestation.json"))
+            assert retained[0]["evidence"] == record.evidence
+            assert retained[0]["sha256"] == record.sha256
+            people = json.loads(bundle.read("people.json"))
+            assert str(grant.pk) in {grant["id"] for grant in people["maintenance_authorisations"]}
+        assert not card.signed
+        assert card.package.release_id is None
+        with pytest.raises(people_services.RefusedError, match="Synthetic Authorisation"):
+            people_services.check_certification_evidence(
+                person=grant.person,
+                on=TODAY,
+                today=TODAY,
+                authorisation=grant,
+                scope_confirmed=True,
+                legacy_evidence="",
+            )
+
+    with working_for(sample.other.id, sample.stranger.id):
+        assert not WorkCardAttestation.objects.filter(pk=record.pk).exists()
+
+
+def test_authority_identity_verification_and_changed_version(
+    completed_card: tuple[Sample, WorkCard], settings: Any
+) -> None:
+    sample, card = completed_card
+    client, path = signed_in(sample.planner), path_for(card)
+    settings.SYNTHETIC_WORK_CARD_ATTESTATION = False
+    assert get(client, path).status_code == 404
+    settings.SYNTHETIC_WORK_CARD_ATTESTATION = True
+    add_grant(sample, card, valid_to=TODAY - timedelta(days=1))
+    add_grant(sample, card, type_rating="Different type")
+    refusal = get(client, path)
+    assert refusal.status_code == 409
+    assert b"No Current Synthetic Authorisation" in refusal.content
+    add_grant(sample, card)
+    assert get(signed_in(sample.stranger), path).status_code == 404
+    assert get(signed_in(sample.reader), path).status_code == 403
+    token = client.get(path, secure=True).context["intent"]
+    assert post(signed_in(sample.lucy), path, consent="yes", intent=token).status_code == 409
+    session = client.session
+    session[VERIFIED_AT_KEY] = (sign_in.current_time() - timedelta(minutes=6)).isoformat()
+    session.save()
+    prompt = post(client, path, consent="yes", intent=token)
+    assert b"Verify your identity" in prompt.content
+    assert get(client, "/work-packages/").status_code == 200  # Cancel.
+    with working_for(sample.ours.id, sample.planner.id):
+        assert not WorkCardAttestation.objects.exists()
+        services.record_inspection(
+            card,
+            inspector=Person.objects.get(full_name="Chris Moore"),
+            inspected_on=TODAY,
+            qualification="Synthetic inspection authority",
+            evidence="Synthetic result satisfactory",
+        )
+    client = signed_in(sample.planner)
+    assert b"The Evidence Has Changed" in post(client, path, consent="yes", intent=token).content
+    fresh = client.get(path, secure=True)
+    assert fresh.context["content"]["inspection_status"] == "Recorded"
+    assert post(client, path, consent="yes", intent=fresh.context["intent"]).status_code == 302
+
+
+def test_failed_archive_write_rolls_back_and_retries(
+    completed_card: tuple[Sample, WorkCard], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sample, card = completed_card
+    add_grant(sample, card)
+    client, path = signed_in(sample.planner), path_for(card)
+    token = client.get(path, secure=True).context["intent"]
+    manager = WorkCardAttestation.objects
+    create = manager.create
+
+    def fail_after_insert(**values: Any) -> None:
+        create(**values)
+        raise DatabaseError("Synthetic interruption after audit trigger")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(manager, "create", fail_after_insert)
+        client.raise_request_exception = False
+        assert post(client, path, consent="yes", intent=token).status_code == 500
+    with working_for(sample.ours.id, sample.planner.id):
+        assert not manager.exists()
+        assert not Event.objects.filter(record_type="planning_workcardattestation").exists()
+    assert post(client, path, consent="yes", intent=token).status_code == 302
+    with working_for(sample.ours.id, sample.planner.id):
+        assert len(Event.of(manager.get(card=card))) == 1

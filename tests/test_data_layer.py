@@ -216,6 +216,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "people_experienceevidence": ["INSERT", "SELECT"],
         "people_experiencewithdrawal": ["INSERT", "SELECT"],
         "people_recurrenttraining": ["INSERT", "SELECT"],
+        "planning_workcardattestation": ["INSERT", "SELECT"],
         # Supplier identities and their evaluation evidence are retained (REQ-343).
         "logistics_supplier": ["INSERT", "SELECT"],
         "logistics_supplierevaluation": ["INSERT", "SELECT"],
@@ -276,7 +277,12 @@ def test_every_table_is_under_the_record_rules() -> None:
         "configuration_position": {"position_rules"},
         "configuration_baseline": {"baseline_keeps"},
         # A defect keeps its decision and who made it (REQ-225).
-        "defects_defect": {"defect_rules", "defect_certification_evidence", "defect_timing"},
+        "defects_defect": {
+            "defect_rules",
+            "defect_certification_evidence",
+            "defect_timing",
+            "defect_refuse_synthetic_certification",
+        },
         # A contract and a work order keep what they said when recorded (REQ-241).
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
@@ -286,11 +292,13 @@ def test_every_table_is_under_the_record_rules() -> None:
         "staffing_publishedshift": {"published_shift_week"},
         "planning_workpackage": {"work_package_evidence"},
         "planning_workcard": {"work_card_evidence", "work_card_amendment_evidence"},
+        "planning_workcardattestation": {"attestation_evidence", "attestation_refuse_update"},
         # A certificate keeps the work, the staff and the approval as they stood (REQ-261).
         "releases_release": {
             "release_rules",
             "release_certification_evidence",
             "release_grounding_guard",
+            "release_refuse_synthetic_certification",
             "release_work_package_snapshot",
         },
         "releases_historicalreleaseevidence": {"historical_release_period"},

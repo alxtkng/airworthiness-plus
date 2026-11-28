@@ -359,6 +359,12 @@ These block verification of the requirements named, not the start of building.
 | REQ-356 | Give Goods In recording to authorised app roles under a maintenance approval. Keep receipt, observations and disposition in the organisation's tenancy. Preserve linked approval and inspector evidence, audit events and organisation export | Role matrix, ADR-0002 (D) | Must | Test |
 | REQ-357 | Create one auditable Stores entry in the same transaction as each accepted disposition. Keep the link between stock, disposition, receipt and inspection evidence. Retain the evidence for returned and quarantined receipts without creating stock | Receiving Inspection and Stores boards, ADR-0008 (D) | Must | Golden, Test |
 
+## Synthetic work card pilot
+
+| Identifier | Requirement | Source | Priority | Verification |
+|---|---|---|---|---|
+| REQ-380 | In the synthetic pilot, archive the named performer's explicit consent to the reviewed work card version after recent identity verification and a current action and aircraft-type authorisation check. Retain that evidence in the aircraft export. Synthetic authority cannot be used for operational certification. | ADR-0011 (D) | Must | Test |
+
 ## Maintenance history
 
 | ID | Requirement | Basis | Priority | Verification |

@@ -1,9 +1,10 @@
 """Sample record workflows through rendered browser forms."""
 
 import pytest
-from playwright.sync_api import Browser, expect
+from playwright.sync_api import Browser, Page, expect
 
 from tests.e2e.browser import (
+    browser_page,
     choose_aircraft,
     definition,
     fill,
@@ -11,10 +12,13 @@ from tests.e2e.browser import (
     open_row_action,
     reveal,
     save,
+    sign_in,
     signed_in,
     submit,
+    totp,
+    wait_for_next_code,
 )
-from tests.e2e.conftest import Account
+from tests.e2e.conftest import Account, RunningSite
 
 
 def test_record_and_close_a_defect(
@@ -830,6 +834,79 @@ def test_certifying_staff_evidence_is_retained_with_release_and_deferral(
         expect(page.locator("main")).to_contain_text("Unverified Historical Evidence")
 
 
+def _record_critical_card_completion(page: Page, reference: str, performer: str) -> None:
+    page.goto("/maintenance-data/add/")
+    save(
+        page,
+        "Record Maintenance Data",
+        {
+            "title": "Test Piper Maintenance Instructions",
+            "author": "Piper",
+            "kind": (
+                "Instructions for Continued Airworthiness, From a Type or "
+                "Supplementary Type Certificate Holder"
+            ),
+            "held": "on",
+            "revision": "1",
+            "revision_date": "2026-11-16",
+            "check_due": "2026-11-30",
+        },
+        "Test Piper Maintenance Instructions",
+    )
+    page.goto("/work-packages/")
+    page.get_by_role("link", name="Build a Work Package").click()
+    save(
+        page,
+        "Build a Work Package",
+        {
+            "aircraft": "G-ABCD",
+            "reference": reference,
+            "title": "Test Landing Light",
+            "location": "Bay 2",
+            "starts_on": "2026-11-18",
+            "ends_on": "2026-11-19",
+        },
+        reference,
+    )
+    page.get_by_role("link", name="Link Work Order").click()
+    save(
+        page,
+        "Link Work Order",
+        {"order": "Landing Light Replacement (12 November 2026)"},
+        "Landing Light Replacement",
+    )
+    page.get_by_role("link", name="Add Work Card").click()
+    save(
+        page,
+        "Add Work Card",
+        {
+            "title": "Test Landing Light Card",
+            "data_set": "Test Piper Maintenance Instructions",
+            "instruction": "Chapter 33",
+            "planned_hours": "2.0",
+            "critical": "on",
+            "inspection_hours": "0.5",
+        },
+        "Test Landing Light Card",
+    )
+    page.get_by_role("link", name="Issue Work Package").click()
+    save(page, "Issue Work Package", {}, "Revision 1")
+    page.get_by_role("link", name="Record Signed Work").click()
+    save(
+        page,
+        "Record Signed Work",
+        {
+            "performed_by": performer,
+            "revision": "1",
+            "completed_on": "2026-11-18",
+            "sign_off_reference": "Signed test card",
+            "hours": "6412.6",
+            "cycles": "0",
+        },
+        "Awaiting Inspection",
+    )
+
+
 def test_work_package_from_draft_to_release(
     chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
 ) -> None:
@@ -849,76 +926,7 @@ def test_work_package_from_draft_to_release(
         )
 
     with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
-        page.goto("/maintenance-data/add/")
-        save(
-            page,
-            "Record Maintenance Data",
-            {
-                "title": "Test Piper Maintenance Instructions",
-                "author": "Piper",
-                "kind": (
-                    "Instructions for Continued Airworthiness, From a Type or "
-                    "Supplementary Type Certificate Holder"
-                ),
-                "held": "on",
-                "revision": "1",
-                "revision_date": "2026-11-16",
-                "check_due": "2026-11-30",
-            },
-            "Test Piper Maintenance Instructions",
-        )
-        page.goto("/work-packages/")
-        page.get_by_role("link", name="Build a Work Package").click()
-        save(
-            page,
-            "Build a Work Package",
-            {
-                "aircraft": "G-ABCD",
-                "reference": "WP-2026-TEST",
-                "title": "Test Landing Light",
-                "location": "Bay 2",
-                "starts_on": "2026-11-18",
-                "ends_on": "2026-11-19",
-            },
-            "WP-2026-TEST",
-        )
-        page.get_by_role("link", name="Link Work Order").click()
-        save(
-            page,
-            "Link Work Order",
-            {"order": "Landing Light Replacement (12 November 2026)"},
-            "Landing Light Replacement",
-        )
-        page.get_by_role("link", name="Add Work Card").click()
-        save(
-            page,
-            "Add Work Card",
-            {
-                "title": "Test Landing Light Card",
-                "data_set": "Test Piper Maintenance Instructions",
-                "instruction": "Chapter 33",
-                "planned_hours": "2.0",
-                "critical": "on",
-                "inspection_hours": "0.5",
-            },
-            "Test Landing Light Card",
-        )
-        page.get_by_role("link", name="Issue Work Package").click()
-        save(page, "Issue Work Package", {}, "Revision 1")
-        page.get_by_role("link", name="Record Signed Work").click()
-        save(
-            page,
-            "Record Signed Work",
-            {
-                "performed_by": "Sam Patel",
-                "revision": "1",
-                "completed_on": "2026-11-18",
-                "sign_off_reference": "Signed test card",
-                "hours": "6412.6",
-                "cycles": "0",
-            },
-            "Awaiting Inspection",
-        )
+        _record_critical_card_completion(page, "WP-2026-TEST", "Sam Patel")
         page.get_by_role("link", name="Record Independent Inspection").click()
         save(
             page,
@@ -947,6 +955,65 @@ def test_work_package_from_draft_to_release(
         )
         page.get_by_role("link", name="Release Certificate", exact=True).click()
         expect(page.get_by_role("heading", name="TEST-PACKAGE-CRS")).to_be_visible()
+
+
+def test_synthetic_work_card_attestation_at_mobile_width(
+    chromium: Browser, running_site: RunningSite, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    accounts = personas["your-organisation"]
+    with signed_in(chromium, running_site.address, accounts[0]) as page:
+        page.goto("/staff/")
+        name = "[Planning and Records Name]"
+        page.get_by_role("link", name=name, exact=True).click()
+        form = form_with(page, "staff_group")
+        fill(form, {"staff_group": "Certifying Staff"})
+        submit(page, form.get_by_role("button", name=f"Save the Record of {name}"))
+        page.get_by_role("link", name="Record Maintenance Authorisation").click()
+        save(
+            page,
+            "Save Authorisation",
+            {
+                "reference": "TEST-SYNTHETIC-AUTH",
+                "scope": "Synthetic work-card completion: Piper PA-28 Series (Lycoming)",
+                "valid_from": "2026-11-16",
+            },
+            "TEST-SYNTHETIC-AUTH",
+        )
+
+    with browser_page(chromium, running_site.address, width=390) as page:
+        authenticator = sign_in(page, accounts[3])
+        _record_critical_card_completion(page, "WP-SYNTHETIC-2026-TEST", name)
+        package_url = page.url
+
+        def open_preview() -> None:
+            page.get_by_text("Test Landing Light Card", exact=True).last.click()
+            page.get_by_role("link", name="Review Synthetic Attestation").click()
+            expect(
+                page.get_by_role("heading", name="Synthetic Work Card Attestation")
+            ).to_be_visible()
+            expect(page.get_by_text("Pending", exact=True)).to_be_visible()
+            expect(page.get_by_text("Person Attesting")).to_be_visible()
+            assert page.locator("html").evaluate("e => e.scrollWidth <= e.clientWidth")
+            page.get_by_role("checkbox").check()
+
+        open_preview()
+        cookie = next(one for one in page.context.cookies() if one["name"] == "sessionid")
+        running_site.advance_verification_age(cookie["value"])
+        submit(page, page.get_by_role("button", name="Archive Synthetic Attestation"))
+        expect(page.get_by_text("Verify your identity to continue.")).to_be_visible()
+        page.get_by_role("link", name="Cancel and Return to Work Packages").click()
+        page.goto(package_url)
+        open_preview()
+        submit(page, page.get_by_role("button", name="Archive Synthetic Attestation"))
+        wait_for_next_code(authenticator.step)
+        code, _ = totp(authenticator.key)
+        page.get_by_label("Your Current Password").fill(accounts[3].new_password)
+        page.get_by_label("Code From Your Authenticator Application").fill(code)
+        submit(page, page.get_by_role("button", name="Confirm Synthetic Attestation"))
+        expect(page.get_by_text("1 Outstanding", exact=False)).to_be_visible()
+        page.reload()
+        page.get_by_text("Test Landing Light Card", exact=True).last.click()
+        expect(page.get_by_text("Archived. Evidence ID", exact=False)).to_be_visible()
 
 
 def test_staffing_plan_records_part_145_shortfall_and_cover(

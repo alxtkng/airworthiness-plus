@@ -62,6 +62,11 @@
 <dt>Signed Work Evidence</dt><dd>{{ card.sign_off_reference }}</dd>
 <dt>Counter Hours</dt><dd>{{ card.hours }}</dd>
 <dt>Counter Cycles</dt><dd>{{ card.cycles }}</dd>
+{% if card.attestation %}
+<dt>Synthetic Attestation</dt><dd>Archived. Evidence ID {{ card.attestation.id }}.</dd>
+{% elif may_attest and card.performed_by.user_id == actor_id %}
+<dt>Synthetic Attestation</dt><dd><a href="{% url 'attest_work_card' package.id card.id %}">Review Synthetic Attestation</a></dd>
+{% endif %}
 {% endif %}
 {% if card.inspector %}
 <dt>Inspected</dt><dd>{{ card.inspected_on|date:"j F Y" }}</dd>

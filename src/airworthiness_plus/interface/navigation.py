@@ -244,6 +244,7 @@ BOARD: tuple[Group, ...] = (
                         "add_work_card",
                         "issue_work_package",
                         "complete_work_card",
+                        "attest_work_card",
                         "inspect_work_card",
                         "release_work_package",
                     }

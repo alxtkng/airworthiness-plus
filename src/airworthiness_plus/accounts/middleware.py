@@ -47,13 +47,17 @@ def _moment(value: object) -> datetime | None:
         return None
 
 
-def recently_verified(session: SessionBase) -> bool:
+def recent_verification(session: SessionBase) -> datetime | None:
     verified = _moment(session.get(VERIFIED_AT_KEY, session.get(SIGNED_IN_AT_KEY)))
     if verified is None:
-        return False
-    return (
-        timedelta() <= sign_in.current_time() - verified <= timedelta(minutes=VERIFICATION_MINUTES)
-    )
+        return None
+    if timedelta() <= sign_in.current_time() - verified <= timedelta(minutes=VERIFICATION_MINUTES):
+        return verified
+    return None
+
+
+def recently_verified(session: SessionBase) -> bool:
+    return recent_verification(session) is not None
 
 
 class OrganisationContextMiddleware:

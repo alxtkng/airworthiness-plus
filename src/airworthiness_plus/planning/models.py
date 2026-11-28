@@ -202,3 +202,16 @@ class WorkCard(Record):
         return self.completed_on is not None and (
             not self.critical or self.inspected_on is not None
         )
+
+
+class WorkCardAttestation(Record):
+    """The synthetic actor's explicit consent and the exact evidence archived."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    card = models.OneToOneField(WorkCard, on_delete=models.PROTECT, related_name="attestation")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    evidence = models.TextField()
+    sha256 = models.CharField(max_length=64)

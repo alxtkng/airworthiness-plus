@@ -134,3 +134,8 @@ class PackageReleaseForm(Form):
     )
     scope_confirmed = forms.BooleanField(label="Authorisation Covers This Work")
     verification = forms.CharField(label="General Verification Evidence", max_length=200)
+
+
+class AttestationForm(Form):
+    consent = forms.BooleanField(label="Consent to the Reviewed Synthetic Attestation")
+    intent = forms.CharField(widget=forms.HiddenInput, max_length=256)

@@ -136,6 +136,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="complete_work_card",
     ),
     path(
+        "work-packages/<uuid:package_id>/cards/<uuid:card_id>/attestation/",
+        planning.attest_work_card,
+        name="attest_work_card",
+    ),
+    path(
         "work-packages/<uuid:package_id>/cards/<uuid:card_id>/inspection/",
         planning.inspect_work_card,
         name="inspect_work_card",
