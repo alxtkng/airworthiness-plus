@@ -38,6 +38,7 @@ def change_custody(
     posting_id: UUID | None = None,
     allocation_id: UUID | None = None,
 ) -> HttpResponse:
+    """Record an authorised Stores reservation, issue, return or quarantine action."""
     user, today = _access(request, Action.RECORD_STORES)
     action = allocations.appointment_action(kind)
     preceding = None
