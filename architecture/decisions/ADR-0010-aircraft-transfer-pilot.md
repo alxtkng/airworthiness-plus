@@ -69,3 +69,10 @@ and chain to the separately pinned synthetic TSA root under the recorded
 policy. Timestamp verification precedes the SQLite transaction. The receiver
 keeps the TSA's proof-of-existence time separate from the asserted signing
 instant and the authority check. See the [retained rehearsal](../../assurance/gejkl-trusted-timestamps.md).
+
+Use `--tsa-evaluated-at` to report the TSA leaf's status at an explicit UTC
+instant while native OpenSSL 3 validates the token path at `genTime`. Add
+`--tsa-crl` for a complete issuer-authenticated PEM CRL for that instant.
+The receiver evaluates the revocation date and reason separately, including
+an earlier invalidity date. The [historical exercise](../../assurance/gejkl-historical-timestamp-status.md)
+records both the retained-token expiry and the replacement-TSA CRL cases.

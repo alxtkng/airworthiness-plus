@@ -29,7 +29,7 @@ When present, these three arguments and the signed evidence inputs form a comple
 
 ## Recorded result
 
-The retained G-EJKL pair passed on code revision `81f18b8` using LibreSSL 3.3.6. The receiver and native verifier ran with operating-system network access denied. The OpenSSL 3 code path remains untested in this environment.
+The retained G-EJKL pair passed on code revision `81f18b8` using LibreSSL 3.3.6. The receiver and native verifier ran with operating-system network access denied. The subsequent [historical status trial](gejkl-historical-timestamp-status.md) exercises OpenSSL 3 with these retained responses.
 
 | Check | Result |
 | --- | --- |
