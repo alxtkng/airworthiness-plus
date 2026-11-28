@@ -348,6 +348,24 @@ Recorded 27 November 2026 as ours. The plan gives each phase the next block of 2
 - Due Soon defaults, decided 18 November 2026 and adjustable for each organisation: 30 days, 10.0 hours or 10 cycles remaining, whichever limit governs. An airworthiness review certificate is Due Soon at 30 days; the 90-day early review window is shown in words, not colour. A regulatory deadline of 30 days or fewer (release to service in the records, copy of the review certificate to the Civil Aviation Authority) is Due Soon from the day it starts. These numbers are ours, not the regulation's.
 - The Fleet lists aircraft under management. An aircraft being transferred in appears on the Transfers tab until its records are complete.
 
+## Accessibility
+
+Decided 28 November 2026 under the accessibility brief (REQ-383 to REQ-410). The record and the audit are in `Accessibility.md`.
+
+- WCAG 2.2 Level AA (ISO/IEC 40500:2025) for every page, in the application and on the canvas. WCAG 3 is a working draft and is not built to. AAA is adopted only for SC 2.3.3 (Reduce Motion), SC 1.4.6 (High contrast) and SC 2.5.5 (Comfortable density)
+- the divider and the edge of a control are separate tokens. `gray-400` stays `#EBEBEB` for decorative lines; `control-border` (`#7D7D7D` light, `#7C7C7C` dark) is the edge of every input, select, text area and secondary button, at 3.68:1 or more (SC 1.4.11). No colour is added: the stronger edge is grey
+- each status dot has an edge in a darker shade of its own colour, so the dot reaches 3:1 on every background without changing the colour rules. The word still carries the meaning (SC 1.4.1)
+- one focus ring for everything: a 2 pixel outline of `focus-ring` offset by 2 pixels (SC 2.4.7, 2.4.11)
+- colours with two themes are written `light-dark()` in `app.css`, so the device’s colour scheme or the person’s Appearance setting chooses, and the `prefers-color-scheme` block is gone. Browsers from 2024 onward support it
+- the title of a page is its own title block, or its active view, or its section, then an en dash and Airworthiness+, as the GOV.UK Design System writes titles. The en dash with spaces separates the two; it is not a range
+- Skip to Main Content is first on every page, signed in or not
+- a form sent back with errors opens on an error summary headed There Is a Problem, with a link to each field, as the GOV.UK Design System does. Refusals that belong to no field stay in their callout
+- a table is named by the heading of its section and scrolls in its own box; below 800 pixels a one-line table is at least 640 pixels wide so its columns stay readable. One line per row is kept
+- the search above a table shows the word Search as its label; the placeholder is gone
+- display settings belong to the person, not the organisation: Appearance, Contrast, Text Size, Density and Reduce Motion are kept on the user account, set on the Display page beside Change Password and Passkeys, and written on `<html>` as data attributes. Until a person chooses, the device decides. On the canvas the page is under Settings, as the brief asks; in the application the Settings section is the organisation’s, so the page sits with the person’s other settings
+- no dyslexia font. The evidence does not support one, and Geist with good line spacing and left-aligned text already follows the British Dyslexia Association Style Guide
+- automated checks are axe-core and our own tests (ADR-0014). They are not a claim of conformance: the manual pass in Accessibility.md is still to be done
+
 ## Roles and Permissions
 
 Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition of CAP 562 C-90; which role may do what is ours, derived from the people in `SampleData.md`, except where a source is given below. `airworthiness_plus/accounts/roles.py` holds the same matrix, and a test fails the build if the two differ.

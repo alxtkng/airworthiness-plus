@@ -71,3 +71,33 @@ The aircraft's product structure, on the Configuration tab of each aircraft reco
 - Each person is a card: name (Label 14 Strong), role (Label 13 `gray-900`), Contracted when contracted, and a status dot only when their authorisation or training needs attention.
 - The Compliance Monitoring Manager reports directly to the Accountable Manager, to show independence.
 - ARIA tree roles: `tree`, `treeitem` with `aria-level`, `group`.
+
+
+## Accessibility Checklist
+
+Every new page or component passes these before it is merged or published, in the application and on the canvas. Each is a rule of `Accessibility.md` and a requirement; the success criterion is in brackets.
+
+1. **Text contrast (SC 1.4.3).** Text uses `gray-1000` or `gray-900` on the backgrounds of the tokens. No colour is written outside the tokens.
+2. **Non-text contrast (SC 1.4.11).** Inputs, selects, checkboxes, secondary buttons and toggles use `control-border`, never `gray-400`. Status dots carry their edge token.
+3. **Use of colour (SC 1.4.1).** Every amber or red dot has its words; green only in a Status column with its word; links in running text are underlined.
+4. **Resize and reflow (SC 1.4.4, 1.4.10).** Usable at 200% and at 320 pixels with no sideways scrolling of the page. A wide table scrolls in its own box.
+5. **Text spacing (SC 1.4.12).** No fixed heights on text. A truncated cell keeps its value in the detail.
+6. **Hover and focus (SC 1.4.13).** No tooltips.
+7. **Keyboard (SC 2.1.1, 2.1.2).** Native buttons and links only; an expandable row is a `button` with `aria-expanded`; never a clickable `div`.
+8. **Focus (SC 2.4.3, 2.4.7, 2.4.11).** Focus follows reading order and shows the `focus-ring` outline; nothing sticky covers it.
+9. **Target size (SC 2.5.8, 2.5.5).** 24 pixels or spaced to 24; 44 in Comfortable, from `target-minimum`.
+10. **Dragging (SC 2.5.7).** Anything dragged can also be done with a single pointer.
+11. **Bypass and title (SC 2.4.1, 2.4.2).** The base template’s skip link stays first; the page has its own title block or a view that names it.
+12. **Headings and landmarks (SC 1.3.1, 2.4.6).** One `h1`, matching the active tab where it is hidden; `h2` sections in order; `nav`, `main` and `aria-current="page"` from the base template.
+13. **Motion (SC 2.3.3).** Any transition uses the `motion` token.
+14. **Labels (SC 1.3.1, 2.5.3, 3.3.2).** Every field has a visible label, connected, and the label starts its accessible name. A placeholder is never the label.
+15. **Errors (SC 3.3.1, 3.3.3).** A form writes `{% error_summary form %}` and each field’s error with the identifier `id="{{ field.auto_id }}_error"`.
+16. **Consistency (SC 3.2.3, 3.2.4, 3.2.6).** Sidebar, tabs and help stay where the base template puts them.
+17. **Redundant entry (SC 3.3.7).** What is already known is filled in or offered to choose.
+18. **Authentication (SC 3.3.8).** No puzzle or memory test; password managers and pasting work.
+19. **Plain language.** Writing.md.
+20. **Names and roles (SC 4.1.2).** Tables have `th scope="col"` and a name from their section heading; a choice of views is links with `aria-current`; a toggle has `aria-pressed` or is a radio group.
+21. **Status messages (SC 4.1.3).** A count that changes after filtering is in `role="status"`.
+22. **Language (SC 3.1.1).** `lang="en-GB"`.
+
+The automated checks (`tests/test_accessibility.py`, `tests/test_canvas_accessibility.py`, the axe-core scans) cover rules 1, 2, 4, 9, 11, 12, 14, 15, 20, 21 and 22 in part. The rest, and the rest of those, are in the manual pass.
