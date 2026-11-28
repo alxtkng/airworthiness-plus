@@ -299,12 +299,22 @@ BOARD: tuple[Group, ...] = (
             ),
             Item(
                 "Tools and Equipment",
+                "tool_register",
                 shown_for=MAINTAINS,
-                tabs=_tabs(
-                    "Register",
-                    "Service Providers",
-                    "Alternative Tooling",
-                    "Tooling Need Evaluations",
+                tabs=(
+                    Tab("Register", "tool_register"),
+                    *_tabs("Service Providers", "Alternative Tooling", "Tooling Need Evaluations"),
+                ),
+                inside=frozenset(
+                    {
+                        "tool_record",
+                        "add_tool",
+                        "add_tool_control",
+                        "add_tool_event",
+                        "tool_delegations",
+                        "add_tool_delegation",
+                        "withdraw_tool_delegation",
+                    }
                 ),
             ),
             Item(

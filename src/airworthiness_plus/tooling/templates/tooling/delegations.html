@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Tool Delegations{% endblock %}
+{% block content %}
+<h1>Tool Delegations</h1>
+<p><a class="button" href="{% url 'add_tool_delegation' %}">Record Tool Delegation</a></p>
+<table data-search="always">
+<thead><tr><th scope="col">Person</th><th scope="col">Action and Site</th><th scope="col">Approval and Procedure</th><th scope="col">Validity</th></tr></thead>
+<tbody>
+{% for grant in delegations %}
+<tr>
+<th scope="row">{{ grant.person }}</th>
+<td>{{ grant.get_action_display }} · {{ grant.site }}</td>
+<td>{{ grant.approval_reference }} · {{ grant.procedure }}<br>{{ grant.authority }}</td>
+<td>{{ grant.starts_on|date:"j F Y" }} to {{ grant.ends_on|date:"j F Y" }}<br>
+{% if grant.withdrawal %}Withdrawn {{ grant.withdrawal.withdrawn_on|date:"j F Y" }} · {{ grant.withdrawal.evidence }}
+{% else %}<a href="{% url 'withdraw_tool_delegation' grant.id %}">Withdraw<span class="sr-only"> {{ grant.get_action_display }} for {{ grant.person }}</span></a>{% endif %}
+</td>
+</tr>
+{% empty %}<tr><td colspan="4">No tooling delegations recorded.</td></tr>{% endfor %}
+</tbody>
+</table>
+{% endblock %}

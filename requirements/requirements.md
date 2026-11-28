@@ -326,6 +326,15 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-348 | Keep maintenance subcontractor assessments and suspensions on the existing supplier identity. Record the approval in force, scope, date and control evidence. A controls-recorded assessment also requires the exposition and qualification evidence and, for Part-145, a pre-audit reference | CAO.A.095(a)(2); AMC1 CAO.A.025 B.7 and E.2; 145.A.75(b), 145.A.70(a)(14), AMC1 145.A.75(b) points 3.6 and 4.1–4.6, read 28 November 2026. The evidence fields and outcome labels are app decisions (D) | Must | Test |
 | REQ-349 | Preserve supplier evaluations independently of subcontractor assessments. Permit subcontractor assessment writes for the Continuing Airworthiness Manager, retain earlier evidence, and include assessments in the organisation export | Decisions.md, ADR-0002 (D) | Must | Test |
 
+### Phase 4 Logistics — Tools and Equipment
+
+| ID | Requirement | Source | Priority | Verification |
+|---|---|---|---|---|
+| REQ-360 | Keep one physical tool identity per organisation with a unique asset ID, equipment identifiers, owner or lender, measurement range and usual location. Show the same register under each maintenance approval. | CAO.A.050(a)–(b), 145.A.40, AMC 145.A.40(a) and (b); Tools and Equipment board; ADR-0009 | Must | Test |
+| REQ-361 | Append dated, approval-specific control basis revisions with the reference, method, limits, scope, interval and decision basis. Keep completion, interim checks, adverse condition, repair, authorised return and withdrawal in history. Show physical restriction independently of the control dates. | CAO.A.050(b), CAO.A.090, 145.A.40(b), AMC 145.A.40(b); ADR-0009 | Must | Test |
+| REQ-362 | Derive the label and each deadline from the current revision and its accepted completion date. The due day is inclusive in UK local time. A passing interim check leaves the calibration deadline unchanged. Before-use controls show without a calendar deadline. Keep an unverified loan's interval and date blank. | AMC 145.A.40(b); local date and evidence policy in ADR-0009 | Must | Golden, Property, Independent |
+| REQ-363 | Require a permitted account and a signed exposition delegation for the action, site and approval in force. Retain the named signer, approval reference, procedure, history and organisation export. Refuse foreign parent links and inconsistent evidence links. | CAO.A.090; ADR-0002 and ADR-0009 | Must | Test |
+
 ## Open Points
 
 These block verification of the requirements named, not the start of building.

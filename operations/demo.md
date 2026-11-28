@@ -213,6 +213,12 @@ On a fictitious supplier record, choose **Record Subcontractor Assessment**. Ent
 
 Open **Logistics → Goods In** as Planning and Records. Select the ELT battery to see two recorded checks and its pending disposition. Compare the two G-DGHI trim cable receipts. One was returned and the replacement was accepted. The oil receipt shows the inspection and return on consecutive dates. Open the owner-supplied alternator to see its failed check and quarantine evidence. On the accepted trim cable receipt, open **View Stores Entry**. Check the recorded location and release evidence, then follow the link back to the receipt. Open **Logistics → Stores → Stock** to find the same entry. Use **Receive an Item** with a fictitious delivery-line reference to try recording a receipt, checks and a disposition.
 
+## Tools and Equipment
+
+Open **Logistics → Tools and Equipment** in the fictitious Part-CAO organisation. Open 0201 and compare the accepted service evidence, six-month interval and 3 February 2027 deadline. Open 0210 for its condition restriction and missing service completion, then 0301 for the before-use instruction. The loaned balancing kit has a lender and no established control basis. Open 0142 to see the unresolved source evidence.
+
+As the Administrator, open **Tool Delegations** to review the sample procedure and action coverage. As Lucy Grant, register a fictitious asset at the Hangar, record its control basis, and use **Record Tool Event** to select the matching revision and add completion evidence. Try a restriction, completed repair and authorised return using the fictitious procedure and evidence references. The marked sample site adds missing examples on upgrade. Its existing tool records are preserved.
+
 ## What Cannot Be Shown Yet
 
-The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: further Stores and tooling workflows, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

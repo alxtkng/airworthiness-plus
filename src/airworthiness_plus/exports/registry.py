@@ -71,6 +71,13 @@ from airworthiness_plus.staffing.roster_models import (
     ShiftPattern,
     StaffingMinimum,
 )
+from airworthiness_plus.tooling.models import (
+    Tool,
+    ToolControlEvent,
+    ToolControlRevision,
+    ToolDelegation,
+    ToolDelegationWithdrawal,
+)
 
 
 @dataclass(frozen=True)
@@ -185,6 +192,11 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(ReceivingDisposition, None),
     Exported(StockEntry, None),
     Exported(SubcontractorAssessment, None),
+    Exported(Tool, None),
+    Exported(ToolControlRevision, None),
+    Exported(ToolControlEvent, None),
+    Exported(ToolDelegation, None),
+    Exported(ToolDelegationWithdrawal, None),
     Exported(Report, None),
     Exported(Absence, None),
     Exported(BankHoliday, None),

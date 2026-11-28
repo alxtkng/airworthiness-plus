@@ -58,7 +58,7 @@ from airworthiness_plus.programme.models import Basis
 from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
-from airworthiness_plus.sample import goods_in, phase1, suppliers
+from airworthiness_plus.sample import goods_in, phase1, suppliers, tools
 from airworthiness_plus.staffing import roster
 from airworthiness_plus.staffing import services as staffing_services
 from airworthiness_plus.staffing.models import AbsenceType, Function
@@ -137,6 +137,16 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             authorisation, withdrawn_from=TODAY, reason="Sample withdrawal"
         )
     assert suppliers.add(sample.ours, sample.lucy) == 5
+    assert tools.add(sample.ours, sample.administrator) == 5
+    assert tools.add(sample.ours, sample.administrator) == 0
+    from airworthiness_plus.tooling import services as tool_services
+    from airworthiness_plus.tooling.models import ToolAction, ToolDelegation
+
+    with working_for(sample.ours.id, sample.administrator.id):
+        grant = ToolDelegation.objects.get(action=ToolAction.REINSTATE)
+        tool_services.withdraw_delegation(
+            sample.administrator, grant, evidence="Fictitious export withdrawal evidence"
+        )
     with working_for(sample.ours.id, sample.lucy.id):
         workshop = Supplier.objects.create(organisation=sample.ours, name="Sample Workshop")
         logistics_services.assess_subcontractor(

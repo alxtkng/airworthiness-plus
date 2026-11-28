@@ -30,7 +30,16 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.sample import build, goods_in, planning, second, staffing, suppliers, top_up
+from airworthiness_plus.sample import (
+    build,
+    goods_in,
+    planning,
+    second,
+    staffing,
+    suppliers,
+    tools,
+    top_up,
+)
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
     seed,
@@ -168,6 +177,18 @@ def bring_goods_in(administrator: User) -> str:
     return ""
 
 
+def bring_tools(administrator: User) -> str:
+    """Add fictitious tooling to an earlier marked test site."""
+    try:
+        with working_for(administrator.organisation_id, administrator.id):
+            organisation = Organisation.objects.get(pk=administrator.organisation_id)
+            if count := tools.add(organisation, administrator):
+                return f"Tools of the Sample Added, {count} Tools"
+    except Exception as error:
+        return f"Sample Tools Not Added: {type(error).__name__}"
+    return ""
+
+
 def bring_staffing(username: str, approval_reference: str) -> str:
     """Give an earlier test site the staffing sample for its own approval."""
     try:
@@ -289,6 +310,8 @@ class Command(BaseCommand):
             receiving_result = bring_goods_in(first)
             if receiving_result:
                 self.stdout.write(receiving_result)
+            if tool_result := bring_tools(first):
+                self.stdout.write(tool_result)
             work_packages = bring_work_packages(first)
             if work_packages:
                 self.stdout.write(work_packages)

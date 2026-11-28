@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Tool and Equipment Register{% endblock %}
+{% block content %}
+<h1>Tool and Equipment Register</h1>
+<p>
+{% if may_register %}<a class="button" href="{% url 'add_tool' %}{% if selected %}?approval={{ selected.approval }}{% endif %}">Register a Tool</a>{% endif %}
+{% if may_delegate %}<a href="{% url 'tool_delegations' %}">Tool Delegations</a>{% endif %}
+</p>
+{% include "tooling/approval.html" %}
+{% if attention %}
+<section aria-labelledby="tools-attention">
+<h2 id="tools-attention">Needs Attention</h2>
+<ul>
+{% for item in attention %}
+<li><a href="{% url 'tool_record' item.tool.id %}{% if selected %}?approval={{ selected.approval }}{% endif %}">{{ item.tool }}</a>
+{% if item.restricted %}<strong>{{ item.condition.get_kind_display|status }}</strong>. {{ item.condition.evidence }}<br>{% endif %}{{ item.control_status|status }}
+{% if item.next_due %} · {{ item.next_due|date:"j F Y" }}{% endif %}</li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+<section aria-labelledby="tools-register">
+<h2 id="tools-register">Register</h2>
+<table data-search="always">
+<thead><tr><th scope="col">Tool</th><th scope="col">Usual Location</th><th scope="col">Condition</th><th scope="col">Control</th><th scope="col">Next Due</th></tr></thead>
+<tbody>
+{% for item in lines %}
+<tr>
+  <th scope="row"><a href="{% url 'tool_record' item.tool.id %}{% if selected %}?approval={{ selected.approval }}{% endif %}">{{ item.tool }}</a></th>
+  <td>{{ item.tool.site }} · {{ item.tool.location }}</td>
+  <td>{% if item.condition %}{{ item.condition.get_kind_display|status }}{% else %}No restriction recorded{% endif %}</td>
+  <td>{{ item.control_status|status }}{% for line in item.controls %}{% if line.revision.interval_months %}<br>{{ line.revision.get_kind_display }} every {{ line.revision.interval_months }} months{% elif item.control_status != line.status %}<br>{{ line.status }}{% endif %}{% endfor %}</td>
+  <td>{% if item.next_due %}{{ item.next_due|date:"j F Y" }}{% endif %}</td>
+</tr>
+{% empty %}<tr><td colspan="5">No tools registered.</td></tr>{% endfor %}
+</tbody>
+</table>
+</section>
+{% endblock %}

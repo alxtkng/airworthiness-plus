@@ -1,0 +1,9 @@
+<dt>Instruction</dt><dd>{{ revision.instruction }} · {{ revision.instruction_revision }}</dd>
+{% if revision.interval_months %}<dt>Interval</dt><dd>{{ revision.interval_months }} calendar months</dd>{% endif %}
+{% if revision.standard %}<dt>Standard</dt><dd>{{ revision.standard }}</dd>{% endif %}
+<dt>Scope</dt><dd>{{ revision.scope }}</dd>
+<dt>Method and Limits</dt><dd>{{ revision.method }}<br>{{ revision.limits }}</dd>
+<dt>Decision Basis</dt><dd>{{ revision.decision_basis }}</dd>
+<dt>Signed By</dt><dd>{{ revision.delegation.person }}</dd>
+<dt>Procedure</dt><dd>{{ revision.delegation.procedure }}</dd>
+{% if revision.loan_evidence %}<dt>Actual Loan</dt><dd>{{ revision.loan_task }} · {{ revision.loan_identity }} · {{ revision.loan_evidence }}</dd>{% endif %}
