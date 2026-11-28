@@ -7,16 +7,34 @@
 <p><a href="{% url 'stores_lookup_exercise' %}">Practise Stock Lookup</a></p>
 <p><a href="{% url 'stores_locations' %}">Locations</a> · <a href="{% url 'stores_appointments' %}">Stores Appointments</a></p>
 
+<form method="get" action="{% url 'stores_stock' %}">
+<p><label for="stock-identity">Part Number or Specification</label><br>
+<input id="stock-identity" name="identity" value="{{ identity }}" maxlength="160">
+<button type="submit">Find Stock</button>
+{% if identity %}<a href="{% url 'stores_stock' %}">Clear Stock Filter</a>{% endif %}</p>
+</form>
+
+{% if by_station %}
+<h2>Totals by Station</h2>
+<table>
+<thead><tr><th scope="col">Station</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
+<tbody>
+{% for station, totals in by_station.items %}{% for total in totals %}
+<tr><th scope="row">{{ station }}</th><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
+{% endfor %}{% endfor %}
+</tbody>
+</table>
+{% endif %}
 <h2>Totals by Location</h2>
 {% if by_location %}
 <table>
-<thead><tr><th scope="col">Location</th><th scope="col">Use</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
+<thead><tr><th scope="col">Station</th><th scope="col">Location</th><th scope="col">Use</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
 <tbody>
 {% for place in by_location %}{% for total in place.totals %}
-<tr><td>{{ place.location }}</td><td>{{ place.location.kind }}</td><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
+<tr><td>{{ place.location.station|default:"—" }}</td><td>{{ place.location }}</td><td>{{ place.location.kind }}</td><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
 {% endfor %}{% endfor %}
 {% for total in overall %}
-<tr><th scope="row">All Locations</th><td></td><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
+<tr><th scope="row" colspan="2">All Locations</th><td></td><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
 {% endfor %}
 </tbody>
 </table>

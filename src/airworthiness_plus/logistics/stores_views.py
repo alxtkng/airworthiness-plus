@@ -107,6 +107,22 @@ def stores_stock(request: HttpRequest) -> HttpResponse:
     """Show custody by location, the posting backlog, holds and return history."""
     user, today = _access(request, Action.VIEW_RECORDS)
     lines = stores.positions(user.organisation, today)
+    identity = request.GET.get("identity", "").strip()[:160]
+    if identity:
+        lines = [
+            line
+            for line in lines
+            if identity.casefold()
+            == (line.posting.evidence.part_number or line.posting.evidence.specification)
+            .strip()
+            .casefold()
+        ]
+    stationed = (
+        StoresLocation.objects.filter(organisation=user.organisation)
+        .exclude(station="")
+        .exclude(withdrawal__withdrawn_on__lte=today)
+    )
+    places = stores.by_location(lines, stationed)
     decisions = list(_decisions(user))
     awaiting = [
         _state(one, today)
@@ -123,8 +139,10 @@ def stores_stock(request: HttpRequest) -> HttpResponse:
             "awaiting": awaiting,
             "holds": holds,
             "returns": returns,
-            "by_location": stores.by_location(lines),
-            "overall": list(stores.totals(lines).values()),
+            "by_location": places,
+            "by_station": stores.by_station(places),
+            "identity": identity,
+            "overall": list(stores.totals(lines).values()) or [stores.Totals("")],
             "warning_days": stores.SHELF_LIFE_WARNING_DAYS,
         },
     )

@@ -358,6 +358,7 @@ class StoresLocation(StoresRecord):
     """One place that holds stock, with the rules that apply to it."""
 
     code = models.CharField("Location Code", max_length=40)
+    station = models.CharField("Station Code", max_length=12, blank=True)
     name = models.CharField("Location", max_length=200)
     kind = models.CharField("Use", max_length=20, choices=LocationKind.choices)
     classes = ArrayField(
