@@ -32,7 +32,7 @@
 {% if departures %}
 <table>
 <thead>
-<tr><th>Task</th><th>Manufacturer</th><th>Programme</th><th>Compensating Measures</th><th>Owner Copy</th><th data-detail>Justification</th><th data-detail>Recorded</th><th data-detail>Withdrawn</th>{% if may_change %}<th data-detail>Record</th>{% endif %}</tr>
+<tr><th scope="col">Task</th><th scope="col">Manufacturer</th><th scope="col">Programme</th><th scope="col">Compensating Measures</th><th scope="col">Owner Copy</th><th scope="col" data-detail>Justification</th><th scope="col" data-detail>Recorded</th><th scope="col" data-detail>Withdrawn</th>{% if may_change %}<th scope="col" data-detail>Record</th>{% endif %}</tr>
 </thead>
 <tbody>
 {% for departure in departures %}
@@ -60,7 +60,7 @@
 {% if annual_review %}
 <p>Opened {{ annual_review.opened_on|long_date }}, {{ annual_review.progress }}</p>
 <table>
-<thead><tr><th>Point</th><th>Found</th><th>Complete</th><th data-detail>Reference</th></tr></thead>
+<thead><tr><th scope="col">Point</th><th scope="col">Found</th><th scope="col">Complete</th><th scope="col" data-detail>Reference</th></tr></thead>
 <tbody>
 {% for name, label, point, note, done in annual_review.points %}
 <tr><td>{{ label }}</td><td>{{ note }}</td><td>{% if done %}Complete{% else %}Open{% endif %}</td><td>{{ point }}</td></tr>
@@ -100,7 +100,7 @@
 <h2>Tasks</h2>
 <table>
 <thead>
-<tr><th>Task</th><th>Limit</th><th>Due</th><th class="number">Remaining</th><th>Tolerance Ends</th><th>Status</th><th>Comes First</th></tr>
+<tr><th scope="col">Task</th><th scope="col">Limit</th><th scope="col">Due</th><th scope="col" class="number">Remaining</th><th scope="col">Tolerance Ends</th><th scope="col">Status</th><th scope="col">Comes First</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -156,7 +156,7 @@
 <h2>Work Done</h2>
 <table>
 <thead>
-<tr><th>Completed</th><th>Work</th><th class="number">Hours</th><th>Certificate of Release to Service</th><th>Pilot-Owner</th><th data-detail>How the 30 Days Were Calculated</th><th data-detail>Performed By</th></tr>
+<tr><th scope="col">Completed</th><th scope="col">Work</th><th scope="col" class="number">Hours</th><th scope="col">Certificate of Release to Service</th><th scope="col">Pilot-Owner</th><th scope="col" data-detail>How the 30 Days Were Calculated</th><th scope="col" data-detail>Performed By</th></tr>
 </thead>
 <tbody>
 {% for line in work %}

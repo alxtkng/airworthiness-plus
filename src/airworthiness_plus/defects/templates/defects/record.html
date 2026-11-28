@@ -4,15 +4,15 @@
 <h1>Record a Defect</h1>
 <form method="post">
 {% csrf_token %}
-{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% error_summary form %}{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
 {% for field in form %}
-<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}
 <p><button type="submit">Record Defect</button></p>
 </form>
 <h2>Deferral Limits</h2>
 <table>
-<thead><tr><th>Decision By</th><th>Applies To</th><th>Default Limit</th><th>Point</th></tr></thead>
+<thead><tr><th scope="col">Decision By</th><th scope="col">Applies To</th><th scope="col">Default Limit</th><th scope="col">Point</th></tr></thead>
 <tbody>
 {% for line in limits %}
 <tr><td>{{ line.decision_by }}</td><td>{{ line.applies_to }}</td><td>{{ line.limit }}</td><td>{{ line.point }}</td></tr>

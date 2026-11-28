@@ -11,7 +11,7 @@
 </dl>
 <h2>Aircraft of {{ customer.name }}</h2>
 <table>
-<thead><tr><th>Aircraft Registration</th><th>Type Rating</th><th>Status</th></tr></thead>
+<thead><tr><th scope="col">Aircraft Registration</th><th scope="col">Type Rating</th><th scope="col">Status</th></tr></thead>
 <tbody>
 {% for one in aircraft %}
 <tr>
@@ -25,7 +25,7 @@
 <h2>Contracts with {{ customer.name }}</h2>
 {% if contracts %}
 <table>
-<thead><tr><th>Aircraft Registration</th><th>Tasks Contracted</th><th>Signed</th><th>Ended</th></tr></thead>
+<thead><tr><th scope="col">Aircraft Registration</th><th scope="col">Tasks Contracted</th><th scope="col">Signed</th><th scope="col">Ended</th></tr></thead>
 <tbody>
 {% for contract in contracts %}
 <tr>
@@ -44,9 +44,9 @@
 <h2>Change the Record of {{ customer.name }}</h2>
 <form method="post" action="{% url 'change_customer' customer.id %}">
 {% csrf_token %}
-{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% error_summary form %}{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
 {% for field in form %}
-<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}
 <p><button type="submit">Save the Record of {{ customer.name }}</button></p>
 </form>

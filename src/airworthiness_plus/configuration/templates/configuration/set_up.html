@@ -16,7 +16,7 @@
 <h2>2 Product Structure Template</h2>
 {% if set_up.template %}
 <table>
-<thead><tr><th>Product</th><th>Chapters</th><th class="number">Positions</th><th class="number">Required</th><th class="number">Tracked by Serial Number</th></tr></thead>
+<thead><tr><th scope="col">Product</th><th scope="col">Chapters</th><th scope="col" class="number">Positions</th><th scope="col" class="number">Required</th><th scope="col" class="number">Tracked by Serial Number</th></tr></thead>
 <tbody>
 {% for product, chapters, positions, required, tracked in set_up.template %}
 <tr><td>{{ product }}</td><td>{{ chapters }}</td><td class="number">{{ positions }}</td><td class="number">{{ required }}</td><td class="number">{{ tracked }}</td></tr>
@@ -38,7 +38,7 @@
 <h2>3 Major Items</h2>
 {% if major %}
 <table>
-<thead><tr><th>Major Item</th><th>Component</th><th>Serial Number</th><th>Since New or Overhaul</th><th>New or Last Overhauled</th><th>Limit</th><th>Remaining</th></tr></thead>
+<thead><tr><th scope="col">Major Item</th><th scope="col">Component</th><th scope="col">Serial Number</th><th scope="col">Since New or Overhaul</th><th scope="col">New or Last Overhauled</th><th scope="col">Limit</th><th scope="col">Remaining</th></tr></thead>
 <tbody>
 {% for position, line in major %}
 <tr>
@@ -63,7 +63,7 @@
 <h2>4 Tracked Positions</h2>
 {% if set_up.tracked %}
 <table>
-<thead><tr><th>Position</th><th>Part Number</th><th>Serial Number</th><th>Source</th><th>Recorded</th><th data-detail>Product and Chapter</th><th data-detail>Change or Repair</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr></thead>
+<thead><tr><th scope="col">Position</th><th scope="col">Part Number</th><th scope="col">Serial Number</th><th scope="col">Source</th><th scope="col">Recorded</th><th scope="col" data-detail>Product and Chapter</th><th scope="col" data-detail>Change or Repair</th>{% if may_record %}<th scope="col" data-detail>Record</th>{% endif %}</tr></thead>
 <tbody>
 {% for position in set_up.tracked %}
 <tr>
@@ -96,7 +96,7 @@
 <h2>5 Modifications and Repairs Embodied</h2>
 {% if set_up.changes %}
 <table>
-<thead><tr><th>Change or Repair</th><th>Approval Route</th><th>Positions Changed</th><th>Embodied</th></tr></thead>
+<thead><tr><th scope="col">Change or Repair</th><th scope="col">Approval Route</th><th scope="col">Positions Changed</th><th scope="col">Embodied</th></tr></thead>
 <tbody>
 {% for change in set_up.changes %}
 <tr><td>{{ change.title }}</td><td>{{ change.route_text }}</td><td>{% for position in change.positions.all %}{{ position.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td><td>{{ change.embodied_on|long_date }}</td></tr>

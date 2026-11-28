@@ -83,6 +83,8 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "airworthiness_plus.interface.navigation.navigation",
             ],
+            # The error summary of every form, with nothing to load (REQ-397).
+            "builtins": ["airworthiness_plus.interface.templatetags.accessibility"],
         },
     },
 ]

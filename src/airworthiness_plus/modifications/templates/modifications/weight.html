@@ -13,7 +13,7 @@
 {% if lines %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Last Weighed</th><th>Schedule</th><th>Changes Since Weighing</th><th class="number">Net Change</th><th>Weight and Balance</th><th>Status</th><th data-detail>Weighing Report</th><th data-detail>Schedule Issued</th><th data-detail>Reweigh Threshold</th><th data-detail>How the Net Change Was Calculated</th></tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Last Weighed</th><th scope="col">Schedule</th><th scope="col">Changes Since Weighing</th><th scope="col" class="number">Net Change</th><th scope="col">Weight and Balance</th><th scope="col">Status</th><th scope="col" data-detail>Weighing Report</th><th scope="col" data-detail>Schedule Issued</th><th scope="col" data-detail>Reweigh Threshold</th><th scope="col" data-detail>How the Net Change Was Calculated</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}

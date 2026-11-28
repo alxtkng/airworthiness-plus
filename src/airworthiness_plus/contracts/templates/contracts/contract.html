@@ -23,12 +23,12 @@
 {% endif %}
 </dl>
 {% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}
-{% if refused.non_field_errors %}<p role="alert">{{ refused.non_field_errors|join:", " }}</p>{% endif %}
+{% error_summary refused %}{% if refused.non_field_errors %}<p role="alert">{{ refused.non_field_errors|join:", " }}</p>{% endif %}
 {% if refused.errors %}{% for field in refused %}{% if field.errors %}<p role="alert">{{ field.label }}, {{ field.errors|join:", " }}</p>{% endif %}{% endfor %}{% endif %}
 <h2>Work Orders Under the Contract</h2>
 {% if orders %}
 <table>
-<thead><tr><th>Work Ordered</th><th>Ordered By</th><th>Agreed</th><th>Outcome</th></tr></thead>
+<thead><tr><th scope="col">Work Ordered</th><th scope="col">Ordered By</th><th scope="col">Agreed</th><th scope="col">Outcome</th></tr></thead>
 <tbody>
 {% for order in orders %}
 <tr><td>{{ order.work }}</td><td>{{ order.ordered_by_text }}</td><td>{{ order.agreed_on|long_date }}</td><td>{% if order.outcome %}{{ order.outcome }}{% else %}Open{% endif %}</td></tr>

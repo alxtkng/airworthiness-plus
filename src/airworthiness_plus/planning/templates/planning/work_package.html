@@ -40,7 +40,7 @@
 <p>{{ signed }} of {{ cards|length }} Signed, {{ planned }} Planned Hours, {{ inspection }} Planned Inspection Hours</p>
 <div class="table-wrap">
 <table>
-<thead><tr><th>Task</th><th>Maintenance Data</th><th>Critical Task</th><th>Performed By</th><th>Independent Inspection</th><th>Planned Hours</th><th>Status</th><th>Actions</th></tr></thead>
+<thead><tr><th scope="col">Task</th><th scope="col">Maintenance Data</th><th scope="col">Critical Task</th><th scope="col">Performed By</th><th scope="col">Independent Inspection</th><th scope="col">Planned Hours</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
 <tbody>
 {% for card in cards %}
 <tr>

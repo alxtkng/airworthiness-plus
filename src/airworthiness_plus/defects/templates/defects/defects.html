@@ -8,7 +8,7 @@
 {% if lines %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Defect</th><th>Decision</th><th>Limit</th><th class="number">Remaining</th><th>Status</th><th data-detail>Note</th><th data-detail>Decided By</th><th data-detail>Decided</th><th data-detail>Found</th><th data-detail>System</th><th data-detail>Point</th><th data-detail>How the Limit Was Calculated</th></tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Defect</th><th scope="col">Decision</th><th scope="col">Limit</th><th scope="col" class="number">Remaining</th><th scope="col">Status</th><th scope="col" data-detail>Note</th><th scope="col" data-detail>Decided By</th><th scope="col" data-detail>Decided</th><th scope="col" data-detail>Found</th><th scope="col" data-detail>System</th><th scope="col" data-detail>Point</th><th scope="col" data-detail>How the Limit Was Calculated</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -37,7 +37,7 @@
 {% if closed %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Defect</th><th>Rectification</th><th>Closed</th><th data-detail>Work Done</th><th data-detail>Found</th></tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Defect</th><th scope="col">Rectification</th><th scope="col">Closed</th><th scope="col" data-detail>Work Done</th><th scope="col" data-detail>Found</th></tr>
 </thead>
 <tbody>
 {% for defect in closed %}

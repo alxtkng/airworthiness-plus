@@ -7,7 +7,7 @@
 {% if coming %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th data-detail>Type Rating</th><th>Owned By</th><th>Records</th><th>Checklist</th><th>Update</th></tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col" data-detail>Type Rating</th><th scope="col">Owned By</th><th scope="col">Records</th><th scope="col">Checklist</th><th scope="col">Update</th></tr>
 </thead>
 <tbody>
 {% for item, line in coming %}
@@ -47,7 +47,7 @@
 <p>Started {{ line.transfer.started_on|long_date }}, {{ line.progress }}</p>
 <table>
 <thead>
-<tr><th class="number">Item</th><th>Checklist</th><th>State</th><th>Note</th><th>Status</th><th data-detail>Holds</th><th data-detail>Records</th>{% if may_change %}<th data-detail>Record</th>{% endif %}</tr>
+<tr><th scope="col" class="number">Item</th><th scope="col">Checklist</th><th scope="col">State</th><th scope="col">Note</th><th scope="col">Status</th><th scope="col" data-detail>Holds</th><th scope="col" data-detail>Records</th>{% if may_change %}<th scope="col" data-detail>Record</th>{% endif %}</tr>
 </thead>
 <tbody>
 {% for entry in line.items %}

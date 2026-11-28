@@ -1,5 +1,5 @@
 <table>
-<thead><tr><th>Issued By</th><th>Condition</th><th>On the Certificate</th><th>Point</th></tr></thead>
+<thead><tr><th scope="col">Issued By</th><th scope="col">Condition</th><th scope="col">On the Certificate</th><th scope="col">Point</th></tr></thead>
 <tbody>
 {% for line in who %}
 <tr><td>{{ line.issued_by }}</td><td>{{ line.condition }}</td><td>{{ line.certificate }}</td><td>{{ line.point }}</td></tr>

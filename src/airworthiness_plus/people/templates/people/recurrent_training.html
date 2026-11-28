@@ -5,7 +5,7 @@
 <p>{{ person.full_name }}</p>
 <form method="post">
 {% csrf_token %}
-{{ form.as_p }}
+{% error_summary form %}{{ form.as_p }}
 <button type="submit">Save Training</button>
 </form>
 {% endblock %}

@@ -10,7 +10,7 @@
 <h2>Next {{ window }} Days</h2>
 {% if soon %}
 <table>
-<thead><tr><th>Forecast Date</th><th>Item</th><th class="number">Remaining</th><th>Status</th><th>Page</th></tr></thead>
+<thead><tr><th scope="col">Forecast Date</th><th scope="col">Item</th><th scope="col" class="number">Remaining</th><th scope="col">Status</th><th scope="col">Page</th></tr></thead>
 <tbody>
 {% for line in soon %}
 <tr><td>{{ line.forecast_text }}</td><td>{{ line.item }}</td><td class="number">{{ line.remaining }}</td><td>{{ line.status|status }}</td><td><a href="{{ line.url }}">{{ line.page }}</a></td></tr>
@@ -23,7 +23,7 @@
 <h2>Maintenance Forecast</h2>
 {% if lines %}
 <table>
-<thead><tr><th>Item</th><th>Next Due</th><th class="number">Remaining</th><th>Forecast Date</th><th>Status</th><th data-detail>Detail</th><th data-detail>Page</th></tr></thead>
+<thead><tr><th scope="col">Item</th><th scope="col">Next Due</th><th scope="col" class="number">Remaining</th><th scope="col">Forecast Date</th><th scope="col">Status</th><th scope="col" data-detail>Detail</th><th scope="col" data-detail>Page</th></tr></thead>
 <tbody>
 {% for line in lines %}
 <tr><td>{{ line.item }}</td><td>{{ line.due }}</td><td class="number">{{ line.remaining }}</td><td>{{ line.forecast_text }}</td><td>{{ line.status|status }}</td><td>{{ line.detail }}</td><td><a href="{{ line.url }}">{{ line.page }}</a></td></tr>

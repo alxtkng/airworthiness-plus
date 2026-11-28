@@ -14,14 +14,14 @@
 {% if may_change %}
 <form method="post" action="{% url 'change_organisation_details' %}">
 {% csrf_token %}
-{% if details_form.non_field_errors %}<p role="alert">{{ details_form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in details_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary details_form %}{% if details_form.non_field_errors %}<p role="alert">{{ details_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in details_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Save Organisation Details</button></p>
 </form>
 {% endif %}
 <h2>Approvals Held</h2>
 <table>
-<thead><tr><th>Approval</th><th>Approval Reference</th><th>Status</th>{% if may_change %}<th>Change</th>{% endif %}</tr></thead>
+<thead><tr><th scope="col">Approval</th><th scope="col">Approval Reference</th><th scope="col">Status</th>{% if may_change %}<th scope="col">Change</th>{% endif %}</tr></thead>
 <tbody>
 {% for approval, can_end in approvals %}
 <tr>
@@ -33,15 +33,15 @@
 {% if may_change %}
 <form method="post" action="{% url 'record_approval_held' %}">
 {% csrf_token %}
-{% if approval_form.non_field_errors %}<p role="alert">{{ approval_form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in approval_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary approval_form %}{% if approval_form.non_field_errors %}<p role="alert">{{ approval_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in approval_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Record an Approval Held</button></p>
 </form>
 {% endif %}
 <h2>Deferral Limits</h2>
 <p>Limit in the Maintenance Data Applies When Shorter, ML.A.403(c)</p>
 <table>
-<thead><tr><th>Decision By</th><th>Applies To</th><th>Default Limit</th><th>Point</th></tr></thead>
+<thead><tr><th scope="col">Decision By</th><th scope="col">Applies To</th><th scope="col">Default Limit</th><th scope="col">Point</th></tr></thead>
 <tbody>
 {% for line in deferral_lines %}
 <tr><td>{{ line.decision_by }}</td><td>{{ line.applies_to }}</td><td>{{ line.limit }}</td><td>{{ line.point }}</td></tr>
@@ -51,15 +51,15 @@
 {% if may_change %}
 <form method="post" action="{% url 'set_deferral_limits' %}">
 {% csrf_token %}
-{% if deferral_form.non_field_errors %}<p role="alert">{{ deferral_form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in deferral_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary deferral_form %}{% if deferral_form.non_field_errors %}<p role="alert">{{ deferral_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in deferral_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Save Deferral Limits</button></p>
 </form>
 {% endif %}
 <h2>Alert Lead Times</h2>
 <p>Each Item Is Due Soon From Its Lead Time</p>
 <table>
-<thead><tr><th>Alert</th><th>Lead Time</th></tr></thead>
+<thead><tr><th scope="col">Alert</th><th scope="col">Lead Time</th></tr></thead>
 <tbody>
 {% for alert, lead in lead_times %}
 <tr><td>{{ alert }}</td><td>{{ lead }}</td></tr>
@@ -69,8 +69,8 @@
 {% if may_change %}
 <form method="post" action="{% url 'set_lead_times' %}">
 {% csrf_token %}
-{% if lead_form.non_field_errors %}<p role="alert">{{ lead_form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in lead_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary lead_form %}{% if lead_form.non_field_errors %}<p role="alert">{{ lead_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in lead_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Save Alert Lead Times</button></p>
 </form>
 {% endif %}
@@ -80,8 +80,8 @@
 {% if may_change %}
 <form method="post" action="{% url 'set_reweigh_threshold' %}">
 {% csrf_token %}
-{% if reweigh_form.non_field_errors %}<p role="alert">{{ reweigh_form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in reweigh_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary reweigh_form %}{% if reweigh_form.non_field_errors %}<p role="alert">{{ reweigh_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in reweigh_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Save Reweigh Threshold</button></p>
 </form>
 {% endif %}

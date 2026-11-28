@@ -17,7 +17,7 @@
 {% for item in working %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endfor %}
 <table>
 <thead>
-<tr><th>Certificate Reference</th><th data-detail>Issued By</th><th>Date of Issue</th><th>Date of Expiry</th><th>Status</th><th>Copy to the Civil Aviation Authority</th></tr>
+<tr><th scope="col">Certificate Reference</th><th scope="col" data-detail>Issued By</th><th scope="col">Date of Issue</th><th scope="col">Date of Expiry</th><th scope="col">Status</th><th scope="col">Copy to the Civil Aviation Authority</th></tr>
 </thead>
 <tbody>
 {% for certificate, extensions in certificates %}
@@ -58,14 +58,14 @@
 {% if not refusal %}
 <form method="post" action="{% url 'start_review' aircraft.id %}">
 {% csrf_token %}
-{% if start_scope %}<p>Review Authorisation Scope. {{ start_scope }}</p>{{ start_form.as_p }}{% endif %}
+{% if start_scope %}<p>Review Authorisation Scope. {{ start_scope }}</p>{% error_summary start_form %}{{ start_form.as_p }}{% endif %}
 <button type="submit">Start an Airworthiness Review of {{ aircraft.registration }}</button>
 </form>
 <h2>Record a Certificate Issued Elsewhere or Before These Records for {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'record_certificate' aircraft.id %}">
 {% csrf_token %}
-{% if certificate_form.non_field_errors %}<p role="alert">{{ certificate_form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in certificate_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary certificate_form %}{% if certificate_form.non_field_errors %}<p role="alert">{{ certificate_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in certificate_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Record Certificate</button></p>
 </form>
 {% endif %}

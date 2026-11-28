@@ -37,7 +37,7 @@
 {% if may_record_defect %}<p><a href="{% url 'record_defect' %}?aircraft={{ aircraft.id }}">Record a Defect</a></p>{% endif %}
 {% if defects %}
 <table>
-<thead><tr><th>Defect</th><th>Decision</th><th>Limit</th><th class="number">Remaining</th><th>Status</th></tr></thead>
+<thead><tr><th scope="col">Defect</th><th scope="col">Decision</th><th scope="col">Limit</th><th scope="col" class="number">Remaining</th><th scope="col">Status</th></tr></thead>
 <tbody>
 {% for line in defects %}
 <tr>
@@ -62,8 +62,8 @@
 <h2>Owner of {{ aircraft.registration }}</h2>
 <form method="post" action="{% url 'change_owner' aircraft.id %}">
 {% csrf_token %}
-{% if owner_form.non_field_errors %}<p role="alert">{{ owner_form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in owner_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary owner_form %}{% if owner_form.non_field_errors %}<p role="alert">{{ owner_form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in owner_form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Save the Owner of {{ aircraft.registration }}</button></p>
 </form>
 {% endif %}
@@ -76,7 +76,7 @@
 <dt>Entered For</dt><dd>{{ current.on|long_date }}</dd>
 </dl>
 <table>
-<thead><tr><th>Date</th><th class="number">Total Hours</th><th class="number">Total Cycles</th><th>Entry</th></tr></thead>
+<thead><tr><th scope="col">Date</th><th scope="col" class="number">Total Hours</th><th scope="col" class="number">Total Cycles</th><th scope="col">Entry</th></tr></thead>
 <tbody>
 {% for entry in entries %}
 <tr>

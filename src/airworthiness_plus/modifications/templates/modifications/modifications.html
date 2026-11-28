@@ -8,7 +8,7 @@
 {% if bulletins %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Bulletin</th><th>Owner Decision</th><th>Recorded</th><th>Status</th><th data-detail>Reference</th><th data-detail>Classification</th><th data-detail>Decision in Detail</th><th data-detail>Sent to the Owner</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Bulletin</th><th scope="col">Owner Decision</th><th scope="col">Recorded</th><th scope="col">Status</th><th scope="col" data-detail>Reference</th><th scope="col" data-detail>Classification</th><th scope="col" data-detail>Decision in Detail</th><th scope="col" data-detail>Sent to the Owner</th>{% if may_record %}<th scope="col" data-detail>Record</th>{% endif %}</tr>
 </thead>
 <tbody>
 {% for line in bulletins %}
@@ -34,7 +34,7 @@
 {% if changes %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Change or Repair</th><th>Approval Route</th><th class="number">Mass Effect</th><th>Records</th><th>Status</th><th data-detail>Embodied</th><th data-detail>Data</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Change or Repair</th><th scope="col">Approval Route</th><th scope="col" class="number">Mass Effect</th><th scope="col">Records</th><th scope="col">Status</th><th scope="col" data-detail>Embodied</th><th scope="col" data-detail>Data</th>{% if may_record %}<th scope="col" data-detail>Record</th>{% endif %}</tr>
 </thead>
 <tbody>
 {% for line in changes %}

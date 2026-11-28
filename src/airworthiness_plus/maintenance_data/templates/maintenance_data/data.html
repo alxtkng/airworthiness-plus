@@ -6,7 +6,7 @@
 <p><a href="{% url 'add_data' %}">Record Maintenance Data</a></p>
 <table>
 <thead>
-<tr><th>Title</th><th data-detail>Author</th><th data-detail>Kind</th><th data-detail>Applies To</th><th>Revision</th><th data-detail>Revision Date</th><th>Holding</th><th data-detail>Special Attention</th><th data-detail>Amendment Status</th><th data-detail>Last Checked</th><th>Next Amendment Check By</th><th>Status</th></tr>
+<tr><th scope="col">Title</th><th scope="col" data-detail>Author</th><th scope="col" data-detail>Kind</th><th scope="col" data-detail>Applies To</th><th scope="col">Revision</th><th scope="col" data-detail>Revision Date</th><th scope="col">Holding</th><th scope="col" data-detail>Special Attention</th><th scope="col" data-detail>Amendment Status</th><th scope="col" data-detail>Last Checked</th><th scope="col">Next Amendment Check By</th><th scope="col">Status</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}

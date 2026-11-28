@@ -6,7 +6,7 @@
 <h2>Certifying Staff</h2>
 {% if certifying_staff %}
 <table>
-<thead><tr><th>Name</th><th>Licence</th><th>Last Attributed Work</th><th>Maintenance Authorisation Evidence</th></tr></thead>
+<thead><tr><th scope="col">Name</th><th scope="col">Licence</th><th scope="col">Last Attributed Work</th><th scope="col">Maintenance Authorisation Evidence</th></tr></thead>
 <tbody>
 {% for person, last_work, outside_employment in certifying_staff %}
 <tr><td><a href="{% url 'person' person.id %}">{{ person.full_name }}</a></td><td>{{ person.licence }}</td><td>{% if last_work %}Last Recorded Work {{ last_work|long_date }}{% else %}No Attributed Work Within Recorded Employment{% endif %}{% if outside_employment %}. {{ outside_employment }} Outside Recorded Employment{% endif %}</td><td>{% if person.maintenance_authorisations.all %}<a href="#assessed-maintenance-experience">Assessed Maintenance Experience</a>{% else %}No Maintenance Authorisation Recorded{% endif %}</td></tr>
@@ -19,7 +19,7 @@
 {% if assessments %}
 <h2 id="assessed-maintenance-experience">Assessed Maintenance Experience</h2>
 <table>
-<thead><tr><th>Name</th><th>Authorisation</th><th>Recorded Term</th><th data-detail>Scope and Limitations</th><th>Days Credited</th><th>Complete Months</th><th>Standard Duration</th></tr></thead>
+<thead><tr><th scope="col">Name</th><th scope="col">Authorisation</th><th scope="col">Recorded Term</th><th scope="col" data-detail>Scope and Limitations</th><th scope="col">Days Credited</th><th scope="col">Complete Months</th><th scope="col">Standard Duration</th></tr></thead>
 <tbody>
 {% for authorisation, term, result in assessments %}
 <tr>
@@ -39,7 +39,7 @@
 <h2>Airworthiness Review Staff</h2>
 {% if review_lines %}
 <table>
-<thead><tr><th>Name</th><th>Last Review</th><th>Continuing Airworthiness Experience</th><th>Recency Lapses</th><th>Status</th><th data-detail>How It Was Worked Out</th></tr></thead>
+<thead><tr><th scope="col">Name</th><th scope="col">Last Review</th><th scope="col">Continuing Airworthiness Experience</th><th scope="col">Recency Lapses</th><th scope="col">Status</th><th scope="col" data-detail>How It Was Worked Out</th></tr></thead>
 <tbody>
 {% for line in review_lines %}
 <tr>

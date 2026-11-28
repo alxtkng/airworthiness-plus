@@ -8,7 +8,7 @@
 {% if lines %}
 <table>
 <thead>
-<tr><th>Type Rating</th><th>System</th><th class="number">In 12 Months</th><th>State</th><th>Action</th><th>Status</th><th data-detail>Aircraft Registration</th><th data-detail>Defects</th><th data-detail>Action Recorded</th></tr>
+<tr><th scope="col">Type Rating</th><th scope="col">System</th><th scope="col" class="number">In 12 Months</th><th scope="col">State</th><th scope="col">Action</th><th scope="col">Status</th><th scope="col" data-detail>Aircraft Registration</th><th scope="col" data-detail>Defects</th><th scope="col" data-detail>Action Recorded</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -33,9 +33,9 @@
 <h2>Record an Action</h2>
 <form method="post" action="{% url 'record_repeat_action' %}">
 {% csrf_token %}
-{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% error_summary form %}{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
 {% for field in form %}
-<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}
 <p><button type="submit">Record Action</button></p>
 </form>

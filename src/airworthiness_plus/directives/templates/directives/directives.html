@@ -12,7 +12,7 @@
 {% if sources %}
 <table>
 <thead>
-<tr><th>Source</th><th>Covers</th><th>Last Checked</th><th>Next Check</th><th>Status</th><th data-detail>Note</th>{% if may_record %}<th data-detail>Record</th>{% endif %}</tr>
+<tr><th scope="col">Source</th><th scope="col">Covers</th><th scope="col">Last Checked</th><th scope="col">Next Check</th><th scope="col">Status</th><th scope="col" data-detail>Note</th>{% if may_record %}<th scope="col" data-detail>Record</th>{% endif %}</tr>
 </thead>
 <tbody>
 {% for line in sources %}
@@ -34,7 +34,7 @@
 <h2>Directives</h2>
 <table>
 <thead>
-<tr><th>Directive Number</th><th data-detail>Revision</th><th data-detail>Issuing Authority</th><th>Subject</th><th>Effective Date</th><th data-detail>Supersedes</th><th>Status</th></tr>
+<tr><th scope="col">Directive Number</th><th scope="col" data-detail>Revision</th><th scope="col" data-detail>Issuing Authority</th><th scope="col">Subject</th><th scope="col">Effective Date</th><th scope="col" data-detail>Supersedes</th><th scope="col">Status</th></tr>
 </thead>
 <tbody>
 {% for directive in directives %}

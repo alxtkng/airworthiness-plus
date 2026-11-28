@@ -9,7 +9,7 @@
 {% if lines %}
 <table>
 <thead>
-<tr><th>Aircraft Registration</th><th>Maintenance</th><th>Issued By</th><th>Completed</th><th>In Records</th><th>Status</th><th>Limitations</th><th data-detail>Approval Reference or Licence</th><th data-detail>Certificate Reference</th><th data-detail>Issued</th><th data-detail>Organisation Told</th><th data-detail>How It Was Calculated</th>{% if may_record %}<th data-detail>Record</th>{% endif %}<th data-detail>Certification Evidence</th></tr>
+<tr><th scope="col">Aircraft Registration</th><th scope="col">Maintenance</th><th scope="col">Issued By</th><th scope="col">Completed</th><th scope="col">In Records</th><th scope="col">Status</th><th scope="col">Limitations</th><th scope="col" data-detail>Approval Reference or Licence</th><th scope="col" data-detail>Certificate Reference</th><th scope="col" data-detail>Issued</th><th scope="col" data-detail>Organisation Told</th><th scope="col" data-detail>How It Was Calculated</th>{% if may_record %}<th scope="col" data-detail>Record</th>{% endif %}<th scope="col" data-detail>Certification Evidence</th></tr>
 </thead>
 <tbody>
 {% for one in lines %}
@@ -38,7 +38,7 @@
 {% if waiting_packages %}
 <h2>Work Packages Awaiting Release</h2>
 <table>
-<thead><tr><th>Aircraft Registration</th><th>Work Package</th><th>Completed</th><th>Enter Release By</th><th>Status</th></tr></thead>
+<thead><tr><th scope="col">Aircraft Registration</th><th scope="col">Work Package</th><th scope="col">Completed</th><th scope="col">Enter Release By</th><th scope="col">Status</th></tr></thead>
 <tbody>
 {% for waiting in waiting_packages %}
 <tr><td>{{ waiting.package.aircraft.registration }}</td><td><a href="{% url 'work_package' waiting.package.id %}">{{ waiting.package.reference }}</a></td><td>{{ waiting.completed_on|long_date }}</td><td>{{ waiting.deadline|long_date }}</td><td>{{ waiting.flag.value|status }}</td></tr>
@@ -49,7 +49,7 @@
 {% if historical_evidence %}
 <h2>Unverified Historical Evidence</h2>
 <table>
-<thead><tr><th>Aircraft Registration</th><th>Maintenance</th><th>Signed Release Reference</th><th>Issued</th><th>Issuer</th><th>Evidence Reference</th><th>Grounding Defect</th></tr></thead>
+<thead><tr><th scope="col">Aircraft Registration</th><th scope="col">Maintenance</th><th scope="col">Signed Release Reference</th><th scope="col">Issued</th><th scope="col">Issuer</th><th scope="col">Evidence Reference</th><th scope="col">Grounding Defect</th></tr></thead>
 <tbody>
 {% for entry in historical_evidence %}
 <tr><td>{{ entry.work.aircraft.registration }}</td><td>{{ entry.work.description }}</td><td>{{ entry.reference }}</td><td>{{ entry.issued_on|long_date }}</td><td>{{ entry.issuer_name }}</td><td>{{ entry.source }}</td><td><a href="{% url 'defect' entry.grounding_defect_id %}">{{ entry.grounding_defect.title }}</a></td></tr>

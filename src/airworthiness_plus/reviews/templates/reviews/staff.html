@@ -6,7 +6,7 @@
 <h2>Maintenance Authorisations</h2>
 {% if maintenance_authorisations %}
 <table>
-<thead><tr><th>Name</th><th>Authorisation Reference</th><th data-detail>Scope and Limitations</th><th>Valid From</th><th>Valid To</th></tr></thead>
+<thead><tr><th scope="col">Name</th><th scope="col">Authorisation Reference</th><th scope="col" data-detail>Scope and Limitations</th><th scope="col">Valid From</th><th scope="col">Valid To</th></tr></thead>
 <tbody>
 {% for authorisation in maintenance_authorisations %}
 <tr>
@@ -28,7 +28,7 @@
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <table>
 <thead>
-<tr><th>Name</th><th data-detail>Authorisation Reference</th><th data-detail>Accepted</th><th>Last Review</th><th data-detail>Months in the 2-Year Period</th><th data-detail>Recency Rests On</th><th>Recency Lapses</th><th>Recency Status</th><th data-detail>How It Was Worked Out</th><th>Record</th><th data-detail>Scope and Limitations</th><th>Authorisation Term</th></tr>
+<tr><th scope="col">Name</th><th scope="col" data-detail>Authorisation Reference</th><th scope="col" data-detail>Accepted</th><th scope="col">Last Review</th><th scope="col" data-detail>Months in the 2-Year Period</th><th scope="col" data-detail>Recency Rests On</th><th scope="col">Recency Lapses</th><th scope="col">Recency Status</th><th scope="col" data-detail>How It Was Worked Out</th><th scope="col">Record</th><th scope="col" data-detail>Scope and Limitations</th><th scope="col">Authorisation Term</th></tr>
 </thead>
 <tbody>
 {% for line, involvement_form, restoration_form in lines %}
@@ -57,8 +57,8 @@
 <h2>Record Airworthiness Review Staff</h2>
 <form method="post" action="{% url 'add_review_staff' %}">
 {% csrf_token %}
-{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% error_summary form %}{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}</p>
 {% endfor %}<p><button type="submit">Record Review Staff</button></p>
 </form>
 {% endif %}

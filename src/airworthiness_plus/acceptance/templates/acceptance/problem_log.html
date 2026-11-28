@@ -5,7 +5,7 @@
 <h1 class="visually-hidden">Problem Log</h1>
 {% if message %}<p role="alert">{{ message }}</p>{% endif %}
 <table>
-<thead><tr><th>Raised</th><th>Problem</th><th>Status</th><th>Action, Solution and Notes</th><th>Add</th></tr></thead>
+<thead><tr><th scope="col">Raised</th><th scope="col">Problem</th><th scope="col">Status</th><th scope="col">Action, Solution and Notes</th><th scope="col">Add</th></tr></thead>
 <tbody>
 {% for line, note_form in lines %}
 <tr>

@@ -7,7 +7,7 @@
 <p>{{ lines|length }} {% if lines|length == 1 %}Customer{% else %}Customers{% endif %}, {{ aircraft }} Aircraft</p>
 <table>
 <thead>
-<tr><th>Customer</th><th>Kind</th><th>Aircraft Registration</th><th>Customer Since</th></tr>
+<tr><th scope="col">Customer</th><th scope="col">Kind</th><th scope="col">Aircraft Registration</th><th scope="col">Customer Since</th></tr>
 </thead>
 <tbody>
 {% for line in lines %}

@@ -5,7 +5,7 @@
 <p>{{ work.aircraft.registration }}, {{ work.description }}</p>
 <form method="post">
 {% csrf_token %}
-{{ form.as_p }}
+{% error_summary form %}{{ form.as_p }}
 <p><button type="submit">Retain Evidence</button></p>
 </form>
 {% endblock %}

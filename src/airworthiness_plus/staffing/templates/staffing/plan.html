@@ -10,7 +10,7 @@
 {% endif %}
 <h2>Review by Approval</h2>
 <table>
-<thead><tr><th>Approval</th><th>Last Reviewed</th><th>Next Review Due</th><th>Outcome</th></tr></thead>
+<thead><tr><th scope="col">Approval</th><th scope="col">Last Reviewed</th><th scope="col">Next Review Due</th><th scope="col">Outcome</th></tr></thead>
 <tbody>
 {% for review in reviews %}
 <tr><td>{{ review.approval.approval }} {{ review.approval.reference }}</td><td>{{ review.latest.reviewed_on|long_date|default:"Not Recorded" }}</td><td>{% if review.next_due %}{{ review.next_due|long_date }}{% elif review.approval.approval == "Part-145" %}Review the Plan{% endif %}</td><td>{{ review.latest.outcome }}</td></tr>
@@ -19,7 +19,7 @@
 </table>
 <h2>Staffing by Month and Function</h2>
 <table>
-<thead><tr><th>Month</th><th>Approval</th><th>Function</th><th>Hours Needed</th><th>Employed Hours</th><th>Contracted Hours</th><th>Hours Available</th><th>Shortfall</th><th>Status</th><th data-detail>Work and Availability Basis</th>{% if may_staff %}<th data-detail>Report</th>{% endif %}</tr></thead>
+<thead><tr><th scope="col">Month</th><th scope="col">Approval</th><th scope="col">Function</th><th scope="col">Hours Needed</th><th scope="col">Employed Hours</th><th scope="col">Contracted Hours</th><th scope="col">Hours Available</th><th scope="col">Shortfall</th><th scope="col">Status</th><th scope="col" data-detail>Work and Availability Basis</th>{% if may_staff %}<th scope="col" data-detail>Report</th>{% endif %}</tr></thead>
 <tbody>
 {% for line in lines %}
 <tr><td>{{ line.demand.month|date:"F Y" }}</td><td>{{ line.demand.approval.approval }}</td><td>{{ line.demand.function }}</td><td>{{ line.demand.needed }}</td><td>{{ line.demand.employed }}</td><td>{{ line.demand.contracted }}</td><td>{{ line.result.available }}</td><td>{{ line.result.shortfall }} ({{ line.result.display_percent }}%)</td><td>{{ line.status }}</td><td>{{ line.demand.basis }}</td>{% if may_staff %}<td>{% if line.result.reportable and not line.reported %}<a href="{% url 'record_staffing_shortfall' line.demand.id %}">Record a Shortfall Report</a>{% endif %}</td>{% endif %}</tr>
@@ -30,7 +30,7 @@
 </table>
 <h2>Shortfall Reports</h2>
 <table>
-<thead><tr><th>Reported</th><th>Month</th><th>Function</th><th>Hours Needed</th><th>Employed Hours</th><th>Contracted Hours</th><th>Shortfall</th><th>Reported To</th><th data-detail>Action Taken</th></tr></thead>
+<thead><tr><th scope="col">Reported</th><th scope="col">Month</th><th scope="col">Function</th><th scope="col">Hours Needed</th><th scope="col">Employed Hours</th><th scope="col">Contracted Hours</th><th scope="col">Shortfall</th><th scope="col">Reported To</th><th scope="col" data-detail>Action Taken</th></tr></thead>
 <tbody>
 {% for report in reports %}
 <tr><td>{{ report.reported_on|long_date }}</td><td>{{ report.demand.month|date:"F Y" }}</td><td>{{ report.demand.function }}</td><td>{{ report.needed }}</td><td>{{ report.employed }}</td><td>{{ report.contracted }}</td><td>{{ report.shortfall_percent }}%</td><td>{{ report.reported_to }}</td><td>{{ report.action }}</td></tr>
@@ -40,7 +40,7 @@
 {% include "staffing/crews.html" %}
 <h2>Absences</h2>
 <table>
-<thead><tr><th>Person</th><th>Absence</th><th>From</th><th>To</th></tr></thead>
+<thead><tr><th scope="col">Person</th><th scope="col">Absence</th><th scope="col">From</th><th scope="col">To</th></tr></thead>
 <tbody>
 {% for absence in absences %}
 <tr><td>{{ absence.person }}</td><td>{{ absence.kind }}</td><td>{{ absence.starts_on|long_date }}</td><td>{{ absence.ends_on|long_date }}</td></tr>
