@@ -420,3 +420,14 @@ Every page meets WCAG 2.2 at Level AA (ISO/IEC 40500:2025), in the application a
 | REQ-402 | Native elements are used first. Tables are `table` elements with `th scope="col"` and a name from a caption or the heading of their section. A filter that is a choice of views is a set of links with `aria-current`; a toggle uses `aria-pressed` or radio buttons. Tabs that change the page are links with `aria-current`, not tab widgets | WCAG 2.2 SC 4.1.2, 1.3.1 | Must | Test |
 | REQ-403 | A count that changes after filtering, such as rows shown of the total or the Marketplace results, is in a polite live region | WCAG 2.2 SC 4.1.3 | Must | Test |
 | REQ-404 | Every page is `lang="en-GB"` | WCAG 2.2 SC 3.1.1 | Must | Test |
+
+### Accessibility, Display Settings
+
+| ID | Requirement | Source | Priority | Verification |
+|---|---|---|---|---|
+| REQ-405 | Appearance is System, Light or Dark. System follows `prefers-color-scheme`. Dark keeps the `#0A0A0A` page background, so no text is pure white on pure black | Accessibility.md, Display Settings; WCAG 2.2 SC 1.4.3 | Must | Test |
+| REQ-406 | Contrast is System, Standard or High. System follows `prefers-contrast: more`. High raises muted text and every line to at least 7:1. Windows contrast themes (`forced-colors: active`) show state by lines and text, never by a fill alone | Accessibility.md, Display Settings; WCAG 2.2 SC 1.4.6 (AAA, adopted for High) | Must | Test |
+| REQ-407 | Text Size is Default, Large or Larger, scaling every font size and line height from the root, independent of browser zoom | Accessibility.md, Display Settings; WCAG 2.2 SC 1.4.4 | Must | Test |
+| REQ-408 | Density is Compact or Comfortable. Compact is one-line tables and targets of 24 pixels or more; Comfortable gives 44 pixel targets and taller rows, for gloves and tablets | Accessibility.md, Display Settings; WCAG 2.2 SC 2.5.8, 2.5.5 | Must | Test |
+| REQ-409 | Reduce Motion is System, On or Off. System follows `prefers-reduced-motion` | Accessibility.md, Display Settings; WCAG 2.2 SC 2.3.3 | Must | Test |
+| REQ-410 | Display settings belong to the person's account and apply to every page they open. Until a person chooses, the device decides. Choosing changes nothing for anyone else | Accessibility.md, Display Settings; Decisions.md, Accessibility | Must | Test |
