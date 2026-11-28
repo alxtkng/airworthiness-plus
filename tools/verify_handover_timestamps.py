@@ -385,8 +385,12 @@ def _read_crl(
         last_update, next_update = crl.last_update_utc, crl.next_update_utc
         if next_update is None or not last_update <= evaluated_at < next_update:
             raise TimestampError("Indeterminate", "TSA CRL does not cover the evaluation instant")
+        if not root.not_valid_before_utc <= last_update <= root.not_valid_after_utc:
+            raise TimestampError("Indeterminate", "TSA CRL issuance is outside issuer validity")
         effective_dates = {}
         for entry in crl:
+            if entry.revocation_date_utc > last_update:
+                raise TimestampError("Indeterminate", "TSA CRL lists a revocation after issuance")
             if entry.serial_number in effective_dates:
                 raise TimestampError(
                     "Indeterminate", "TSA CRL contains duplicate certificate entries"
@@ -450,6 +454,8 @@ def _revocation_status(
     verified_signers: list[_VerifiedSigner],
 ) -> dict[str, Any]:
     last_update, next_update, effective_dates = _read_crl(content, root, evaluated_at)
+    if any(last_update < signer.gen_time for signer in verified_signers):
+        raise TimestampError("Indeterminate", "TSA CRL was issued before trusted genTime")
     return {
         "status": "Verified",
         "crl_sha256": hashlib.sha256(content).hexdigest(),

@@ -184,6 +184,8 @@ def main() -> None:
         "--tsa-root", type=Path, help="TSA root certificate from the trust custodian"
     )
     parser.add_argument("--tsa-root-sha256", help="TSA root digest supplied independently")
+    parser.add_argument("--tsa-crl", type=Path, help="Complete issuer-signed TSA revocation list")
+    parser.add_argument("--tsa-evaluated-at", help="Explicit UTC TSA status evaluation instant")
     options = parser.parse_args()
     signing = (options.signatures, options.trust, options.trust_sha256)
     if any(value is not None for value in signing) and not all(signing):
@@ -194,6 +196,10 @@ def main() -> None:
             "Timestamped import requires signed evidence, --timestamps, --tsa-root "
             "and --tsa-root-sha256"
         )
+    if (options.tsa_crl or options.tsa_evaluated_at) and not all(timing):
+        parser.error("TSA status evaluation requires timestamped evidence")
+    if options.tsa_crl and not options.tsa_evaluated_at:
+        parser.error("A TSA CRL requires --tsa-evaluated-at")
     try:
         received = read_transfer(
             options.archive.read_bytes(),
@@ -223,6 +229,8 @@ def main() -> None:
                     options.timestamps.read_bytes(),
                     options.tsa_root.read_bytes(),
                     options.tsa_root_sha256,
+                    revocation_pem=options.tsa_crl.read_bytes() if options.tsa_crl else None,
+                    evaluated_at=options.tsa_evaluated_at,
                 )
             )
         imported = import_transfer(options.database, received)

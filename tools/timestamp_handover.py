@@ -1,6 +1,7 @@
 """Issue local RFC 3161 responses for the synthetic handover rehearsal."""
 
 import base64
+import os
 import secrets
 import shutil
 import subprocess
@@ -190,6 +191,7 @@ def _run(authority: SyntheticTimestampAuthority, directory: Path, *arguments: st
     result = subprocess.run(  # noqa: S603
         [authority._openssl, "ts", *arguments],
         cwd=directory,
+        env={"LC_ALL": "C", "OPENSSL_CONF": os.devnull},
         capture_output=True,
         timeout=15,
         check=False,
