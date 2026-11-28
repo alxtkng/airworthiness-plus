@@ -16,6 +16,7 @@ from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
+from airworthiness_plus.logistics import stores_views as stores
 from airworthiness_plus.logistics import views as logistics
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.modifications import views as modifications
@@ -85,6 +86,22 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path(
         "tools/<uuid:tool_id>/calibration/", calibration.place_order, name="place_calibration_order"
     ),
+    path("stores/locations/", stores.store_locations, name="store_locations"),
+    path("stores/locations/add/", stores.add_store_location, name="add_store_location"),
+    path(
+        "stores/dispositions/<uuid:disposition_id>/",
+        stores.stores_disposition,
+        name="stores_disposition",
+    ),
+    path(
+        "stores/dispositions/<uuid:disposition_id>/resolve/",
+        stores.resolve_stock,
+        name="resolve_stock",
+    ),
+    path("stores/dispositions/<uuid:disposition_id>/post/", stores.post_stock, name="post_stock"),
+    path("stores/lots/<uuid:lot_id>/move/", stores.move_stock, name="move_stock"),
+    path("stores/lots/<uuid:lot_id>/count/", stores.count_stock, name="count_stock"),
+    path("stores/counts/<uuid:count_id>/adjust/", stores.adjust_stock, name="adjust_stock"),
     path("tools/", tooling.tool_register, name="tool_register"),
     path("tools/add/", tooling.add_tool, name="add_tool"),
     path("tools/delegations/", tooling.tool_delegations, name="tool_delegations"),

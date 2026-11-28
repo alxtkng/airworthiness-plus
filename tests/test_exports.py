@@ -173,6 +173,53 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
         )
 
     assert goods_in.add(sample.ours, sample.lucy) == 5
+    with working_for(sample.ours.id, sample.lucy.id):
+        # Stores PR 1 (REQ-358): a location, a resolution, a posting, a count and movements.
+        from airworthiness_plus.logistics import stores
+        from airworthiness_plus.logistics.models import ReceivingDisposition
+
+        cable = ReceivingDisposition.objects.get(receipt__delivery_reference="RX-002")
+        moved_on = cable.disposition_on
+        stores_actor = Person.objects.get(user=sample.lucy)
+        bay = stores.add_location(
+            sample.ours,
+            name="[Serviceable Stores Bay]",
+            kind="Serviceable Stores",
+            holds_components=True,
+            holds_standard_parts=False,
+            holds_materials=False,
+            secure=True,
+        )
+        stores.resolve(
+            cable,
+            actor=stores_actor,
+            authority="[Stores Appointment]",
+            unit="Each",
+            part_number="[Cable Part Number]",
+            serial_number="[Cable Serial Number]",
+            location=bay,
+            shelf_life_basis="Not Applicable",
+            evidence="[Release Folder Reviewed]",
+            evidence_on=moved_on,
+        )
+        lot = stores.post(
+            cable, actor=stores_actor, authority="[Stores Appointment]", posted_on=moved_on
+        )
+        tally = stores.count(
+            lot,
+            location=bay,
+            counted_quantity="0",
+            counted_on=moved_on,
+            counter=stores_actor,
+            evidence="[Count Sheet]",
+        )
+        stores.adjust(
+            tally,
+            actor=stores_actor,
+            authority="[Adjustment Authority]",
+            evidence="[Variance Investigation]",
+            moved_on=moved_on,
+        )
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     reviews = add_sample_reviews(sample, fleet)

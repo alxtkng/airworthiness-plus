@@ -54,3 +54,14 @@ def days(value: object) -> str:
 def whole(value: object) -> str:
     """Write a whole number as 4,236, or nothing if there is none."""
     return formatting.whole(value) if isinstance(value, int) else ""
+
+
+@register.filter
+def stock_quantity(value: object) -> str:
+    """An exact Stores quantity, with no trailing zeros and never in exponent form."""
+    if value is None or value == "":
+        return ""
+    text = f"{Decimal(str(value)):f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text or "0"

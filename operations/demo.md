@@ -213,6 +213,10 @@ On a fictitious supplier record, choose **Record Subcontractor Assessment**. Ent
 
 Open **Logistics → Goods In** as Planning and Records. Select the ELT battery to see two recorded checks and its pending disposition. Compare the two G-DGHI trim cable receipts. One was returned and the replacement was accepted. The oil receipt shows the inspection and return on consecutive dates. Open the owner-supplied alternator to see its failed check and quarantine evidence. On the accepted trim cable receipt, open **View Stores Entry**. Check the recorded location and release evidence, then follow the link back to the receipt. Open **Logistics → Stores → Stock** to find the same entry. Use **Receive an Item** with a fictitious delivery-line reference to try recording a receipt, checks and a disposition.
 
+### Stores Posting and Locations
+
+Open **Logistics → Stores → Stock** as Read Only. The accepted trim cable RX-002 shows **Awaiting Stock Posting** with zero available, and its entry lists the blocking reasons: unit, identity, location and shelf-life basis. The alternator RX-004 is a quarantine hold with details to verify, and RX-003 and RX-005 are returns with nothing credited. As the Continuing Airworthiness Manager, open **Locations** and add a serviceable bay and a secure quarantine cage. On RX-002 choose **Resolve for Stock**, give a fictitious part and serial number, the bay and Not Applicable shelf life, then **Post to Stock**. The entry shows one intake and one available. Use **Move Stock**, **Record a Stock Count** and **Adjust From This Count** to see the count change nothing until the adjustment. Resolve and post RX-004 to the cage to see blocked custody with zero available.
+
 ## Tools and Equipment
 
 Open **Logistics → Tools and Equipment** in the fictitious Part-CAO organisation. Open 0201 and compare the accepted service evidence, six-month interval and 3 February 2027 deadline. Open 0210 for its condition restriction and missing service completion, then 0301 for the before-use instruction. The loaned balancing kit has a lender and no established control basis. Open 0142 to see the unresolved source evidence.

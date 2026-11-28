@@ -3,14 +3,17 @@
 {% block title %}Stores Stock{% endblock %}
 {% block content %}
 <h1>Stock</h1>
+<p><a href="{% url 'store_locations' %}">Stores Locations</a></p>
+<h2>Acceptances</h2>
 {% if entries %}
 <table data-search="always">
-<thead><tr><th scope="col">Item</th><th scope="col">Item Reference</th><th scope="col">Received Quantity</th><th scope="col">Stock Location</th><th scope="col">Moved On</th><th scope="col">Shelf Life To</th><th scope="col">Delivery Line</th></tr></thead>
+<thead><tr><th scope="col">Item</th><th scope="col">Item Reference</th><th scope="col">Received Quantity</th><th scope="col">Stock Location</th><th scope="col">Posting</th><th scope="col">On Hand</th><th scope="col">Available</th><th scope="col">Moved On</th><th scope="col">Shelf Life To</th><th scope="col">Delivery Line</th></tr></thead>
 <tbody>
-{% for entry in entries %}{% with decision=entry.disposition receipt=entry.disposition.receipt %}
+{% for line in entries %}{% with decision=line.decision receipt=line.receipt %}
 <tr>
-<td><a href="{% url 'stock_entry' entry.id %}">{{ receipt.item }}</a></td>
+<td><a href="{% url 'stock_entry' line.entry.id %}">{{ receipt.item }}</a></td>
 <td>{{ receipt.item_reference }}</td><td>{{ receipt.quantity }}</td><td>{{ decision.destination }}</td>
+<td>{{ line.state }}</td><td>{{ line.on_hand }}{% if line.unit %} {{ line.unit }}{% endif %}</td><td>{{ line.available }}</td>
 <td>{{ decision.disposition_on|long_date }}</td><td>{{ receipt.shelf_life_to|long_date }}</td>
 <td><a href="{% url 'goods_receipt' receipt.id %}">{{ receipt.delivery_reference }}</a></td>
 </tr>
@@ -18,4 +21,40 @@
 </tbody>
 </table>
 {% else %}<p>No Items Accepted into Stores</p>{% endif %}
+<h2>Stock by Location</h2>
+{% if positions %}
+<table>
+<thead><tr><th scope="col">Location</th><th scope="col">Kind</th><th scope="col">Delivery Line</th><th scope="col">Identity</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Shelf Life</th></tr></thead>
+<tbody>
+{% for one in positions %}
+<tr><td>{{ one.location.name }}</td><td>{{ one.location.kind }}</td>
+<td><a href="{% url 'stores_disposition' one.lot.disposition_id %}">{{ one.lot.disposition.receipt.delivery_reference }}</a></td>
+<td>{{ one.lot.part_number }}{% if one.lot.serial_number %} SN {{ one.lot.serial_number }}{% endif %}{% if one.lot.batch_number %} Batch {{ one.lot.batch_number }}{% endif %}{% if one.lot.specification %} {{ one.lot.specification }}{% endif %}</td>
+<td>{{ one.on_hand|stock_quantity }} {{ one.lot.unit }}</td><td>{{ one.reserved|stock_quantity }}</td><td>{{ one.available|stock_quantity }}</td><td>{{ one.shelf }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Stock Posted</p>{% endif %}
+<h2>Quarantine Holds</h2>
+{% if holds %}
+<table>
+<thead><tr><th scope="col">Delivery Line</th><th scope="col">Item</th><th scope="col">Hold</th><th scope="col">Recorded Location</th><th scope="col">Available</th></tr></thead>
+<tbody>
+{% for line in holds %}
+<tr><td><a href="{% url 'stores_disposition' line.decision.id %}">{{ line.receipt.delivery_reference }}</a></td><td>{{ line.receipt.item }}</td><td>{{ line.state }}</td><td>{{ line.decision.destination }}</td><td>0</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Quarantine Holds</p>{% endif %}
+<h2>Returned to Supplier</h2>
+{% if returns %}
+<table>
+<thead><tr><th scope="col">Delivery Line</th><th scope="col">Item</th><th scope="col">Recipient</th><th scope="col">Returned On</th><th scope="col">Credited</th></tr></thead>
+<tbody>
+{% for line in returns %}
+<tr><td><a href="{% url 'stores_disposition' line.decision.id %}">{{ line.receipt.delivery_reference }}</a></td><td>{{ line.receipt.item }}</td><td>{{ line.decision.destination }}</td><td>{{ line.decision.disposition_on|long_date }}</td><td>0</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Returns</p>{% endif %}
 {% endblock %}

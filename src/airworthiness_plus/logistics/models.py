@@ -1,5 +1,7 @@
 """Supplier identities and append-only evaluation evidence (REQ-340 to REQ-342)."""
 
+from decimal import Decimal
+
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Lower
@@ -241,3 +243,275 @@ class StockEntry(Record):
 
     class Meta:
         ordering = ["-disposition__disposition_on", "disposition__receipt__item", "id"]
+
+
+# Stores PR 1 (REQ-358): the location register and the disposition-keyed stock ledger.
+# The StockEntry above stays the link to an acceptance. Stock is credited only by a
+# StockPosting, once per immutable disposition, and every balance is derived from the
+# movements that follow it (assurance/phase-4-stores-handoff.md, approved 28 November 2026).
+
+STOCK_QUANTITY_LIMIT = 2147483647
+
+
+class StockUnit(models.TextChoices):
+    EACH = "Each", "Each"
+    LITRE = "Litre", "Litre"
+
+
+class LocationKind(models.TextChoices):
+    SERVICEABLE = "Serviceable Stores", "Serviceable Stores"
+    QUARANTINE = "Quarantine", "Quarantine"
+
+
+class StoreLocation(Record):
+    """A same-organisation Stores or quarantine location and the classes it may hold."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    name = models.CharField("Location", max_length=120)
+    kind = models.CharField("Kind", max_length=20, choices=LocationKind.choices)
+    holds_components = models.BooleanField("Holds Components", default=False)
+    holds_standard_parts = models.BooleanField("Holds Standard Parts", default=False)
+    holds_materials = models.BooleanField("Holds Materials", default=False)
+    secure = models.BooleanField("Secure and Segregated", default=False)
+    storage_conditions = models.CharField("Storage Conditions", max_length=200, blank=True)
+    active = models.BooleanField("Active", default=True)
+
+    class Meta:
+        ordering = ["kind", "name", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("name"), "organisation", name="store_location_name_once_per_organisation"
+            ),
+            models.CheckConstraint(
+                condition=~Q(name="")
+                & Q(kind__in=LocationKind.values)
+                & (
+                    Q(holds_components=True)
+                    | Q(holds_standard_parts=True)
+                    | Q(holds_materials=True)
+                )
+                & (~Q(kind=LocationKind.QUARANTINE) | Q(secure=True)),
+                name="store_location_has_kind_classes_and_secure_quarantine",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.kind})"
+
+    def accepts(self, classification: str) -> bool:
+        if classification in (ItemClass.UNSERVICEABLE, ItemClass.UNSALVAGEABLE):
+            return self.kind == LocationKind.QUARANTINE and self.holds_components
+        return {
+            ItemClass.SERVICEABLE: self.holds_components,
+            ItemClass.STANDARD: self.holds_standard_parts,
+            ItemClass.MATERIAL: self.holds_materials,
+        }.get(ItemClass(classification), False)
+
+
+class ShelfLifeBasis(models.TextChoices):
+    DATED = "Dated", "Dated"
+    NOT_APPLICABLE = "Not Applicable", "Not Applicable"
+
+
+class ShelfLifeRule(models.TextChoices):
+    THROUGH = "Valid Through the Date", "Valid Through the Date"
+    START_OF_DAY = "Expires at the Start of the Date", "Expires at the Start of the Date"
+
+
+class StockResolution(Record):
+    """A dated, evidenced structured reading of one disposition's unit, identity and location.
+
+    Corrections append a later resolution. The original receipt, disposition and StockEntry
+    are never changed. The quantity is always the received quantity in the resolved unit.
+    """
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    disposition = models.ForeignKey(
+        ReceivingDisposition, on_delete=models.PROTECT, related_name="stock_resolutions"
+    )
+    unit = models.CharField("Unit", max_length=10, choices=StockUnit.choices)
+    part_number = models.CharField("Part Number", max_length=100, blank=True)
+    serial_number = models.CharField("Serial Number", max_length=100, blank=True)
+    batch_number = models.CharField("Batch or Lot", max_length=100, blank=True)
+    specification = models.CharField("Standard or Specification", max_length=160, blank=True)
+    location = models.ForeignKey(
+        StoreLocation, on_delete=models.PROTECT, related_name="+", null=True, blank=True
+    )
+    shelf_life_basis = models.CharField(
+        "Shelf-Life Basis", max_length=20, choices=ShelfLifeBasis.choices, blank=True
+    )
+    shelf_life_to = models.DateField("Shelf Life To", null=True, blank=True)
+    shelf_life_rule = models.CharField(
+        "Shelf-Life Boundary", max_length=40, choices=ShelfLifeRule.choices, blank=True
+    )
+    evidence = models.TextField("Original Evidence Relied On", max_length=1000)
+    evidence_on = models.DateField("Assessed On")
+    recorded_by = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    recorded_by_name = models.CharField("Recorded By at Recording", max_length=200)
+    authority = models.CharField("Authority Relied On", max_length=200)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(unit__in=StockUnit.values)
+                & ~Q(evidence="")
+                & ~Q(authority="")
+                & (
+                    Q(shelf_life_basis="", shelf_life_to__isnull=True, shelf_life_rule="")
+                    | Q(
+                        shelf_life_basis=ShelfLifeBasis.NOT_APPLICABLE,
+                        shelf_life_to__isnull=True,
+                        shelf_life_rule="",
+                    )
+                    | (
+                        Q(shelf_life_basis=ShelfLifeBasis.DATED, shelf_life_to__isnull=False)
+                        & Q(shelf_life_rule__in=ShelfLifeRule.values)
+                    )
+                )
+                & (Q(serial_number="") | Q(unit=StockUnit.EACH)),
+                name="stock_resolution_is_evidenced_and_consistent",
+            ),
+        ]
+
+
+class StockPosting(Record):
+    """The once-only stock posting of one disposition, and the lot its movements follow."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    disposition = models.OneToOneField(
+        ReceivingDisposition, on_delete=models.PROTECT, related_name="stock_posting"
+    )
+    resolution = models.ForeignKey(StockResolution, on_delete=models.PROTECT, related_name="+")
+    held = models.BooleanField("Blocked Custody")
+    unit = models.CharField("Unit", max_length=10, choices=StockUnit.choices)
+    quantity = models.DecimalField("Posted Quantity", max_digits=13, decimal_places=3)
+    part_number = models.CharField("Part Number", max_length=100, blank=True)
+    serial_number = models.CharField("Serial Number", max_length=100, blank=True)
+    batch_number = models.CharField("Batch or Lot", max_length=100, blank=True)
+    specification = models.CharField("Standard or Specification", max_length=160, blank=True)
+    location = models.ForeignKey(StoreLocation, on_delete=models.PROTECT, related_name="+")
+    location_name = models.CharField("Location at Posting", max_length=120)
+    location_kind = models.CharField("Location Kind at Posting", max_length=20)
+    shelf_life_basis = models.CharField("Shelf-Life Basis", max_length=20)
+    shelf_life_to = models.DateField("Shelf Life To", null=True, blank=True)
+    shelf_life_rule = models.CharField("Shelf-Life Boundary", max_length=40, blank=True)
+    physical_on = models.DateField("Physically Moved On")
+    posted_on = models.DateField("Posted On")
+    actor = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    actor_name = models.CharField("Posted By at Posting", max_length=200)
+    authority = models.CharField("Authority Relied On", max_length=200)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-physical_on", "-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(quantity__gt=0, quantity__lte=STOCK_QUANTITY_LIMIT)
+                & Q(unit__in=StockUnit.values)
+                & ~Q(authority="")
+                & Q(posted_on__gte=F("physical_on"))
+                & (Q(serial_number="") | Q(unit=StockUnit.EACH, quantity=1)),
+                name="stock_posting_has_quantity_unit_and_authority",
+            ),
+        ]
+
+
+class MovementKind(models.TextChoices):
+    INTAKE = "Intake", "Intake"
+    TRANSFER = "Transfer", "Transfer"
+    ADJUSTMENT = "Adjustment", "Adjustment"
+
+
+class StockCount(Record):
+    """A physical count of one lot at one location. It changes no balance by itself."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    lot = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="counts")
+    location = models.ForeignKey(StoreLocation, on_delete=models.PROTECT, related_name="+")
+    counted_quantity = models.DecimalField("Counted Quantity", max_digits=13, decimal_places=3)
+    ledger_quantity = models.DecimalField("Ledger On Hand", max_digits=13, decimal_places=3)
+    counted_on = models.DateField("Counted On")
+    counter = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    counter_name = models.CharField("Counted By at Recording", max_length=200)
+    evidence = models.TextField("Count Evidence", max_length=1000)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-counted_on", "-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(counted_quantity__gte=0, counted_quantity__lte=STOCK_QUANTITY_LIMIT)
+                & ~Q(evidence=""),
+                name="stock_count_has_quantity_and_evidence",
+            ),
+        ]
+
+    @property
+    def variance(self) -> Decimal:
+        return Decimal(self.counted_quantity) - Decimal(self.ledger_quantity)
+
+
+class StockMovement(Record):
+    """One movement of a lot. Intake opens it; transfers conserve it; adjustments are authorised."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    lot = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="movements")
+    kind = models.CharField("Movement", max_length=12, choices=MovementKind.choices)
+    from_location = models.ForeignKey(
+        StoreLocation, on_delete=models.PROTECT, related_name="+", null=True, blank=True
+    )
+    to_location = models.ForeignKey(
+        StoreLocation, on_delete=models.PROTECT, related_name="+", null=True, blank=True
+    )
+    quantity = models.DecimalField("Quantity", max_digits=13, decimal_places=3)
+    moved_on = models.DateField("Moved On")
+    count = models.OneToOneField(
+        StockCount, on_delete=models.PROTECT, related_name="adjustment", null=True, blank=True
+    )
+    actor = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    actor_name = models.CharField("Moved By at Recording", max_length=200)
+    authority = models.CharField("Authority Relied On", max_length=200)
+    evidence = models.TextField("Movement Evidence", max_length=1000)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["moved_on", "recorded_at", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(quantity__gt=0, quantity__lte=STOCK_QUANTITY_LIMIT)
+                & ~Q(authority="")
+                & ~Q(evidence="")
+                & (
+                    Q(
+                        kind=MovementKind.INTAKE,
+                        from_location__isnull=True,
+                        to_location__isnull=False,
+                        count__isnull=True,
+                    )
+                    | (
+                        Q(
+                            kind=MovementKind.TRANSFER,
+                            from_location__isnull=False,
+                            to_location__isnull=False,
+                            count__isnull=True,
+                        )
+                        & ~Q(from_location=F("to_location"))
+                    )
+                    | (
+                        Q(kind=MovementKind.ADJUSTMENT, count__isnull=False)
+                        & (
+                            Q(from_location__isnull=True, to_location__isnull=False)
+                            | Q(from_location__isnull=False, to_location__isnull=True)
+                        )
+                    )
+                ),
+                name="stock_movement_has_a_valid_shape",
+            ),
+            models.UniqueConstraint(
+                "lot",
+                condition=Q(kind=MovementKind.INTAKE),
+                name="stock_lot_has_one_intake",
+            ),
+        ]
