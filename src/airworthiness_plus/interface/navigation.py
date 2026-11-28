@@ -619,7 +619,7 @@ def navigation(request: HttpRequest) -> dict[str, object]:
     """Give every page its sidebar, its breadcrumb and its section tabs."""
     user = request.user
     if not isinstance(user, User):
-        return {}
+        return {"page_title": "Sign In"}
     match = request.resolver_match
     address = match.url_name if match and match.url_name else ""
     found = place(address)
@@ -638,4 +638,8 @@ def navigation(request: HttpRequest) -> dict[str, object]:
     # One tab is no choice of views, so it is not shown.
     if found and len(found[1].tabs) > 1 and address in {tab.address for tab in found[1].tabs}:
         tabs = [(tab, tab.address == address) for tab in found[1].tabs]
-    return {"sidebar": sidebar, "place": found, "section_tabs": tabs}
+    # The title of a page that names none of its own: its view, or its section
+    # (WCAG 2.2 SC 2.4.2, REQ-393). A page with its own title block overrides it.
+    current = [tab.label for tab, chosen in tabs if chosen]
+    title = current[0] if current else found[1].label if found else "Your Account"
+    return {"sidebar": sidebar, "place": found, "section_tabs": tabs, "page_title": title}
