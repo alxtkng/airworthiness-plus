@@ -3,10 +3,24 @@
 {% block title %}Maintenance Data{% endblock %}
 {% block content %}
 <h1 class="visually-hidden">Maintenance Data</h1>
-<p><a href="{% url 'add_data' %}">Record Maintenance Data</a></p>
-<table>
+{% if may_record %}
+<div class="page-actions"><a class="button primary" href="{% url 'add_data' %}">Add Maintenance Data</a></div>
+{% endif %}
+<ul class="summary-strip" role="list" aria-label="Maintenance Data Summary">
+<li><strong>{{ held_and_current }}</strong> Held and Current</li>
+<li><strong>{{ checks_needed }}</strong> Amendment to Check</li>
+<li><strong>{{ not_held }}</strong> Not Currently Held</li>
+</ul>
+<h2 id="maintenance-data-register">Data Register</h2>
+{% if lines %}
+<div class="table-scroll" role="region" aria-labelledby="maintenance-data-register" tabindex="0">
+<table class="maintenance-data-register" aria-labelledby="maintenance-data-register">
 <thead>
-<tr><th>Title</th><th data-detail>Author</th><th data-detail>Kind</th><th data-detail>Applies To</th><th>Revision</th><th data-detail>Revision Date</th><th>Holding</th><th data-detail>Special Attention</th><th data-detail>Amendment Status</th><th data-detail>Last Checked</th><th>Next Amendment Check By</th><th>Status</th></tr>
+<tr>
+<th class="data-title">Maintenance Data</th><th class="data-author">Author</th><th data-detail>Kind</th><th class="data-applicability">Applies To</th><th class="data-revision">Revision</th>
+<th data-detail>Revision Date</th><th data-detail>Holding</th><th data-detail>Special Attention</th><th data-detail>Amendment Status</th>
+<th class="data-check-date">Last Checked</th><th data-detail>Checked By</th><th class="data-check-date">Next Check By</th><th class="data-status">Status</th>
+</tr>
 </thead>
 <tbody>
 {% for line in lines %}
@@ -20,11 +34,16 @@
 <td>{{ line.state }}{% if line.data_set.no_longer_held_on %}, From {{ line.data_set.no_longer_held_on|long_date }}{% endif %}</td>
 <td>{% if line.data_set.mandatory %}Mandatory Instructions or Airworthiness Limitations{% endif %}</td>
 <td>{{ line.data_set.amendment_service }}{% if line.data_set.customer_provided %}Provided by {{ line.data_set.provided_by }}, {{ line.data_set.evidence }}, {{ line.data_set.evidence_dated|long_date }}{% endif %}</td>
-<td>{% if line.last_check %}{{ line.last_check.checked_on|long_date }}, {{ line.last_check.checked_by.full_name }}{% endif %}</td>
+<td>{{ line.last_check.checked_on|long_date }}</td>
+<td>{{ line.last_check.checked_by.full_name }}</td>
 <td>{{ line.data_set.check_due|long_date }}</td>
-<td>{{ line.flag.value|status }}</td>
+<td>{% if line.flag.value %}{{ line.flag.value|status }}{% elif line.state == "No Amendment Check Recorded" %}Check Needed{% else %}{{ line.state }}{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
+</div>
+{% else %}
+<p>No Maintenance Data Recorded</p>
+{% endif %}
 {% endblock %}

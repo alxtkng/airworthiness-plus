@@ -118,7 +118,8 @@ def test_each_set_shows_its_author_revision_and_last_check(
         f"<td>{GROB}</td>",
         "<td>[Revision]</td>",
         "<td>1 March 2026</td>",
-        "<td>2 November 2026, [Planning and Records Name]</td>",
+        "<td>2 November 2026</td>",
+        "<td>[Planning and Records Name]</td>",
         "<td>20 November 2026</td>",
         "<td>Civil Aviation Authority Requirement</td>",
         "<td>Mandatory Instructions or Airworthiness Limitations</td>",
@@ -131,6 +132,30 @@ def test_each_set_shows_its_author_revision_and_last_check(
         "Component Manufacturer's Instructions",
         "Modified Maintenance Instructions",
     }
+
+
+def test_register_summary_and_action_follow_held_records_and_role(
+    sample: Sample, data: dict[str, DataSet]
+) -> None:
+    with working_for(sample.ours.id, sample.planner.id):
+        services.record_check(
+            data["grob"],
+            checked_by=sample.planner,
+            checked_on=TODAY,
+            result="No Amendment",
+            next_due=date(2027, 1, 18),
+        )
+        services.end_holding(data["bxyz"], TODAY)
+
+    reader = page(signed_in(sample.reader), "/maintenance-data/")
+    for item in (
+        "<li><strong>1</strong> Held and Current</li>",
+        "<li><strong>1</strong> Amendment to Check</li>",
+        "<li><strong>2</strong> Not Currently Held</li>",
+    ):
+        assert item in reader
+    assert "Add Maintenance Data" not in reader
+    assert "Add Maintenance Data" in page(signed_in(sample.planner), "/maintenance-data/")
 
 
 def test_grob_manual_amendment_check_is_due_by_20_november(

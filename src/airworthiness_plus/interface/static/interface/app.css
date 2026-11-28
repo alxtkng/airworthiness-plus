@@ -130,9 +130,29 @@ a {
 }
 
 .sidebar .organisation {
-  margin: 0;
-  padding: var(--space-2);
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  line-height: 16px;
+}
+
+.sidebar .organisation-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--space-8);
+  height: var(--space-8);
+  border-radius: var(--material-base);
+  background: var(--gray-1000);
+  color: var(--background-100);
+  font-weight: 600;
+}
+
+.sidebar .organisation p {
+  margin: var(--space-1) 0 0;
+  color: var(--gray-900);
+  font-size: 13px;
 }
 
 .sidebar h2 {
@@ -259,6 +279,61 @@ main.alone {
   margin: 0 auto;
   padding-top: var(--space-10);
 }
+
+/* Register pages */
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+}
+
+.summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-10);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  list-style: none;
+  background: var(--background-200);
+  border-radius: var(--material-base);
+  color: var(--gray-900);
+}
+
+.summary-strip strong {
+  color: var(--gray-1000);
+  font-weight: 600;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  padding: var(--space-1);
+  margin: calc(-1 * var(--space-1));
+}
+
+.table-scroll table {
+  margin: 0;
+}
+
+@media screen {
+  .js .maintenance-data-register {
+    min-width: 1040px;
+  }
+}
+
+.js .maintenance-data-register th:not(:first-child),
+.js .maintenance-data-register tr:not(.detail) td:not(.disclosure) {
+  padding-inline: var(--space-3);
+}
+
+.js .maintenance-data-register .data-title { width: 24%; }
+.js .maintenance-data-register .data-author { width: 9%; }
+.js .maintenance-data-register .data-applicability { width: 13%; }
+.js .maintenance-data-register .data-revision { width: 8%; }
+.js .maintenance-data-register .data-check-date { width: 14%; }
+.js .maintenance-data-register .data-status { width: 13%; }
 
 /* Type */
 
@@ -608,11 +683,19 @@ button,
   cursor: pointer;
 }
 
-button:hover {
+button:hover,
+a.button:hover {
   border-color: var(--gray-500);
 }
 
-button.primary {
+a.button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+button.primary,
+a.button.primary {
   border-color: var(--gray-1000);
   background: var(--gray-1000);
   color: var(--background-100);
