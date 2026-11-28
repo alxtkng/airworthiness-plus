@@ -72,18 +72,26 @@ def test_programme_review_and_recorded_release(
         assert definition(page, "Last Reviewed") == "18 November 2026"
         page.get_by_role("link", name="Record Work Done", exact=True).click()
         work = "Test inspection recorded without release reference"
+        values = {
+            "description": work,
+            "dated": "2026-11-17",
+            "hours": "6411.0",
+            "cycles": "0",
+            "instruction_reference": "Synthetic inspection instruction AW-I-05",
+            "instruction_revision": "2",
+            "completion_measurements": "Clearance 1.2 mm",
+        }
         save(
             page,
             "Record Work",
-            {
-                "description": work,
-                "dated": "2026-11-17",
-                "hours": "6411.0",
-                "cycles": "0",
-            },
-            work,
+            {**values, "instruction_revision": ""},
+            "Give the Issued Instruction, Its Revision and the Completion Measurements With Units",
         )
+        save(page, "Record Work", values, work)
+        page.reload()
         row = page.locator("main tr:not(.detail)").filter(has_text=work)
+        expect(row).to_contain_text("Synthetic inspection instruction AW-I-05, Revision 2")
+        expect(row).to_contain_text("Clearance 1.2 mm")
         reveal(row).get_by_role("link", name="Record Certificate of Release to Service").click()
         save(
             page,

@@ -162,7 +162,7 @@
 {% for line in work %}
 <tr>
 <td>{{ line.work.dated|long_date }}</td>
-<td>{{ line.work.description }}</td>
+<td>{{ line.work.description }}{% if line.work.instruction_reference %}<br>{{ line.work.instruction_reference }}, Revision {{ line.work.instruction_revision }}<br>{{ line.work.completion_measurements }}{% endif %}</td>
 <td class="number">{{ line.work.hours|hours }}</td>
 <td>{% if line.work.release_reference %}{% if line.work.certificate %}<a href="{% url 'release_certificate' line.work.certificate.id %}">{{ line.work.release_reference }}</a>{% elif line.work.work_card.package.release_id %}<a href="{% url 'release_certificate' line.work.work_card.package.release_id %}">{{ line.work.release_reference }}</a>{% else %}{{ line.work.release_reference }}{% endif %}, Recorded {{ line.work.release_recorded_on|long_date }}{% if line.release_late %}, After the 30 Days{% endif %}{% else %}To Be Recorded by {{ line.release_deadline|long_date }}, {{ line.release_flag.value }}{% endif %}
 {% if may_record_release and not line.work.certificate and not line.work.work_card.package.release_id %}<a href="{% url 'record_release_certificate' line.work.id %}">Record Certificate of Release to Service</a>{% endif %}</td>

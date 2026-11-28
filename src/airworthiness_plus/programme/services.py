@@ -231,6 +231,9 @@ def record_work(
     by_pilot_owner: bool = False,
     pilot_owner_told_on: date | None = None,
     historical: bool = False,
+    instruction_reference: str = "",
+    instruction_revision: str = "",
+    completion_measurements: str = "",
 ) -> WorkDone:
     """Record work done: a task of the programme, or other maintenance (REQ-050).
 
@@ -241,6 +244,14 @@ def record_work(
     today = aircraft_services.today()
     if dated > today:
         raise RefusedError("Work Cannot Be Completed After Today")
+    evidence = tuple(
+        value.strip()
+        for value in (instruction_reference, instruction_revision, completion_measurements)
+    )
+    if any(evidence) and not all(evidence):
+        raise RefusedError(
+            "Give the Issued Instruction, Its Revision and the Completion Measurements With Units"
+        )
     if performed_by is not None:
         if performed_by.organisation_id != aircraft.organisation_id:
             raise RefusedError("The Person Must Belong to This Organisation")
@@ -268,6 +279,9 @@ def record_work(
         dated=dated,
         hours=hours,
         cycles=cycles,
+        instruction_reference=evidence[0],
+        instruction_revision=evidence[1],
+        completion_measurements=evidence[2],
         release_reference=release_reference,
         release_recorded_on=release_recorded_on if release_reference else None,
         by_pilot_owner=by_pilot_owner,

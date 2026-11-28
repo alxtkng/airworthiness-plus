@@ -326,7 +326,11 @@ def test_every_table_is_under_the_record_rules() -> None:
             "release_work_package_snapshot",
         },
         "releases_historicalreleaseevidence": {"historical_release_period"},
-        "programme_workdone": {"release_entry_fixed", "work_performer"},
+        "programme_workdone": {
+            "release_entry_fixed",
+            "work_performer",
+            "preserve_completion_evidence",
+        },
         # A fitting keeps what it said, and its removal is added once (REQ-235).
         "components_component": {"review_fitting_rules"},
         "components_installation": {"installation_rules", "fitting_usage_rules"},

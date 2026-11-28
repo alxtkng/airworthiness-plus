@@ -1148,13 +1148,16 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
             source="Synthetic inspection instructions, revision 1",
             interval=Interval(days=30),
         )
-        programme_services.record_work(
+        completion = programme_services.record_work(
             aircraft,
             task=inspection,
             description="Synthetic inspection completed. Airframe reading 11206.8 hours.",
             dated=TODAY - timedelta(days=10),
             hours=D("11206.8"),
             cycles=0,
+            instruction_reference="Synthetic instruction AW-I-05",
+            instruction_revision="2",
+            completion_measurements="Clearance 1.2 mm",
         )
         original = aircraft_services.enter_utilisation(counter, Reading(TODAY, D("11208.6"), 0))
         before = build(sample.ours, by=sample.planner, aircraft=aircraft)
@@ -1260,8 +1263,48 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
     assert not database.exists()
     results["missing_trust"] = without_trust.stderr.strip().splitlines()[-1]
 
+    comparison = sender / "comparison.json"
+    report = receiver / "reconciliation.txt"
+    expected = {
+        "format": "Airworthiness+ Aircraft Handover Reconciliation",
+        "version": 1,
+        "records": {
+            "source_organisation_id": identity["organisation_id"],
+            "aircraft_id": identity["aircraft_id"],
+            "defect_id": str(defect.id),
+            "defect_limit_on": forecast[
+                "Deferred Defect Limit, Right Headset Socket Crackle"
+            ].isoformat(),
+            "inspection_id": str(inspection.id),
+            "inspection_source": inspection.source,
+            "completion_id": str(completion.id),
+            "instruction_reference": "Synthetic instruction AW-I-05",
+            "instruction_revision": "2",
+            "completion_measurements": "Clearance 1.2 mm",
+            "next_due": forecast[inspection_title].isoformat(),
+            "original_reading_id": str(original.id),
+            "corrected_reading_id": str(correction.id),
+            "original_hours": 11208.6,
+            "corrected_hours": 11206.8,
+        },
+    }
+    comparison_command = [*command, "--compare", str(comparison), "--report", str(report)]
+    comparison.write_bytes(_trial_json({**expected, "version": 2}))
+    unsupported_comparison = run(comparison_command)
+    assert unsupported_comparison.returncode == 1
+    assert "Unsupported reconciliation format or version" in unsupported_comparison.stderr
+    assert not database.exists()
+    inconsistent = deepcopy(expected)
+    inconsistent["records"]["next_due"] = "2026-12-31"
+    comparison.write_bytes(_trial_json(inconsistent))
+    changed_due = run(comparison_command)
+    assert changed_due.returncode == 1
+    assert "Reconciliation differs for next_due" in changed_due.stderr
+    assert not database.exists()
+    comparison.write_bytes(_trial_json(expected))
+
     began = perf_counter()
-    first = run(command)
+    first = run(comparison_command)
     elapsed = perf_counter() - began
     assert first.returncode == 0, first.stderr
     evidence = json.loads(first.stdout)
@@ -1283,6 +1326,12 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
     )
     assert date.fromisoformat(evidence["next_due"]) == forecast[inspection_title]
     (receiver / "verdict.json").write_bytes(_trial_json(evidence))
+    report_text = report.read_text()
+    assert "Imported in" in report_text
+    assert "Rekeyed records: 0" in report_text
+    assert "Missing or changed mapped fields: 0" in report_text
+    assert "Completion measurements: Clearance 1.2 mm" in report_text
+    assert "Operational maintenance authority: Unverified" in report_text
 
     replay = run(command)
     assert replay.returncode == 0, replay.stderr

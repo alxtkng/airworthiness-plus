@@ -8,6 +8,7 @@ import sqlite3
 from contextlib import closing
 from datetime import date, timedelta
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 from zipfile import BadZipFile, ZipFile
 
@@ -16,6 +17,10 @@ from airworthiness_plus.exports.verify import verify
 
 class TransferError(ValueError):
     """The receiver could not reconcile this aircraft transfer."""
+
+
+MAPPING = "Airworthiness+ Aircraft Handover Reconciliation"
+MAPPING_VERSION = 1
 
 
 def _records(archive: ZipFile, table: str, organisation_id: str) -> dict[str, dict[str, Any]]:
@@ -165,6 +170,73 @@ def import_transfer(database: Path, received: dict[str, Any]) -> bool:
         return False
 
 
+def reconcile(received: dict[str, Any], comparison: dict[str, Any]) -> dict[str, Any]:
+    """Require the sender's separately recorded comparison for each trial record."""
+    if comparison.get("format") != MAPPING or type(comparison.get("version")) is not int:
+        raise TransferError("Unsupported reconciliation format or version")
+    if comparison["version"] != MAPPING_VERSION:
+        raise TransferError("Unsupported reconciliation format or version")
+    completion = received["last_completion"]
+    if not all(
+        completion.get(key)
+        for key in ("instruction_reference", "instruction_revision", "completion_measurements")
+    ):
+        raise TransferError("The inspection lacks its issued instruction, revision or measurements")
+    actual = {
+        "source_organisation_id": received["source_organisation_id"],
+        "aircraft_id": received["aircraft"]["id"],
+        "defect_id": received["defect"]["id"],
+        "defect_limit_on": received["defect"]["limit_on"],
+        "inspection_id": received["inspection"]["id"],
+        "inspection_source": received["inspection"]["source"],
+        "completion_id": completion["id"],
+        "instruction_reference": completion["instruction_reference"],
+        "instruction_revision": completion["instruction_revision"],
+        "completion_measurements": completion["completion_measurements"],
+        "next_due": received["next_due"],
+        "original_reading_id": received["original_reading"]["id"],
+        "corrected_reading_id": received["corrected_reading"]["id"],
+        "original_hours": received["original_reading"]["hours"],
+        "corrected_hours": received["corrected_reading"]["hours"],
+    }
+    expected = comparison.get("records")
+    if not isinstance(expected, dict) or actual.keys() != expected.keys():
+        raise TransferError("The reconciliation requires a comparison for every mapped field")
+    changed = [field for field, value in actual.items() if value != expected[field]]
+    if changed:
+        raise TransferError(f"Reconciliation differs for {', '.join(changed)}")
+    return actual
+
+
+def comparison_report(
+    received: dict[str, Any], comparison: dict[str, Any], imported: bool, elapsed: float
+) -> str:
+    """Show receivers which checks ran and what they established."""
+    lines = [
+        f"{MAPPING}, version {MAPPING_VERSION}",
+        f"Aircraft: {received['aircraft']['registration']}",
+        f"Manifest SHA-256: {received['manifest_sha256']}",
+        f"Receiver: {'Imported' if imported else 'Replayed'} in {elapsed:.3f} seconds",
+        "Rekeyed records: 0",
+        "Missing or changed mapped fields: 0",
+        "Content integrity: Archive consistency and supplied manifest digest verified",
+        f"Issuer trust: {received['issuer_trust']}",
+        f"Reading evidence: {received['signature']}",
+        "Operational maintenance authority: Unverified",
+        "Exact signing time: Unverified",
+    ]
+    for result in ("maintenance_authorisation", "timestamp_assurance", "renewal_chain_status"):
+        if result in received:
+            lines.append(f"{result.replace('_', ' ').capitalize()}: {received[result]}")
+    if "original_timestamp_evidence" in received:
+        lines.append(received["original_timestamp_evidence"]["timestamp_assurance"])
+    lines.extend(["", "Matched sender comparison"])
+    lines.extend(
+        f"{key.replace('_', ' ').capitalize()}: {value}" for key, value in comparison.items()
+    )
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
@@ -174,6 +246,8 @@ def main() -> None:
     parser.add_argument("--defect-id", required=True)
     parser.add_argument("--inspection-id", required=True)
     parser.add_argument("--correction-id", required=True)
+    parser.add_argument("--compare", type=Path, help="Separately recorded trial comparison JSON")
+    parser.add_argument("--report", type=Path, help="Write a human-readable reconciliation report")
     parser.add_argument("--signatures", type=Path, help="Detached synthetic reading signatures")
     parser.add_argument("--trust", type=Path, help="Trust file supplied by the trial custodian")
     parser.add_argument(
@@ -191,6 +265,8 @@ def main() -> None:
     parser.add_argument("--renewal-tsa-root-sha256", help="Independently supplied renewal root pin")
     parser.add_argument("--renewal-tsa-crl", type=Path, help="Complete renewal TSA revocation list")
     options = parser.parse_args()
+    if options.report and not options.compare:
+        parser.error("A reconciliation report requires --compare")
     signing = (options.signatures, options.trust, options.trust_sha256)
     if any(value is not None for value in signing) and not all(signing):
         parser.error("Signed import requires --signatures, --trust and --trust-sha256")
@@ -217,6 +293,7 @@ def main() -> None:
             "Renewal verification requires both timestamp envelopes, both TSA roots and pins, "
             "the renewal TSA CRL and --tsa-evaluated-at"
         )
+    started = perf_counter()
     try:
         received = read_transfer(
             options.archive.read_bytes(),
@@ -267,7 +344,18 @@ def main() -> None:
                     evaluated_at=options.tsa_evaluated_at,
                 )
             )
+        comparison = None
+        if options.compare:
+            supplied = json.loads(options.compare.read_bytes())
+            if not isinstance(supplied, dict):
+                raise TransferError("Expected a reconciliation document")
+            comparison = reconcile(received, supplied)
         imported = import_transfer(options.database, received)
+        if options.report and comparison is not None:
+            options.report.write_text(
+                comparison_report(received, comparison, imported, perf_counter() - started),
+                encoding="utf-8",
+            )
     except (OSError, sqlite3.Error, ValueError) as error:
         parser.exit(1, f"{error}\n")
     print(json.dumps({"imported": imported, **received}, indent=2))

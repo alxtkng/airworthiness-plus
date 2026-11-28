@@ -244,6 +244,9 @@ def record_work(request: HttpRequest, aircraft_id: uuid.UUID) -> HttpResponse:
                 performed_by=data["performed_by"],
                 by_pilot_owner=data["by_pilot_owner"],
                 pilot_owner_told_on=data["pilot_owner_told_on"],
+                instruction_reference=data["instruction_reference"],
+                instruction_revision=data["instruction_revision"],
+                completion_measurements=data["completion_measurements"],
             )
         except services.RefusedError as error:
             form.add_error(None, str(error))
