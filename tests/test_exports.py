@@ -9,6 +9,7 @@ import hashlib
 import importlib
 import io
 import json
+import os
 import secrets
 import shutil
 import sqlite3
@@ -1229,7 +1230,7 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
     def run(arguments: list[str]) -> subprocess.CompletedProcess[str]:
         return subprocess.run(  # noqa: S603  fixed Python receiver and synthetic file inputs
             arguments,
-            env={"PYTHONPATH": str(project / "src")},
+            env={"PYTHONPATH": str(project / "src"), "PATH": os.environ.get("PATH", os.defpath)},
             capture_output=True,
             check=False,
             text=True,
