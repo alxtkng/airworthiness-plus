@@ -825,6 +825,12 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
     padding-left: var(--space-4);
     padding-right: var(--space-4);
   }
+
+  /* A one-line table keeps columns wide enough to read and to tap, and scrolls
+     inside its own box rather than squeezing (SC 1.4.10, 2.5.8; REQ-386). */
+  .js table.compact {
+    min-width: 640px;
+  }
 }
 
 /* Comfortable density: every control and link that is a target reaches 44 pixels. */
