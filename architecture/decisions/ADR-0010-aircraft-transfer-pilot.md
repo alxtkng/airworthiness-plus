@@ -41,3 +41,19 @@ PYTHONPATH=src uv run python tools/receive_handover.py transfer.zip receiver.sql
 ```
 
 A successful result identifies the correction as unsigned and issuer trust as indeterminate. The pilot exercises independent storage and a calendar recomputation. Operational import, separately trusted signatures, authority at signing and Spec 2500 mapping are pending.
+
+## Signed reading rehearsal
+
+The same receiver also takes `--signatures`, `--trust` and `--trust-sha256` as a complete set. Verification precedes the SQLite transaction. Use a receiver database for the exercise whose incoming evidence is signed. A prior unsigned snapshot requires reconciliation before the receiver will accept a different snapshot for the same aircraft.
+
+The signature envelope uses format `Airworthiness+ Synthetic Reading Signatures`, integer version 1, and the two detached claim/signature pairs. Both claims use purpose `airworthiness-plus:synthetic-utilisation-reading:v1`. The original has no predecessor and the correction binds the original claim hash. The supporting trust file uses format `Airworthiness+ Synthetic Reading Trust`, integer version 1, and lists of enrolled keys and separately scoped authorities. The receiver checks both lists against the claimed times with exclusive validity end dates and reported status coverage. The public key and signature use padded Base64. The synthetic custody channel is independent of the sender's archive inputs. [Trial and results](../../assurance/gejkl-signed-handover.md)
+
+```sh
+PYTHONPATH=src uv run python tools/receive_handover.py sender/02-corrected.zip receiver/receiver.sqlite \
+  --manifest-digest "$manifest_digest" --aircraft-id "$aircraft_id" \
+  --defect-id "$defect_id" --inspection-id "$inspection_id" --correction-id "$correction_id" \
+  --signatures sender/02-signatures.json --trust custodian/trust.json \
+  --trust-sha256 "$trust_pin"
+```
+
+The archive values and identifiers come from the sender route. Supply the trust pin from the separate custody route. Record versions and the scoped synthetic grant can be verified offline. Regulated issuance, operational status infrastructure and a trusted signature timestamp remain open.

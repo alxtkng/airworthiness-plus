@@ -101,3 +101,5 @@ The receiver displays the signed record status as unsigned and issuer trust as
 indeterminate. The integrated trial still requires independently trusted
 signatures on both the original and corrected record, verification of relevant
 maintenance authority and a signed transfer exercise.
+
+The subsequent [signed G-EJKL trial](gejkl-signed-handover.md) verifies the original and correction offline against separately supplied synthetic trust. It preserves this unsigned regression and records trusted signing time and operational authority as open.
