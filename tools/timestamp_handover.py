@@ -1,0 +1,196 @@
+"""Issue local RFC 3161 responses for the synthetic handover rehearsal."""
+
+import secrets
+import shutil
+import subprocess
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
+POLICY_OID = "1.3.6.1.4.1.32473.1.1"
+
+_CONFIGURATION = f"""\
+[tsa]
+default_tsa = rehearsal
+[rehearsal]
+serial = serial
+crypto_device = builtin
+signer_cert = tsa.pem
+certs = root.pem
+signer_key = tsa.key
+signer_digest = sha256
+default_policy = {POLICY_OID}
+digests = sha256
+ordering = no
+tsa_name = yes
+ess_cert_id_chain = no
+"""
+
+
+@dataclass(frozen=True)
+class SyntheticTimestampAuthority:
+    """A rehearsal trust anchor and its dedicated, ephemeral timestamp signer."""
+
+    root_pem: bytes
+    workdir: Path
+    _leaf_pem: bytes = field(repr=False)
+    _leaf_key: rsa.RSAPrivateKey = field(repr=False)
+    _openssl: str = field(repr=False)
+
+
+def _name(common_name: str) -> x509.Name:
+    return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
+
+
+def _usage(*, ca: bool) -> x509.KeyUsage:
+    return x509.KeyUsage(
+        digital_signature=not ca,
+        content_commitment=False,
+        key_encipherment=False,
+        data_encipherment=False,
+        key_agreement=False,
+        key_cert_sign=ca,
+        crl_sign=ca,
+        encipher_only=False,
+        decipher_only=False,
+    )
+
+
+def make_timestamp_authority(workdir: Path) -> SyntheticTimestampAuthority:
+    """Create a synthetic root and dedicated TSA leaf using the current UTC clock.
+
+    Keep keys in memory. Supply an existing disposable work directory for the
+    private temporary directories needed by the local OpenSSL CLI.
+    """
+    openssl = shutil.which("openssl")
+    if openssl is None:
+        raise RuntimeError("The synthetic timestamp authority requires local OpenSSL")
+    if not workdir.is_dir():
+        raise ValueError("Supply an existing disposable timestamp work directory")
+
+    now = datetime.now(UTC)
+    root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    leaf_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    root_name = _name("Airworthiness+ Synthetic Handover Timestamp Root")
+    leaf_name = _name("Airworthiness+ Synthetic Handover Timestamp Authority")
+    root = (
+        x509.CertificateBuilder()
+        .subject_name(root_name)
+        .issuer_name(root_name)
+        .public_key(root_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(minutes=5))
+        .not_valid_after(now + timedelta(days=365))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+        .add_extension(_usage(ca=True), critical=True)
+        .add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(root_key.public_key()), critical=False
+        )
+        .sign(root_key, hashes.SHA256())
+    )
+    leaf = (
+        x509.CertificateBuilder()
+        .subject_name(leaf_name)
+        .issuer_name(root_name)
+        .public_key(leaf_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(minutes=5))
+        .not_valid_after(now + timedelta(days=90))
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(_usage(ca=False), critical=True)
+        .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.TIME_STAMPING]), critical=True)
+        .add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(root_key.public_key()),
+            critical=False,
+        )
+        .sign(root_key, hashes.SHA256())
+    )
+    return SyntheticTimestampAuthority(
+        root_pem=root.public_bytes(serialization.Encoding.PEM),
+        workdir=workdir.resolve(),
+        _leaf_pem=leaf.public_bytes(serialization.Encoding.PEM),
+        _leaf_key=leaf_key,
+        _openssl=openssl,
+    )
+
+
+def _run(authority: SyntheticTimestampAuthority, directory: Path, *arguments: str) -> None:
+    result = subprocess.run(  # noqa: S603
+        [authority._openssl, "ts", *arguments],
+        cwd=directory,
+        capture_output=True,
+        timeout=15,
+        check=False,
+    )
+    if result.returncode:
+        raise RuntimeError(
+            f"Local timestamp {arguments[0]} failed: {result.stderr.decode().strip()}"
+        )
+
+
+def issue_timestamp(authority: SyntheticTimestampAuthority, signature_bytes: bytes) -> bytes:
+    """Return a DER TimeStampResp covering the exact raw Ed25519 signature bytes."""
+    if not isinstance(signature_bytes, bytes) or len(signature_bytes) != 64:
+        raise ValueError("Timestamping requires exactly 64 raw Ed25519 signature bytes")
+    with TemporaryDirectory(prefix="synthetic-tsa-", dir=authority.workdir) as temporary:
+        directory = Path(temporary)
+        (directory / "root.pem").write_bytes(authority.root_pem)
+        (directory / "empty-ca").mkdir()
+        (directory / "tsa.pem").write_bytes(authority._leaf_pem)
+        key = directory / "tsa.key"
+        key.touch(mode=0o600)
+        key.write_bytes(
+            authority._leaf_key.private_bytes(
+                serialization.Encoding.PEM,
+                serialization.PrivateFormat.PKCS8,
+                serialization.NoEncryption(),
+            )
+        )
+        (directory / "tsa.cnf").write_text(_CONFIGURATION, encoding="ascii")
+        # Per-response independent random serial seeds avoid shared state on concurrent calls.
+        (directory / "serial").write_text(secrets.token_hex(16) + "\n", encoding="ascii")
+        (directory / "signature.bin").write_bytes(signature_bytes)
+        _run(
+            authority,
+            directory,
+            "-query",
+            "-data",
+            "signature.bin",
+            "-sha256",
+            "-cert",
+            "-policy",
+            POLICY_OID,
+            "-out",
+            "request.tsq",
+        )
+        _run(
+            authority,
+            directory,
+            "-reply",
+            "-config",
+            "tsa.cnf",
+            "-queryfile",
+            "request.tsq",
+            "-out",
+            "response.tsr",
+        )
+        _run(
+            authority,
+            directory,
+            "-verify",
+            "-queryfile",
+            "request.tsq",
+            "-in",
+            "response.tsr",
+            "-CAfile",
+            "root.pem",
+            "-CApath",
+            "empty-ca",
+        )
+        return (directory / "response.tsr").read_bytes()
