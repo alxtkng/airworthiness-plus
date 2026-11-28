@@ -17,8 +17,10 @@ from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
+from airworthiness_plus.logistics import allocation_views
 from airworthiness_plus.logistics import stores_views as stores
 from airworthiness_plus.logistics import views as logistics
+from airworthiness_plus.logistics.models import AllocationKind
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.modifications import views as modifications
 from airworthiness_plus.organisations import views as settings
@@ -73,6 +75,36 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="post_disposition",
     ),
     path("stores/lots/<uuid:posting_id>/move/", stores.move_stock, name="move_stock"),
+    path(
+        "stores/lots/<uuid:posting_id>/reserve/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.RESERVE},
+        name="reserve_stock",
+    ),
+    path(
+        "stores/lots/<uuid:posting_id>/quarantine/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.QUARANTINE},
+        name="quarantine_stock",
+    ),
+    path(
+        "stores/allocations/<uuid:allocation_id>/release/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.RELEASE},
+        name="release_stock_reservation",
+    ),
+    path(
+        "stores/allocations/<uuid:allocation_id>/issue/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.ISSUE},
+        name="issue_reserved_stock",
+    ),
+    path(
+        "stores/allocations/<uuid:allocation_id>/return/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.RETURN},
+        name="return_issued_stock",
+    ),
     path("stores/lots/<uuid:posting_id>/count/", stores.count_stock, name="count_stock"),
     path("stores/counts/<uuid:count_id>/adjust/", stores.adjust_stock, name="adjust_stock"),
     path("stores/<uuid:stock_id>/", stores.stock_entry, name="stock_entry"),

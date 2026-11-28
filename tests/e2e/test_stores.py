@@ -4,7 +4,7 @@ import re
 
 from playwright.sync_api import Browser, Page, expect
 
-from tests.e2e.browser import definition, fill, form_with, signed_in, submit
+from tests.e2e.browser import definition, fill, form_with, save, signed_in, submit
 from tests.e2e.conftest import Account
 
 
@@ -235,3 +235,173 @@ def test_stores_posting_works_by_keyboard_at_320_pixels(
         assert definition(page, "Available Quantity") == "0"
         page.reload()
         assert definition(page, "Posting Status") == "Quarantine Hold"
+
+
+def test_stores_reserves_issues_and_quarantines_a_maintenance_return(
+    chromium: Browser,
+    live_site: str,
+    personas: dict[str, tuple[Account, ...]],
+) -> None:
+    ours = personas["your-organisation"]
+    with signed_in(chromium, live_site, ours[0]) as page:
+        for action in (
+            "Post Accepted Items to Stock",
+            "Reserve Stock for a Work Card",
+            "Issue Stock to Maintenance",
+            "Accept Maintenance Returns to Quarantine",
+            "Move Unreserved Stock to Quarantine",
+        ):
+            _appoint(page, action)
+
+    with signed_in(chromium, live_site, ours[1]) as page:
+        page.goto("/maintenance-data/add/")
+        save(
+            page,
+            "Record Maintenance Data",
+            {
+                "title": "Synthetic Stores Parts Data",
+                "author": "Synthetic Aircraft Maker",
+                "kind": (
+                    "Instructions for Continued Airworthiness, From a Type or "
+                    "Supplementary Type Certificate Holder"
+                ),
+                "held": "on",
+                "revision": "1",
+                "revision_date": "2026-11-16",
+                "check_due": "2026-11-30",
+            },
+            "Synthetic Stores Parts Data",
+        )
+        page.goto("/work-packages/")
+        page.get_by_role("link", name="Build a Work Package").click()
+        save(
+            page,
+            "Build a Work Package",
+            {
+                "aircraft": "G-ABCD",
+                "reference": "WP-STORES-LIVE",
+                "title": "Synthetic workshop installation",
+                "location": "Bay A",
+                "starts_on": "2026-11-18",
+                "ends_on": "2026-11-19",
+            },
+            "WP-STORES-LIVE",
+        )
+        page.get_by_role("link", name="Link Work Order").click()
+        save(
+            page,
+            "Link Work Order",
+            {"order": "Landing Light Replacement (12 November 2026)"},
+            "Landing Light Replacement",
+        )
+        page.get_by_role("link", name="Add Work Card").click()
+        save(
+            page,
+            "Add Work Card",
+            {
+                "title": "Synthetic Installation Card",
+                "data_set": "Synthetic Stores Parts Data",
+                "instruction": "Chapter 33",
+                "planned_hours": "2.0",
+            },
+            "Synthetic Installation Card",
+        )
+        package_url = page.url
+        page.goto("/stores/")
+        page.get_by_role("link", name="Stabilator Trim Cable Assembly", exact=True).click()
+        entry_url = page.url
+        page.get_by_role("link", name="Record Posting Evidence", exact=True).click()
+        main_store = "BAY-A, Bay A, Serviceable Components"
+        quarantine = "QUAR-1, Quarantine Store, Locked"
+        save(
+            page,
+            "Record Posting Evidence",
+            {
+                "unit": "Each",
+                "quantity": "1",
+                "manufacturer": "Synthetic Cable Maker",
+                "part_number": "PN-TEST-713",
+                "serial": "SN-TEST-863",
+                "shelf_life_basis": "Not Applicable",
+                "location": main_store,
+                "evidence": "Synthetic verified Form 1 mapping",
+            },
+            "None. Ready to Post",
+        )
+        page.get_by_role("link", name="Post to Stock", exact=True).click()
+        save(page, "Post to Stock", {}, "Posted to Stock")
+        reserve = {
+            "source": main_store,
+            "card": "WP-STORES-LIVE · G-ABCD · Synthetic Installation Card",
+            "quantity": "1",
+            "required_identity": "PN-TEST-713",
+            "applicable_source": "Synthetic Parts Data revision 1, figure 33",
+            "evidence": "Material requisition from workshop",
+        }
+        page.get_by_role("link", name="Reserve Stock", exact=True).click()
+        save(page, "Reserve Stock", reserve, "Issued Package With an Open Written Order")
+        page.goto(package_url)
+        page.get_by_role("link", name="Issue Work Package").click()
+        save(page, "Issue Work Package", {}, "Revision 1")
+        page.goto(entry_url)
+        page.get_by_role("link", name="Reserve Stock", exact=True).click()
+        save(page, "Reserve Stock", reserve, "Reserved · Open")
+        assert definition(page, "On Hand") == "1 (Each)"
+        assert definition(page, "Reserved") == "1"
+        assert definition(page, "Available Quantity") == "0"
+
+        page.get_by_role("link", name="Quarantine Stock", exact=True).click()
+        save(
+            page,
+            "Quarantine Stock",
+            {
+                "source": main_store,
+                "destination": quarantine,
+                "quantity": "1",
+                "evidence": "Review integrity of the label",
+            },
+            "Less Unreserved Stock",
+        )
+        page.goto(entry_url)
+        page.get_by_role("link", name="Release Reservation", exact=True).click()
+        save(
+            page,
+            "Release Reservation",
+            {"evidence": "Workshop changed its installation slot"},
+            "Reservation Released",
+        )
+        assert definition(page, "Available Quantity") == "1"
+        page.get_by_role("link", name="Reserve Stock", exact=True).click()
+        save(page, "Reserve Stock", reserve, "Reserved · Open")
+        issue = page.get_by_role("link", name="Issue Reserved Stock", exact=True)
+        issue_url = issue.get_attribute("href")
+        assert issue_url
+        issue.click()
+        save(
+            page,
+            "Issue Reserved Stock",
+            {"evidence": "Handed intact to the workshop"},
+            "Issued to Maintenance",
+        )
+        assert definition(page, "On Hand") == "0 (Each)"
+        assert definition(page, "Reserved") == "0"
+        page.get_by_role("link", name="Return Stock to Quarantine", exact=True).click()
+        save(
+            page,
+            "Return Stock to Quarantine",
+            {"destination": quarantine, "evidence": "Opened packaging held for fresh inspection"},
+            "Returned to Quarantine",
+        )
+        assert definition(page, "On Hand") == "1 (Each)"
+        assert definition(page, "Available Quantity") == "0"
+        page.get_by_role("link", name="Reserve Stock", exact=True).click()
+        save(
+            page,
+            "Reserve Stock",
+            {**reserve, "source": quarantine},
+            "Does Not Hold Serviceable Stock",
+        )
+
+    with signed_in(chromium, live_site, personas["second-organisation"][1]) as page:
+        response = page.goto(issue_url)
+        assert response is not None and response.status == 404

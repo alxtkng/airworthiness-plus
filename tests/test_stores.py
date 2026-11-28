@@ -24,10 +24,16 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import ActionRefusedError
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.aircraft.models import Aircraft
+from airworthiness_plus.contracts import services as contracts
+from airworthiness_plus.contracts.models import OrderedBy
+from airworthiness_plus.exports.build import build
+from airworthiness_plus.exports.verify import verify
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
-from airworthiness_plus.logistics import stores
+from airworthiness_plus.logistics import allocations, stores
 from airworthiness_plus.logistics.models import (
+    AllocationKind,
     ItemClass,
     LocationKind,
     MovementKind,
@@ -36,6 +42,7 @@ from airworthiness_plus.logistics.models import (
     Receipt,
     ReceivingDisposition,
     ShelfLifeBasis,
+    StockAllocation,
     StockCount,
     StockEntry,
     StockMovement,
@@ -46,11 +53,16 @@ from airworthiness_plus.logistics.models import (
     StoresLocation,
 )
 from airworthiness_plus.logistics.services import RefusedError
+from airworthiness_plus.maintenance_data import services as data
+from airworthiness_plus.maintenance_data.models import Kind
 from airworthiness_plus.people.models import Person
+from airworthiness_plus.planning import services as planning
+from airworthiness_plus.planning.models import WorkCard
 from airworthiness_plus.sample import goods_in
 from airworthiness_plus.sample import stores as stores_sample
 from airworthiness_rules import shelf_life
-from tests.support import Sample, get, post, signed_in
+from tests.support import Sample, add_sample_fleet, get, post, signed_in
+from tests.test_exports import opened
 
 pytestmark = pytest.mark.django_db
 
@@ -1153,3 +1165,264 @@ def test_s09_generated_movements_conserve_custody_and_never_go_negative(
             assert set(after) <= accepting
             assert sum(after.values()) == Decimal(24)
         transaction.set_rollback(True)
+
+
+def _grant_allocation_actions(sample: Sample) -> None:
+    with working_for(sample.ours.pk, sample.administrator.pk):
+        person = Person.objects.get(user=sample.lucy)
+        for action in (
+            StoresAction.RESERVE,
+            StoresAction.ISSUE,
+            StoresAction.RETURN,
+            StoresAction.QUARANTINE,
+        ):
+            stores.record_appointment(
+                sample.administrator,
+                request_id=uuid4(),
+                approval="Part-CAO",
+                person=person,
+                action=action,
+                starts_on=TODAY,
+                ends_on=TODAY + timedelta(days=30),
+                exposition_reference="Synthetic Stores procedure, revision 1",
+                authority="Synthetic appointment",
+            )
+
+
+def _allocation_card(sample: Sample, aircraft: Aircraft) -> WorkCard:
+    with working_for(sample.ours.pk, sample.lucy.pk):
+        package = planning.build_package(
+            aircraft,
+            reference="WP-STORES-ALLOC",
+            title="Check installation",
+            location="Bay B",
+            starts_on=TODAY,
+            ends_on=TODAY + timedelta(days=1),
+        )
+        dataset = data.record_data(
+            organisation=sample.ours,
+            title="Synthetic Parts Manual",
+            author="Maker",
+            kind=Kind.INSTRUCTIONS,
+            applies_to=[aircraft.type_rating],
+            revision="1",
+            revision_date=TODAY,
+            check_due=TODAY + timedelta(days=7),
+        )
+        card = planning.add_card(
+            package,
+            title="Replace hardware",
+            data_set=dataset,
+            instruction="Chapter 53",
+            planned_hours=Decimal(1),
+        )
+        order = contracts.add_work_order(
+            aircraft,
+            work=package.title,
+            ordered_by=OrderedBy.MANAGER,
+            agreed_on=TODAY,
+        )
+        planning.link_order(package, order)
+        return card
+
+
+def test_allocation_rechecks_issue_eligibility_and_preserves_quarantined_custody(
+    stocked: Sample,
+    day: Day,
+) -> None:
+    aircraft = add_sample_fleet(stocked)["G-ABCD"]
+    _grant_allocation_actions(stocked)
+    card = _allocation_card(stocked, aircraft)
+    with working_for(stocked.ours.pk, stocked.lucy.pk):
+        user = stocked.lucy
+        bolts = lot("RX-007")
+        source = place("BAY-B")
+        quarantine = place("QUAR-1")
+        reservation: dict[str, Any] = {
+            "source": source,
+            "card": card,
+            "quantity": Decimal(4),
+            "required_identity": "[Bolt Standard]",
+            "applicable_source": "Synthetic Parts Manual revision 1, Figure 53",
+            "evidence": "Match installation request and reservation label",
+        }
+        with pytest.raises(RefusedError, match="Unfinished Card on an Issued Package"):
+            allocations.record(
+                user, bolts, AllocationKind.RESERVE, request_id=uuid4(), **reservation
+            )
+        planning.issue_package(card.package)
+        with pytest.raises(RefusedError, match="Must Match the Received Lot"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.RESERVE,
+                request_id=uuid4(),
+                **{**reservation, "required_identity": "Unapproved alternate"},
+            )
+        reserve_id = uuid4()
+        reserved = allocations.record(
+            user, bolts, AllocationKind.RESERVE, request_id=reserve_id, **reservation
+        )
+        assert (
+            allocations.record(
+                user, bolts, AllocationKind.RESERVE, request_id=reserve_id, **reservation
+            )
+            == reserved
+        )
+        with pytest.raises(RefusedError, match="Different Custody Evidence"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.RESERVE,
+                request_id=reserve_id,
+                **{**reservation, "quantity": Decimal(1)},
+            )
+        (position,) = stores.positions(user.organisation, day.today, posting=bolts)
+        assert (position.on_hand, position.reserved, position.available) == (
+            Decimal(50),
+            Decimal(4),
+            Decimal(46),
+        )
+        with pytest.raises(RefusedError, match="Less Unreserved Stock"):
+            stores.move(
+                user,
+                bolts,
+                request_id=uuid4(),
+                source=source,
+                destination=place("BAY-A"),
+                quantity=Decimal(47),
+                moved_on=day.today,
+                evidence="Would move reserved bolts",
+            )
+        with pytest.raises(DatabaseError), transaction.atomic():
+            StockAllocation.objects.filter(pk=reserved.pk).update(evidence="Rewritten")
+        issue_id = uuid4()
+        issued = allocations.record(
+            user,
+            bolts,
+            AllocationKind.ISSUE,
+            preceding=reserved,
+            request_id=issue_id,
+            evidence="Transferred to workshop against authorised card",
+        )
+        assert (
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.ISSUE,
+                preceding=reserved,
+                request_id=issue_id,
+                evidence="Transferred to workshop against authorised card",
+            )
+            == issued
+        )
+        with pytest.raises(RefusedError, match="Already Been Continued"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.ISSUE,
+                preceding=reserved,
+                request_id=uuid4(),
+                evidence="Retry with a new request",
+            )
+        assert stores.on_hand(bolts, source) == 46
+        returned = allocations.record(
+            user,
+            bolts,
+            AllocationKind.RETURN,
+            preceding=issued,
+            request_id=uuid4(),
+            destination=quarantine,
+            evidence="Packaging opened; retain for receiving inspection",
+        )
+        allocations.record(
+            user,
+            bolts,
+            AllocationKind.QUARANTINE,
+            request_id=uuid4(),
+            source=source,
+            destination=quarantine,
+            quantity=Decimal(1),
+            evidence="Label damaged",
+        )
+        position_by_code = {
+            item.location.code: item
+            for item in stores.positions(user.organisation, day.today, posting=bolts)
+        }
+        assert position_by_code["BAY-B"].on_hand == position_by_code["BAY-B"].available == 45
+        assert position_by_code["QUAR-1"].on_hand == 5
+        assert position_by_code["QUAR-1"].available == 0
+        with pytest.raises(RefusedError, match="New Receiving Decision"):
+            stores.move(
+                user,
+                bolts,
+                request_id=uuid4(),
+                source=quarantine,
+                destination=source,
+                quantity=Decimal(1),
+                moved_on=day.today,
+                evidence="Forged clearing of quarantine",
+            )
+        with pytest.raises(RefusedError, match="Does Not Hold Serviceable Stock"):
+            allocations.record(
+                user,
+                bolts,
+                AllocationKind.RESERVE,
+                request_id=uuid4(),
+                **{**reservation, "source": quarantine},
+            )
+        assert Event.of(returned).get().actor_id == user.pk
+        exported = build(stocked.ours, by=user)
+        assert verify(exported.content).problems == ()
+        records = opened(exported.content)["records/logistics_stockallocation.json"]
+        assert {row["kind"] for row in records} == {"Reserve", "Issue", "Return", "Quarantine"}
+        assert any(row["preceding_id"] == str(issued.pk) for row in records)
+    with working_for(stocked.other.pk, stocked.stranger.pk):
+        assert not StockAllocation.objects.exists()
+
+
+def test_issue_rechecks_lot_expiry_after_reservation(stocked: Sample, day: Day) -> None:
+    _grant_allocation_actions(stocked)
+    card = _allocation_card(stocked, add_sample_fleet(stocked)["G-ABCD"])
+    with working_for(stocked.ours.pk, stocked.lucy.pk):
+        planner = stocked.lucy
+        planning.issue_package(card.package)
+        source = place("BAY-A")
+        evidence_for(
+            planner,
+            "RX-002",
+            unit=StockUnit.EACH,
+            quantity=Decimal(1),
+            part_number="PN-EXPIRY",
+            serial="SN-EXPIRY",
+            shelf_life_basis=ShelfLifeBasis.THROUGH,
+            shelf_life_to=TODAY,
+            location=source,
+        )
+        posting = stores.post(planner, decision("RX-002"), request_id=uuid4())
+        reservation = allocations.record(
+            planner,
+            posting,
+            AllocationKind.RESERVE,
+            request_id=uuid4(),
+            source=source,
+            card=card,
+            quantity=Decimal(1),
+            required_identity="PN-EXPIRY",
+            applicable_source="Synthetic applicable manual and revision",
+            evidence="Booked",
+        )
+        day.today += timedelta(days=1)
+        with pytest.raises(RefusedError, match="Shelf Life Blocks Issue"):
+            allocations.record(
+                planner,
+                posting,
+                AllocationKind.ISSUE,
+                request_id=uuid4(),
+                preceding=reservation,
+                evidence="Request after expiry",
+            )
+        assert StockAllocation.objects.filter(posting=posting).count() == 1
+        (position,) = stores.positions(stocked.ours, day.today, posting=posting)
+        assert position.on_hand == position.reserved == Decimal(1)
+        assert position.available == Decimal(0)

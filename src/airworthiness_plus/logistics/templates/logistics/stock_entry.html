@@ -37,14 +37,42 @@
 {% if positions %}
 <h2>Custody</h2>
 <table>
-<thead><tr><th scope="col">Location</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Shelf Life</th></tr></thead>
+<thead><tr><th scope="col">Location</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Condition</th><th scope="col">Shelf Life</th></tr></thead>
 <tbody>
 {% for line in positions %}
-<tr><td>{{ line.location }}</td><td>{{ line.on_hand|amount }} {{ line.unit }}</td><td>{{ line.reserved|amount }}</td><td>{{ line.available|amount }}</td><td>{% include "logistics/shelf_life.html" with shelf=line.shelf %}</td></tr>
+<tr><td>{{ line.location }}</td><td>{{ line.on_hand|amount }} {{ line.unit }}</td><td>{{ line.reserved|amount }}</td><td>{{ line.available|amount }}</td><td>{{ line.location.kind }}</td><td>{% include "logistics/shelf_life.html" with shelf=line.shelf %}</td></tr>
 {% endfor %}
 </tbody>
 </table>
+{% if posting.kind == "Stock" %}
+<p>{% if may_reserve %}<a class="button" href="{% url 'reserve_stock' posting.id %}">Reserve Stock</a> {% endif %}
+{% if may_quarantine %}<a class="button" href="{% url 'quarantine_stock' posting.id %}">Quarantine Stock</a>{% endif %}</p>
+{% endif %}
 {% if may_move or may_count %}<p>{% if may_move %}<a class="button" href="{% url 'move_stock' posting.id %}">Move Stock</a> {% endif %}{% if may_count %}<a class="button" href="{% url 'count_stock' posting.id %}">Count Stock</a>{% endif %}</p>{% endif %}
+{% endif %}
+
+{% if allocations %}
+<h2>Reservations, Issues and Returns</h2>
+<table>
+<thead><tr><th scope="col">Event</th><th scope="col">Work Card</th><th scope="col">Location</th><th scope="col">Quantity</th><th scope="col">Evidence</th><th scope="col">Recorded By</th><th scope="col">Actions</th></tr></thead>
+<tbody>
+{% for event in allocations %}
+<tr>
+<td>{{ event.get_kind_display }}{% if event.kind == "Reserve" and not event.following %} · Open{% endif %}</td>
+<td>{% if event.card_id %}<a href="{% url 'work_package' event.card.package_id %}#card-{{ event.card_id }}">{{ event.card.package }} · {{ event.card }}</a>{% endif %}</td>
+<td>{% if event.source %}{{ event.source }}{% endif %}{% if event.destination %}{% if event.source %} to {% endif %}{{ event.destination }}{% endif %}</td>
+<td>{{ event.quantity|amount }} {{ posting.evidence.unit }}</td>
+<td>{% if event.required_identity %}{{ event.required_identity }} · {{ event.applicable_source }}<br>{% endif %}{{ event.evidence }}</td>
+<td>{{ event.appointment.person.full_name }}, {{ event.recorded_on|long_date }}</td>
+<td>{% if not event.following %}
+{% if event.kind == "Reserve" %}{% if may_issue %}<a href="{% url 'issue_reserved_stock' event.id %}">Issue Reserved Stock</a>{% endif %}
+{% if may_reserve %}<a href="{% url 'release_stock_reservation' event.id %}">Release Reservation</a>{% endif %}
+{% elif event.kind == "Issue" and may_return %}<a href="{% url 'return_issued_stock' event.id %}">Return Stock to Quarantine</a>{% endif %}
+{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
 {% endif %}
 
 {% if movements %}

@@ -6,6 +6,7 @@
 {% if receipt %}<p><a href="{% url 'goods_receipt' receipt.id %}">{{ receipt.item }}, {{ receipt.delivery_reference }}</a></p>{% endif %}
 {% if blockers %}<p>Still Blocking: {{ blockers|join:"; " }}</p>{% endif %}
 {% if count %}<p>Count of {{ count.counted|amount }} at {{ count.location }} against {{ count.on_hand|amount }} on the ledger. Variance {{ variance }}</p>{% endif %}
+{% if custody %}<p>{{ custody.quantity|amount }} {{ custody.posting.evidence.unit }} reserved or issued for {{ custody.card.package }} · {{ custody.card.title }}. Part {{ custody.required_identity }}, {{ custody.applicable_source }}.</p>{% endif %}
 <form method="post">
 {% csrf_token %}
 {% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}

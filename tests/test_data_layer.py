@@ -233,6 +233,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "logistics_postingevidence": ["INSERT", "SELECT"],
         "logistics_stockposting": ["INSERT", "SELECT"],
         "logistics_stockmovement": ["INSERT", "SELECT"],
+        "logistics_stockallocation": ["INSERT", "SELECT"],
         "logistics_stockcount": ["INSERT", "SELECT"],
         "tooling_tool": ["INSERT", "SELECT"],
         "tooling_toolserviceproviderauthorisation": ["INSERT", "SELECT"],
@@ -276,6 +277,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "logistics_storeslocationwithdrawal": {
             "history_refuse_update",
             "stores_location_withdrawal_rules",
+            "stores_allocated_location_withdrawal",
         },
         "logistics_postingevidence": {"history_refuse_update", "stores_posting_evidence_rules"},
         "logistics_stockposting": {
@@ -283,7 +285,12 @@ def test_every_table_is_under_the_record_rules() -> None:
             "stores_posting_rules",
             "stores_posting_opening",
         },
-        "logistics_stockmovement": {"history_refuse_update", "stores_movement_rules"},
+        "logistics_stockmovement": {
+            "history_refuse_update",
+            "stores_movement_rules",
+            "stores_movement_reservations",
+        },
+        "logistics_stockallocation": {"history_refuse_update", "stores_allocation_rules"},
         "logistics_stockcount": {"history_refuse_update", "stores_count_rules"},
         "tooling_tool": {"history_refuse_update", "tooling_tool_a_check_evidence"},
         "tooling_toolserviceproviderauthorisation": {

@@ -25,14 +25,14 @@
 <h2>Stock by Location</h2>
 {% if positions %}
 <table data-search="always">
-<thead><tr><th scope="col">Item</th><th scope="col">Identity</th><th scope="col">Class</th><th scope="col">Location</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Shelf Life</th></tr></thead>
+<thead><tr><th scope="col">Item</th><th scope="col">Identity</th><th scope="col">Class</th><th scope="col">Location</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Condition</th><th scope="col">Shelf Life</th></tr></thead>
 <tbody>
 {% for line in positions %}{% with receipt=line.posting.disposition.receipt basis=line.posting.evidence %}
 <tr>
 <td><a href="{% url 'stock_entry' line.posting.disposition.stock_entry.id %}">{{ receipt.item }}</a></td>
 <td>{% include "logistics/stock_identity.html" with basis=basis %}</td>
 <td>{{ receipt.classification }}</td><td>{{ line.location }}</td><td>{{ line.unit }}</td>
-<td>{{ line.on_hand|amount }}</td><td>{{ line.reserved|amount }}</td><td>{{ line.available|amount }}</td>
+<td>{{ line.on_hand|amount }}</td><td>{{ line.reserved|amount }}</td><td>{{ line.available|amount }}</td><td>{{ line.location.kind }}</td>
 <td>{% include "logistics/shelf_life.html" with shelf=line.shelf %}</td>
 </tr>
 {% endwith %}{% endfor %}

@@ -291,3 +291,12 @@ def test_s02_postgres_alone_refuses_a_second_posting_from_a_parallel_session(
     finally:
         first.close()
         second.close()
+
+
+def test_concurrent_reserved_issue_records_one_custody_change(seeded: Seeded, clone: str) -> None:
+    result = race(seeded, clone, "issue")
+    outcomes = sorted(result["results"])
+    assert outcomes[0].startswith("ok:"), outcomes
+    assert outcomes[1].startswith("refused:RefusedError:This Custody Record"), outcomes
+    assert result["issues"] == 1
+    assert not any(row[0] == "RX-002" for row in result["ledger"]["positions"])

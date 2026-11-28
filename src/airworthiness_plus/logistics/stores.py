@@ -475,6 +475,16 @@ def on_hand(posting: StockPosting, location: StoresLocation) -> Decimal:
     return Decimal(value)
 
 
+def unreserved(posting: StockPosting, location: StoresLocation) -> Decimal:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT logistics_stock_on_hand(%s, %s) - logistics_stock_reserved(%s, %s)",
+            [posting.pk, location.pk, posting.pk, location.pk],
+        )
+        (value,) = cursor.fetchone()
+    return Decimal(value)
+
+
 def _lock_stock(posting: StockPosting) -> None:
     with connection.cursor() as cursor:
         cursor.execute("SELECT logistics_lock_stock(%s)", [posting.pk])
@@ -508,6 +518,14 @@ def move(
         raise RefusedError("The Movement Date Must Follow Arrival and Not Be in the Future")
     if source == destination:
         raise RefusedError("Choose a Different Destination")
+    if (
+        posting.kind == PostingKind.STOCK
+        and source.kind == LocationKind.QUARANTINE
+        and destination.kind == LocationKind.SERVICEABLE
+    ):
+        raise RefusedError(
+            "Quarantined Stock Needs a New Receiving Decision Before Serviceable Use"
+        )
     if not fits(basis.unit, quantity, basis.serial):
         raise RefusedError("The Quantity Does Not Fit Its Unit or the Serial Number")
     if not accepts(destination, posting.kind, posting.disposition.receipt.classification, today):
@@ -516,8 +534,8 @@ def move(
             if posting.kind == PostingKind.HOLD
             else "The Destination Does Not Accept This Item"
         )
-    if on_hand(posting, source) < quantity:
-        raise RefusedError("The Source Location Holds Less Than This Quantity")
+    if unreserved(posting, source) < quantity:
+        raise RefusedError("The Source Location Holds Less Unreserved Stock Than This Quantity")
     return StockMovement.objects.create(
         organisation_id=posting.organisation_id,
         submission=request_id,
@@ -586,6 +604,8 @@ def adjust(user: User, taken: StockCount, *, request_id: UUID, evidence: str) ->
         raise RefusedError("The Count Matches the Ledger. Nothing to Adjust")
     if on_hand(posting, taken.location) != taken.on_hand:
         raise RefusedError("The Ledger Has Moved Since the Count. Count Again")
+    if variance < 0 and abs(variance) > unreserved(posting, taken.location):
+        raise RefusedError("Release the Reservations Covering the Count Shortfall First")
     return StockMovement.objects.create(
         organisation_id=posting.organisation_id,
         submission=request_id,
@@ -642,26 +662,45 @@ def positions(
     location: StoresLocation | None = None,
 ) -> list[Position]:
     """Return every custody position with a nonzero balance, derived from the ledger."""
-    movements = StockMovement.objects.filter(organisation=organisation).select_related(
-        "posting__evidence", "posting__disposition__receipt", "source", "destination"
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            WITH custody_positions AS (
+                SELECT posting_id, source_id, destination_id FROM logistics_stockmovement
+                 WHERE organisation_id = %s AND (%s::uuid IS NULL OR posting_id = %s)
+                UNION ALL
+                SELECT posting_id, source_id, destination_id FROM logistics_stockallocation
+                 WHERE organisation_id = %s AND (%s::uuid IS NULL OR posting_id = %s)
+            ),
+            places AS (
+                SELECT posting_id, source_id AS place FROM custody_positions
+                UNION
+                SELECT posting_id, destination_id FROM custody_positions
+            )
+            SELECT posting_id, place, logistics_stock_on_hand(posting_id, place),
+                   logistics_stock_reserved(posting_id, place)
+              FROM places
+             WHERE place IS NOT NULL AND (%s::uuid IS NULL OR place = %s)
+            """,
+            [
+                organisation.pk,
+                posting.pk if posting else None,
+                posting.pk if posting else None,
+                organisation.pk,
+                posting.pk if posting else None,
+                posting.pk if posting else None,
+                location.pk if location else None,
+                location.pk if location else None,
+            ],
+        )
+        balances = [row for row in cursor.fetchall() if row[2]]
+    lots = StockPosting.objects.select_related("evidence", "disposition__receipt").in_bulk(
+        {lot for lot, _, _, _ in balances}
     )
-    if posting is not None:
-        movements = movements.filter(posting=posting)
-    balances: dict[tuple[UUID, UUID], Decimal] = defaultdict(Decimal)
-    lots: dict[UUID, StockPosting] = {}
-    places: dict[UUID, StoresLocation] = {}
-    for movement in movements:
-        lots[movement.posting_id] = movement.posting
-        if movement.destination is not None:
-            places[movement.destination.pk] = movement.destination
-            balances[movement.posting_id, movement.destination.pk] += movement.quantity
-        if movement.source is not None:
-            places[movement.source.pk] = movement.source
-            balances[movement.posting_id, movement.source.pk] -= movement.quantity
+    locations = StoresLocation.objects.in_bulk({place for _, place, _, _ in balances})
     result = [
-        Position(lots[lot], places[place], amount, shelf_of(lots[lot].evidence, day))
-        for (lot, place), amount in balances.items()
-        if amount and (location is None or place == location.pk)
+        Position(lots[lot], locations[place], amount, shelf_of(lots[lot].evidence, day), reserved)
+        for lot, place, amount, reserved in balances
     ]
     result.sort(
         key=lambda one: (one.location.code, one.posting.disposition.receipt.item, one.posting.pk)
