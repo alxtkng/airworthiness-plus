@@ -27,3 +27,17 @@ Airworthiness Limited owns confirming access to the applicable versions and publ
 ## Verification
 
 Run the archive handover regression and retain its results. The receiving records lead then tests valid transfer, replay, unsupported version, conflicting duplicate, missing required record and dangling reference in a separate implementation. Compare IDs, evidence history and operational status, and record transformations and differences. Independent import, issuer trust and standards conformance are open.
+
+## Local receiving rehearsal
+
+The first receiver is a separate Python command and SQLite database. It receives a source aircraft archive, the separately supplied manifest digest, the expected aircraft identifier and the three trial record identifiers. It checks archive consistency and parent references, recalculates a day-based next due, and retains the selected records and their source history. Re-importing the same snapshot returns the same result without inserting again. A distinct snapshot for that aircraft is referred for reconciliation and the previous snapshot remains available. The exercise uses the project archive, synthetic inputs and the existing portable archive verifier.
+
+From the project root, run the executable fixture with `uv run pytest -q tests/test_exports.py::test_independent_receiver_imports_the_unsigned_trial_and_rejects_invalid_transfers`. To run the receiver with that fixture's archive and identifiers:
+
+```sh
+PYTHONPATH=src uv run python tools/receive_handover.py transfer.zip receiver.sqlite \
+  --manifest-digest "$manifest_digest" --aircraft-id "$aircraft_id" \
+  --defect-id "$defect_id" --inspection-id "$inspection_id" --correction-id "$correction_id"
+```
+
+A successful result identifies the correction as unsigned and issuer trust as indeterminate. The pilot exercises independent storage and a calendar recomputation. Operational import, separately trusted signatures, authority at signing and Spec 2500 mapping are pending.

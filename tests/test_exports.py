@@ -9,8 +9,12 @@ import hashlib
 import io
 import json
 import secrets
+import sqlite3
+import subprocess
+import sys
 import warnings
 import zipfile
+from contextlib import closing
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -722,6 +726,137 @@ def test_handover_archive_preserves_deferral_inspection_and_correction(
     (correction,) = [record for record in readings if record["supersedes_id"]]
     (original,) = [record for record in readings if record["id"] == correction["supersedes_id"]]
     assert (original["hours"], correction["hours"]) == (11208.6, 11206.8)
+
+
+def test_independent_receiver_imports_the_unsigned_trial_and_rejects_invalid_transfers(
+    sample: Sample, fleet: dict[str, Aircraft], tmp_path: Path
+) -> None:
+    """REQ-134, REQ-290 and AMOS case 6. Reconstruct and replay on a separate database."""
+    aircraft = fleet["G-EJKL"]
+    title = "Receiver Trial Inspection"
+    with working_for(sample.ours.id, sample.planner.id):
+        counter = aircraft.counters.get(kind=CounterKind.AIRFRAME)
+        task = programme_services.add_task(
+            aircraft.programme,
+            title=title,
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=counter,
+            source="Synthetic receiver trial reference",
+            interval=Interval(days=30),
+        )
+        programme_services.record_work(
+            aircraft,
+            task=task,
+            description=title,
+            dated=TODAY - timedelta(days=10),
+            hours=D("11206.8"),
+            cycles=0,
+        )
+        sender_forecast = {line.item: line.forecast for line in forecast_lines(aircraft, TODAY)}
+        export = build(sample.ours, by=sample.planner, aircraft=aircraft)
+
+    files = opened(export.content)
+    defect_title = "Right Headset Socket Crackle"
+    (defect,) = [
+        item for item in files["records/defects_defect.json"] if item["title"] == defect_title
+    ]
+    (correction,) = [
+        row for row in files["records/aircraft_utilisationentry.json"] if row["supersedes_id"]
+    ]
+    database = tmp_path / "receiver.sqlite"
+    archive_path = tmp_path / "transfer.zip"
+    project = Path(__file__).resolve().parents[1]
+
+    def receive(
+        content: bytes, digest: str = export.manifest_sha256, aircraft_id: str = str(aircraft.id)
+    ) -> subprocess.CompletedProcess[str]:
+        archive_path.write_bytes(content)
+        return subprocess.run(  # noqa: S603  fixed executable and synthetic fixture
+            [
+                sys.executable,
+                str(project / "tools" / "receive_handover.py"),
+                str(archive_path),
+                str(database),
+                "--manifest-digest",
+                digest,
+                "--aircraft-id",
+                aircraft_id,
+                "--defect-id",
+                defect["id"],
+                "--inspection-id",
+                str(task.id),
+                "--correction-id",
+                correction["id"],
+            ],
+            env={"PYTHONPATH": str(project / "src")},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    first = receive(export.content)
+    assert first.returncode == 0, first.stderr
+    received = json.loads(first.stdout)
+    assert received.pop("imported") is True
+    assert date.fromisoformat(received["next_due"]) == sender_forecast[title]
+    assert (
+        date.fromisoformat(received["defect"]["limit_on"])
+        == sender_forecast[f"Deferred Defect Limit, {defect_title}"]
+    )
+    assert received["defect"]["closed_on"] is None
+    assert received["original_reading"]["hours"] == 11208.6
+    assert received["corrected_reading"]["hours"] == 11206.8
+    assert received["issuer_trust"] == "Indeterminate"
+    assert received["history"]["defects_defect"] == [
+        event
+        for event in files["history/defects_defect.json"]
+        if event["record_id"] == defect["id"]
+    ]
+    readings = received["history"]["aircraft_utilisationentry"]
+    assert {entry["record_id"] for entry in readings} == {
+        correction["id"],
+        correction["supersedes_id"],
+    }
+
+    replay = receive(export.content)
+    assert replay.returncode == 0, replay.stderr
+    assert json.loads(replay.stdout) == {"imported": False, **received}
+
+    def refused(result: subprocess.CompletedProcess[str], reason: str) -> None:
+        assert result.returncode == 1
+        assert reason in result.stderr
+
+    forwarded_manifest = json.dumps({**files["manifest.json"], "exported_by": "Trial"}).encode()
+    forwarded = rewritten(export.content, {"manifest.json": forwarded_manifest}, fix_manifest=False)
+    refused(
+        receive(forwarded, hashlib.sha256(forwarded_manifest).hexdigest()),
+        "needs reconciliation",
+    )
+    refused(receive(export.content, aircraft_id=str(fleet["G-CDEF"].id)), "different aircraft")
+    changed = rewritten(export.content, {"README.txt": b"Altered"}, fix_manifest=False)
+    refused(receive(changed), "altered")
+
+    for table in ("defects_defect", "programme_programme"):
+        missing = rewritten(
+            export.content,
+            {f"records/{table}.json": b"[]", f"history/{table}.json": b"[]"},
+            fix_manifest=True,
+        )
+        refused(receive(missing, verify(missing).manifest_sha256), "record or dependency")
+
+    manifest = json.dumps({**files["manifest.json"], "version": 2}).encode()
+    unsupported = rewritten(export.content, {"manifest.json": manifest}, fix_manifest=False)
+    refused(receive(unsupported, hashlib.sha256(manifest).hexdigest()), "Unsupported")
+
+    duplicate = io.BytesIO(export.content)
+    with zipfile.ZipFile(duplicate, "a") as archive, pytest.warns(UserWarning, match="Duplicate"):
+        archive.writestr("README.txt", files["README.txt"])
+    refused(receive(duplicate.getvalue()), "more than once")
+
+    with closing(sqlite3.connect(database)) as db:
+        snapshots = db.execute("SELECT evidence FROM handover").fetchall()
+        assert len(snapshots) == 1
+        assert json.loads(snapshots[0][0]) == received
 
 
 # Verification (T-SEC-019)

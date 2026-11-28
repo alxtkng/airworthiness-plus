@@ -71,3 +71,30 @@ The unsigned sender archive comparison and local fallback passed. The synthetic 
 ## Candidate validation
 
 The combined code revision is `6e2f78b`. Ruff lint and formatting and mypy passed. The traceability checker found 237 requirements and 237 traced entries. The complete suite outside the live browser directory passed **1,386 checks**, with no failures or skips. This includes the standalone browser checks. The focused rerun passed **25 of 26** checks, including the schema and navigation regressions, security, maintenance history, Stores and fallback. The remaining case timed out during the signing journey's existing work-card setup. The signing branch's dedicated 305-check pass and its browser rerun outcomes remain visible in the [pilot evidence](amos-synthetic-attestation.md).
+
+The complete live browser rerun on the same code finished with **66 passes,
+three failures and zero skips**. The history, Stores, signing and fallback
+journeys passed. The existing session-management and second-organisation
+manager navigation journeys timed out. The existing passkey journey reached
+the sign-in page instead of the expected signed-in view after password and
+authenticator verification. The passkey scenario also failed in an isolated
+run of the integration baseline.
+
+## Separate receiver rehearsal
+
+The local receiver imports the unsigned G-EJKL fixture into SQLite from a
+separate Python process without Django settings or access to the source
+database. It retains the deferral, inspection, original and corrected reading,
+and their relevant source history. The deferral status and limit agree with
+the sender and the receiver independently obtains the same next due date.
+Replaying the same archive leaves one snapshot. The receiver refuses a
+different snapshot for the same aircraft pending reconciliation, an altered
+member, a duplicate member, the wrong aircraft, an unsupported version, a
+missing defect and a missing programme dependency. The receiving database
+still contains the original reconciled snapshot after those refusals.
+[Receiver workflow and reproduction](../architecture/decisions/ADR-0010-aircraft-transfer-pilot.md)
+
+The receiver displays the signed record status as unsigned and issuer trust as
+indeterminate. The integrated trial still requires independently trusted
+signatures on both the original and corrected record, verification of relevant
+maintenance authority and a signed transfer exercise.
