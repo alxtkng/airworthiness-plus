@@ -28,7 +28,8 @@ from airworthiness_plus.maintenance_data.forms import (
     EndHoldingForm,
     RevisionForm,
 )
-from airworthiness_plus.maintenance_data.models import DataSet, Evidence, Kind
+from airworthiness_plus.maintenance_data.models import DataSet, Evidence, Holding, Kind
+from airworthiness_rules.programme import Flag
 
 
 def _user(request: HttpRequest) -> User:
@@ -41,8 +42,23 @@ def _user(request: HttpRequest) -> User:
 @requires(Action.VIEW_RECORDS)
 def data_page(request: HttpRequest) -> HttpResponse:
     """Every set of maintenance data, those needing attention first (REQ-083, REQ-084)."""
-    lines = services.data_lines(_user(request).organisation, aircraft_services.today())
-    return render(request, "maintenance_data/data.html", {"lines": lines})
+    user = _user(request)
+    lines = services.data_lines(user.organisation, aircraft_services.today())
+    held = [line for line in lines if line.data_set.holding == Holding.HELD]
+    checks_needed = sum(
+        line.flag is not Flag.NONE or line.data_set.check_due is None for line in held
+    )
+    return render(
+        request,
+        "maintenance_data/data.html",
+        {
+            "lines": lines,
+            "held_and_current": len(held) - checks_needed,
+            "checks_needed": checks_needed,
+            "not_held": len(lines) - len(held),
+            "may_record": user.may(Action.RECORD_MAINTENANCE_DATA),
+        },
+    )
 
 
 @never_cache

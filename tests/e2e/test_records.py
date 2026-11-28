@@ -304,7 +304,18 @@ def test_maintenance_data_revision_and_amendment_check(
 ) -> None:
     with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
         page.goto("/maintenance-data/")
-        page.locator('a[href="/maintenance-data/add/"]').first.click()
+        register = page.get_by_role("table", name="Data Register")
+        expect(register.get_by_role("columnheader", name="Applies To")).to_be_visible()
+        expect(register.get_by_role("columnheader", name="Next Check By")).to_be_visible()
+        manual = register.locator("tbody tr:not(.detail)").filter(has_text="Grob G 115")
+        disclosure = manual.get_by_role("button", name="Show Details")
+        disclosure.focus()
+        disclosure.press("Enter")
+        expect(disclosure).to_have_attribute("aria-expanded", "true")
+        details = manual.locator("xpath=following-sibling::tr[1]")
+        expect(details.get_by_text("2 November 2026", exact=True)).to_be_visible()
+        expect(details.get_by_text("[Planning and Records Name]", exact=True)).to_be_visible()
+        page.get_by_role("link", name="Add Maintenance Data").click()
         form = form_with(page, "title")
         form.locator('[name="held"]').check()
         save(
