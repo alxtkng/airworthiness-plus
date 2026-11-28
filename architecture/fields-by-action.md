@@ -215,6 +215,7 @@ The system sets these itself, whatever is sent:
 
 ## Values Fixed by the State of the Record
 
+- Calibration certificate acceptance requires ordered uncertainty and coverage for as-found conformity claims and as-left evidence.
 - Nothing is deleted. A change to a record adds an entry to its history, which keeps what the record said before.
 - A certificate: its reference, dates, aircraft, issuer and serial never change once recorded. It can be voided, with a reason, and never made valid again. The day its copy was sent can be recorded.
 - A review and its points cannot be changed once its certificate is issued. Before that, only the review staff member carrying it out records on it.

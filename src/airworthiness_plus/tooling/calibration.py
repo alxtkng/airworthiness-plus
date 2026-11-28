@@ -428,12 +428,16 @@ def _validate_certificate(
             raise RefusedError("The certificate includes a point outside the ordered scope")
         if point.statement in {Statement.CONFORMS, Statement.FAILS} and not certificate.rule:
             raise RefusedError("The laboratory conformity claim has no decision rule")
+        if (
+            order.uncertainty_required
+            and (point.phase == Phase.LEFT or point.statement == Statement.CONFORMS)
+            and (point.uncertainty is None or not point.coverage)
+        ):
+            raise RefusedError("The ordered scope requires uncertainty and coverage")
         if point.phase == Phase.FOUND:
             continue
         if point.error is None or point.measured_value is None or not point.convention:
             raise RefusedError("Record the as-left reading, signed error and error convention")
-        if order.uncertainty_required and (point.uncertainty is None or not point.coverage):
-            raise RefusedError("The ordered scope requires uncertainty and coverage")
         if point.statement == Statement.MEASUREMENT:
             if (
                 not internal_rule
