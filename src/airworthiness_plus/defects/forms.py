@@ -23,6 +23,7 @@ class DefectForm(CertificationEvidenceForm, Form):
     note = forms.CharField(label="Note", max_length=200, required=False)
     found_on = forms.DateField(label="Found")
     chapter = forms.IntegerField(label="Chapter", min_value=FIRST_CHAPTER, max_value=LAST_CHAPTER)
+    section = forms.RegexField(r"^[0-9]{2}$", label="ATA Section", required=False, max_length=2)
     system = forms.CharField(label="System", max_length=100)
     decision = forms.ChoiceField(label="Decision", choices=Decision.choices)
     basis = forms.ChoiceField(

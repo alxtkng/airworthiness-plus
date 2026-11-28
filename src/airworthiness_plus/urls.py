@@ -12,6 +12,7 @@ from airworthiness_plus.configuration import views as configuration
 from airworthiness_plus.contracts import views as contracts
 from airworthiness_plus.customers import views as customers
 from airworthiness_plus.dashboard import views as dashboard
+from airworthiness_plus.defects import maintenance_history
 from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
@@ -107,6 +108,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="record_staffing_shortfall",
     ),
     path("work-packages/", planning.work_packages, name="work_packages"),
+    path("maintenance-history/", maintenance_history.page, name="maintenance_history"),
+    path(
+        "aircraft/<uuid:aircraft_id>/maintenance-history/",
+        maintenance_history.page,
+        name="aircraft_maintenance_history",
+    ),
     path("work-packages/build/", planning.build_work_package, name="build_work_package"),
     path("work-packages/<uuid:package_id>/", planning.work_package, name="work_package"),
     path(

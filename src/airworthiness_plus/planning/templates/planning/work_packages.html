@@ -3,6 +3,7 @@
 {% block content %}
 <header class="page-heading">
 <h1>Work Packages</h1>
+<a class="button" href="{% url 'maintenance_history' %}">Maintenance History</a>
 {% if may_plan %}<a class="button" href="{% url 'build_work_package' %}">Build a Work Package</a>{% endif %}
 </header>
 <div class="table-wrap">

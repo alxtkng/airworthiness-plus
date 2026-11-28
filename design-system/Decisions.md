@@ -589,3 +589,8 @@ Source: CAP 562 Issue 4 Amendment 3 (January 2020), read in full. Its wording pr
 | Records retention, Non-Part 21 | Until 2 years after the aircraft is destroyed or permanently withdrawn | CAP 562 5-70 |
 | Computerised records | Amendment history that cannot be deleted, write access by role, up to 100% check of directive and review data on migration, controlled certificate serials, 6-month parallel run, written approval to keep records outside logbooks | CAP 562 C-90 |
 | Parts release, Non-Part 21 | Civil Aviation Authority Approved Certificate | CAP 562 Chapter B |
+
+
+### Maintenance history
+
+Maintenance History is available from the aircraft tabs and Work Packages. The aircraft entry pins the aircraft. The planning entry can search the fleet in the current organisation or a selected aircraft. A chapter matches its recorded sections and a section matches the exact code. Earlier chapter-only records remain searchable. A defect search distinguishes the submitted report and note from the recorded rectification. Order and package results match these facets through their linked defect. The date refers to defect discovery, order agreement or package planned start, respectively. The state filter groups open and closed records while the results retain each source's own status. The written work order continues to represent the agreed work scope under CAO.A.055(b). [UK authority evidence](../research/amos-uk-authority.md)

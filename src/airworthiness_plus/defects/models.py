@@ -57,6 +57,7 @@ class Defect(Record):
     note = models.CharField("Note", max_length=200, blank=True)
     found_on = models.DateField("Found")
     chapter = models.PositiveSmallIntegerField("Chapter")
+    section = models.CharField("ATA Section", max_length=2, blank=True)
     system = models.CharField("System", max_length=100)
 
     decision = models.CharField("Decision", max_length=20, choices=Decision.choices)
@@ -97,6 +98,10 @@ class Defect(Record):
                 & Q(chapter__gte=FIRST_CHAPTER, chapter__lte=LAST_CHAPTER)
                 & Q(decided_on__gte=F("found_on")),
                 name="defect_has_a_title_a_system_and_a_decision_not_before_it_was_found",
+            ),
+            models.CheckConstraint(
+                condition=Q(section="") | Q(section__regex=r"^[0-9]{2}$"),
+                name="defect_ata_section_is_two_digits_or_blank",
             ),
             # Not Deferrable has no basis and no limit; Deferred has both.
             models.CheckConstraint(
@@ -175,7 +180,8 @@ class Defect(Record):
     @property
     def system_text(self) -> str:
         """Return the system as the Repeat Defects board writes it: Chapter 33, Lights."""
-        return f"Chapter {self.chapter}, {self.system}"
+        classification = f"{self.chapter:02d}-{self.section}" if self.section else str(self.chapter)
+        return f"Chapter {classification}, {self.system}"
 
 
 class RepeatAction(Record):

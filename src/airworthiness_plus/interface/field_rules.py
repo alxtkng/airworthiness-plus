@@ -232,6 +232,8 @@ READS = frozenset(
         "weight_and_balance",
         "component",
         "defects",
+        "maintenance_history",
+        "aircraft_maintenance_history",
         "defect",
         "repeat_defects",
         "aircraft",

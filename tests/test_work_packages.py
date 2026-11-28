@@ -9,6 +9,8 @@ from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.contracts import services as contract_services
 from airworthiness_plus.contracts.models import OrderedBy
+from airworthiness_plus.defects import services as defect_services
+from airworthiness_plus.defects.models import Basis, Decision
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
@@ -33,6 +35,49 @@ def test_work_packages_board_requires_sign_in_and_lists_sample_aircraft(
     response = get(signed_in(sample.reader), "/work-packages/")
     assert response.status_code == 200
     assert "Work Packages" in response.content.decode()
+
+
+def test_the_maintenance_history_links_the_original_order_and_package(
+    setup: tuple[Sample, Aircraft],
+) -> None:
+    """REQ-381. An order retains its scope and receives classification via its linked defect."""
+    from airworthiness_plus.planning import services
+
+    sample, aircraft = setup
+    with working_for(sample.ours.id, sample.planner.id):
+        defect = defect_services.record_defect(
+            aircraft,
+            title="Loose seat track",
+            found_on=TODAY,
+            chapter=25,
+            section="21",
+            system="Equipment",
+            decision=Decision.DEFERRED,
+            basis=Basis.PILOT_NON_REQUIRED,
+            decided_on=TODAY,
+        )
+        package = services.build_package(
+            aircraft,
+            reference="WP-HISTORY",
+            title="Inspect seat track",
+            location="Bay 1",
+            starts_on=TODAY,
+            ends_on=TODAY,
+            defect=defect,
+        )
+        order = contract_services.add_work_order(
+            aircraft, work="Scheduled cabin work", ordered_by=OrderedBy.MANAGER, agreed_on=TODAY
+        )
+        services.link_order(package, order)
+
+    client = signed_in(sample.reader)
+    result = get(client, f"/aircraft/{aircraft.id}/maintenance-history/?ata=25-21&state=open")
+    assert result.status_code == 200
+    body = result.content.decode()
+    assert f'href="/defects/{defect.id}/"' in body
+    assert f'href="/work-packages/{package.id}/"' in body
+    assert f'href="/contracts/#order-{order.id}">{order.work}</a>' in body
+    assert f'id="order-{order.id}"' in get(client, "/contracts/").content.decode()
 
 
 def test_order_and_current_data_are_checked_before_issue(setup: tuple[Sample, Aircraft]) -> None:
