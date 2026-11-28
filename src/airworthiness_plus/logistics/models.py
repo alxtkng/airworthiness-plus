@@ -71,6 +71,13 @@ class ItemClass(models.TextChoices):
     MATERIAL = "Material", "Material"
 
 
+class DocumentKind(models.TextChoices):
+    CAA_FORM_1 = "CAA Form 1", "CAA Form 1"
+    EQUIVALENT = "Equivalent Release", "Equivalent Release"
+    EXCEPTION = "Permitted Exception", "Permitted Exception"
+    CONFORMITY = "Conformity Evidence", "Conformity Evidence"
+
+
 class CheckKind(models.TextChoices):
     SOURCE = "Supplier", "Supplier"
     DOCUMENT = "Release Document", "Release Document"
@@ -162,6 +169,17 @@ class ReceivingDisposition(Record):
     outcome = models.CharField("Disposition", max_length=25, choices=Destination.choices)
     destination = models.CharField("Store, Quarantine Location or Return Recipient", max_length=200)
     evidence = models.TextField("Decision Reason and Movement Evidence", max_length=1000)
+    document_kind = models.CharField(
+        "Evidence Type", max_length=25, choices=DocumentKind.choices, blank=True
+    )
+    document_reference = models.CharField("Evidence Reference", max_length=200, blank=True)
+    evidence_basis = models.CharField(
+        "Standard, Specification or Regulatory Basis", max_length=200, blank=True
+    )
+    manufacturing_source = models.CharField("Manufacturing Source", max_length=200, blank=True)
+    material_supplier_source = models.CharField(
+        "Supplier Source on Material Evidence", max_length=200, blank=True
+    )
 
     class Meta:
         constraints = [
@@ -170,3 +188,15 @@ class ReceivingDisposition(Record):
                 name="receiving_disposition_has_outcome_and_ordered_dates",
             ),
         ]
+
+
+class StockEntry(Record):
+    """The initial Stores entry for an accepted disposition."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    disposition = models.OneToOneField(
+        ReceivingDisposition, on_delete=models.PROTECT, related_name="stock_entry"
+    )
+
+    class Meta:
+        ordering = ["-disposition__disposition_on", "disposition__receipt__item", "id"]

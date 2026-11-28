@@ -222,6 +222,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         "logistics_receipt": ["INSERT", "SELECT"],
         "logistics_receivingcheck": ["INSERT", "SELECT"],
         "logistics_receivingdisposition": ["INSERT", "SELECT"],
+        "logistics_stockentry": ["SELECT"],
         "staffing_review": ["INSERT", "SELECT"],
         "staffing_report": ["INSERT", "SELECT"],
         "staffing_absence": ["INSERT", "SELECT"],
@@ -239,7 +240,12 @@ def test_every_table_is_under_the_record_rules() -> None:
     extra_triggers = {
         "logistics_receipt": {"receipt_rules"},
         "logistics_receivingcheck": {"receiving_check_rules"},
-        "logistics_receivingdisposition": {"receiving_disposition_rules"},
+        "logistics_receivingdisposition": {
+            "receiving_disposition_rules",
+            "receiving_disposition_verified_evidence",
+            "stock_from_acceptance",
+        },
+        "logistics_stockentry": {"history_refuse_update", "stock_requires_acceptance"},
         # The approval it was set up with is changed only by the owner (REQ-200).
         "organisations_organisation": {"serial_floor_guard", "set_up_approval_guard"},
         "organisations_approval": {"approval_guard"},

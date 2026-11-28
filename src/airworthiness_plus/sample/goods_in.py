@@ -12,6 +12,7 @@ from airworthiness_plus.logistics.models import (
     CheckKind,
     CheckOutcome,
     Destination,
+    DocumentKind,
     ItemClass,
     Receipt,
 )
@@ -154,6 +155,12 @@ def _add_receipt(
             outcome=example.disposition,
             destination=example.location,
             evidence=example.evidence,
+            document_kind=DocumentKind.CAA_FORM_1
+            if example.disposition == Destination.STORES
+            else "",
+            document_reference="[Sample Release Folder / RX-002 / CAA Form 1]"
+            if example.disposition == Destination.STORES
+            else "",
         )
 
 

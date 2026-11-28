@@ -34,7 +34,11 @@
 <dt>Moved or Returned On</dt><dd>{{ disposition.disposition_on|long_date }}</dd>
 <dt>Location or Recipient</dt><dd>{{ disposition.destination }}</dd>
 <dt>Decision Reason and Movement Evidence</dt><dd>{{ disposition.evidence }}</dd>
+{% include "logistics/verified_evidence.html" %}
 </dl>
+{% if disposition.stock_entry %}
+<p><a class="button" href="{% url 'stock_entry' disposition.stock_entry.id %}">View Stores Entry</a></p>
+{% endif %}
 {% else %}
 <p>Awaiting Inspection</p>
 {% if may_record %}

@@ -200,6 +200,8 @@ READS = frozenset(
         "suppliers",
         "goods_in",
         "goods_receipt",
+        "stores_stock",
+        "stock_entry",
         "supplier",
         "staffing_plan",
         "work_packages",

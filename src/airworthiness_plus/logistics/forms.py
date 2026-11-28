@@ -7,6 +7,7 @@ from airworthiness_plus.logistics.models import (
     CheckKind,
     CheckOutcome,
     Destination,
+    DocumentKind,
     ItemClass,
     SupplierStatus,
 )
@@ -73,4 +74,40 @@ class ReceivingDispositionForm(Form):
     )
     evidence = forms.CharField(
         label="Decision Reason and Movement Evidence", max_length=1000, widget=forms.Textarea
+    )
+    document_kind = forms.ChoiceField(
+        label="Evidence Type",
+        choices=[("", "Choose an evidence type"), *DocumentKind.choices],
+        required=False,
+        help_text="Required for Stores. Select the evidence that was checked.",
+    )
+    document_reference = forms.CharField(
+        label="Evidence Reference",
+        max_length=200,
+        required=False,
+        help_text=(
+            "Give the reference where the checked release, conformity statement "
+            "or exception evidence can be retrieved."
+        ),
+    )
+    evidence_basis = forms.CharField(
+        label="Standard, Specification or Regulatory Basis",
+        max_length=200,
+        required=False,
+        help_text=(
+            "For conformity, give the applicable standard or specification. "
+            "For an equivalent release or exception, give the agreement or rule relied on."
+        ),
+    )
+    manufacturing_source = forms.CharField(
+        label="Manufacturing Source",
+        max_length=200,
+        required=False,
+        help_text="For material, give the manufacturing source stated on the conformity evidence.",
+    )
+    material_supplier_source = forms.CharField(
+        label="Supplier Source on Material Evidence",
+        max_length=200,
+        required=False,
+        help_text="For material, give the supplier source stated on the conformity evidence.",
     )

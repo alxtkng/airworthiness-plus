@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ receipt.item }} · Stock{% endblock %}
+{% block content %}
+<h1>{{ receipt.item }}</h1>
+<p><a href="{% url 'goods_receipt' receipt.id %}">View Goods In Receipt {{ receipt.delivery_reference }}</a></p>
+<dl>
+<dt>Class</dt><dd>{{ receipt.classification }}</dd>
+<dt>Supplier or Owner Source</dt><dd>{{ receipt.source }}</dd>
+<dt>Item Reference</dt><dd>{{ receipt.item_reference }}</dd>
+<dt>Received Quantity</dt><dd>{{ receipt.quantity }}</dd>
+<dt>Stock Location</dt><dd>{{ disposition.destination }}</dd>
+<dt>Moved On</dt><dd>{{ disposition.disposition_on|long_date }}</dd>
+{% if receipt.shelf_life_to %}<dt>Shelf Life To</dt><dd>{{ receipt.shelf_life_to|long_date }}</dd>{% endif %}
+<dt>Release Document Shown on Arrival</dt><dd>{{ receipt.release_document|default:"Not Recorded" }}</dd>
+{% include "logistics/verified_evidence.html" %}
+</dl>
+{% endblock %}

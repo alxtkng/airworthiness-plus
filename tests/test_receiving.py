@@ -4,6 +4,7 @@ import pytest
 
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
+from airworthiness_plus.logistics.models import StockEntry
 from airworthiness_plus.people.models import Person
 from tests.support import Sample, get, post, signed_in
 
@@ -32,7 +33,7 @@ CHECKS = (
 
 
 def test_receiving_retains_each_check_and_decision_and_requires_evidence(sample: Sample) -> None:
-    """REQ-344 to REQ-346. Pending checks prevent a receipt entering stores."""
+    """REQ-353 to REQ-355. Pending checks prevent a receipt entering stores."""
     recorder = signed_in(sample.planner)
     created = post(recorder, "/goods-in/receive/", **RECEIPT)
     assert created.status_code == 302
@@ -50,6 +51,8 @@ def test_receiving_retains_each_check_and_decision_and_requires_evidence(sample:
         "outcome": "Accepted into Stores",
         "destination": "Store Bay B",
         "evidence": "Receiving inspection record RI-26",
+        "document_kind": "CAA Form 1",
+        "document_reference": "Checked release register RI-26 / Form 1",
     }
     refused = post(recorder, receipt + "dispose/", **decision)
     assert refused.status_code == 200
@@ -75,6 +78,17 @@ def test_receiving_retains_each_check_and_decision_and_requires_evidence(sample:
     assert b"Chris Moore" in read.content
     assert b"UK.CAO.[Number]" in read.content
     assert b"Accepted into Stores" in get(recorder, "/goods-in/").content
+    assert b"View Stores Entry" in read.content
+    with working_for(sample.ours.id, sample.lucy.id):
+        entry = StockEntry.objects.get()
+        assert f"/goods-in/{entry.disposition.receipt_id}/" == receipt
+    stock_url = f"/stores/{entry.pk}/"
+    stock = get(signed_in(sample.reader), stock_url)
+    for value in (b"Store Bay B", b"Checked release register", b"PN-713, SN-863", b"DELIVERY-26"):
+        assert value in stock.content
+    other = signed_in(sample.stranger)
+    assert get(other, stock_url).status_code in {403, 404}
+    assert b"DELIVERY-26" not in get(other, "/stores/").content
     assert post(recorder, receipt + "dispose/", **decision).status_code != 302
     assert (
         post(
@@ -93,14 +107,21 @@ def test_receiving_retains_each_check_and_decision_and_requires_evidence(sample:
                 "logistics_receipt",
                 "logistics_receivingcheck",
                 "logistics_receivingdisposition",
+                "logistics_stockentry",
             )
         )
-        assert audit.count() == 8
-        assert set(audit.values_list("actor_id", flat=True)) == {sample.planner.id}
+        assert audit.count() == 9
+        assert StockEntry.objects.count() == 1
+        stock_event = audit.get(record_type="logistics_stockentry", record_id=entry.id)
+        assert stock_event.actor_id is None
+        assert stock_event.actor_name.startswith("Database Role ")
+        assert str(entry.disposition_id) in (stock_event.after_json or "")
+        decisions = audit.exclude(pk=stock_event.pk)
+        assert set(decisions.values_list("actor_id", flat=True)) == {sample.planner.id}
 
 
 def test_receiving_is_tenant_scoped_and_reserved_to_recording_roles(sample: Sample) -> None:
-    """REQ-347. Rights and tenant isolation hold even behind a direct URL."""
+    """REQ-356. Rights and tenant isolation hold even behind a direct URL."""
     reader = signed_in(sample.reader)
     assert post(reader, "/goods-in/receive/", **RECEIPT).status_code == 403
     created = post(signed_in(sample.lucy), "/goods-in/receive/", **RECEIPT)
@@ -114,7 +135,7 @@ def test_receiving_is_tenant_scoped_and_reserved_to_recording_roles(sample: Samp
 
 
 def test_a_failed_suspect_part_check_requires_quarantine(sample: Sample) -> None:
-    """REQ-346. A second attempted movement cannot rewrite the quarantine."""
+    """REQ-355. A second attempted movement cannot rewrite the quarantine."""
     from airworthiness_plus.logistics.models import Receipt, ReceivingDisposition
 
     recorder = signed_in(sample.planner)
@@ -145,17 +166,25 @@ def test_a_failed_suspect_part_check_requires_quarantine(sample: Sample) -> None
         "evidence": "Decided after finding a serial number mismatch",
     }
     assert b"Must Go to Quarantine" in post(recorder, detail + "dispose/", **evidence).content
-    evidence.update(outcome="Quarantined", destination="Secure Quarantine Bay Q2")
+    evidence.update(
+        outcome="Quarantined",
+        destination="Secure Quarantine Bay Q2",
+        document_kind="CAA Form 1",
+        document_reference="Retained mismatched release",
+    )
     assert post(recorder, detail + "dispose/", **evidence).status_code == 302
     with working_for(sample.ours.id, sample.planner.id):
         assert Receipt.objects.count() == 1
         decision = ReceivingDisposition.objects.get()
         assert decision.outcome == "Quarantined"
         assert decision.destination == "Secure Quarantine Bay Q2"
+        assert decision.document_reference == "Retained mismatched release"
+        assert decision.receipt.item_reference == RECEIPT["item_reference"]
+        assert not StockEntry.objects.exists()
 
 
 def test_database_blocks_invalid_disposition_and_preserves_the_record(sample: Sample) -> None:
-    """REQ-346, REQ-347. The application database role cannot bypass inspection."""
+    """REQ-355, REQ-356. The application database role cannot bypass inspection."""
     from datetime import date
 
     from django.db import DatabaseError, IntegrityError, transaction
@@ -198,7 +227,20 @@ def test_database_blocks_invalid_disposition_and_preserves_the_record(sample: Sa
                 checked_on=date(2026, 11, 16),
                 evidence="   ",
             )
+        for kind in CheckKind:
+            ReceivingCheck.objects.create(
+                organisation=sample.ours,
+                receipt=receipt,
+                kind=kind,
+                outcome="Pass",
+                checked_on=date(2026, 11, 16),
+                evidence="Synthetic check evidence",
+            )
+        with pytest.raises(IntegrityError, match="traceable evidence"), transaction.atomic():
+            ReceivingDisposition.objects.create(**decision, outcome=Destination.STORES)
         kept = ReceivingDisposition.objects.create(**decision, outcome=Destination.QUARANTINE)
+        with pytest.raises(DatabaseError, match="permission denied"), transaction.atomic():
+            StockEntry.objects.create(organisation=sample.ours, disposition=kept)
         kept.refresh_from_db()
         assert kept.inspector_name == "Chris Moore"
         assert kept.approval_reference == term.reference
@@ -220,7 +262,7 @@ def test_database_blocks_invalid_disposition_and_preserves_the_record(sample: Sa
 def test_goods_in_sample_records_pending_returned_accepted_and_quarantined(
     sample: Sample,
 ) -> None:
-    """REQ-218 and REQ-344 to REQ-346. Canvas examples are traceable and added only once."""
+    """REQ-218 and REQ-353 to REQ-355. Canvas examples are traceable and added only once."""
     from airworthiness_plus.logistics.models import Receipt
     from airworthiness_plus.sample import goods_in
 
@@ -235,6 +277,9 @@ def test_goods_in_sample_records_pending_returned_accepted_and_quarantined(
         oil = Receipt.objects.get(delivery_reference="RX-005")
         assert oil.disposition.inspected_on.isoformat() == "2026-10-28"
         assert oil.disposition.disposition_on.isoformat() == "2026-10-29"
+        assert oil.item_reference == "[Oil Batch Number]"
+        assert oil.disposition.evidence.startswith("Batch Without Conformity Evidence")
+        assert StockEntry.objects.get().disposition.receipt.delivery_reference == "RX-002"
 
 
 @pytest.mark.parametrize("received_class", ["Unserviceable Component", "Unsalvageable Component"])
@@ -314,6 +359,8 @@ def test_expired_shelf_life_and_a_later_failed_check_stop_acceptance(sample: Sam
         "outcome": "Accepted into Stores",
         "destination": "Store",
         "evidence": "Intake inspection evidence",
+        "document_kind": "CAA Form 1",
+        "document_reference": "Synthetic release",
     }
     assert b"Shelf Life Has Passed" in post(recorder, detail + "dispose/", **args).content
     args["disposition_on"] = "2026-11-17"
@@ -344,3 +391,143 @@ def test_expired_shelf_life_and_a_later_failed_check_stop_acceptance(sample: Sam
         == 302
     )
     assert post(recorder, detail + "dispose/", **args).status_code == 302
+
+
+@pytest.mark.parametrize(
+    ("classification", "kind", "basis", "manufacturer", "error"),
+    [
+        ("Serviceable Component", "Conformity Evidence", "SYN-1", "", "Choose the Release"),
+        ("Serviceable Component", "Equivalent Release", "", "", "Give the Applicable Basis"),
+        ("Serviceable Component", "Equivalent Release", "Sample bilateral basis", "", ""),
+        ("Serviceable Component", "Permitted Exception", "Sample documented exception", "", ""),
+        ("Standard Part", "CAA Form 1", "SYN-1", "", "Give the Conformity Evidence"),
+        ("Standard Part", "Conformity Evidence", "", "", "Give the Conformity Evidence"),
+        ("Standard Part", "Conformity Evidence", "SYN-1", "", ""),
+        ("Material", "Conformity Evidence", "SYN-2", "", "Give the Manufacturing Source"),
+        ("Material", "Conformity Evidence", "SYN-2", "Sample Factory", ""),
+    ],
+)
+def test_stores_evidence_depends_on_the_received_class(
+    sample: Sample, classification: str, kind: str, basis: str, manufacturer: str, error: str
+) -> None:
+    """REQ-355 and REQ-357. Successful and refused cases use the real form and database."""
+    recorder = signed_in(sample.planner)
+    response = post(recorder, "/goods-in/receive/", **{**RECEIPT, "classification": classification})
+    assert response.status_code == 302
+    detail = response["Location"]
+    for check in CHECKS:
+        result = post(
+            recorder,
+            detail + "check/",
+            check=check,
+            outcome="Pass",
+            checked_on="2026-11-16",
+            evidence=f"Synthetic evidence for {check}",
+        )
+        assert result.status_code == 302
+    with working_for(sample.ours.id, sample.planner.id):
+        inspector = Person.objects.get(full_name="Chris Moore")
+    decision = {
+        "approval": "Part-CAO",
+        "inspector": str(inspector.pk),
+        "inspector_authority": "Sample RI-6",
+        "inspected_on": "2026-11-16",
+        "disposition_on": "2026-11-17",
+        "outcome": "Accepted into Stores",
+        "destination": "Sample Bay",
+        "evidence": "Synthetic inspection record",
+        "document_kind": kind,
+        "document_reference": "Synthetic evidence register",
+        "evidence_basis": basis,
+        "manufacturing_source": manufacturer,
+        "material_supplier_source": "Supplier on Sample Statement",
+    }
+    refused = post(recorder, detail + "dispose/", **{**decision, "document_reference": ""})
+    assert b"Give a Traceable Evidence Reference" in refused.content
+    if classification == "Material" and manufacturer:
+        missing_supplier = post(
+            recorder, detail + "dispose/", **{**decision, "material_supplier_source": ""}
+        )
+        assert b"Give the Manufacturing Source and Supplier Source" in missing_supplier.content
+    result = post(recorder, detail + "dispose/", **decision)
+    with working_for(sample.ours.id, sample.planner.id):
+        if error:
+            assert error.encode() in result.content
+            assert not StockEntry.objects.exists()
+        else:
+            assert result.status_code == 302
+            disposition = StockEntry.objects.get().disposition
+            assert disposition.document_kind == kind
+            assert disposition.evidence_basis == basis
+            assert disposition.manufacturing_source == manufacturer
+
+
+def test_stock_migration_keeps_prior_acceptance_and_its_original_evidence(sample: Sample) -> None:
+    """REQ-357. Upgrade a receipt accepted before structured evidence was available."""
+    from datetime import date
+
+    from django.db import connection
+    from django.db.migrations.executor import MigrationExecutor
+
+    from airworthiness_plus.exports.build import build
+    from airworthiness_plus.exports.verify import verify
+    from airworthiness_plus.organisations.models import Approval, ApprovalType
+    from tests.conftest import as_owner
+
+    with as_owner():
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        old_apps = executor.migrate([("logistics", "0004_receiving_record_rules")]).apps
+    old_receipt = old_apps.get_model("logistics", "Receipt")
+    old_check = old_apps.get_model("logistics", "ReceivingCheck")
+    old_decision = old_apps.get_model("logistics", "ReceivingDisposition")
+    day = date(2026, 11, 16)
+    with working_for(sample.ours.id, sample.planner.id):
+        arrival = old_receipt.objects.create(
+            organisation_id=sample.ours.id,
+            item="Synthetic Test Assembly",
+            received_on=day,
+            classification="Serviceable Component",
+            source="Synthetic Supplier",
+            item_reference="Test Serial 262",
+            quantity=1,
+            delivery_reference="MIGRATION-262",
+            release_document="Original Sample Release Reference",
+        )
+        for check in CHECKS:
+            old_check.objects.create(
+                organisation_id=sample.ours.id,
+                receipt_id=arrival.id,
+                kind=check,
+                outcome="Pass",
+                evidence="Sample evidence retained by the original procedure",
+                checked_on=day,
+            )
+        decision = old_decision.objects.create(
+            organisation_id=sample.ours.id,
+            receipt_id=arrival.id,
+            approval_id=Approval.objects.get(approval=ApprovalType.PART_CAO).id,
+            inspector_id=Person.objects.get(full_name="Chris Moore").id,
+            inspector_authority="Sample RI-6",
+            inspected_on=day,
+            disposition_on=day,
+            outcome="Accepted into Stores",
+            destination="Sample Bay",
+            evidence="Original inspection decision",
+        )
+    with as_owner():
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        MigrationExecutor(connection).migrate(latest)
+    with working_for(sample.ours.id, sample.planner.id):
+        entry = StockEntry.objects.get()
+        assert entry.disposition_id == decision.id
+        assert entry.disposition.receipt.release_document == "Original Sample Release Reference"
+        assert entry.disposition.document_reference == ""
+        assert (
+            Event.objects.filter(
+                record_type="logistics_receivingdisposition", record_id=decision.id
+            ).count()
+            == 1
+        )
+        assert not verify(build(sample.ours, by=sample.planner).content).problems

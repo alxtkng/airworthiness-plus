@@ -20,7 +20,13 @@ from airworthiness_plus.logistics.forms import (
     ReceivingCheckForm,
     ReceivingDispositionForm,
 )
-from airworthiness_plus.logistics.models import CheckKind, Receipt, ReceivingDisposition, Supplier
+from airworthiness_plus.logistics.models import (
+    CheckKind,
+    Receipt,
+    ReceivingDisposition,
+    StockEntry,
+    Supplier,
+)
 from airworthiness_plus.organisations.models import Approval
 
 
@@ -126,7 +132,8 @@ def receipt(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
     """Show the current state and retain the history of recorded observations."""
     user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
     record = get_object_or_404(
-        Receipt.objects.select_related("disposition__approval"), pk=receipt_id
+        Receipt.objects.select_related("disposition__approval", "disposition__stock_entry"),
+        pk=receipt_id,
     )
     history = list(record.checks.all())
     current = receiving.current_checks(history)
@@ -145,10 +152,38 @@ def receipt(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
 
 
 @never_cache
+@requires(Action.VIEW_RECORDS)
+def stores_stock(request: HttpRequest) -> HttpResponse:
+    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
+    entries = StockEntry.objects.filter(organisation=user.organisation).select_related(
+        "disposition__receipt"
+    )
+    return render(request, "logistics/stock.html", {"entries": entries})
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def stock_entry(request: HttpRequest, stock_id: UUID) -> HttpResponse:
+    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
+    entry = get_object_or_404(
+        StockEntry.objects.filter(organisation=user.organisation).select_related(
+            "disposition__receipt"
+        ),
+        pk=stock_id,
+    )
+    decision = entry.disposition
+    return render(
+        request,
+        "logistics/stock_entry.html",
+        {"receipt": decision.receipt, "disposition": decision},
+    )
+
+
+@never_cache
 @requires(Action.RECORD_GOODS_IN)
 @require_http_methods(["GET", "POST"])
 def receive(request: HttpRequest) -> HttpResponse:
-    """Record one line of goods received (REQ-344)."""
+    """Record one line of goods received (REQ-353)."""
     user, _ = _maintenance_access(request, Action.RECORD_GOODS_IN, aircraft_services.today())
     form = ReceiptForm(request.POST if request.method == "POST" else None)
     if form.is_bound and form.is_valid():
@@ -169,7 +204,7 @@ def receive(request: HttpRequest) -> HttpResponse:
 @requires(Action.RECORD_GOODS_IN)
 @require_http_methods(["GET", "POST"])
 def record_receiving_check(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
-    """Append an inspection check observation (REQ-345)."""
+    """Append an inspection check observation (REQ-354)."""
     return _record_inspection(request, receipt_id, check=True)
 
 
@@ -177,7 +212,7 @@ def record_receiving_check(request: HttpRequest, receipt_id: UUID) -> HttpRespon
 @requires(Action.RECORD_GOODS_IN)
 @require_http_methods(["GET", "POST"])
 def record_receiving_disposition(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
-    """Record the inspection decision and its disposition (REQ-346)."""
+    """Record the inspection decision and its disposition (REQ-355)."""
     return _record_inspection(request, receipt_id, check=False)
 
 

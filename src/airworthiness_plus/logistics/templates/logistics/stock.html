@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Stores Stock{% endblock %}
+{% block content %}
+<h1>Stock</h1>
+{% if entries %}
+<table data-search="always">
+<thead><tr><th scope="col">Item</th><th scope="col">Item Reference</th><th scope="col">Received Quantity</th><th scope="col">Stock Location</th><th scope="col">Moved On</th><th scope="col">Shelf Life To</th><th scope="col">Delivery Line</th></tr></thead>
+<tbody>
+{% for entry in entries %}{% with decision=entry.disposition receipt=entry.disposition.receipt %}
+<tr>
+<td><a href="{% url 'stock_entry' entry.id %}">{{ receipt.item }}</a></td>
+<td>{{ receipt.item_reference }}</td><td>{{ receipt.quantity }}</td><td>{{ decision.destination }}</td>
+<td>{{ decision.disposition_on|long_date }}</td><td>{{ receipt.shelf_life_to|long_date }}</td>
+<td><a href="{% url 'goods_receipt' receipt.id %}">{{ receipt.delivery_reference }}</a></td>
+</tr>
+{% endwith %}{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Items Accepted into Stores</p>{% endif %}
+{% endblock %}

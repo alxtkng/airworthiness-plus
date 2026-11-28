@@ -9,6 +9,7 @@ from airworthiness_plus.logistics.models import (
     CheckKind,
     CheckOutcome,
     Destination,
+    DocumentKind,
     ItemClass,
     Receipt,
     ReceivingCheck,
@@ -122,6 +123,34 @@ def _check_stores(receipt: Receipt, checks: dict[str, ReceivingCheck], moved_on:
             raise RefusedError("All Applicable Checks Must Pass Before Acceptance into Stores")
 
 
+def _check_document(
+    classification: str,
+    kind: str,
+    reference: str,
+    basis: str,
+    manufacturing_source: str,
+    material_supplier_source: str,
+) -> None:
+    if not reference.strip():
+        raise RefusedError("Give a Traceable Evidence Reference Before Acceptance into Stores")
+    if classification == ItemClass.SERVICEABLE:
+        if kind not in (DocumentKind.CAA_FORM_1, DocumentKind.EQUIVALENT, DocumentKind.EXCEPTION):
+            raise RefusedError("Choose the Release or Permitted Exception for This Component")
+        if kind != DocumentKind.CAA_FORM_1 and not basis.strip():
+            raise RefusedError("Give the Applicable Basis for the Equivalent Release or Exception")
+    else:
+        if kind != DocumentKind.CONFORMITY or not basis.strip():
+            raise RefusedError(
+                "Give the Conformity Evidence and Applicable Standard or Specification"
+            )
+        if classification == ItemClass.MATERIAL and not (
+            manufacturing_source.strip() and material_supplier_source.strip()
+        ):
+            raise RefusedError(
+                "Give the Manufacturing Source and Supplier Source Shown on the Material Evidence"
+            )
+
+
 @transaction.atomic
 def dispose(
     receipt: Receipt,
@@ -134,6 +163,11 @@ def dispose(
     outcome: str,
     destination: str,
     evidence: str,
+    document_kind: str = "",
+    document_reference: str = "",
+    evidence_basis: str = "",
+    manufacturing_source: str = "",
+    material_supplier_source: str = "",
 ) -> ReceivingDisposition:
     """Keep once-only disposition and the dated inspector and approval evidence."""
     _lock_open_receipt(receipt)
@@ -171,6 +205,14 @@ def dispose(
         raise RefusedError("An Unserviceable or Unsalvageable Item Must Go to Quarantine")
     if outcome == Destination.STORES:
         _check_stores(receipt, checks, disposition_on)
+        _check_document(
+            receipt.classification,
+            document_kind,
+            document_reference,
+            evidence_basis,
+            manufacturing_source,
+            material_supplier_source,
+        )
     return ReceivingDisposition.objects.create(
         organisation_id=receipt.organisation_id,
         receipt=receipt,
@@ -184,4 +226,9 @@ def dispose(
         outcome=outcome,
         destination=destination,
         evidence=evidence,
+        document_kind=document_kind,
+        document_reference=document_reference,
+        evidence_basis=evidence_basis,
+        manufacturing_source=manufacturing_source,
+        material_supplier_source=material_supplier_source,
     )

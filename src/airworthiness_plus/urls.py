@@ -42,6 +42,8 @@ urlpatterns: list[URLPattern | URLResolver] = [
         logistics.record_receiving_disposition,
         name="record_receiving_disposition",
     ),
+    path("stores/", logistics.stores_stock, name="stores_stock"),
+    path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
     path("suppliers/", logistics.suppliers, name="suppliers"),
     path("suppliers/evaluate/", logistics.add_supplier, name="add_supplier"),
     path("suppliers/<uuid:supplier_id>/", logistics.supplier, name="supplier"),

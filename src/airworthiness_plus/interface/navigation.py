@@ -290,7 +290,13 @@ BOARD: tuple[Group, ...] = (
                     }
                 ),
             ),
-            Item("Stores", shown_for=MAINTAINS, tabs=_tabs("Stock", "Quarantine and Scrap")),
+            Item(
+                "Stores",
+                "stores_stock",
+                shown_for=MAINTAINS,
+                tabs=(Tab("Stock", "stores_stock"), *_tabs("Quarantine and Scrap")),
+                inside=frozenset({"stock_entry"}),
+            ),
             Item(
                 "Tools and Equipment",
                 shown_for=MAINTAINS,
