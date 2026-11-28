@@ -2,7 +2,7 @@
 
 from playwright.sync_api import Browser, expect
 
-from tests.e2e.browser import save, signed_in
+from tests.e2e.browser import fill, save, signed_in
 from tests.e2e.conftest import Account
 
 HOME = "/tools/providers/"
@@ -146,46 +146,66 @@ def test_calibration_scope_order_and_certificate_workflows(
                 },
                 f"Fictitious {kind} evidence",
             )
-        page.get_by_role("link", name="Record Certificate Version").click()
-        save(
-            page,
-            "Record Calibration Certificate",
-            {
-                "number": "BROWSER-CERT-1",
-                "revision": "1",
-                "source": "Fictitious browser certificate",
-                "calibrated_on": "2026-11-14",
-                "received_on": "2026-11-16",
-                "serial": "E2E-0142",
-                "facility": "Browser Laboratory",
-                "standard": "Fictitious approved standard",
-                "method": "Browser Torque Method Revision 1",
-                "configuration": "Clockwise",
-                "traceability": "Fictitious chain to a standard",
-                "rule": "Fictitious reported rule",
-            },
-            "BROWSER-CERT-1",
-        )
-        for phase, reading, error, statement in (
-            ("As Found", "21.04", "5.2", "Nonconforming"),
-            ("As Left", "20.1", "0.5", "Conforming"),
-        ):
-            page.get_by_role("link", name="Record Calibration Result").click()
+        certificate_fields = {
+            "number": "BROWSER-CERT-1",
+            "source": "Fictitious browser certificate",
+            "calibrated_on": "2026-11-14",
+            "received_on": "2026-11-16",
+            "serial": "E2E-0142",
+            "facility": "Browser Laboratory",
+            "standard": "Fictitious approved standard",
+            "method": "Browser Torque Method Revision 1",
+            "configuration": "Clockwise",
+            "traceability": "Fictitious chain to a standard",
+            "rule": "Fictitious reported rule",
+        }
+        for revision in ("1", "2"):
+            page.get_by_role("link", name="Record Certificate Version").click()
             save(
                 page,
-                "Record Calibration Result",
-                {
-                    "phase": phase,
-                    "reference_value": "20",
-                    "measured_value": reading,
-                    "error": error,
-                    "uncertainty": "0.2",
-                    "coverage": "k=2",
-                    "convention": "Indication less reference",
-                    "statement": statement,
-                },
-                statement,
+                "Record Calibration Certificate",
+                {**certificate_fields, "revision": revision},
+                "BROWSER-CERT-1",
             )
+            as_found = (
+                ("20.1", "0.5", "Conforming", "")
+                if revision == "1"
+                else ("21.04", "5.2", "Nonconforming", "0.2")
+            )
+            for phase, (reading, error, statement, uncertainty) in (
+                ("As Found", as_found),
+                ("As Left", ("20.1", "0.5", "Conforming", "0.2")),
+            ):
+                page.get_by_role("link", name="Record Calibration Result").click()
+                save(
+                    page,
+                    "Record Calibration Result",
+                    {
+                        "phase": phase,
+                        "reference_value": "20",
+                        "measured_value": reading,
+                        "error": error,
+                        "uncertainty": uncertainty,
+                        "coverage": "k=2",
+                        "convention": "Indication less reference",
+                        "statement": statement,
+                    },
+                    statement,
+                )
+            if revision == "1":
+                page.get_by_role("link", name="Decide Certificate Acceptance").click()
+                submit = page.get_by_role(
+                    "button", name="Decide Certificate Acceptance", exact=True
+                )
+                fill(
+                    submit.locator("xpath=ancestor::form"),
+                    {"outcome": "Accepted", "reason": "Review of incomplete as-found evidence"},
+                )
+                submit.click()
+                expect(page.locator("main")).to_contain_text(
+                    "The ordered scope requires uncertainty and coverage"
+                )
+                page.goto(order)
         page.get_by_role("link", name="Decide Certificate Acceptance").click()
         save(
             page,
