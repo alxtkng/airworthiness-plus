@@ -42,6 +42,7 @@ class SyntheticTimestampAuthority:
 
     root_pem: bytes
     workdir: Path
+    _root_key: rsa.RSAPrivateKey = field(repr=False)
     _leaf_pem: bytes = field(repr=False)
     _leaf_key: rsa.RSAPrivateKey = field(repr=False)
     _openssl: str = field(repr=False)
@@ -117,10 +118,72 @@ def make_timestamp_authority(workdir: Path) -> SyntheticTimestampAuthority:
     return SyntheticTimestampAuthority(
         root_pem=root.public_bytes(serialization.Encoding.PEM),
         workdir=workdir.resolve(),
+        _root_key=root_key,
         _leaf_pem=leaf.public_bytes(serialization.Encoding.PEM),
         _leaf_key=leaf_key,
         _openssl=openssl,
     )
+
+
+def _crl_time(moment: datetime) -> datetime:
+    if moment.utcoffset() is None:
+        raise ValueError("CRL fixture times must be timezone-aware")
+    return moment.astimezone(UTC).replace(microsecond=0)
+
+
+def make_timestamp_crl(
+    authority: SyntheticTimestampAuthority,
+    *,
+    last_update: datetime,
+    next_update: datetime,
+    revoked_at: datetime | None = None,
+    invalidity_date: datetime | None = None,
+    reason: x509.ReasonFlags | None = x509.ReasonFlags.cessation_of_operation,
+) -> bytes:
+    """Build a complete PEM CRL for one counterfactual synthetic status scenario.
+
+    The CRL covers the TSA leaf issued by this root. Times are explicitly
+    supplied, including for future-dated replay fixtures. No private key is
+    exported with the result. Use reason=None to omit the entry extension.
+    """
+    last_update, next_update = _crl_time(last_update), _crl_time(next_update)
+    if last_update >= next_update:
+        raise ValueError("CRL nextUpdate must follow thisUpdate")
+    if revoked_at is None and invalidity_date is not None:
+        raise ValueError("An invalidity date requires a revoked TSA leaf")
+
+    root = x509.load_pem_x509_certificate(authority.root_pem)
+    builder = (
+        x509.CertificateRevocationListBuilder()
+        .issuer_name(root.subject)
+        .last_update(last_update)
+        .next_update(next_update)
+        .add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(authority._root_key.public_key()),
+            critical=False,
+        )
+        .add_extension(x509.CRLNumber(1), critical=False)
+    )
+    if revoked_at is not None:
+        revoked_at = _crl_time(revoked_at)
+        if revoked_at > last_update:
+            raise ValueError("A revocation listed in the CRL cannot follow thisUpdate")
+        leaf = x509.load_pem_x509_certificate(authority._leaf_pem)
+        entry = (
+            x509.RevokedCertificateBuilder()
+            .serial_number(leaf.serial_number)
+            .revocation_date(revoked_at)
+        )
+        if reason is not None:
+            entry = entry.add_extension(x509.CRLReason(reason), critical=False)
+        if invalidity_date is not None:
+            invalidity_date = _crl_time(invalidity_date)
+            if invalidity_date > revoked_at:
+                raise ValueError("The invalidity date cannot follow the revocation date")
+            entry = entry.add_extension(x509.InvalidityDate(invalidity_date), critical=False)
+        builder = builder.add_revoked_certificate(entry.build())
+    crl = builder.sign(authority._root_key, hashes.SHA256())
+    return crl.public_bytes(serialization.Encoding.PEM)
 
 
 def _run(authority: SyntheticTimestampAuthority, directory: Path, *arguments: str) -> None:
