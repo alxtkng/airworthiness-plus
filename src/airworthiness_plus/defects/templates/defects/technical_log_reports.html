@@ -1,0 +1,16 @@
+{% if reports %}
+<table>
+<thead><tr><th>Report</th><th>Flight</th><th>ATA</th><th>Linked Part Number</th><th>Original Reporter</th></tr></thead>
+<tbody>
+{% for report in reports %}
+<tr>
+<td><a href="{% url 'technical_log_report' aircraft.id report.id %}">{{ report.kind }} · {{ report.source_reference }}</a></td>
+<td>{{ report.flight }}</td>
+<td>{{ report.chapter|stringformat:"02d" }}{% if report.section %}-{{ report.section }}{% endif %}</td>
+<td>{{ report.part_number }}</td>
+<td>{{ report.reporter }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Flight Reports Found</p>{% endif %}

@@ -80,5 +80,9 @@ chapter and section filtering, separate text searches, keyboard navigation and
 tenant isolation. `test_stores_exercise.py` follows the sample lookup from Stores
 and resumes its checkpoint. `test_parallel_handover.py` uses the two sample
 organisations to rehearse a stop and compare the source records after fallback.
-The mobile synthetic attestation journey is in `test_records.py`.
+`test_aircraft_records.py` remaps a synthetic lightning finding to a revised
+drawing, follows both keyboard and list links, and checks tenant separation.
+It also transcribes source flight reports, filters on the linked part, and
+checks the downloaded report and release attribution. The mobile synthetic
+attestation journey is in `test_records.py`.
 [Case evidence and scope](../../assurance/amos-evidence-matrix.md)

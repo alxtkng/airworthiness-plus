@@ -26,6 +26,10 @@
 <dt>Work Done</dt><dd>{% if defect.work_done %}{{ defect.work_done.description }}{% if defect.work_done.by_pilot_owner %}, Pilot-Owner Maintenance{% endif %}{% endif %}</dd>
 {% endif %}
 </dl>
+{% if flight_reports %}
+<h2>Source Flight Reports</h2>
+<ul>{% for report in flight_reports %}<li><a href="{% url 'technical_log_report' defect.aircraft_id report.id %}">{{ report.kind }} · {{ report.source_reference }}</a></li>{% endfor %}</ul>
+{% endif %}
 {% with item=line.working %}{% if item %}{% include "interface/working.html" with title=item.title rule=item.rule inputs=item.inputs source=item.source %}{% endif %}{% endwith %}
 {% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
 {% if defect.open and may_record %}

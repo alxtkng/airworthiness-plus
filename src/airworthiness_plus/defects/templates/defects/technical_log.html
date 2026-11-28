@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Technical Log · {{ aircraft.registration }}{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+{% include "interface/aircraft_tabs.html" with active="Technical Log" %}
+{% if may_record %}<p><a href="{% url 'record_technical_log_flight' aircraft.id %}">Record a Flight</a></p>{% endif %}
+<h2>Flights</h2>
+<ul>
+{% for flight in flights %}
+<li><a href="{% url 'technical_log_flight' aircraft.id flight.id %}">{{ flight }}</a> · {{ flight.departure }} to {{ flight.arrival }}</li>
+{% empty %}<li>No Flights Recorded</li>
+{% endfor %}
+</ul>
+<h2>Reports</h2>
+<form method="get" aria-label="Filter Flight Reports">
+{{ filter.as_p }}
+<p><button type="submit">Filter Reports</button></p>
+</form>
+{% include "defects/technical_log_reports.html" %}
+{% endblock %}

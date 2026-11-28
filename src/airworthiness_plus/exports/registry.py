@@ -19,7 +19,15 @@ from airworthiness_plus.components.models import Component, Installation
 from airworthiness_plus.configuration.models import Baseline, Position, Transfer, TransferItem
 from airworthiness_plus.contracts.models import Contract, WorkOrder
 from airworthiness_plus.customers.models import Customer
-from airworthiness_plus.defects.models import Defect, RepeatAction
+from airworthiness_plus.defects.models import (
+    AircraftDrawing,
+    DamageEntry,
+    Defect,
+    FlightEvent,
+    FlightReport,
+    FlightReportRelease,
+    RepeatAction,
+)
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive, Source
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.logistics.models import (
@@ -161,10 +169,20 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(WorkCard, _by("package__aircraft")),
     Exported(WorkCardAttestation, _by("card__package__aircraft")),
     Exported(Defect, _by("aircraft")),
+    Exported(AircraftDrawing, _by("aircraft")),
+    Exported(DamageEntry, _by("aircraft")),
+    Exported(FlightEvent, _by("aircraft")),
+    Exported(FlightReport, _by("flight__aircraft")),
+    Exported(FlightReportRelease, _by("report__flight__aircraft")),
     # What was done about the same defect on the aircraft's type.
     Exported(RepeatAction, lambda aircraft: Q(type_rating=aircraft.type_rating)),
-    # Every component that has ever been fitted to the aircraft, and where each has been.
-    Exported(Component, lambda aircraft: Q(installations__aircraft=aircraft)),
+    # Components fitted to the aircraft or named in a flight report, with fitting history.
+    Exported(
+        Component,
+        lambda aircraft: (
+            Q(installations__aircraft=aircraft) | Q(flightreport__flight__aircraft=aircraft)
+        ),
+    ),
     Exported(Installation, lambda aircraft: Q(component__installations__aircraft=aircraft)),
     Exported(Bulletin, _by("aircraft")),
     Exported(Change, _by("aircraft")),

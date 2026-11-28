@@ -22,6 +22,7 @@ from airworthiness_plus.components import forms as components
 from airworthiness_plus.configuration import forms as configuration
 from airworthiness_plus.contracts import forms as contracts
 from airworthiness_plus.customers import forms as customers
+from airworthiness_plus.defects import aircraft_records_forms
 from airworthiness_plus.defects import forms as defects
 from airworthiness_plus.directives import forms as directives
 from airworthiness_plus.imports import forms as imports
@@ -97,6 +98,16 @@ WRITES: dict[str, Sets] = {
     "record_historical_release_evidence": (releases.HistoricalReleaseEvidenceForm,),
     "record_release_certificate": (releases.CertificateForm,),
     "record_defect": (defects.DefectForm,),
+    "record_damage_drawing": (aircraft_records_forms.DrawingForm,),
+    "revise_damage_drawing": (aircraft_records_forms.DrawingForm,),
+    "record_damage_entry": (aircraft_records_forms.DamageForm,),
+    "revise_damage_entry": (aircraft_records_forms.DamageForm,),
+    "record_technical_log_flight": (aircraft_records_forms.FlightForm,),
+    "transcribe_technical_log_report": (
+        aircraft_records_forms.FlightReportForm,
+        "Password and Authenticator Code",
+    ),
+    "link_technical_log_release": (aircraft_records_forms.ReportReleaseForm,),
     "close_defect": (defects.CloseForm,),
     "record_repeat_action": (defects.RepeatActionForm,),
     "add_component": (components.ComponentForm,),
@@ -246,6 +257,12 @@ READS = frozenset(
         "weight_and_balance",
         "component",
         "defects",
+        "damage_register",
+        "damage_drawing",
+        "damage_entry",
+        "technical_log",
+        "technical_log_flight",
+        "technical_log_report",
         "maintenance_history",
         "aircraft_maintenance_history",
         "defect",

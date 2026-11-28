@@ -75,6 +75,19 @@ history/<type>.json
         hash            the hash of this entry
         hash_algorithm  how the hash was made; sha256-fields-1 is the method below
 
+Aircraft damage and flight reports
+    defects_damageentry.drawing_id points to the exact revision in
+    defects_aircraftdrawing. Follow supersedes_id for previous versions
+    of both records. Drawing outline points and marker coordinates use
+    the same 0 to 100 top-left origin. Repair and follow-up IDs link to the
+    work and programme task. Evidence references identify source evidence
+    held separately.
+    defects_flightreport.flight_id links the flight. The original reporter,
+    report text and source reference are distinct from the recorder and
+    verification time. A record in defects_flightreportrelease links an
+    existing certificate holding the certifier. The linked component and
+    recorded part number support structured retrieval.
+
 people.json (in the export of an aircraft)
     The name of each person the records refer to by an identifier.
 

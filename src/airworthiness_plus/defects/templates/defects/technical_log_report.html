@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ report.source_reference }} · {{ aircraft.registration }} Technical Log{% endblock %}
+{% block content %}
+<h1>{{ report.kind }} · {{ report.source_reference }}</h1>
+<p><a href="{% url 'technical_log_flight' aircraft.id report.flight_id %}">{{ aircraft.registration }} · Flight {{ report.flight }}</a></p>
+<dl>
+<dt>Original Reporter</dt><dd>{{ report.reporter }}</dd>
+<dt>Original Report</dt><dd class="flight-report-text">{{ report.report }}</dd>
+<dt>Recorded By</dt><dd>{{ report.recorder_name }}</dd>
+<dt>Recorder Verified</dt><dd>{{ report.verification_at|date:"Y-m-d H:i:s T" }}</dd>
+<dt>ATA</dt><dd>{{ report.chapter|stringformat:"02d" }}{% if report.section %}-{{ report.section }}{% endif %}</dd>
+{% if report.component %}
+<dt>Linked Component</dt><dd><a href="{% url 'component' report.component_id %}">{{ report.component }}</a>{% if report.part_number %} · {{ report.part_number }}{% endif %}</dd>
+{% endif %}
+{% if report.defect %}<dt>Linked Defect</dt><dd><a href="{% url 'defect' report.defect_id %}">{{ report.defect }}</a></dd>{% endif %}
+{% if report.certification %}
+<dt>Later Certifier</dt><dd>{{ report.certification.release.issued_by_text }} · <a href="{% url 'release_certificate' report.certification.release_id %}">{{ report.certification.release }}</a></dd>
+{% endif %}
+</dl>
+{% if may_record_release and not report.certification %}
+<p><a href="{% url 'link_technical_log_release' aircraft.id report.id %}">Link an Existing Release</a></p>
+{% endif %}
+{% endblock %}

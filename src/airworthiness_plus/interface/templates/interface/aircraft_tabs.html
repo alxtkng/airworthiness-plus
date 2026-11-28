@@ -7,4 +7,6 @@
 <a href="{% url 'aircraft_configuration' aircraft.id %}"{% if active == "Configuration" %} aria-current="page"{% endif %}>Configuration</a>
 <a href="{% url 'aircraft_data' aircraft.id %}"{% if active == "Maintenance Data" %} aria-current="page"{% endif %}>Maintenance Data</a>
 <a href="{% url 'aircraft_review' aircraft.id %}"{% if active == "Airworthiness Review" %} aria-current="page"{% endif %}>Airworthiness Review</a>
+<a href="{% url 'damage_register' aircraft.id %}"{% if active == "Damage Register" %} aria-current="page"{% endif %}>Damage Register</a>
+<a href="{% url 'technical_log' aircraft.id %}"{% if active == "Technical Log" %} aria-current="page"{% endif %}>Technical Log</a>
 </nav>
