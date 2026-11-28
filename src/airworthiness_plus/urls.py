@@ -16,6 +16,7 @@ from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
+from airworthiness_plus.logistics import stores_views as stores
 from airworthiness_plus.logistics import views as logistics
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.modifications import views as modifications
@@ -43,8 +44,36 @@ urlpatterns: list[URLPattern | URLResolver] = [
         logistics.record_receiving_disposition,
         name="record_receiving_disposition",
     ),
-    path("stores/", logistics.stores_stock, name="stores_stock"),
-    path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
+    path("stores/", stores.stores_stock, name="stores_stock"),
+    path("stores/locations/", stores.stores_locations, name="stores_locations"),
+    path("stores/locations/add/", stores.add_stores_location, name="add_stores_location"),
+    path(
+        "stores/locations/<uuid:location_id>/withdraw/",
+        stores.withdraw_stores_location,
+        name="withdraw_stores_location",
+    ),
+    path("stores/appointments/", stores.stores_appointments, name="stores_appointments"),
+    path("stores/appointments/add/", stores.add_stores_appointment, name="add_stores_appointment"),
+    path(
+        "stores/appointments/<uuid:appointment_id>/withdraw/",
+        stores.withdraw_stores_appointment,
+        name="withdraw_stores_appointment",
+    ),
+    path("stores/holds/<uuid:disposition_id>/", stores.quarantine_hold, name="quarantine_hold"),
+    path(
+        "stores/dispositions/<uuid:disposition_id>/evidence/",
+        stores.record_posting_evidence,
+        name="record_posting_evidence",
+    ),
+    path(
+        "stores/dispositions/<uuid:disposition_id>/post/",
+        stores.post_disposition,
+        name="post_disposition",
+    ),
+    path("stores/lots/<uuid:posting_id>/move/", stores.move_stock, name="move_stock"),
+    path("stores/lots/<uuid:posting_id>/count/", stores.count_stock, name="count_stock"),
+    path("stores/counts/<uuid:count_id>/adjust/", stores.adjust_stock, name="adjust_stock"),
+    path("stores/<uuid:stock_id>/", stores.stock_entry, name="stock_entry"),
     path("tools/", tooling.tool_register, name="tool_register"),
     path("tools/add/", tooling.add_tool, name="add_tool"),
     path("tools/delegations/", tooling.tool_delegations, name="tool_delegations"),

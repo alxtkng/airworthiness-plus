@@ -1,0 +1,1 @@
+{% if basis.part_number %}Part Number {{ basis.part_number }}{% endif %}{% if basis.serial %}, Serial {{ basis.serial }}{% endif %}{% if basis.specification %}{% if basis.part_number %}, {% endif %}{{ basis.specification }}{% endif %}{% if basis.batch %}, Batch {{ basis.batch }}{% endif %}{% if basis.manufacturer %}, {{ basis.manufacturer }}{% endif %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Stores Locations{% endblock %}
+{% block content %}
+<h1>Stores Locations</h1>
+<p><a href="{% url 'stores_stock' %}">Stock</a></p>
+{% if may_locate %}<p><a class="button" href="{% url 'add_stores_location' %}">Add a Stores Location</a></p>{% endif %}
+{% if locations %}
+<table>
+<thead><tr><th scope="col">Code</th><th scope="col">Location</th><th scope="col">Use</th><th scope="col">Classes Held</th><th scope="col">Storage Conditions</th><th scope="col">Secure</th><th scope="col">Status</th></tr></thead>
+<tbody>
+{% for place in locations %}
+<tr><td>{{ place.code }}</td><td>{{ place.name }}</td><td>{{ place.kind }}</td><td>{{ place.classes|join:", " }}</td><td>{{ place.storage_conditions }}</td><td>{{ place.secure|yesno:"Yes,No" }}</td>
+<td>{% if place.withdrawal %}Withdrawn {{ place.withdrawal.withdrawn_on|long_date }}{% else %}Active{% if may_locate %} · <a href="{% url 'withdraw_stores_location' place.id %}">Withdraw {{ place.code }}</a>{% endif %}{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Stores Locations Recorded</p>{% endif %}
+{% endblock %}

@@ -295,7 +295,23 @@ BOARD: tuple[Group, ...] = (
                 "stores_stock",
                 shown_for=MAINTAINS,
                 tabs=(Tab("Stock", "stores_stock"), *_tabs("Quarantine and Scrap")),
-                inside=frozenset({"stock_entry"}),
+                inside=frozenset(
+                    {
+                        "stock_entry",
+                        "quarantine_hold",
+                        "stores_locations",
+                        "add_stores_location",
+                        "withdraw_stores_location",
+                        "stores_appointments",
+                        "add_stores_appointment",
+                        "withdraw_stores_appointment",
+                        "record_posting_evidence",
+                        "post_disposition",
+                        "move_stock",
+                        "count_stock",
+                        "adjust_stock",
+                    }
+                ),
             ),
             Item(
                 "Tools and Equipment",

@@ -36,6 +36,7 @@ from airworthiness_plus.sample import (
     planning,
     second,
     staffing,
+    stores,
     suppliers,
     tools,
     top_up,
@@ -189,6 +190,18 @@ def bring_tools(administrator: User) -> str:
     return ""
 
 
+def bring_stores(administrator: User) -> str:
+    """Add fictitious Stores locations, appointments and postings to an earlier test site."""
+    try:
+        with working_for(administrator.organisation_id, administrator.id):
+            organisation = Organisation.objects.get(pk=administrator.organisation_id)
+            if count := stores.add(organisation, administrator):
+                return f"Stores of the Sample Added, {count} Postings"
+    except Exception as error:
+        return f"Sample Stores Not Added: {type(error).__name__}"
+    return ""
+
+
 def bring_staffing(username: str, approval_reference: str) -> str:
     """Give an earlier test site the staffing sample for its own approval."""
     try:
@@ -312,6 +325,8 @@ class Command(BaseCommand):
                 self.stdout.write(receiving_result)
             if tool_result := bring_tools(first):
                 self.stdout.write(tool_result)
+            if stores_result := bring_stores(first):
+                self.stdout.write(stores_result)
             work_packages = bring_work_packages(first)
             if work_packages:
                 self.stdout.write(work_packages)
