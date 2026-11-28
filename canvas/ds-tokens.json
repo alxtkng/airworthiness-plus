@@ -1,6 +1,6 @@
 {
   "name": "Airworthiness+",
-  "version": 2,
+  "version": 3,
   "color": {
     "themes": [
       {
@@ -51,7 +51,11 @@
           "light": "#ebebeb",
           "dark": "#2e2e2e"
         },
-        "usage": "Default border: dividers, tables, cards, inputs and secondary buttons."
+        "usage": "Divider: decorative lines between rows and sections only. Below 3:1, so never the edge of a control (WCAG 2.2 SC 1.4.11); controls use control-border.",
+        "highContrast": {
+          "light": "#4d4d4d",
+          "dark": "#a1a1a1"
+        }
       },
       {
         "name": "gray-500",
@@ -59,7 +63,11 @@
           "light": "#c9c9c9",
           "dark": "#454545"
         },
-        "usage": "Hover border."
+        "usage": "Hover border.",
+        "highContrast": {
+          "light": "#4d4d4d",
+          "dark": "#a1a1a1"
+        }
       },
       {
         "name": "gray-900",
@@ -67,7 +75,11 @@
           "light": "#666666",
           "dark": "#a1a1a1"
         },
-        "usage": "Secondary text and icons: the line under a title, table headers, labels above values."
+        "usage": "Secondary text and icons: the line under a title, table headers, labels above values.",
+        "highContrast": {
+          "light": "#4d4d4d",
+          "dark": "#c7c7c7"
+        }
       },
       {
         "name": "gray-1000",
@@ -76,6 +88,30 @@
           "dark": "#ededed"
         },
         "usage": "Primary text and icons, and the primary button fill. Almost all text."
+      },
+      {
+        "name": "control-border",
+        "value": {
+          "light": "#7d7d7d",
+          "dark": "#7c7c7c"
+        },
+        "highContrast": {
+          "light": "#4d4d4d",
+          "dark": "#a1a1a1"
+        },
+        "usage": "The edge of every input, select, text area and secondary button: 3:1 or more on every background (WCAG 2.2 SC 1.4.11)."
+      },
+      {
+        "name": "focus-ring",
+        "value": {
+          "light": "#171717",
+          "dark": "#ededed"
+        },
+        "highContrast": {
+          "light": "#000000",
+          "dark": "#ffffff"
+        },
+        "usage": "The focus outline, focus-width wide at focus-offset from the element: 3:1 or more in both themes (SC 2.4.7, 2.4.11)."
       },
       {
         "name": "status-ok",
@@ -91,6 +127,30 @@
         "name": "status-stop",
         "value": "#ff5a4e",
         "usage": "Round status dot for unserviceable, overdue or quarantined."
+      },
+      {
+        "name": "status-ok-edge",
+        "value": {
+          "light": "#107a3f",
+          "dark": "#1fcb6e"
+        },
+        "usage": "Edge of the green status dot, so the dot reaches 3:1 on every background (SC 1.4.11). The word beside it still carries the meaning."
+      },
+      {
+        "name": "status-due-edge",
+        "value": {
+          "light": "#9a6700",
+          "dark": "#ffb224"
+        },
+        "usage": "Edge of the amber status dot (SC 1.4.11)."
+      },
+      {
+        "name": "status-stop-edge",
+        "value": {
+          "light": "#c4291c",
+          "dark": "#ff5a4e"
+        },
+        "usage": "Edge of the red status dot (SC 1.4.11)."
       }
     ]
   },
@@ -283,8 +343,54 @@
         "name": "hairline",
         "value": "1px",
         "usage": "The only line width. Every divider, table border and control border."
+      },
+      {
+        "name": "focus-width",
+        "value": "2px",
+        "usage": "Width of the focus outline and the error summary edge."
+      },
+      {
+        "name": "focus-offset",
+        "value": "2px",
+        "usage": "Gap between an element and its focus outline."
       }
     ]
   },
-  "source": "Geist design system by Vercel: vercel.com/geist. Roles and usage follow the published Typography, Colors and Materials pages. Pixel values follow the Geist Tailwind preset."
+  "source": "Geist design system by Vercel: vercel.com/geist. Roles and usage follow the published Typography, Colors and Materials pages. Pixel values follow the Geist Tailwind preset.",
+  "display": {
+    "settings": "design-system/Accessibility.md, Display Settings. Each value is the default; a setting written on <html> replaces it.",
+    "tokens": [
+      {
+        "name": "text-scale",
+        "value": "1",
+        "large": "1.125",
+        "larger": "1.25",
+        "usage": "Multiplies every font size and line height. Text Size: Default, Large, Larger."
+      },
+      {
+        "name": "target-minimum",
+        "value": "24px",
+        "comfortable": "44px",
+        "usage": "The smallest pointer target (SC 2.5.8; SC 2.5.5 in Comfortable)."
+      },
+      {
+        "name": "control-height",
+        "value": "40px",
+        "comfortable": "44px",
+        "usage": "Height of buttons, inputs and selects."
+      },
+      {
+        "name": "row-padding",
+        "value": "12px",
+        "comfortable": "16px",
+        "usage": "Vertical padding of a table cell."
+      },
+      {
+        "name": "motion",
+        "value": "120ms",
+        "reduced": "0ms",
+        "usage": "Length of the one transition, the turn of a disclosure chevron. 0ms under Reduce Motion (SC 2.3.3)."
+      }
+    ]
+  }
 }
