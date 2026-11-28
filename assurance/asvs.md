@@ -361,3 +361,5 @@ Roster and Planning Settings actions are listed in the fields-by-action inventor
 Supplier routes reuse CSRF protection and server-side role checks, with generated fields-by-action entries (8.1.2). The database scopes the supplier and approval, and retains evaluation history and audit events (16.2.2 and 16.4.2).
 
 Maintenance subcontractor assessments use the role and field inventory (8.1.2), scoped references, and append-only history (16.2.2 and 16.4.2).
+
+Goods In uses the generated action and field inventory (8.1.2), server-side role checks and CSRF protection. PostgreSQL validates organisation scope and dates, serializes intake decisions per receipt, and retains append-only observations and disposition evidence in hashed history (16.2.2 and 16.4.2).

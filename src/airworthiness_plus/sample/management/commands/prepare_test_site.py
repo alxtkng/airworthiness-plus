@@ -30,7 +30,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.history.sql import APPLICATION_ROLE, SIGNING_IN_SETTING
 from airworthiness_plus.organisations.models import Organisation
-from airworthiness_plus.sample import build, planning, second, staffing, suppliers, top_up
+from airworthiness_plus.sample import build, goods_in, planning, second, staffing, suppliers, top_up
 from airworthiness_plus.sample.management.commands.seed_sample_organisation import (
     ADMINISTRATOR,
     seed,
@@ -154,6 +154,20 @@ def bring_suppliers(administrator: User) -> str:
     return ""
 
 
+def bring_goods_in(administrator: User) -> str:
+    """Add the Goods In examples to an earlier primary test-site sample."""
+    try:
+        with working_for(administrator.organisation_id, administrator.id):
+            organisation = Organisation.objects.get(pk=administrator.organisation_id)
+            if organisation.approval_reference == build.APPROVAL_REFERENCE:
+                count = goods_in.add(organisation, administrator)
+                if count:
+                    return f"Goods In of the Sample Added, {count} Receipts"
+    except Exception as error:
+        return f"Sample Goods In Not Added: {type(error).__name__}"
+    return ""
+
+
 def bring_staffing(username: str, approval_reference: str) -> str:
     """Give an earlier test site the staffing sample for its own approval."""
     try:
@@ -272,6 +286,9 @@ class Command(BaseCommand):
             supplier_result = bring_suppliers(first)
             if supplier_result:
                 self.stdout.write(supplier_result)
+            receiving_result = bring_goods_in(first)
+            if receiving_result:
+                self.stdout.write(receiving_result)
             work_packages = bring_work_packages(first)
             if work_packages:
                 self.stdout.write(work_packages)

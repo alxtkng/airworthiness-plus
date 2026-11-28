@@ -23,6 +23,10 @@ from airworthiness_plus.defects.models import Defect, RepeatAction
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive, Source
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.logistics.models import (
+    Receipt,
+    ReceivingCheck,
+    ReceivingDisposition,
+    StockEntry,
     SubcontractorAssessment,
     Supplier,
     SupplierEvaluation,
@@ -176,6 +180,10 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(StaffingReview, None),
     Exported(Supplier, None),
     Exported(SupplierEvaluation, None),
+    Exported(Receipt, None),
+    Exported(ReceivingCheck, None),
+    Exported(ReceivingDisposition, None),
+    Exported(StockEntry, None),
     Exported(SubcontractorAssessment, None),
     Exported(Report, None),
     Exported(Absence, None),

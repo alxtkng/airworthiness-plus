@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Goods In{% endblock %}
+{% block content %}
+<h1>Goods In</h1>
+{% if may_record %}<p><a class="button" href="{% url 'receive_item' %}">Receive an Item</a></p>{% endif %}
+<h2>Received</h2>
+{% if receipts %}
+<table data-search="always">
+<thead><tr><th scope="col">Received</th><th scope="col">Item</th><th scope="col">Class on Arrival</th><th scope="col">Source</th><th scope="col">Release Document on Arrival</th><th scope="col">Disposition</th></tr></thead>
+<tbody>
+{% for receipt in receipts %}
+<tr>
+<td>{{ receipt.received_on|long_date }}</td>
+<td><a href="{% url 'goods_receipt' receipt.id %}">{{ receipt.item }}</a></td>
+<td>{{ receipt.classification }}</td><td>{{ receipt.source }}</td>
+<td>{{ receipt.release_document|default:"Not Recorded" }}</td>
+<td>{% if receipt.disposition %}{{ receipt.disposition.outcome }}{% else %}Awaiting Inspection{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Receipts Recorded</p>{% endif %}
+{% endblock %}

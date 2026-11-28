@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ receipt.item }}{% endblock %}
+{% block content %}
+<h1>{{ receipt.item }}</h1>
+<dl>
+<dt>Received</dt><dd>{{ receipt.received_on|long_date }}</dd>
+<dt>Class on Arrival</dt><dd>{{ receipt.classification }}</dd>
+<dt>Supplier or Owner Source</dt><dd>{{ receipt.source }}</dd>
+<dt>Item Reference</dt><dd>{{ receipt.item_reference }}</dd>
+<dt>Quantity</dt><dd>{{ receipt.quantity }}</dd>
+<dt>Delivery Line Reference</dt><dd>{{ receipt.delivery_reference }}</dd>
+<dt>Release Document Shown on Arrival</dt><dd>{{ receipt.release_document|default:"Not Recorded" }}</dd>
+{% if receipt.intended_use %}<dt>Intended Aircraft or Work Package</dt><dd>{{ receipt.intended_use }}</dd>{% endif %}
+{% if receipt.shelf_life_to %}<dt>Shelf Life To</dt><dd>{{ receipt.shelf_life_to|long_date }}</dd>{% endif %}
+</dl>
+<h2>Receiving Inspection</h2>
+<p>{{ checks_done }} of {{ check_rows|length }} Checks Recorded</p>
+<table>
+<thead><tr><th scope="col">Check</th><th scope="col">Current Result</th><th scope="col">Checked On</th><th scope="col">Evidence</th></tr></thead>
+<tbody>{% for kind, check in check_rows %}
+<tr><td>{{ kind }}</td><td>{{ check.outcome|default:"Pending" }}</td>
+<td>{{ check.checked_on|long_date }}</td><td>{{ check.evidence }}</td></tr>
+{% endfor %}</tbody>
+</table>
+<h2>Disposition</h2>
+{% if disposition %}
+<dl>
+<dt>Disposition</dt><dd>{{ disposition.outcome }}</dd>
+<dt>Maintenance Approval</dt><dd>{{ disposition.approval.approval }} · {{ disposition.approval_reference }}</dd>
+<dt>Receiving Inspector</dt><dd>{{ disposition.inspector_name }}</dd>
+<dt>Inspector Authorisation Evidence</dt><dd>{{ disposition.inspector_authority }}</dd>
+<dt>Inspection Decision On</dt><dd>{{ disposition.inspected_on|long_date }}</dd>
+<dt>Moved or Returned On</dt><dd>{{ disposition.disposition_on|long_date }}</dd>
+<dt>Location or Recipient</dt><dd>{{ disposition.destination }}</dd>
+<dt>Decision Reason and Movement Evidence</dt><dd>{{ disposition.evidence }}</dd>
+{% include "logistics/verified_evidence.html" %}
+</dl>
+{% if disposition.stock_entry %}
+<p><a class="button" href="{% url 'stock_entry' disposition.stock_entry.id %}">View Stores Entry</a></p>
+{% endif %}
+{% else %}
+<p>Awaiting Inspection</p>
+{% if may_record %}
+<p><a class="button" href="{% url 'record_receiving_check' receipt.id %}">Record a Check</a>
+<a class="button" href="{% url 'record_receiving_disposition' receipt.id %}">Record the Disposition</a></p>
+{% endif %}
+{% endif %}
+{% if history %}
+<details>
+<summary>Check History</summary>
+<table>
+<thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Checked On</th><th scope="col">Evidence</th></tr></thead>
+<tbody>{% for check in history %}
+<tr><td>{{ check.kind }}</td><td>{{ check.outcome }}</td>
+<td>{{ check.checked_on|long_date }}</td><td>{{ check.evidence }}</td></tr>
+{% endfor %}</tbody>
+</table>
+</details>
+{% endif %}
+{% endblock %}

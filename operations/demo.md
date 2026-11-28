@@ -209,6 +209,10 @@ Sign in as the Continuing Airworthiness Manager and open **Logistics → Supplie
 
 On a fictitious supplier record, choose **Record Subcontractor Assessment**. Enter a specialised maintenance scope, the organisation's exposition reference, the qualification evidence and the controls. Part-145 also asks for a pre-audit reference when recording controls. Save and expand the history row to see the supporting evidence. A later suspension remains in this history alongside the earlier assessment.
 
+### Goods In and Receiving Inspection
+
+Open **Logistics → Goods In** as Planning and Records. Select the ELT battery to see two recorded checks and its pending disposition. Compare the two G-DGHI trim cable receipts. One was returned and the replacement was accepted. The oil receipt shows the inspection and return on consecutive dates. Open the owner-supplied alternator to see its failed check and quarantine evidence. On the accepted trim cable receipt, open **View Stores Entry**. Check the recorded location and release evidence, then follow the link back to the receipt. Open **Logistics → Stores → Stock** to find the same entry. Use **Receive an Item** with a fictitious delivery-line reference to try recording a receipt, checks and a disposition.
+
 ## What Cannot Be Shown Yet
 
-The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: goods in, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

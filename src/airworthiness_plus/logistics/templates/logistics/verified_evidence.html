@@ -1,0 +1,13 @@
+{% if disposition.document_kind %}
+<dt>Evidence Type</dt><dd>{{ disposition.document_kind }}</dd>
+{% endif %}
+<dt>Evidence Reference</dt><dd>{{ disposition.document_reference|default:"Not Recorded" }}</dd>
+{% if disposition.evidence_basis %}
+<dt>Standard, Specification or Regulatory Basis</dt><dd>{{ disposition.evidence_basis }}</dd>
+{% endif %}
+{% if disposition.manufacturing_source %}
+<dt>Manufacturing Source</dt><dd>{{ disposition.manufacturing_source }}</dd>
+{% endif %}
+{% if disposition.material_supplier_source %}
+<dt>Supplier Source on Material Evidence</dt><dd>{{ disposition.material_supplier_source }}</dd>
+{% endif %}

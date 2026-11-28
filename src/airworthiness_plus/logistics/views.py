@@ -12,13 +12,22 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.logistics import services
+from airworthiness_plus.logistics import receiving, services
 from airworthiness_plus.logistics.forms import (
     EvaluationForm,
     NewSupplierForm,
+    ReceiptForm,
+    ReceivingCheckForm,
+    ReceivingDispositionForm,
     SubcontractorAssessmentForm,
 )
-from airworthiness_plus.logistics.models import Supplier
+from airworthiness_plus.logistics.models import (
+    CheckKind,
+    Receipt,
+    ReceivingDisposition,
+    StockEntry,
+    Supplier,
+)
 from airworthiness_plus.organisations.models import Approval
 
 
@@ -122,4 +131,134 @@ def assess_subcontractor(request: HttpRequest, supplier_id: UUID) -> HttpRespons
         request,
         "logistics/evaluate.html",
         {"form": form, "supplier": supplier_record, "assessing_subcontractor": True},
+    )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def goods_in(request: HttpRequest) -> HttpResponse:
+    """Show the shared receiving register under the organisation's maintenance approvals."""
+    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
+    return render(
+        request,
+        "logistics/goods_in.html",
+        {
+            "receipts": Receipt.objects.filter(organisation=user.organisation).select_related(
+                "disposition"
+            ),
+            "may_record": user.may(Action.RECORD_GOODS_IN),
+        },
+    )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def receipt(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
+    """Show the current state and retain the history of recorded observations."""
+    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
+    record = get_object_or_404(
+        Receipt.objects.select_related("disposition__approval", "disposition__stock_entry"),
+        pk=receipt_id,
+    )
+    history = list(record.checks.all())
+    current = receiving.current_checks(history)
+    return render(
+        request,
+        "logistics/receipt.html",
+        {
+            "receipt": record,
+            "disposition": getattr(record, "disposition", None),
+            "check_rows": [(kind.label, current.get(kind)) for kind in CheckKind],
+            "checks_done": len(current),
+            "history": history,
+            "may_record": user.may(Action.RECORD_GOODS_IN),
+        },
+    )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def stores_stock(request: HttpRequest) -> HttpResponse:
+    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
+    entries = StockEntry.objects.filter(organisation=user.organisation).select_related(
+        "disposition__receipt"
+    )
+    return render(request, "logistics/stock.html", {"entries": entries})
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+def stock_entry(request: HttpRequest, stock_id: UUID) -> HttpResponse:
+    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
+    entry = get_object_or_404(
+        StockEntry.objects.filter(organisation=user.organisation).select_related(
+            "disposition__receipt"
+        ),
+        pk=stock_id,
+    )
+    decision = entry.disposition
+    return render(
+        request,
+        "logistics/stock_entry.html",
+        {"receipt": decision.receipt, "disposition": decision},
+    )
+
+
+@never_cache
+@requires(Action.RECORD_GOODS_IN)
+@require_http_methods(["GET", "POST"])
+def receive(request: HttpRequest) -> HttpResponse:
+    """Record one line of goods received (REQ-353)."""
+    user, _ = _maintenance_access(request, Action.RECORD_GOODS_IN, aircraft_services.today())
+    form = ReceiptForm(request.POST if request.method == "POST" else None)
+    if form.is_bound and form.is_valid():
+        try:
+            record = receiving.receive(user.organisation, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("goods_receipt", receipt_id=record.pk)
+    return render(
+        request,
+        "logistics/receiving_form.html",
+        {"form": form, "heading": "Receive an Item", "button": "Record Receipt"},
+    )
+
+
+@never_cache
+@requires(Action.RECORD_GOODS_IN)
+@require_http_methods(["GET", "POST"])
+def record_receiving_check(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
+    """Append an inspection check observation (REQ-354)."""
+    return _record_inspection(request, receipt_id, check=True)
+
+
+@never_cache
+@requires(Action.RECORD_GOODS_IN)
+@require_http_methods(["GET", "POST"])
+def record_receiving_disposition(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
+    """Record the inspection decision and its disposition (REQ-355)."""
+    return _record_inspection(request, receipt_id, check=False)
+
+
+def _record_inspection(request: HttpRequest, receipt_id: UUID, *, check: bool) -> HttpResponse:
+    _maintenance_access(request, Action.RECORD_GOODS_IN, aircraft_services.today())
+    record = get_object_or_404(Receipt, pk=receipt_id)
+    if request.method == "GET" and ReceivingDisposition.objects.filter(receipt=record).exists():
+        return redirect("goods_receipt", receipt_id=record.pk)
+    form_class = ReceivingCheckForm if check else ReceivingDispositionForm
+    form = form_class(request.POST if request.method == "POST" else None)
+    if form.is_bound and form.is_valid():
+        try:
+            action = receiving.record_check if check else receiving.dispose
+            action(record, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("goods_receipt", receipt_id=record.pk)
+    heading = "Record a Check" if check else "Record the Disposition"
+    return render(
+        request,
+        "logistics/receiving_form.html",
+        {"form": form, "heading": heading, "button": heading, "receipt": record},
     )

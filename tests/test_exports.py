@@ -58,7 +58,7 @@ from airworthiness_plus.programme.models import Basis
 from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
-from airworthiness_plus.sample import phase1, suppliers
+from airworthiness_plus.sample import goods_in, phase1, suppliers
 from airworthiness_plus.staffing import roster
 from airworthiness_plus.staffing import services as staffing_services
 from airworthiness_plus.staffing.models import AbsenceType, Function
@@ -162,6 +162,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             outcome=SubcontractorOutcome.SUSPENDED,
         )
 
+    assert goods_in.add(sample.ours, sample.lucy) == 5
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     reviews = add_sample_reviews(sample, fleet)
