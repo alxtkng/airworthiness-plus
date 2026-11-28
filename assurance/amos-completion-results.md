@@ -1,6 +1,6 @@
 # AMOS local completion evidence
 
-28 November 2026. The validation branch started at `5b18ede` and integrated `origin/main` `91f9176`, retaining the calibration decision as ADR-0010. The transfer pilot is ADR-0012. Aircraft records, dispatch and the structured work-card pilot were built and verified in separate worktrees, then tested together. The provisional Stores producer contract and candidate source are recorded separately. [Case evidence and dependencies](amos-evidence-matrix.md) · [Stores producer review](phase-4-stores-handoff.md)
+28 November 2026. The validation branch started at `5b18ede` and initially integrated `91f9176`, retaining the calibration decision as ADR-0010. The transfer pilot is ADR-0012. Aircraft records, dispatch, signing and Stores were built and verified in separate worktrees. Stores PR #167 merged during validation at `642f1b8` and became the integration base. Alex King recorded approval of the receipt-to-stock contract and REQ-357 clarification in the parallel work. [Case evidence and dependencies](amos-evidence-matrix.md) · [Stores producer review](phase-4-stores-handoff.md) · [Merged Stores PR #167](https://github.com/alxtkng/airworthiness-plus/pull/167)
 
 ## G-EJKL reconciliation
 
@@ -24,13 +24,19 @@ The retained complete synthetic renewal fixture was imported and replayed with b
 
 The early mixed-worktree baseline attempt reported 200 passes and 30 failures while files changed under an already-seeded browser service. Its results remain in the logs. The fixed-revision baseline above is the reproducible baseline selection. The historic 43-check renewal run remains focused evidence.
 
+## Published Stores migration
+
+The full pre-port candidate `3c2e110` passed 1,498 non-live checks and 78 live browser checks after the targeted corrections. Its alternate implementation of Logistics 0007 and 0008 was present only in the local candidate. A disposable upgrade from the published PR #167 schema refused that candidate when it encountered its former `logistics_storesappointment` dependency. The port uses PR #167's published `StoreLocation`, `StockResolution` and `StockPosting` with both published migration files byte-identical to `642f1b8`. Previous test totals belong to the pre-port implementation.
+
+The published-state fixture provisions four actual stock postings and five movements with open legacy, quarantine and return states. For the station-only intermediate revision `8575fe8`, the fixture preserved every published record projection and the exact event identities and hashes through migration, normal signed-in reads and native restore. Both source and recovered copies reported zero record-chain discrepancies. The retained fixture checks main 7, station-prefix ZRH 8, network 10, physical quarantine 2 with zero available and tenant refusal. The separate station acceptance test uses configured station codes, with ZRH Line 1, BSL 1, LUG 1 and GVA 0 explicitly visible.
+
 ## Release evidence boundaries
 
 The local release exercise uses disposable PostgreSQL 16.14, Python 3.13, Chromium 158, Node.js 24 and OpenSSL 3.5.9. The data set is synthetic. Raw logs, public verification material, the two receiver databases and reconciliation outputs are retained in the workspace folder `amos-completion-evidence-2026-11-28`. The locally stopped PostgreSQL cluster and the normal-form captures are separate from any hosted service. [Rehearsal procedure](../operations/amos-parallel-handover.md)
 
 | Owner | Prerequisite | Next evidence |
 | --- | --- | --- |
-| Alex King as likely Goods In producer owner and the requirements owner | Confirm the checked producer revision, responsibility for as-received data and legacy evidence, and the proposed clarification to REQ-357 | Record approval and repeat representative cases with the applicable receiving and Stores procedures |
+| Approval holder and operator Stores lead | Applicable authority and maintenance data, staff appointments and the operator’s receiving and custody procedures | Repeat representative receiving, exact and alternate issue, quarantine and return journeys against the approved procedures. The product-level producer contract approval is recorded separately |
 | Structures, technical records and operator maintenance leads | Applicable approval and aircraft population, source content and rights, authorised people and procedures | Lightning record and flight-log provenance through the operator's actual workflow and independent drawing or source review |
 | Airworthiness Limited and Airlines for America | Applicable licensed ATA revisions and agreed publication terms | Exercise Spec 2500 and the agreed Spec 2000 Chapter 16–18 profiles with an independent operator system |
 | Approval holder, trust-service specialist and signing provider | Per-action approval basis, sandbox contract and access, provider proof format, record preservation policy | Complete sandbox identity, digest, timing, decline, delay, replay, archive and recovery cases, then validate the selected PDF/A and PAdES profile independently |
