@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ tool }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'tool_register' %}{% if selected %}?approval={{ selected.approval }}{% endif %}">Tool and Equipment Register</a></p>
+<h1>{{ tool }}</h1>
+<p>
+{% if may_control %}<a class="button" href="{% url 'add_tool_control' tool.id %}?approval={{ selected.approval }}">Record Control Basis</a>{% endif %}
+{% if may_record %}<a class="button" href="{% url 'add_tool_event' tool.id %}?approval={{ selected.approval }}">Record Tool Event</a>{% endif %}
+</p>
+{% include "tooling/approval.html" %}
+<section aria-labelledby="tool-label">
+<h2 id="tool-label">Control Label</h2>
+<dl>
+  <dt>Asset ID</dt><dd>{{ tool.asset_id }}</dd>
+  {% if tool.serial %}<dt>Serial Number</dt><dd>{{ tool.serial }}</dd>{% endif %}
+  <dt>Condition</dt><dd>{% if label.condition %}{{ label.condition.get_kind_display|status }} · {{ label.condition.occurred_on|date:"j F Y" }}<br>{{ label.condition.evidence }}{% else %}No restriction recorded{% endif %}</dd>
+  <dt>Control Status</dt><dd>{{ label.control_status }}</dd>
+  <dt>Next Due</dt><dd>{% if label.next_due %}{{ label.next_due|date:"j F Y" }}{% endif %}</dd>
+</dl>
+{% for line in label.controls %}
+<h3>{{ line.revision.get_kind_display }}</h3>
+<dl>
+  <dt>Status</dt><dd>{{ line.status }}</dd>
+  {% if line.due_on %}<dt>Due On</dt><dd>{{ line.due_on|date:"j F Y" }}</dd>{% endif %}
+  {% include "tooling/basis.html" with revision=line.revision %}
+  {% if line.completion %}<dt>Accepted Completion</dt><dd>{{ line.completion.occurred_on|date:"j F Y" }} · {{ line.completion.evidence }}</dd>{% endif %}
+</dl>
+{% endfor %}
+</section>
+<section aria-labelledby="tool-identity">
+<h2 id="tool-identity">Identity and Location</h2>
+<dl>
+  {% if tool.manufacturer %}<dt>Manufacturer</dt><dd>{{ tool.manufacturer }}</dd>{% endif %}
+  {% if tool.model %}<dt>Model</dt><dd>{{ tool.model }}</dd>{% endif %}
+  {% if tool.part_number %}<dt>Part Number</dt><dd>{{ tool.part_number }}</dd>{% endif %}
+  {% if tool.component_ids %}<dt>Component IDs and Configuration</dt><dd>{{ tool.component_ids }}</dd>{% endif %}
+  {% if tool.measurement_range %}<dt>Range or Capacity</dt><dd>{{ tool.measurement_range }}</dd>{% endif %}
+  {% if tool.owner %}<dt>Owner</dt><dd>{{ tool.owner }}</dd>{% endif %}
+  {% if tool.lender %}<dt>Lender</dt><dd>{{ tool.lender }}</dd>{% endif %}
+  <dt>Usual Location</dt><dd>{{ tool.site }} · {{ tool.location }}</dd>
+  {% if tool.notes %}<dt>Evidence Notes</dt><dd>{{ tool.notes|linebreaksbr }}</dd>{% endif %}
+</dl>
+</section>
+<section aria-labelledby="tool-events">
+<h2 id="tool-events">Control and Condition History</h2>
+{% for event in tool.control_events.all %}
+<details>
+  <summary>{{ event.occurred_on|date:"j F Y" }}, {{ event.get_kind_display }}, {{ event.delegation.approval_reference }}</summary>
+  <dl>
+    <dt>Evidence</dt><dd>{{ event.evidence }}</dd>
+    {% if event.control %}<dt>Control Basis</dt><dd>{{ event.control.instruction }} · {{ event.control.instruction_revision }} · effective {{ event.control.effective_on|date:"j F Y" }}</dd>{% endif %}
+    {% if event.reference_instrument %}<dt>Reference Instrument</dt><dd>{{ event.reference_instrument }}</dd>{% endif %}
+    {% if event.result %}<dt>Reading</dt><dd>{{ event.result }}</dd>{% endif %}
+    {% if event.limit %}<dt>Limit</dt><dd>{{ event.limit }}</dd>{% endif %}
+    <dt>Signed By</dt><dd>{{ event.delegation.person }} · {{ event.signed_on|date:"j F Y" }}</dd>
+    <dt>Procedure</dt><dd>{{ event.delegation.procedure }}</dd>
+  </dl>
+</details>
+{% empty %}<p>No control or condition events recorded.</p>{% endfor %}
+</section>
+<section aria-labelledby="tool-revisions">
+<h2 id="tool-revisions">Control Basis History</h2>
+{% for revision in tool.control_revisions.all %}
+<details>
+  <summary>{{ revision.effective_on|date:"j F Y" }}, {{ revision.get_kind_display }}, {{ revision.delegation.approval_reference }}</summary>
+  <dl>{% include "tooling/basis.html" %}</dl>
+</details>
+{% empty %}<p>No verified control basis recorded.</p>{% endfor %}
+</section>
+{% endblock %}

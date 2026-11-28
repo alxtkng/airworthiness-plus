@@ -27,6 +27,7 @@ from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
 from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
+from airworthiness_plus.tooling import views as tooling
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("goods-in/", logistics.goods_in, name="goods_in"),
@@ -44,6 +45,18 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     path("stores/", logistics.stores_stock, name="stores_stock"),
     path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
+    path("tools/", tooling.tool_register, name="tool_register"),
+    path("tools/add/", tooling.add_tool, name="add_tool"),
+    path("tools/delegations/", tooling.tool_delegations, name="tool_delegations"),
+    path("tools/delegations/add/", tooling.add_tool_delegation, name="add_tool_delegation"),
+    path(
+        "tools/delegations/<uuid:delegation_id>/withdraw/",
+        tooling.withdraw_tool_delegation,
+        name="withdraw_tool_delegation",
+    ),
+    path("tools/<uuid:tool_id>/", tooling.tool_record, name="tool_record"),
+    path("tools/<uuid:tool_id>/control/", tooling.add_tool_control, name="add_tool_control"),
+    path("tools/<uuid:tool_id>/event/", tooling.add_tool_event, name="add_tool_event"),
     path("suppliers/", logistics.suppliers, name="suppliers"),
     path(
         "suppliers/<uuid:supplier_id>/subcontracting/",

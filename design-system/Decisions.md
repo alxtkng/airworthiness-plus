@@ -261,6 +261,14 @@ Recorded 27 November 2026 as ours. The plan gives each phase the next block of 2
 - Management System, not Safety Management, so it fits Part-CAO's quality system as well as safety management.
 - No Pilot Phone or Log a Flight screen for now.
 
+## Tools and Equipment
+
+- Use one register across maintenance approvals. Select the governing approval to display its controls. Keep physical condition visible beside the next date. A condition hold or withdrawal takes precedence over use, while its control dates remain visible.
+- The label uses calendar months from the accepted completion. If the target is a shorter month, use its last day. A fresh completion establishes its own anniversary. The due day is inclusive in Europe/London. The calendar lead time is the existing organisation setting. A before-use control has no calendar deadline. A passing interim check leaves the calibration anchor unchanged.
+- The exposition record names a person and limits the power by action, approval reference, site and validity. Administrators transcribe signed delegation evidence and withdrawals. The person performing a technical action checks any narrower authority or competency conditions in the cited procedure. An actual organisation confirms its CAE or MOE delegation and control convention before relying on these labels. See ADR-0009.
+- The balancing kit stays **Control basis to verify** with neither a control interval nor a date until the verified documents and actual kit and sensor identities are recorded. The 0142 chronology, recheck scope and no-effect evidence gaps stay visible in the sample record.
+- PR 2 records the open affected-work case and restricts the tool when it records an out-of-limits result. PR 4 records the investigation, dispositions and closure.
+
 ## Interface
 
 - Geist, applied by its own rules. Restrained colour. No AI slop.
@@ -409,6 +417,10 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Draw Up or End Contract | No | Yes | No | No | No |
 | Acknowledge Own Handover | No | Yes | Yes | Yes | No |
 | Record Staffing Plan | No | Yes | No | Yes | No |
+| Manage Tool Delegation Records | Yes | No | No | No | No |
+| Register a Tool | No | Yes | No | Yes | No |
+| Record Tool Control Basis | No | Yes | No | Yes | No |
+| Record Tool Control Evidence and Condition | No | Yes | No | Yes | No |
 | Record Subcontractor Assessment | No | Yes | No | No | No |
 | Record Supplier Evaluation | No | Yes | No | No | No |
 | Record Goods In | No | Yes | No | Yes | No |

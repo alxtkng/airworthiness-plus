@@ -1,0 +1,14 @@
+{% if available %}
+<form method="get">
+  <label for="tool-approval">Maintenance Approval</label>
+  <select id="tool-approval" name="approval">
+    {% for approval in available %}
+    <option value="{{ approval.approval }}"{% if approval == selected %} selected{% endif %}>{{ approval.approval }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Show Controls</button>
+</form>
+{% if reference %}<p>Approval reference {{ reference }}</p>{% endif %}
+{% else %}
+<p>No current maintenance approval. Earlier evidence remains in the tool records.</p>
+{% endif %}

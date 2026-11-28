@@ -363,3 +363,7 @@ Supplier routes reuse CSRF protection and server-side role checks, with generate
 Maintenance subcontractor assessments use the role and field inventory (8.1.2), scoped references, and append-only history (16.2.2 and 16.4.2).
 
 Goods In uses the generated action and field inventory (8.1.2), server-side role checks and CSRF protection. PostgreSQL validates organisation scope and dates, serializes intake decisions per receipt, and retains append-only observations and disposition evidence in hashed history (16.2.2 and 16.4.2).
+
+### Tool register and control evidence
+
+REQ-360 to REQ-363 add the register, control and delegation surfaces. The field inventory maps each POST to its allowed values and role (8.1.2). The service checks the linked person, action, approval, dated authority and site. The database checks tenant boundaries and consistency of the tool, basis and delegation (8.2, 8.3). Session-bound CSRF validation applies to every write. Hashed, attributable record history and the existing export verification cover retained decisions and retries (16.2.2 and 16.4.2). The tooling service, database, browser and export tests exercise the new surface.
