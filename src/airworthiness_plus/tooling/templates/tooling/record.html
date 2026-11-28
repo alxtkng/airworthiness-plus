@@ -5,6 +5,7 @@
 <p><a href="{% url 'tool_register' %}{% if selected %}?approval={{ selected.approval }}{% endif %}">Tool and Equipment Register</a></p>
 <h1>{{ tool }}</h1>
 <p>
+{% if may_calibrate %}<a class="button" href="{% url 'place_calibration_order' tool.id %}">Place Calibration Order</a>{% endif %}
 {% if may_control %}<a class="button" href="{% url 'add_tool_control' tool.id %}?approval={{ selected.approval }}">Record Control Basis</a>{% endif %}
 {% if may_record %}<a class="button" href="{% url 'add_tool_event' tool.id %}?approval={{ selected.approval }}">Record Tool Event</a>{% endif %}
 </p>
@@ -15,6 +16,7 @@
   <dt>Asset ID</dt><dd>{{ tool.asset_id }}</dd>
   {% if tool.serial %}<dt>Serial Number</dt><dd>{{ tool.serial }}</dd>{% endif %}
   <dt>Condition</dt><dd>{% if label.condition %}{{ label.condition.get_kind_display|status }} · {{ label.condition.occurred_on|date:"j F Y" }}<br>{{ label.condition.evidence }}{% else %}No restriction recorded{% endif %}</dd>
+  {% if label.calibration_hold %}<dt>Calibration Hold</dt><dd>Calibration hold · <a href="{% url 'calibration_order' label.calibration_hold.id %}">{{ label.calibration_hold.reference }}</a></dd>{% endif %}
   <dt>Control Status</dt><dd>{{ label.control_status }}</dd>
   <dt>Next Due</dt><dd>{% if label.next_due %}{{ label.next_due|date:"j F Y" }}{% endif %}</dd>
 </dl>
@@ -24,7 +26,8 @@
   <dt>Status</dt><dd>{{ line.status }}</dd>
   {% if line.due_on %}<dt>Due On</dt><dd>{{ line.due_on|date:"j F Y" }}</dd>{% endif %}
   {% include "tooling/basis.html" with revision=line.revision %}
-  {% if line.completion %}<dt>Accepted Completion</dt><dd>{{ line.completion.occurred_on|date:"j F Y" }} · {{ line.completion.evidence }}</dd>{% endif %}
+  {% if line.completion %}<dt>Accepted Completion</dt><dd>{{ line.completion.occurred_on|date:"j F Y" }} · {{ line.completion.evidence }}
+  {% if line.completion.decision %} · <a href="{% url 'calibration_certificate' line.completion.decision.certificate.order_id line.completion.decision.certificate_id %}">{{ line.completion.decision.certificate }}</a>{% endif %}</dd>{% endif %}
 </dl>
 {% endfor %}
 </section>
@@ -43,6 +46,10 @@
 </dl>
 </section>
 <section aria-labelledby="tool-events">
+{% if tool.calibration_orders.all %}
+<h2>Calibration Orders</h2>
+<ul>{% for order in tool.calibration_orders.all %}<li><a href="{% url 'calibration_order' order.id %}">{{ order.reference }}</a></li>{% endfor %}</ul>
+{% endif %}
 <h2 id="tool-events">Control and Condition History</h2>
 {% for event in tool.control_events.all %}
 <details>

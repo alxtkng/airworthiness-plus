@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Provider Scope{% endblock %}
+{% block content %}
+<h1>{{ scope.supplier }}</h1>
+<p><a href="{% url 'tool_providers' %}">Service Providers</a></p>
+<dl>
+<dt>Laboratory Facility</dt><dd>{{ scope.facility }}</dd>
+<dt>Service</dt><dd>{{ scope.get_service_display }}</dd>
+<dt>Measurement and Scope</dt><dd>{{ scope.measurement }}{% if scope.range_from is not None %}, {{ scope.range_from|floatformat:"-6" }} to {{ scope.range_to|floatformat:"-6" }} {{ scope.unit }}{% endif %}</dd>
+<dt>Method and Revision</dt><dd>{{ scope.method }}</dd>
+<dt>Validity</dt><dd>{{ scope.valid_from|long_date }} to {{ scope.valid_to|long_date }}</dd>
+{% if scope.review_on %}<dt>Review By</dt><dd>{{ scope.review_on|long_date }}</dd>{% endif %}
+<dt>Recorded Decision</dt><dd>{{ scope.get_status_display }}</dd>
+<dt>Accreditation and Scope Schedule</dt><dd>{{ scope.accreditation|default:"Awaiting evidence" }}</dd>
+<dt>Evidence</dt><dd>{{ scope.evidence|linebreaksbr }}</dd>
+<dt>Delegation</dt><dd>{{ scope.delegation.person }}, {{ scope.delegation.approval_reference }}, {{ scope.delegation.procedure }}, {{ scope.delegation.site }}</dd>
+<dt>Signed On</dt><dd>{{ scope.signed_on|long_date }}</dd>
+</dl>
+{% endblock %}

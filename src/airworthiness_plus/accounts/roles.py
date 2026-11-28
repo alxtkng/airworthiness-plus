@@ -51,6 +51,8 @@ class Action(Enum):
     MANAGE_TOOL_DELEGATIONS = "Manage Tool Delegation Records"
     RECORD_TOOL = "Register a Tool"
     RECORD_TOOL_CONTROL = "Record Tool Control Basis"
+    RECORD_TOOL_PROVIDER = "Record Tool Provider Scope"
+    RECORD_TOOL_CALIBRATION = "Record Tool Calibration"
     RECORD_TOOL_EVENT = "Record Tool Control Evidence and Condition"
     RECORD_SUPPLIER_EVALUATION = "Record Supplier Evaluation"
     RECORD_GOODS_IN = "Record Goods In"
@@ -101,6 +103,8 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.MANAGE_TOOL_DELEGATIONS: frozenset({_ADMINISTRATOR}),
     Action.RECORD_TOOL: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_TOOL_CONTROL: frozenset({_MANAGER, _RECORDS}),
+    Action.RECORD_TOOL_PROVIDER: frozenset({_MANAGER, _RECORDS}),
+    Action.RECORD_TOOL_CALIBRATION: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_TOOL_EVENT: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_SUPPLIER_EVALUATION: frozenset({_MANAGER}),
     Action.RECORD_GOODS_IN: frozenset({_MANAGER, _RECORDS}),

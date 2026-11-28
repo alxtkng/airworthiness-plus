@@ -5,6 +5,8 @@ from datetime import date
 from uuid import UUID
 
 from airworthiness_plus.organisations.models import Approval
+from airworthiness_plus.tooling.calibration_models import CalibrationOrder, CalibrationReinstatement
+from airworthiness_plus.tooling.calibration_status import holding_order, reinstatement_on
 from airworthiness_plus.tooling.models import ControlKind, EventKind, Tool, ToolControlEvent
 from airworthiness_plus.tooling.models import ToolControlRevision as Revision
 from airworthiness_rules.dates import add_months
@@ -26,7 +28,7 @@ UNKNOWN = "Control basis to verify"
 @dataclass(frozen=True)
 class ControlLine:
     revision: Revision
-    completion: ToolControlEvent | None
+    completion: ToolControlEvent | CalibrationReinstatement | None
     due_on: date | None
     status: str
 
@@ -36,6 +38,7 @@ class ToolLabel:
     tool: Tool
     controls: list[ControlLine]
     condition: ToolControlEvent | None
+    calibration_hold: CalibrationOrder | None
 
     @property
     def next_due(self) -> date | None:
@@ -43,7 +46,9 @@ class ToolLabel:
 
     @property
     def restricted(self) -> bool:
-        return self.condition is not None and self.condition.kind != EventKind.REINSTATED
+        return self.calibration_hold is not None or (
+            self.condition is not None and self.condition.kind != EventKind.REINSTATED
+        )
 
     @property
     def control_status(self) -> str:
@@ -101,7 +106,7 @@ def label(
 ) -> ToolLabel:
     """Derive all control dates for one approval and the shared physical condition."""
     controls = active_controls(tool, approval, reference, day) if approval else {}
-    completions: dict[UUID, ToolControlEvent] = {}
+    completions: dict[UUID, ToolControlEvent | CalibrationReinstatement] = {}
     for event in tool.control_events.all():
         if (
             event.control_id is not None
@@ -110,6 +115,20 @@ def label(
             and event.signed_on <= day
         ):
             completions.setdefault(event.control_id, event)
+    calibration_hold = holding_order(tool, day)
+    cases = [
+        order.impact_case
+        for order in tool.calibration_orders.all()
+        if hasattr(order, "impact_case") and order.impact_case.opened_on <= day
+    ]
+    for order in tool.calibration_orders.all():
+        if ready := reinstatement_on(order, day):
+            earlier = completions.get(ready.control_id)
+            if earlier is None or (ready.occurred_on, ready.entered_at) > (
+                earlier.occurred_on,
+                earlier.entered_at,
+            ):
+                completions[ready.control_id] = ready
     lines = []
     for revision in controls.values():
         completion = completions.get(revision.pk)
@@ -120,6 +139,18 @@ def label(
         )
         if revision.kind == ControlKind.BEFORE_USE:
             state: str = ControlKind.BEFORE_USE
+        elif (
+            revision.kind == ControlKind.CALIBRATION
+            and completion
+            and calibration_hold is None
+            and any(
+                completion.entered_at <= case.entered_at
+                or completion.occurred_on < case.trigger.certificate.calibrated_on
+                for case in cases
+            )
+        ):
+            state = "Completion evidence needed"
+            due = None
         elif due is None:
             state = "Completion evidence needed"
         elif due < day:
@@ -131,4 +162,4 @@ def label(
         else:
             state = "Current"
         lines.append(ControlLine(revision, completion, due, state))
-    return ToolLabel(tool, lines, condition_on(tool, day))
+    return ToolLabel(tool, lines, condition_on(tool, day), calibration_hold)

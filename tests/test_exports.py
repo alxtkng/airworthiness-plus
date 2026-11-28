@@ -460,9 +460,26 @@ def test_every_type_of_record_is_in_the_export() -> None:
 
 
 def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
-    sample: Sample, fleet: dict[str, Aircraft]
+    sample: Sample, fleet: dict[str, Aircraft], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """REQ-135. Every type of record, compared with the database, with its whole history."""
+    from tests.test_calibration import (
+        certificate,
+        complete_results,
+        create_custody,
+        order_for,
+        setup_workshop,
+        submitted,
+    )
+
+    calibration = setup_workshop(sample, monkeypatch, "TEST-EXPORT")
+    writer, _, _ = calibration
+    order = order_for(calibration)
+    create_custody(writer, order)
+    cert = certificate(writer, order)
+    complete_results(writer, cert)
+    submitted(writer, cert + "decision/", outcome="Accepted", reason="Fictitious verified scope")
+    submitted(writer, order + "reinstate/", evidence="Fictitious restored tool")
     with working_for(sample.ours.id, sample.lucy.id):
         export = build(sample.ours, by=sample.lucy)
     files = opened(export.content)
