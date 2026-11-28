@@ -219,6 +219,9 @@ def test_every_table_is_under_the_record_rules() -> None:
         # Supplier identities and their evaluation evidence are retained (REQ-343).
         "logistics_supplier": ["INSERT", "SELECT"],
         "logistics_supplierevaluation": ["INSERT", "SELECT"],
+        "logistics_receipt": ["INSERT", "SELECT"],
+        "logistics_receivingcheck": ["INSERT", "SELECT"],
+        "logistics_receivingdisposition": ["INSERT", "SELECT"],
         "staffing_review": ["INSERT", "SELECT"],
         "staffing_report": ["INSERT", "SELECT"],
         "staffing_absence": ["INSERT", "SELECT"],
@@ -234,6 +237,9 @@ def test_every_table_is_under_the_record_rules() -> None:
     # While a user name is being checked at sign-in, that one user can be read.
     extra_policies = {"accounts_user": ["sign_in_lookup"]}
     extra_triggers = {
+        "logistics_receipt": {"receipt_rules"},
+        "logistics_receivingcheck": {"receiving_check_rules"},
+        "logistics_receivingdisposition": {"receiving_disposition_rules"},
         # The approval it was set up with is changed only by the owner (REQ-200).
         "organisations_organisation": {"serial_floor_guard", "set_up_approval_guard"},
         "organisations_approval": {"approval_guard"},

@@ -29,6 +29,19 @@ from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
 
 urlpatterns: list[URLPattern | URLResolver] = [
+    path("goods-in/", logistics.goods_in, name="goods_in"),
+    path("goods-in/receive/", logistics.receive, name="receive_item"),
+    path("goods-in/<uuid:receipt_id>/", logistics.receipt, name="goods_receipt"),
+    path(
+        "goods-in/<uuid:receipt_id>/check/",
+        logistics.record_receiving_check,
+        name="record_receiving_check",
+    ),
+    path(
+        "goods-in/<uuid:receipt_id>/dispose/",
+        logistics.record_receiving_disposition,
+        name="record_receiving_disposition",
+    ),
     path("suppliers/", logistics.suppliers, name="suppliers"),
     path("suppliers/evaluate/", logistics.add_supplier, name="add_supplier"),
     path("suppliers/<uuid:supplier_id>/", logistics.supplier, name="supplier"),

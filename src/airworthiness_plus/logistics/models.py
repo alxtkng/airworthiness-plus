@@ -61,3 +61,112 @@ class SupplierEvaluation(Record):
                 name="approved_supplier_has_next_evaluation",
             ),
         ]
+
+
+class ItemClass(models.TextChoices):
+    SERVICEABLE = "Serviceable Component", "Serviceable Component"
+    UNSERVICEABLE = "Unserviceable Component", "Unserviceable Component"
+    UNSALVAGEABLE = "Unsalvageable Component", "Unsalvageable Component"
+    STANDARD = "Standard Part", "Standard Part"
+    MATERIAL = "Material", "Material"
+
+
+class CheckKind(models.TextChoices):
+    SOURCE = "Supplier", "Supplier"
+    DOCUMENT = "Release Document", "Release Document"
+    IDENTITY = "Part Number and Modification Status", "Part Number and Modification Status"
+    CONDITION = "Condition and Packaging", "Condition and Packaging"
+    SHELF = "Shelf Life", "Shelf Life"
+    SUSPECT = "Suspected Unapproved Part Checks", "Suspected Unapproved Part Checks"
+
+
+class CheckOutcome(models.TextChoices):
+    PASS = "Pass", "Pass"
+    FAIL = "Fail", "Fail"
+    NOT_APPLICABLE = "Not Applicable", "Not Applicable"
+
+
+class Destination(models.TextChoices):
+    STORES = "Accepted into Stores", "Accepted into Stores"
+    RETURN = "Returned to Supplier", "Returned to Supplier"
+    QUARANTINE = "Quarantined", "Quarantined"
+
+
+class Receipt(Record):
+    """What arrived, with its source and as-received classification."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    item = models.CharField("Item", max_length=200)
+    received_on = models.DateField("Received On")
+    classification = models.CharField("Received Class", max_length=30, choices=ItemClass.choices)
+    source = models.CharField("Supplier or Owner Source", max_length=200)
+    item_reference = models.CharField("Part, Serial, Batch or Specification", max_length=200)
+    quantity = models.PositiveIntegerField()
+    delivery_reference = models.CharField("Delivery Line Reference", max_length=100)
+    release_document = models.CharField(
+        "Release Document Shown on Arrival", max_length=200, blank=True
+    )
+    intended_use = models.CharField("Intended Aircraft or Work Package", max_length=200, blank=True)
+    shelf_life_to = models.DateField("Shelf Life To", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-received_on", "item", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("delivery_reference"), "organisation", name="receipt_delivery_line_once"
+            ),
+            models.CheckConstraint(
+                condition=Q(classification__in=ItemClass.values, quantity__gt=0),
+                name="receipt_has_class_and_quantity",
+            ),
+        ]
+
+
+class ReceivingCheck(Record):
+    """One recorded observation; a later observation can correct it before disposition."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    receipt = models.ForeignKey(Receipt, on_delete=models.PROTECT, related_name="checks")
+    kind = models.CharField("Check", max_length=40, choices=CheckKind.choices)
+    outcome = models.CharField("Result", max_length=20, choices=CheckOutcome.choices)
+    evidence = models.TextField("What Was Checked and the Evidence", max_length=1000)
+    checked_on = models.DateField("Checked On")
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-checked_on", "-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(kind__in=CheckKind.values)
+                & (
+                    Q(outcome__in=[CheckOutcome.PASS, CheckOutcome.FAIL])
+                    | Q(kind=CheckKind.SHELF, outcome=CheckOutcome.NOT_APPLICABLE)
+                ),
+                name="receiving_check_has_a_valid_result",
+            ),
+        ]
+
+
+class ReceivingDisposition(Record):
+    """The final incoming decision and movement evidence, retained in one record."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    receipt = models.OneToOneField(Receipt, on_delete=models.PROTECT, related_name="disposition")
+    approval = models.ForeignKey(Approval, on_delete=models.PROTECT, related_name="+")
+    approval_reference = models.CharField("Approval Reference", max_length=40)
+    inspector = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    inspector_name = models.CharField("Inspector Name at Recording", max_length=200)
+    inspector_authority = models.CharField("Inspector Authorisation Evidence", max_length=200)
+    inspected_on = models.DateField("Inspection Decision On")
+    disposition_on = models.DateField("Moved or Returned On")
+    outcome = models.CharField("Disposition", max_length=25, choices=Destination.choices)
+    destination = models.CharField("Store, Quarantine Location or Return Recipient", max_length=200)
+    evidence = models.TextField("Decision Reason and Movement Evidence", max_length=1000)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(outcome__in=Destination.values, disposition_on__gte=F("inspected_on")),
+                name="receiving_disposition_has_outcome_and_ordered_dates",
+            ),
+        ]

@@ -276,7 +276,20 @@ BOARD: tuple[Group, ...] = (
     Group(
         "Logistics",
         (
-            Item("Goods In", shown_for=MAINTAINS, tabs=_tabs("Receiving Inspection")),
+            Item(
+                "Goods In",
+                "goods_in",
+                shown_for=MAINTAINS,
+                tabs=(Tab("Receiving Inspection", "goods_in"),),
+                inside=frozenset(
+                    {
+                        "goods_receipt",
+                        "receive_item",
+                        "record_receiving_check",
+                        "record_receiving_disposition",
+                    }
+                ),
+            ),
             Item("Stores", shown_for=MAINTAINS, tabs=_tabs("Stock", "Quarantine and Scrap")),
             Item(
                 "Tools and Equipment",

@@ -48,6 +48,7 @@ class Action(Enum):
     ACKNOWLEDGE_HANDOVER = "Acknowledge Own Handover"
     RECORD_STAFFING_PLAN = "Record Staffing Plan"
     RECORD_SUPPLIER_EVALUATION = "Record Supplier Evaluation"
+    RECORD_GOODS_IN = "Record Goods In"
     PLAN_WORK_PACKAGE = "Plan Work Package"
     RECORD_WORK_CARD = "Record Work Card Evidence"
     RECORD_WORK_ORDER = "Record Work Order"
@@ -92,6 +93,7 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.ACKNOWLEDGE_HANDOVER: frozenset({_MANAGER, _REVIEW, _RECORDS}),
     Action.RECORD_STAFFING_PLAN: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_SUPPLIER_EVALUATION: frozenset({_MANAGER}),
+    Action.RECORD_GOODS_IN: frozenset({_MANAGER, _RECORDS}),
     Action.PLAN_WORK_PACKAGE: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_WORK_CARD: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_WORK_ORDER: frozenset({_MANAGER, _RECORDS}),

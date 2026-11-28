@@ -44,6 +44,9 @@ Sets = tuple[type[forms.Form] | str, ...]
 WRITES: dict[str, Sets] = {
     "add_supplier": (logistics.NewSupplierForm,),
     "evaluate_supplier": (logistics.EvaluationForm,),
+    "receive_item": (logistics.ReceiptForm,),
+    "record_receiving_check": (logistics.ReceivingCheckForm,),
+    "record_receiving_disposition": (logistics.ReceivingDispositionForm,),
     "add_roster_shift": (roster.ShiftForm,),
     "withdraw_roster_shift": (roster.WithdrawShiftForm,),
     "publish_roster": (roster.PublicationForm,),
@@ -195,6 +198,8 @@ READS = frozenset(
         "load_and_capacity",
         "planning_settings",
         "suppliers",
+        "goods_in",
+        "goods_receipt",
         "supplier",
         "staffing_plan",
         "work_packages",

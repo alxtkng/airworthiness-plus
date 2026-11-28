@@ -316,3 +316,8 @@ Added on 24 November 2026 for the person records, from the Staff board:
 ## Suppliers
 
 [Parts Distributor], [Engine Overhaul Organisation], [Propeller Organisation], [Calibration Laboratory], [Oil Supplier] (suspended). The Suppliers board shows the illustrative Part-CAO evaluations dated 18 November 2026. The propeller organisation has a next evaluation of 30 November 2026. The oil supplier retains the missing conformity evidence with its suspension and has no next evaluation date in the sample.
+
+
+## Goods In
+
+Five representative Receiving Inspection board entries are seeded. On 18 November the ELT battery has the supplier and release-document checks recorded and is Awaiting Inspection. The ineligible G-DGHI trim cable is returned on 15 November and its replacement is accepted into stores on 16 November. The owner-supplied G-FMNO alternator is quarantined on 6 November and references a separate sample authority report dated 7 November. The oil without conformity evidence is inspected on 28 October and returned on 29 October. The delivery-line and receiving-inspector authorisation references are illustrative.
