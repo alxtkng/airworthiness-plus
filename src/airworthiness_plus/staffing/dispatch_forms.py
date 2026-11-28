@@ -19,12 +19,12 @@ class CardChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
         return f"{obj.package} · {obj.title}"
 
 
-class TimedForm(Form):
+class TimedForm(forms.Form):
     starts_at = forms.DateTimeField(label="Starts", widget=LOCAL_TIME)
     ends_at = forms.DateTimeField(label="Ends", widget=LOCAL_TIME)
 
 
-class MoveAssignmentForm(TimedForm):
+class MoveAssignmentForm(TimedForm, Form):
     field_order = ["shift", "starts_at", "ends_at", "reason"]
 
     shift = ShiftChoice(
@@ -42,7 +42,7 @@ class AssignmentForm(MoveAssignmentForm):
     card = CardChoice(label="Work Card", queryset=WorkCard.objects.select_related("package"))
 
 
-class BreakForm(TimedForm):
+class BreakForm(TimedForm, Form):
     field_order = ["shift", "starts_at", "ends_at", "note"]
 
     shift = ShiftChoice(
@@ -52,7 +52,7 @@ class BreakForm(TimedForm):
     note = forms.CharField(label="Window Note", max_length=300)
 
 
-class TurnaroundForm(TimedForm):
+class TurnaroundForm(TimedForm, Form):
     field_order = ["package", "starts_at", "ends_at", "note"]
 
     package = forms.ModelChoiceField(label="Work Package", queryset=WorkPackage.objects.all())
