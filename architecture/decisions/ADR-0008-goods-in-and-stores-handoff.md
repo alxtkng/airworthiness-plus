@@ -32,7 +32,48 @@ the original decision. Missing structured evidence stays blank and the original
 inspection record remains available. New acceptance requires an evidence reference
 and the class-specific evidence fields.
 
-## Proposed local Stores ledger extension
+## Stores posting, 28 November 2026
+
+Alex King, Goods In owner, approved the receipt-to-stock contract recorded in
+`assurance/phase-4-stores-handoff.md` on 28 November 2026, with its legacy
+mappings and the REQ-357 clarification. REQ-358 implements it in Stores PR 1.
+
+The stock entry stays the permanent link to the acceptance. It no longer stands
+for a quantity in stock. Stores posts the disposition once, keyed by its
+identifier, from the persisted decision and a dated posting-evidence record. The
+evidence resolves the unit and exact quantity, the separate part, serial, batch
+and specification, the shelf-life basis and a location from the Stores location
+register. A legacy acceptance and a new one take the same path. Until the
+evidence is complete the entry shows Awaiting Stock Posting, every blocking
+reason and zero available. A quarantine is posted as blocked custody in a
+secure quarantine location, with zero available. A supplier return is never
+posted.
+
+The posting row and its opening movement are written by one statement: an
+after-insert trigger writes the movement, so neither can exist without the
+other. A unique link on the disposition and an advisory lock on its identifier
+let one caller post. A replay that would use the same evidence returns the
+original posting. One that would use later evidence is a conflict and the
+original stands. Balances are derived from append-only movements. Each
+movement takes a per-lot lock in the database, and the database refuses a
+quantity that does not fit its unit, a move beyond the source balance, an
+incompatible or withdrawn destination and an adjustment the ledger no longer
+matches. A count records the ledger quantity the database read and changes
+nothing. A separately appointed person applies its variance.
+
+Each Stores action needs a current dated appointment for the signed-in
+person's own record, under a maintenance approval held that day, as well as the
+app role. The Administrator transcribes appointments and does not act in
+Stores. The database checks the appointment again on every insert.
+
+Goods In does not yet capture the unit, the separate identifiers or a register
+location at receipt and disposition. Until it does, new acceptances are
+resolved through the same Stores posting evidence. Reservations, issue to a work
+package and final disposal are later pull requests. The organisation's
+procedures, appointments, warning lead time and manufacturer cut-offs are To Be
+Checked.
+
+## Local AMOS custody extension (REQ-359)
 
 The live trial keeps the original acceptance link and uses the immutable disposition UUID to post an evidenced ledger credit once. Legacy acceptance may remain visible with unverified identity, physical location, unit or shelf-life basis and zero available stock. Stores records dated assessments separately. Location and station codes are independent. Quantities are grouped by station, store and unit for an exact part-number or specification lookup. Configured stores remain visible with zero quantity when appropriate. [Producer review and evidence](../../assurance/phase-4-stores-handoff.md)
 

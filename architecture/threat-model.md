@@ -253,6 +253,7 @@ The canvas build, Phase 1 (`prompts/canvas-build.md`): Continuing Airworthiness,
 | Maintenance subcontractor evidence | TH-008, TH-020, TH-021 | The server checks the role and approval on the assessment date. The database restricts both parent references to the tenant and grants append-only access. The evidence is included in the organisation export. |
 
 | Receipt, receiving checks and first disposition | TH-008, TH-020, TH-021, TH-025 | Role checks and CSRF guard form writes. PostgreSQL scopes receipts and parent references, captures the inspection reference and inspector name, and serializes checks and final decisions per receipt. Checks and disposition are append-only and included in organisation exports. A restricted database trigger creates the stock entry from the accepted disposition in the same transaction. The application role has read-only access to stock entries. |
+| Stores posting, custody movements and counts | TH-008, TH-020, TH-021, TH-023, TH-025 | Role checks, a current dated Stores appointment for the signed-in person and CSRF guard every write. Submission references make a repeated form submission return the first record. PostgreSQL scopes every record and parent reference to the tenant, checks the appointment again, keeps one posting per disposition with its opening movement in the same statement, and serialises movements per lot so that a concurrent overspend or a stale adjustment is refused. The runtime role can only insert and read. The records and their history are in the organisation export. |
 
 ## Not Yet Covered
 
