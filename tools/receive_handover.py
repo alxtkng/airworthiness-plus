@@ -1,4 +1,4 @@
-"""Reconstruct the unsigned aircraft handover fixture in a separate SQLite receiver."""
+"""Reconstruct the synthetic aircraft handover in a separate SQLite receiver."""
 
 import argparse
 import hashlib
@@ -174,7 +174,15 @@ def main() -> None:
     parser.add_argument("--defect-id", required=True)
     parser.add_argument("--inspection-id", required=True)
     parser.add_argument("--correction-id", required=True)
+    parser.add_argument("--signatures", type=Path, help="Detached synthetic reading signatures")
+    parser.add_argument("--trust", type=Path, help="Trust file supplied by the trial custodian")
+    parser.add_argument(
+        "--trust-sha256", help="Trust digest supplied independently to the receiver"
+    )
     options = parser.parse_args()
+    signing = (options.signatures, options.trust, options.trust_sha256)
+    if any(value is not None for value in signing) and not all(signing):
+        parser.error("Signed import requires --signatures, --trust and --trust-sha256")
     try:
         received = read_transfer(
             options.archive.read_bytes(),
@@ -184,8 +192,19 @@ def main() -> None:
             inspection_id=options.inspection_id,
             correction_id=options.correction_id,
         )
+        if options.signatures is not None:
+            from verify_handover_signatures import verify_signatures
+
+            received.update(
+                verify_signatures(
+                    received,
+                    options.signatures.read_bytes(),
+                    options.trust.read_bytes(),
+                    options.trust_sha256,
+                )
+            )
         imported = import_transfer(options.database, received)
-    except (OSError, sqlite3.Error, TransferError) as error:
+    except (OSError, sqlite3.Error, ValueError) as error:
         parser.exit(1, f"{error}\n")
     print(json.dumps({"imported": imported, **received}, indent=2))
 

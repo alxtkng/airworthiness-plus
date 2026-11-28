@@ -6,6 +6,7 @@ type of record so that every type is compared with the database.
 
 import csv
 import hashlib
+import importlib
 import io
 import json
 import secrets
@@ -14,13 +15,17 @@ import subprocess
 import sys
 import warnings
 import zipfile
+from base64 import b64encode
 from contextlib import closing
+from copy import deepcopy
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
+from time import perf_counter, sleep
 from typing import Any
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection
@@ -38,6 +43,7 @@ from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
 from airworthiness_plus.configuration import services as configuration_services
 from airworthiness_plus.configuration.forecast import forecast_lines
 from airworthiness_plus.configuration.models import Product
+from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.defects.models import Basis as DeferralBasis
 from airworthiness_plus.defects.models import Decision as DefectDecision
 from airworthiness_plus.directives import services as directive_services
@@ -857,6 +863,369 @@ def test_independent_receiver_imports_the_unsigned_trial_and_rejects_invalid_tra
         snapshots = db.execute("SELECT evidence FROM handover").fetchall()
         assert len(snapshots) == 1
         assert json.loads(snapshots[0][0]) == received
+
+
+# The receiver process has only file inputs. It fails immediately if it attempts a network call.
+OFFLINE_RECEIVER = """
+import runpy, sys
+from pathlib import Path
+
+def offline(event, args):
+    if event.startswith("socket."):
+        raise RuntimeError("The trial receiver has no network access")
+
+sys.addaudithook(offline)
+script = sys.argv.pop(1)
+sys.path.insert(0, str(Path(script).parent))
+runpy.run_path(script, run_name="__main__")
+"""
+READING_TABLE = "aircraft_utilisationentry"
+TRIAL_CORRECTION_REASON = "Reconciled the transcription against the synthetic airframe log."
+
+
+def _whole_signing_time(earliest: datetime) -> datetime:
+    next_second = earliest.replace(microsecond=0) + timedelta(seconds=1)
+    delay = (next_second - datetime.now(UTC)).total_seconds()
+    if delay > 0:
+        sleep(delay)
+    return datetime.now(UTC).replace(microsecond=0)
+
+
+def _stamp(value: datetime) -> str:
+    return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _signed_fixture_key(
+    identity: dict[str, str], public_key: bytes, started_at: datetime, observed_at: datetime
+) -> dict[str, Any]:
+    """The fixture custodian supplies the enrolled public key and authority status."""
+    bounds = {
+        "valid_from": _stamp(started_at - timedelta(minutes=1)),
+        "valid_to": _stamp(observed_at + timedelta(hours=1)),
+        "revoked_at": None,
+        "status_as_of": _stamp(observed_at),
+    }
+    subject = {name: identity[name] for name in ("signer_id", "organisation_id")}
+    return {
+        "format": "Airworthiness+ Synthetic Reading Trust",
+        "version": 1,
+        "keys": [
+            {
+                **subject,
+                **bounds,
+                "key_id": identity["key_id"],
+                "public_key": b64encode(public_key).decode("ascii"),
+            }
+        ],
+        "authorities": [
+            {
+                **subject,
+                **bounds,
+                "authority_id": identity["authority_id"],
+                "aircraft_id": identity["aircraft_id"],
+                "scope": "airworthiness-plus:synthetic-utilisation-reading:v1",
+            }
+        ],
+    }
+
+
+def _trial_json(value: Any) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+
+
+def _receiver_archive_with_changed_reading(content: bytes, original_id: str) -> bytes:
+    records_path = f"records/{READING_TABLE}.json"
+    history_path = f"history/{READING_TABLE}.json"
+    files = opened(content)
+    records = files[records_path]
+    history = files[history_path]
+    record = next(row for row in records if row["id"] == original_id)
+    event = next(row for row in history if row["record_id"] == original_id)
+    record["hours"] = 11208.7
+    event["after"] = json.dumps(record)
+    event["hash"] = entry_hash(event)
+    altered = rewritten(
+        content,
+        {records_path: _trial_json(records), history_path: _trial_json(history)},
+        fix_manifest=True,
+    )
+    assert verify(altered).problems == ()
+    return altered
+
+
+def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
+    sample: Sample, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project = Path(__file__).resolve().parents[1]
+    monkeypatch.syspath_prepend(str(project / "tools"))
+    signing = importlib.import_module("sign_handover")
+
+    sender = tmp_path / "sender"
+    custodian = tmp_path / "custodian"
+    receiver = tmp_path / "receiver"
+    for directory in (sender, custodian, receiver):
+        directory.mkdir()
+
+    fleet = add_sample_fleet(sample)
+    add_sample_programmes(sample, fleet)
+    aircraft = fleet["G-EJKL"]
+    private_key = Ed25519PrivateKey.generate()
+    enrolled_public_key = private_key.public_key().public_bytes_raw()
+    started_at = datetime.now(UTC).replace(microsecond=0)
+    identity = {
+        "signer_id": str(sample.planner.id),
+        "organisation_id": str(sample.ours.id),
+        "aircraft_id": str(aircraft.id),
+        "key_id": "GEJKL-TRIAL-KEY",
+        "authority_id": "GEJKL-TRIAL-UTILISATION",
+    }
+    inspection_title = "Signed Handover Trial Recurring Inspection"
+    with working_for(sample.ours.id, sample.planner.id):
+        counter = aircraft.counters.get(kind=CounterKind.AIRFRAME)
+        programme = programme_services.set_up_programme(
+            aircraft, basis=Basis.INSTRUCTIONS, reference="Synthetic trial programme"
+        )
+        defect = defect_services.record_defect(
+            aircraft,
+            title="Right Headset Socket Crackle",
+            note="Synthetic pilot report. Use the left socket during the deferral.",
+            found_on=TODAY,
+            chapter=23,
+            system="Communications",
+            decision=DefectDecision.DEFERRED,
+            basis=DeferralBasis.PILOT_NON_REQUIRED,
+            decided_on=TODAY,
+            data_limit_on=TODAY + timedelta(days=7),
+        )
+        inspection = programme_services.add_task(
+            programme,
+            title=inspection_title,
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=counter,
+            source="Synthetic inspection instructions, revision 1",
+            interval=Interval(days=30),
+        )
+        programme_services.record_work(
+            aircraft,
+            task=inspection,
+            description="Synthetic inspection completed. Airframe reading 11206.8 hours.",
+            dated=TODAY - timedelta(days=10),
+            hours=D("11206.8"),
+            cycles=0,
+        )
+        original = aircraft_services.enter_utilisation(counter, Reading(TODAY, D("11208.6"), 0))
+        before = build(sample.ours, by=sample.planner, aircraft=aircraft)
+        original_at = _whole_signing_time(Event.of(original).get().at)
+        original_record = next(
+            row
+            for row in opened(before.content)[f"records/{READING_TABLE}.json"]
+            if row["id"] == str(original.id)
+        )
+        original_signature = signing.sign_original(
+            original_record, private_key=private_key, signed_at=_stamp(original_at), **identity
+        )
+        (sender / "01-original.zip").write_bytes(before.content)
+        (sender / "01-original-signature.json").write_bytes(_trial_json(original_signature))
+
+        correction = aircraft_services.enter_utilisation(
+            counter, Reading(TODAY, D("11206.8"), 0), supersedes=original
+        )
+        final = build(sample.ours, by=sample.planner, aircraft=aircraft)
+        correction_at = _whole_signing_time(max(original_at, Event.of(correction).get().at))
+        forecast = {line.item: line.forecast for line in forecast_lines(aircraft, TODAY)}
+
+    readings = opened(final.content)[f"records/{READING_TABLE}.json"]
+    assert original_record == next(row for row in readings if row["id"] == str(original.id))
+    assert str(correction.id) not in {
+        row["id"] for row in opened(before.content)[f"records/{READING_TABLE}.json"]
+    }
+    corrected_record = next(row for row in readings if row["id"] == str(correction.id))
+    corrected_signature = signing.sign_correction(
+        original_record,
+        corrected_record,
+        original_signature,
+        private_key=private_key,
+        signed_at=_stamp(correction_at),
+        reason=TRIAL_CORRECTION_REASON,
+        **identity,
+    )
+    envelope = signing.signature_envelope(original_signature, corrected_signature)
+    (sender / "02-corrected.zip").write_bytes(final.content)
+    (sender / "02-signatures.json").write_bytes(_trial_json(envelope))
+    (sender / "identifiers.json").write_bytes(
+        _trial_json(
+            {
+                "business_date": TODAY.isoformat(),
+                "aircraft_id": identity["aircraft_id"],
+                "defect_id": str(defect.id),
+                "inspection_id": str(inspection.id),
+                "correction_id": str(correction.id),
+                "original_archive_manifest_sha256": before.manifest_sha256,
+                "corrected_archive_manifest_sha256": final.manifest_sha256,
+            }
+        )
+    )
+
+    trust = _signed_fixture_key(identity, enrolled_public_key, started_at, correction_at)
+    trust_bytes = _trial_json(trust)
+    trust_digest = hashlib.sha256(trust_bytes).hexdigest()
+    trust_file = custodian / "trust.json"
+    trust_file.write_bytes(trust_bytes)
+    (custodian / "trust.sha256").write_text(trust_digest + "\n")
+    database = receiver / "receiver.sqlite"
+    script = project / "tools" / "receive_handover.py"
+    archive = sender / "02-corrected.zip"
+    signatures = sender / "02-signatures.json"
+    command = [
+        sys.executable,
+        "-c",
+        OFFLINE_RECEIVER,
+        str(script),
+        str(archive),
+        str(database),
+        "--manifest-digest",
+        final.manifest_sha256,
+        "--aircraft-id",
+        identity["aircraft_id"],
+        "--defect-id",
+        str(defect.id),
+        "--inspection-id",
+        str(inspection.id),
+        "--correction-id",
+        str(correction.id),
+        "--signatures",
+        str(signatures),
+        "--trust",
+        str(trust_file),
+        "--trust-sha256",
+        trust_digest,
+    ]
+
+    def run(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(  # noqa: S603  fixed Python receiver and synthetic file inputs
+            arguments,
+            env={"PYTHONPATH": str(project / "src")},
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+
+    results: dict[str, Any] = {}
+    without_trust = run(command[:-4])
+    assert without_trust.returncode != 0
+    assert "requires --signatures, --trust and --trust-sha256" in without_trust.stderr
+    assert not database.exists()
+    results["missing_trust"] = without_trust.stderr.strip().splitlines()[-1]
+
+    began = perf_counter()
+    first = run(command)
+    elapsed = perf_counter() - began
+    assert first.returncode == 0, first.stderr
+    evidence = json.loads(first.stdout)
+    assert evidence["imported"] is True
+    assert evidence["trust_sha256"] == trust_digest
+    assert evidence["signatures"] == envelope["signatures"]
+    assert evidence["issuer_trust"] != "Indeterminate"
+    assert evidence["signing_time"].lower().startswith("signer-asserted")
+    assert evidence["correction_reason"] == TRIAL_CORRECTION_REASON
+    assert (evidence["original_reading"]["hours"], evidence["corrected_reading"]["hours"]) == (
+        11208.6,
+        11206.8,
+    )
+    assert evidence["corrected_reading"]["supersedes_id"] == str(original.id)
+    assert evidence["defect"]["closed_on"] is None
+    assert (
+        date.fromisoformat(evidence["defect"]["limit_on"])
+        == forecast["Deferred Defect Limit, Right Headset Socket Crackle"]
+    )
+    assert date.fromisoformat(evidence["next_due"]) == forecast[inspection_title]
+    (receiver / "verdict.json").write_bytes(_trial_json(evidence))
+
+    replay = run(command)
+    assert replay.returncode == 0, replay.stderr
+    assert json.loads(replay.stdout) == {**evidence, "imported": False}
+    results["verification_and_import_seconds"] = round(elapsed, 3)
+    results["replay"] = "One snapshot, replay reported imported=false"
+
+    def refusal(name: str, args: list[str], expected: str) -> None:
+        result = run(args)
+        assert result.returncode != 0, name
+        assert expected.casefold() in result.stderr.casefold(), (name, result.stderr)
+        results[name] = result.stderr.strip().splitlines()[-1]
+
+    refusal("trust_pin_mismatch", [*command[:-1], "0" * 64], "trust")
+    for name, field, scope, value, outcome in (
+        ("unknown_issuer", "keys", None, [], "Unknown"),
+        ("expired_key", "keys", "valid_to", _stamp(original_at), "Inapplicable"),
+        ("revoked_key", "keys", "revoked_at", _stamp(original_at), "Inapplicable"),
+        ("missing_grant", "authorities", None, [], "Unknown"),
+        ("expired_grant", "authorities", "valid_to", _stamp(correction_at), "Inapplicable"),
+        (
+            "wrong_aircraft_grant",
+            "authorities",
+            "aircraft_id",
+            str(fleet["G-CDEF"].id),
+            "Inapplicable",
+        ),
+        (
+            "historical_status_unavailable",
+            "keys",
+            "status_as_of",
+            _stamp(original_at - timedelta(seconds=1)),
+            "Indeterminate",
+        ),
+    ):
+        alternate = deepcopy(trust)
+        if scope is None:
+            alternate[field] = value
+        else:
+            alternate[field][0][scope] = value
+        changed_trust = receiver / "negative-trust.json"
+        synthetic = _trial_json(alternate)
+        changed_trust.write_bytes(synthetic)
+        refusal(
+            name,
+            [
+                *command[:-3],
+                str(changed_trust),
+                "--trust-sha256",
+                hashlib.sha256(synthetic).hexdigest(),
+            ],
+            outcome,
+        )
+
+    modified_archive = receiver / "negative-archive.zip"
+    modified = _receiver_archive_with_changed_reading(final.content, str(original.id))
+    modified_archive.write_bytes(modified)
+    arguments = command.copy()
+    arguments[command.index(str(archive))] = str(modified_archive)
+    arguments[command.index("--manifest-digest") + 1] = verify(modified).manifest_sha256
+    refusal("rehashed_altered_reading", arguments, "Invalid")
+
+    changed_envelope = deepcopy(envelope)
+    changed_envelope["signatures"][1]["claim"]["reason"] = "Changed after endorsement"
+    modified_signatures = receiver / "negative-signatures.json"
+    modified_signatures.write_bytes(_trial_json(changed_envelope))
+    arguments = command.copy()
+    arguments[command.index("--signatures") + 1] = str(modified_signatures)
+    refusal("altered_correction_reason", arguments, "Invalid")
+
+    changed_envelope = deepcopy(envelope)
+    claim = changed_envelope["signatures"][1]["claim"]
+    claim["supersedes_claim_sha256"] = "0" * 64
+    payload = json.dumps(
+        claim, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode()
+    changed_envelope["signatures"][1]["signature"] = b64encode(private_key.sign(payload)).decode()
+    modified_signatures.write_bytes(_trial_json(changed_envelope))
+    refusal("valid_signature_wrong_original_claim", arguments, "Invalid")
+
+    with closing(sqlite3.connect(database)) as db:
+        (row,) = db.execute("SELECT evidence FROM handover").fetchall()
+        assert json.loads(row[0]) == {
+            key: value for key, value in evidence.items() if key != "imported"
+        }
+    (receiver / "results.json").write_bytes(_trial_json(results))
 
 
 # Verification (T-SEC-019)
