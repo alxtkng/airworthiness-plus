@@ -17,6 +17,7 @@ How changes reach `main`. The same steps apply to code, requirements and assuran
 - A new or changed regulatory claim carries its reference (for example ML.A.305, AMC1 CAO.A.025, CAP 562 C-90). A claim with no source is marked `To Be Checked`, never guessed.
 - A new hazard, or a change to a mitigation, updates `assurance/hazard-log.md`.
 - A product, interface or regulation decision is added to `design-system/Decisions.md`. An architecture decision gets a record in `architecture/decisions/`.
+- A pull request that adds or changes a page, in the application or on the canvas, passes the accessibility checks and updates the audit in `design-system/Accessibility.md`. The page passes the Accessibility Checklist in `design-system/Components.md`.
 - Tests use the sample organisation and fleet in `design-system/SampleData.md`. Today in the sample world is 18 November 2026.
 - Nothing is deleted from records, in the product or in this repository's record documents. Superseded entries stay and are marked superseded.
 
