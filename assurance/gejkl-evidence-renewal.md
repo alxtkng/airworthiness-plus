@@ -48,3 +48,5 @@ For the public artifacts, use a fresh SQLite path with the [timestamped receiver
 The local `gejkl-renewal-trial-2026-11-28` folder retains the original and successor timestamp envelopes, independent trust inputs, receiver verdicts and refusal evidence. Private keys remained ephemeral. Renewal of the newest token at a later deadline, hash-algorithm migration and third-party operational validation remain separate evidence.
 
 At code revision `e241fac`, all **43 export, security, status and renewal checks** passed with OpenSSL 3.5.9 selected. Ruff, mypy and requirements traceability passed.
+
+The integrated receiver was rerun on both existing fixture arms. Each imported once and replayed without duplication. The complete chain verified at the retained evaluation time. Revocation status for the exact retained predecessor tokens remained indeterminate. The repeat verdicts are in the local `amos-completion-evidence-2026-11-28` evidence folder. [Local completion evidence](amos-completion-results.md)

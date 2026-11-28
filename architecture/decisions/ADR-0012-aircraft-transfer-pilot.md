@@ -28,7 +28,7 @@ Airworthiness Limited owns confirming access to the applicable versions and publ
 
 ## Verification
 
-Enable `AIRWORTHINESS_NODE24` with the absolute path of Node.js 24 when running the signed export regression. The independent JavaScript implementation uses Info-ZIP, native SHA-256 and SQLite. It checks the pinned archive digest, table ownership and record references and recomputes the calendar deadline. It retains source history for the mapped tables. Its output records comparison time, rekeying and unresolved verification. The Python receiver performs the event-chain and signature verification. Operator-system import and standards conformance remain open.
+Enable `AIRWORTHINESS_NODE24` with the absolute path of Node.js 24 when running the signed export regression. The independent JavaScript implementation uses Info-ZIP, native cryptography and SQLite. It checks the pinned archive digest, table ownership and record references, recomputes the calendar deadline and verifies the detached reading signatures and applicable synthetic grant with the recipient's separately pinned trust. It retains source history for the mapped tables and reports comparison time, rekeying and unresolved verification. The Python receiver also checks archive event chains, RFC 3161 tokens and renewal evidence. Operator-system import and standards conformance remain open.
 
 ## Human-readable evidence
 
