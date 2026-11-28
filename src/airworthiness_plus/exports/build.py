@@ -28,7 +28,12 @@ from airworthiness_plus.exports.verify import MANIFEST
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
-from airworthiness_plus.planning.models import WorkCard, WorkCardAttestation
+from airworthiness_plus.planning.models import (
+    WorkCard,
+    WorkCardAttestation,
+    WorkCardSigningJob,
+    WorkCardStepSignOff,
+)
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases.models import Release
 from airworthiness_plus.reviews.models import ReviewStaff
@@ -211,6 +216,11 @@ def build(organisation: Organisation, *, by: User, aircraft: Aircraft | None = N
                             )
                         )
                         | Q(
+                            pk__in=WorkCardStepSignOff.objects.filter(
+                                card__package__aircraft=aircraft
+                            ).values("performer_id")
+                        )
+                        | Q(
                             pk__in=Handover.objects.filter(package__aircraft=aircraft).values(
                                 "outgoing_id"
                             )
@@ -250,6 +260,21 @@ def build(organisation: Organisation, *, by: User, aircraft: Aircraft | None = N
                             pk__in=WorkCardAttestation.objects.filter(
                                 card__package__aircraft=aircraft
                             ).values("authorisation_id")
+                        )
+                        | Q(
+                            pk__in=WorkCardSigningJob.objects.filter(
+                                card__package__aircraft=aircraft
+                            ).values("authorisation_id")
+                        )
+                        | Q(
+                            pk__in=WorkCardStepSignOff.objects.filter(
+                                card__package__aircraft=aircraft
+                            ).values("authorisation_id")
+                        )
+                        | Q(
+                            pk__in=WorkCard.objects.filter(package__aircraft=aircraft).values(
+                                "inspection_authorisation_id"
+                            )
                         )
                     )
                     .order_by("pk")

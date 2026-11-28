@@ -4,7 +4,6 @@ import hashlib
 import json
 from typing import Any
 
-from django.conf import settings
 from django.contrib.auth import HASH_SESSION_KEY
 from django.contrib.sessions.backends.base import SessionBase
 from django.core import signing
@@ -16,7 +15,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.history.models import Event
-from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
 from airworthiness_plus.planning import signing_provider
 from airworthiness_plus.planning.models import (
     SigningState,
@@ -25,17 +24,15 @@ from airworthiness_plus.planning.models import (
     WorkCardSigningJob,
     WorkPackage,
 )
-from airworthiness_plus.planning.services import RefusedError, _person_on
+from airworthiness_plus.planning.services import (
+    RefusedError,
+    synthetic_authorisation,
+    synthetic_available,
+)
 
 POLICY = "synthetic-work-card-completion-1"
 CONSENT = "I attest to the recorded completion shown on this synthetic work card."
 SALT = "planning.work-card-attestation"
-
-
-def available(package: WorkPackage) -> bool:
-    return settings.SYNTHETIC_WORK_CARD_ATTESTATION and package.reference.startswith(
-        "WP-SYNTHETIC-"
-    )
 
 
 def _json(value: dict[str, Any]) -> str:
@@ -46,14 +43,10 @@ def _digest(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def _scope(card: WorkCard) -> str:
-    return MaintenanceAuthorisation.SYNTHETIC_COMPLETION_SCOPE + card.package.aircraft.type_rating
-
-
 def preview(
     card: WorkCard, actor: User, *, lock: bool = False
 ) -> tuple[dict[str, Any], MaintenanceAuthorisation]:
-    if not available(card.package) or not actor.may(Action.RECORD_WORK_CARD):
+    if not synthetic_available(card.package) or not actor.may(Action.RECORD_WORK_CARD):
         raise RefusedError("Synthetic Attestation Is Unavailable")
     if (
         card.completed_on is None
@@ -68,16 +61,7 @@ def preview(
     person = people.get(pk=card.performed_by_id)
     if person.user_id != actor.pk:
         raise RefusedError("Only the Named Performer May Attest to Recorded Completion")
-    _person_on(person, card.package, today)
-    scope = _scope(card)
-    grants = MaintenanceAuthorisation.objects.filter(person=person, scope=scope).select_related(
-        "withdrawal"
-    )
-    grant = next(
-        (grant for grant in grants if grant.term_on(today) == "Within Recorded Dates"), None
-    )
-    if person.staff_group != StaffGroup.CERTIFYING or grant is None:
-        raise RefusedError("No Current Synthetic Authorisation Covers This Task and Aircraft Type")
+    grant = synthetic_authorisation(card, actor, person, today)
     version = Event.of(card).last()
     if version is None:
         raise RefusedError("The Work Card Version Could Not Be Established")
@@ -113,6 +97,22 @@ def preview(
         "authorisation_valid_from": grant.valid_from.isoformat(),
         "authorisation_valid_to": grant.valid_to.isoformat() if grant.valid_to else None,
     }
+    if card.steps:
+        content["steps"] = [
+            {
+                **card.steps[step.number - 1],
+                "number": step.number,
+                "sign_off_id": str(step.pk),
+                "performer_id": str(step.performer_id),
+                "authorisation_id": str(step.authorisation_id),
+                "signed_on": step.signed_on.isoformat(),
+                "evidence": step.evidence,
+            }
+            for step in card.step_signoffs.all()
+        ]
+        content["inspection_authorisation_id"] = (
+            str(card.inspection_authorisation_id) if card.inspection_authorisation_id else None
+        )
     return content, grant
 
 

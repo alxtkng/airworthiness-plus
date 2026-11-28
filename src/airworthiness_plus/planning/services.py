@@ -4,8 +4,11 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
+from django.conf import settings
 from django.db import transaction
 
+from airworthiness_plus.accounts.models import User
+from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.contracts.models import Outcome, WorkOrder
@@ -16,8 +19,8 @@ from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import DataSet, Holding, Revision
 from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import ApprovalType, Organisation, Privilege
-from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
-from airworthiness_plus.planning.models import WorkCard, WorkPackage
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
+from airworthiness_plus.planning.models import WorkCard, WorkCardStepSignOff, WorkPackage
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Task, WorkDone
 from airworthiness_plus.releases import services as release_services
@@ -27,6 +30,12 @@ from airworthiness_rules.intervals import TaskKind
 
 class RefusedError(ValueError):
     """The requested transition lacks the necessary evidence."""
+
+
+def synthetic_available(package: WorkPackage) -> bool:
+    return settings.SYNTHETIC_WORK_CARD_ATTESTATION and package.reference.startswith(
+        "WP-SYNTHETIC-"
+    )
 
 
 def _for_maintenance(aircraft: Aircraft, on: date) -> None:
@@ -117,6 +126,7 @@ def add_card(
     critical: bool = False,
     task: Task | None = None,
     directive: Applicability | None = None,
+    structured_steps: str = "",
 ) -> WorkCard:
     package = _locked_draft(package)
     title, instruction = title.strip(), instruction.strip()
@@ -133,12 +143,41 @@ def add_card(
         raise RefusedError("This Programme Task Already Has a Work Card in the Package")
     if directive is not None and package.cards.filter(directive=directive).exists():
         raise RefusedError("This Airworthiness Directive Already Has a Work Card in the Package")
+    steps = []
+    source_revision = None
+    if structured_steps.strip():
+        if not synthetic_available(package):
+            raise RefusedError("Structured Work Cards Are Available Only for Synthetic Packages")
+        for source in structured_steps.splitlines():
+            source = source.strip()
+            if source:
+                steps.append(
+                    {
+                        "instruction": source.removeprefix("*").strip(),
+                        "critical": source.startswith("*"),
+                    }
+                )
+        if len(steps) > 30 or any(not item["instruction"] for item in steps):
+            raise RefusedError("Enter Up to 30 Nonempty Instructions")
+        if any(item["critical"] for item in steps) and not critical:
+            raise RefusedError("Mark the Card Critical When It Contains a Critical Step")
+        data_set = DataSet.objects.select_for_update().get(pk=data_set.pk)
+        source_revision = data_services.current_revision(data_set)
+        _check_data(
+            package,
+            data_set,
+            source_revision,
+            aircraft_services.today(),
+            checked_until=data_set.check_due,
+        )
     return WorkCard.objects.create(
         organisation_id=package.organisation_id,
         package=package,
         title=title,
         data_set=data_set,
         instruction=instruction,
+        structured_revision=source_revision,
+        steps=steps,
         planned_hours=planned_hours,
         inspection_hours=inspection_hours,
         critical=critical,
@@ -197,6 +236,10 @@ def issue_package(package: WorkPackage) -> None:
         data_set = data[card.data_set_id]
         revision = data_services.current_revision(data_set)
         _check_data(package, data_set, revision, today, checked_until=data_set.check_due)
+        if card.steps and (
+            not synthetic_available(package) or revision != card.structured_revision
+        ):
+            raise RefusedError("The Structured Work Card Source Is Superseded or Unavailable")
         card.revision = revision
         card.issue_check_due = data_set.check_due
         card.save(update_fields=["revision", "issue_check_due"])
@@ -225,6 +268,69 @@ def _person_on(person: Person, package: WorkPackage, on: date) -> None:
         raise RefusedError("The Named Person Must Be With the Organisation on That Day")
 
 
+def synthetic_authorisation(
+    card: WorkCard, actor: User, person: Person, on: date, *, inspection: bool = False
+) -> MaintenanceAuthorisation:
+    if not synthetic_available(card.package) or not actor.may(Action.RECORD_WORK_CARD):
+        raise RefusedError("Synthetic Work Card Evidence Is Unavailable")
+    if person.user_id != actor.pk or actor.organisation_id != card.organisation_id:
+        raise RefusedError("Sign In as the Named Person for This Synthetic Action")
+    _person_on(person, card.package, on)
+    scope = MaintenanceAuthorisation.SYNTHETIC_COMPLETION_SCOPE
+    if inspection:
+        scope += "independent inspection: "
+    scope += card.package.aircraft.type_rating
+    grants = MaintenanceAuthorisation.objects.filter(person=person, scope=scope).select_related(
+        "withdrawal"
+    )
+    grant = next((grant for grant in grants if grant.term_on(on) == "Within Recorded Dates"), None)
+    if person.staff_group != StaffGroup.CERTIFYING or grant is None:
+        raise RefusedError("No Current Synthetic Authorisation Covers This Task and Aircraft Type")
+    return grant
+
+
+@transaction.atomic
+def sign_step(card: WorkCard, actor: User, number: int, evidence: str) -> WorkCardStepSignOff:
+    package = _locked_issued(card.package_id)
+    card = WorkCard.objects.get(pk=card.pk)
+    today = aircraft_services.today()
+    if (
+        not synthetic_available(package)
+        or card.completed_on is not None
+        or not 1 <= number <= len(card.steps)
+    ):
+        raise RefusedError("Choose a Step on an Open Synthetic Work Card")
+    data_set = DataSet.objects.select_for_update().get(pk=card.data_set_id)
+    current = data_services.current_revision(data_set)
+    if current != card.revision:
+        raise RefusedError("The Issued Structured Work Card Source Is Superseded")
+    _check_data(package, data_set, current, today, checked_until=data_set.check_due)
+    prior = list(card.step_signoffs.all())
+    person = Person.objects.select_for_update().filter(user=actor).first()
+    if person is None:
+        raise RefusedError("The Signed-In User Needs a Staff Record")
+    grant = synthetic_authorisation(card, actor, person, today)
+    evidence = evidence.strip()
+    if not evidence:
+        raise RefusedError("Record the Step Result")
+    if any(step.performer_id != person.pk for step in prior):
+        raise RefusedError("This Pilot Requires the Same Authorised Performer for Every Step")
+    if len(prior) >= number and prior[number - 1].evidence == evidence:
+        return prior[number - 1]
+    if len(prior) + 1 != number:
+        raise RefusedError("Sign Each Step Once in the Order Shown")
+    return WorkCardStepSignOff.objects.create(
+        organisation_id=card.organisation_id,
+        card=card,
+        number=number,
+        performer=person,
+        actor=actor,
+        authorisation=grant,
+        signed_on=today,
+        evidence=evidence,
+    )
+
+
 @transaction.atomic
 def record_completion(
     card: WorkCard,
@@ -251,6 +357,15 @@ def record_completion(
         raise RefusedError("Give Signed Work Evidence and the Counter Readings")
     data_set = DataSet.objects.select_for_update().get(pk=card.data_set_id)
     revision = revision or card.revision
+    if card.steps:
+        if not synthetic_available(package) or revision != card.structured_revision:
+            raise RefusedError("The Completed Work Must Use the Pinned Structured Revision")
+        signoffs = list(card.step_signoffs.all())
+        if len(signoffs) != len(card.steps) or any(
+            step.performer_id != performed_by.pk or step.signed_on > completed_on
+            for step in signoffs
+        ):
+            raise RefusedError("Every Structured Step Needs the Named Performer's Sign-Off")
     effective = data_set.revisions.filter(revision_date__lte=completed_on)
     current = effective.order_by("-revision_date", "-current", "pk").first()
     if (
@@ -319,6 +434,7 @@ def record_inspection(
     inspected_on: date,
     qualification: str,
     evidence: str,
+    actor: User | None = None,
 ) -> None:
     package = _locked_issued(card.package_id)
     card = WorkCard.objects.get(pk=card.pk)
@@ -331,6 +447,15 @@ def record_inspection(
     if not card.completed_on <= inspected_on <= aircraft_services.today():
         raise RefusedError("Inspection Is Dated Between Completion of the Work and Today")
     _person_on(inspector, package, inspected_on)
+    if card.steps:
+        if actor is None or inspected_on != aircraft_services.today():
+            raise RefusedError("The Independent Inspector Must Record Today's Synthetic Inspection")
+        inspector = Person.objects.select_for_update().get(pk=inspector.pk)
+        if card.step_signoffs.filter(performer=inspector).exists():
+            raise RefusedError("Independent Inspection Needs a Person Who Did Not Sign a Step")
+        card.inspection_authorisation = synthetic_authorisation(
+            card, actor, inspector, inspected_on, inspection=True
+        )
     qualification, evidence = qualification.strip(), evidence.strip()
     if not qualification or not evidence:
         raise RefusedError("Give Evidence of Qualification and Satisfactory Independent Inspection")
@@ -338,7 +463,15 @@ def record_inspection(
     card.inspected_on = inspected_on
     card.qualification = qualification
     card.inspection_evidence = evidence
-    card.save(update_fields=["inspector", "inspected_on", "qualification", "inspection_evidence"])
+    card.save(
+        update_fields=[
+            "inspector",
+            "inspected_on",
+            "qualification",
+            "inspection_evidence",
+            "inspection_authorisation",
+        ]
+    )
 
 
 @transaction.atomic
@@ -377,6 +510,8 @@ def release_package(
             or (card.inspected_on is not None and card.inspected_on > issued_on)
         ):
             raise RefusedError(f"Signed Work and Any Independent Inspection Are Needed: {card}")
+    if any(card.steps for card in cards):
+        raise RefusedError("Synthetic Structured Cards Cannot Be Used for a Release Certificate")
     # The accomplishment service locks the people named on the cards.
     # Take those locks in the same order for every package.
     people = {issued_by.pk} | {card.performed_by_id for card in cards}

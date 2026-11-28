@@ -99,6 +99,13 @@ class WorkCard(Record):
         Revision, on_delete=models.PROTECT, null=True, related_name="+"
     )
     instruction = models.CharField("Instruction Reference", max_length=200)
+    structured_revision = models.ForeignKey(
+        Revision, on_delete=models.PROTECT, null=True, related_name="+"
+    )
+    steps = models.JSONField(default=list, blank=True)
+    inspection_authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, null=True, related_name="+"
+    )
     planned_hours = models.DecimalField("Planned Hours", max_digits=6, decimal_places=1)
     inspection_hours = models.DecimalField(
         "Planned Inspection Hours", max_digits=6, decimal_places=1, default=0
@@ -260,4 +267,25 @@ class WorkCardSigningJob(Record):
                 | (~Q(status="archived") & Q(archive__isnull=True)),
                 name="work_card_signature_archive_matches_state",
             ),
+        ]
+
+
+class WorkCardStepSignOff(Record):
+    """One signed synthetic step of a pinned work card."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    card = models.ForeignKey(WorkCard, on_delete=models.PROTECT, related_name="step_signoffs")
+    number = models.PositiveSmallIntegerField()
+    performer = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="+")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    signed_on = models.DateField()
+    evidence = models.CharField(max_length=500)
+
+    class Meta:
+        ordering = ["number"]
+        constraints = [
+            models.UniqueConstraint(fields=["card", "number"], name="one_sign_off_per_card_step"),
         ]

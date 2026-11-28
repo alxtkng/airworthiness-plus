@@ -33,6 +33,9 @@
 <dt>Completion Date</dt><dd>{{ content.completed_on }}</dd>
 <dt>Source Evidence</dt><dd>{{ content.source_evidence }}</dd>
 <dt>Counter Hours and Cycles</dt><dd>{{ content.hours }} hours, {{ content.cycles }} cycles</dd>
+{% if content.steps %}
+<dt>Step Results</dt><dd><ol>{% for step in content.steps %}<li>{{ step.instruction }}{% if step.critical %} (Critical){% endif %}. {{ step.evidence }} ({{ step.signed_on }}).</li>{% endfor %}</ol></dd>
+{% endif %}
 <dt>Independent Inspection</dt><dd>{{ content.inspection_status }}</dd>
 <dt>Person Attesting</dt><dd>{{ content.actor_name }}</dd>
 <dt>Authorisation</dt><dd>{{ content.authorisation_reference }}. {{ content.authorisation_scope }}.

@@ -15,7 +15,7 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.accounts.user_views import code_page
 from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.planning import attestation, forms, services
-from airworthiness_plus.planning.models import WorkCard, WorkPackage
+from airworthiness_plus.planning.models import SigningState, WorkCard, WorkPackage
 from airworthiness_plus.releases.services import maintains
 
 
@@ -81,12 +81,16 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
         package.cards.select_related(
             "data_set",
             "revision",
+            "structured_revision",
             "performed_by",
             "supervised_by",
             "inspector",
             "work__certificate",
             "attestation",
-        ).prefetch_related("signing_jobs")
+            "inspection_authorisation",
+        ).prefetch_related(
+            "signing_jobs", "step_signoffs__performer", "step_signoffs__authorisation"
+        )
     )
     return render(
         request,
@@ -95,6 +99,7 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "package": package,
             "cards": cards,
             "signed": sum(card.signed for card in cards),
+            "has_structured_pilot": any(card.steps for card in cards),
             "missing_inspections": sum(
                 card.critical and card.inspected_on is None for card in cards
             ),
@@ -105,7 +110,7 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "may_attest": (
                 may_maintain
                 and user.may(Action.RECORD_WORK_CARD)
-                and attestation.available(package)
+                and services.synthetic_available(package)
             ),
             "actor_id": user.pk,
             "may_release": may_maintain and user.may(Action.RECORD_RELEASE_CERTIFICATE),
@@ -196,13 +201,13 @@ def complete_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) ->
 @require_http_methods(["GET", "POST"])
 def inspect_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> HttpResponse:
     """Record satisfactory independent inspection of a critical task."""
-    _user(request)
+    user = _user(request)
     card = _card(package_id, card_id)
     return _form(
         request,
         forms.InspectionForm(request.POST or None),
         "Record Independent Inspection",
-        lambda **values: services.record_inspection(card, **values),
+        lambda **values: services.record_inspection(card, actor=user, **values),
         card.package,
     )
 
@@ -230,7 +235,7 @@ def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> H
     """Archive explicit consent to the reviewed synthetic completion version."""
     user = _user(request)
     card = _card(package_id, card_id)
-    if not attestation.available(card.package):
+    if not services.synthetic_available(card.package):
         raise Http404
     error = ""
     content = None
@@ -258,11 +263,16 @@ def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> H
                 return prompt
             attestation.enqueue(card, user, form.cleaned_data["intent"], request.session)
             job = attestation.active_job(card, user)
-            if job is not None and job.status != "archived":
+            if job is not None and job.status != SigningState.ARCHIVED:
                 return redirect("attest_work_card", package_id=package_id, card_id=card_id)
             return redirect("work_package", package_id=package_id)
-        content, _ = attestation.preview(card, user)
-        token = attestation.intent(content)
+        if job is None or job.status not in {
+            SigningState.PENDING,
+            SigningState.SIGNED,
+            SigningState.ARCHIVED,
+        }:
+            content, _ = attestation.preview(card, user)
+            token = attestation.intent(content)
     except services.RefusedError as refusal:
         error = str(refusal)
     return render(
@@ -277,4 +287,29 @@ def attest_work_card(request: HttpRequest, package_id: UUID, card_id: UUID) -> H
             "error": error,
         },
         status=409 if error else 200,
+    )
+
+
+@never_cache
+@requires(Action.RECORD_WORK_CARD)
+@require_http_methods(["GET", "POST"])
+def sign_work_card_step(
+    request: HttpRequest, package_id: UUID, card_id: UUID, number: int
+) -> HttpResponse:
+    user = _user(request)
+    card = _card(package_id, card_id)
+    if not services.synthetic_available(card.package) or not 1 <= number <= len(card.steps):
+        raise Http404
+    form = forms.StepSignOffForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.sign_step(card, user, number, form.cleaned_data["evidence"])
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("work_package", package_id=package_id)
+    return render(
+        request,
+        "planning/step_signoff.html",
+        {"card": card, "step": card.steps[number - 1], "number": number, "form": form},
     )
