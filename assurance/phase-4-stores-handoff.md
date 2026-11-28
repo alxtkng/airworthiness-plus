@@ -1,6 +1,12 @@
 # Stores receipt handoff and PR 1 test cases
 
-28 November 2026. **Proposed for Goods In owner confirmation.** The design review agreed that Goods In owns the receipt, inspection and final disposition, and that Stores posts once using the immutable disposition ID. The contract below specifies the implementation of that boundary. Record the owner’s agreement and the confirmed producer revision here before changing the integration.
+28 November 2026. **Proposed for Goods In owner confirmation.** The design review agreed that Goods In owns the receipt, inspection and final disposition, and that Stores posts once using the immutable disposition ID. The contract below specifies the implementation of that boundary. Record the owner’s agreement and the confirmed producer revision here before approving the operational contract.
+
+## Integration review
+
+PR #161 identifies Alex King (`alxtkng`) as author and merger and lists no separate reviewer or assignee. The repository identifies Alex as the project owner, so this handoff treats him as the likely Goods In producer owner. The accepted producer tree at `9eb703b` matches merge `4ebb665`. The producer service and receiving migrations 0004–0006 are byte-for-byte unchanged on `origin/main` at `91f9176` and at the Stores contract commit `b690cf2`. [Goods In PR](https://github.com/alxtkng/airworthiness-plus/pull/161)
+
+The isolated review branch preserves the original worktree at `b690cf2` and captures its uncommitted changes in `d944f80`. The receipt-to-ledger and browser pack reported 126 passes and one failing narrow-screen fixture interaction. A Playwright rerun passed with a portable native select interaction in `abe7516`. The local integration commit `6b95f3a` retains the guided exercise and calibration changes. Its Stores, permission, data and inventory pack passed all 334 checks. The local review checked the immutable acceptance link, preserved unresolved legacy evidence and tested once-only credit across retries and concurrent use of PostgreSQL. A confirmed producer agreement and REQ-357 wording review remain open. The next review is to confirm captured as-received evidence responsibilities and agree which unresolved evidence must go back to Goods In before operational posting.
 
 ## Goods In baseline
 

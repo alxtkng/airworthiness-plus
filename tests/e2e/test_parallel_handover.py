@@ -1,19 +1,31 @@
 """Rehearse a stop and fallback with the two synthetic organisations."""
 
+import hashlib
+import importlib
 import json
 import os
 import subprocess
 import sys
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from playwright.sync_api import Browser, Page, expect
 
 from airworthiness_plus.exports.verify import verify
 from tests.e2e.browser import choose_aircraft, fill, reveal, save, signed_in, submit
 from tests.e2e.conftest import Account
-from tests.test_exports import OFFLINE_RECEIVER, opened
+from tests.test_exports import (
+    OFFLINE_RECEIVER,
+    _signed_fixture_key,
+    _stamp,
+    _trial_json,
+    _whole_signing_time,
+    opened,
+)
 
 AIRCRAFT = "G-EJKL"
 DEFECT = "Right Headset Socket Crackle"
@@ -84,14 +96,30 @@ def test_gejkl_completion_and_correction_transfer_from_normal_forms(
     live_site: str,
     personas: dict[str, tuple[Account, ...]],
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Record completion and both reading versions, then reconcile the aircraft export offline."""
     title = "G-EJKL Trial Repeat Inspection"
     instruction = "Synthetic applicable instruction AW-I-05"
     measurements = "Clearance 1.2 mm"
     readings_table = "records/aircraft_utilisationentry.json"
+    history_table = "history/aircraft_utilisationentry.json"
+    project = Path(__file__).resolve().parents[2]
+    monkeypatch.syspath_prepend(str(project / "tools"))
+    signatures = importlib.import_module("sign_handover")
+    key = Ed25519PrivateKey.generate()
     with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
         choose_aircraft(page, AIRCRAFT, "Maintenance Programme")
+        page.get_by_role("link", name="Record the Programme", exact=True).click()
+        save(
+            page,
+            "Save Programme",
+            {
+                "basis": "Design Approval Holder's Instructions",
+                "reference": "G-EJKL Trial Programme",
+            },
+            "G-EJKL Trial Programme",
+        )
         page.get_by_role("link", name="Add a Task", exact=True).click()
         page.get_by_label("Runs Against", exact=True).select_option(index=1)
         save(
@@ -134,6 +162,21 @@ def test_gejkl_completion_and_correction_transfer_from_normal_forms(
         original = next(
             item for item in original_archive[readings_table] if item["hours"] == 11208.6
         )
+        original_event = next(
+            item for item in original_archive[history_table] if item["record_id"] == original["id"]
+        )
+        original_at = _whole_signing_time(datetime.fromisoformat(original_event["at"]))
+        identity = {
+            "signer_id": original_event["actor_id"],
+            "organisation_id": original["organisation_id"],
+            "aircraft_id": original_archive["manifest.json"]["aircraft"]["id"],
+            "key_id": "GEJKL-BROWSER-TRIAL-KEY",
+            "authority_id": "GEJKL-BROWSER-TRIAL-UTILISATION",
+        }
+        endorsed = signatures.sign_original(
+            original, private_key=key, signed_at=_stamp(original_at), **identity
+        )
+        (tmp_path / "browser-original-signature.json").write_bytes(_trial_json(endorsed))
         choose_aircraft(page, AIRCRAFT)
         page.get_by_role("link", name="Enter Hours and Cycles", exact=True).click()
         page.get_by_label("Counter", exact=True).select_option(index=1)
@@ -164,7 +207,32 @@ def test_gejkl_completion_and_correction_transfer_from_normal_forms(
     aircraft_id = records["manifest.json"]["aircraft"]["id"]
     archive = tmp_path / "browser-source.zip"
     archive.write_bytes(content)
-    project = Path(__file__).resolve().parents[2]
+    corrected_event = next(
+        item for item in records[history_table] if item["record_id"] == correction["id"]
+    )
+    corrected_at = _whole_signing_time(datetime.fromisoformat(corrected_event["at"]))
+    signed_correction = signatures.sign_correction(
+        original,
+        correction,
+        endorsed,
+        private_key=key,
+        signed_at=_stamp(corrected_at),
+        reason="Corrected the synthetic airframe log transcription.",
+        **identity,
+    )
+    signed_path = tmp_path / "browser-signatures.json"
+    signed_path.write_bytes(_trial_json(signatures.signature_envelope(endorsed, signed_correction)))
+    custodian = tmp_path / "custodian"
+    custodian.mkdir()
+    trust = _trial_json(
+        _signed_fixture_key(
+            identity, key.public_key().public_bytes_raw(), original_at, corrected_at
+        )
+    )
+    pin = hashlib.sha256(trust).hexdigest()
+    trust_file = custodian / "trust.json"
+    trust_file.write_bytes(trust)
+    (custodian / "trust.sha256").write_text(pin + "\n")
     command = [
         sys.executable,
         "-c",
@@ -182,6 +250,12 @@ def test_gejkl_completion_and_correction_transfer_from_normal_forms(
         task["id"],
         "--correction-id",
         correction["id"],
+        "--signatures",
+        str(signed_path),
+        "--trust",
+        str(trust_file),
+        "--trust-sha256",
+        pin,
     ]
     for imported in (True, False):
         receiver = subprocess.run(  # noqa: S603  fixed offline executable and synthetic archive
@@ -201,4 +275,5 @@ def test_gejkl_completion_and_correction_transfer_from_normal_forms(
         assert received["last_completion"]["completion_measurements"] == measurements
         assert received["original_reading"] == original
         assert received["corrected_reading"] == correction
+        assert received["signature"] == "Both detached Ed25519 signatures verified"
     (tmp_path / "browser-reconciliation.json").write_text(json.dumps(received, indent=2) + "\n")
