@@ -33,7 +33,15 @@ from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Basis, InspectionCategory, Task
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import Certificate, ReviewStaff
-from airworthiness_plus.sample import calibration, goods_in, phase1, planning, suppliers, tools
+from airworthiness_plus.sample import (
+    calibration,
+    goods_in,
+    phase1,
+    planning,
+    stores,
+    suppliers,
+    tools,
+)
 from airworthiness_plus.sample.models import Added, Part
 from airworthiness_rules.intervals import Interval, Reading, TaskKind
 
@@ -641,6 +649,7 @@ def build(ours: Organisation, administrator: User) -> Staff:
     planning.add_work_packages(ours, people.planner, fleet["G-EJKL"])
     suppliers.add(ours, administrator)
     goods_in.add(ours, administrator)
+    stores.add(ours, administrator)
     tools.add(ours, administrator)
     calibration.add(ours, administrator)
     return people

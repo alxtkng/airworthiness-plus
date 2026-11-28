@@ -367,7 +367,7 @@ def post(
         assert place is not None  # noqa: S101  checked by posting_blockers
         try:
             with transaction.atomic():
-                return StockPosting.objects.create(
+                created = StockPosting.objects.create(
                     organisation_id=disposition.organisation_id,
                     disposition=disposition,
                     resolution=resolution,
@@ -384,6 +384,9 @@ def post(
                     actor_name=actor.full_name,
                     authority=_text(authority),
                 )
+                # The database fills the posting from the persisted records. Return those.
+                created.refresh_from_db()
+                return created
         except DatabaseError as error:
             if isinstance(error, IntegrityError) and (
                 StockPosting.objects.filter(disposition=disposition).exists()
@@ -471,7 +474,7 @@ def move(
     """Move part or all of a position between two compatible locations of the organisation."""
     amount = checked_quantity(quantity, lot.unit)
     if lot.serial_number and amount != 1:
-        raise RefusedError("A Serialised Item Moves Whole")
+        raise RefusedError("A Serialised Item Moves as Exactly One Each")
     if from_location.pk == to_location.pk:
         raise RefusedError("Choose a Different Destination")
     for place in (from_location, to_location):

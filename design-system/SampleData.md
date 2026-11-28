@@ -322,6 +322,10 @@ Added on 24 November 2026 for the person records, from the Staff board:
 
 Five representative Receiving Inspection board entries are seeded. On 18 November the ELT battery has the supplier and release-document checks recorded and is Awaiting Inspection. The ineligible G-DGHI trim cable is returned on 15 November and its replacement is accepted into Stores on 16 November and creates a linked stock entry with its sample CAA Form 1 reference. The owner-supplied G-FMNO alternator is quarantined on 6 November and references a separate sample authority report dated 7 November. The oil without conformity evidence is inspected on 28 October and returned on 29 October. The delivery-line and receiving-inspector authorisation references are illustrative.
 
+## Stores
+
+Two Stores locations are seeded under the names Goods In recorded: [Serviceable Stores Bay], a serviceable location for components, standard parts and materials, and [Secure Quarantine Store], a secure quarantine location for components. Nothing is posted. The accepted trim cable RX-002 shows Awaiting Stock Posting until a person records a resolution and posts it, and the quarantined alternator RX-004 is a hold with details to verify. The storage conditions are illustrative.
+
 ## Tools and Equipment
 
 The marked Part-CAO sample uses fictitious Hangar delegations for Lucy Grant. Grease Gun 0201 has the board's 3 August 2026 service evidence and six-month interval, giving 3 February 2027. Jack 0210 is segregated with a leaking seal and a 12-month service control. Its service completion is missing. Jack Point Adapter 0301 shows inspection before each use.

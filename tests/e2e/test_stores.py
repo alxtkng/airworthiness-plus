@@ -309,3 +309,29 @@ def test_two_committed_sessions_cannot_post_or_overspend_twice(
 
 def site_dsn(site: RunningSite) -> str:
     return psycopg.conninfo.make_conninfo(site.database.admin.info.dsn, dbname=site.name)
+
+
+def test_facts_stay_on_screen_at_320_pixels(
+    chromium: Browser,
+    live_site: str,
+    personas: dict[str, tuple[Account, ...]],
+) -> None:
+    """Exploratory finding, 28 November 2026: long labels pushed values off a phone screen."""
+    with signed_in(chromium, live_site, personas["your-organisation"][4], width=320) as page:
+        page.goto("/stores/")
+        link = page.get_by_role("link", name="Stabilator Trim Cable Assembly", exact=True)
+        stores_entry = str(link.get_attribute("href"))
+        page.goto(stores_entry)
+        receipt = page.get_by_role("link", name="View Goods In Receipt RX-002", exact=True)
+        for url in (stores_entry, str(receipt.get_attribute("href"))):
+            page.goto(url)
+            clipped = page.evaluate(
+                "[...document.querySelectorAll('main dd')].filter(e => {"
+                " const r = document.createRange(); r.selectNodeContents(e);"
+                " const edge = Math.min("
+                " document.querySelector('main').getBoundingClientRect().right,"
+                " window.innerWidth);"
+                " return r.getBoundingClientRect().right > edge + 1;"
+                "}).map(e => e.innerText)"
+            )
+            assert clipped == [], url

@@ -198,7 +198,10 @@ class StockResolutionForm(Form):
         label="Standard or Specification", max_length=160, required=False
     )
     location = _LocationChoice(
-        label="Stock Location", queryset=StoreLocation.objects.none(), required=False
+        label="Stock Location",
+        queryset=StoreLocation.objects.none(),
+        required=False,
+        empty_label="Not Yet Resolved",
     )
     shelf_life_basis = forms.ChoiceField(
         label="Shelf-Life Basis",

@@ -37,6 +37,7 @@ from airworthiness_plus.sample import (
     planning,
     second,
     staffing,
+    stores,
     suppliers,
     tools,
     top_up,
@@ -175,6 +176,18 @@ def bring_goods_in(administrator: User) -> str:
                     return f"Goods In of the Sample Added, {count} Receipts"
     except Exception as error:
         return f"Sample Goods In Not Added: {type(error).__name__}"
+    return ""
+
+
+def bring_stores(administrator: User) -> str:
+    """Add the sample Stores locations to an earlier primary test-site sample."""
+    try:
+        with working_for(administrator.organisation_id, administrator.id):
+            organisation = Organisation.objects.get(pk=administrator.organisation_id)
+            if count := stores.add(organisation, administrator):
+                return f"Stores Locations of the Sample Added, {count} Locations"
+    except Exception as error:
+        return f"Sample Stores Locations Not Added: {type(error).__name__}"
     return ""
 
 
@@ -323,6 +336,8 @@ class Command(BaseCommand):
             receiving_result = bring_goods_in(first)
             if receiving_result:
                 self.stdout.write(receiving_result)
+            if stores_result := bring_stores(first):
+                self.stdout.write(stores_result)
             if tool_result := bring_tools(first):
                 self.stdout.write(tool_result)
             if calibration_result := bring_calibration(first):

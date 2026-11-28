@@ -330,6 +330,8 @@ def test_a_test_site_seeded_before_the_canvas_build_is_given_what_is_missing(
             "Sources of Directives of the Sample Added, 4 Records",
             "Suppliers of the Sample Added, 5 Suppliers",
             "Goods In of the Sample Added, 5 Receipts",
+            # From 28 November 2026 the start adds the two Stores locations Goods In named.
+            "Stores Locations of the Sample Added, 2 Locations",
             "Tools of the Sample Added, 5 Tools",
             "Calibration Orders of the Sample Added, 2 Orders",
             "Second Sample Organisation Set Up",
