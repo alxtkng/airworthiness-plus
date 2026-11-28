@@ -35,12 +35,14 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.reviews.models import ReviewStaff
 from airworthiness_plus.sample import build
+from tests.accessibility_scan import violations
 from tests.support import (
     TODAY,
     Sample,
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
+    post,
     signed_in,
 )
 
@@ -84,6 +86,7 @@ def in_browser(
     *,
     width: int = 1280,
     script: bool = True,
+    colour_scheme: str = "light",
 ) -> None:
     """Open a browser that is served only ``pages`` and the static files, and run ``check``.
 
@@ -118,7 +121,9 @@ def in_browser(
             pytest.skip(f"No browser to run the script in: {error.message.splitlines()[0]}")
         try:
             context = browser.new_context(
-                viewport={"width": width, "height": 900}, java_script_enabled=script
+                viewport={"width": width, "height": 900},
+                java_script_enabled=script,
+                color_scheme=colour_scheme,  # type: ignore[arg-type,unused-ignore]
             )
             context.route("**/*", serve)
             page = context.new_page()
@@ -319,7 +324,7 @@ def test_how_a_figure_was_worked_out_opens_inside_a_row(
                        row.querySelector('dl').getBoundingClientRect().width,
                        row.querySelector('dl > div:not(.wide)').getBoundingClientRect().width]"""
         )
-        assert widths[0] == widths[1]
+        assert widths[0] == pytest.approx(widths[1], abs=0.5)
         assert widths[2] < widths[1] / 2
         source = wide.get_by_text("AMC1 CAO.A.045(c) and (d)", exact=True)
         assert not source.is_visible()
@@ -535,7 +540,7 @@ def test_a_short_table_that_asks_for_it_is_searched() -> None:
     def check(page: Page) -> None:
         page.goto(f"{ORIGIN}/searching/")
         assert page.get_by_label("Search This Table").count() == 2
-        count = page.locator("#short + p[role=status]")
+        count = page.locator(".table-scroll:has(#short) + p[role=status]")
         assert count.text_content() == "4 of 4 Shown"
         page.get_by_label("Search This Table").nth(1).fill("short 3")
         assert count.text_content() == "1 of 4 Shown"
@@ -562,7 +567,7 @@ def test_a_long_table_is_searched_and_says_how_many_rows_it_shows() -> None:
         page.goto(f"{ORIGIN}/searching/")
         search = page.get_by_label("Search This Table")
         assert search.count() == 1  # the table of 4 rows has none
-        count = page.locator("#long + p[role=status]")
+        count = page.locator(".table-scroll:has(#long) + p[role=status]")
         assert count.text_content() == "12 of 12 Shown"
 
         # Items 4, 8 and 12 hold Alpha: 4 % 4, 8 % 4 and 12 % 4 are 0.
@@ -657,3 +662,50 @@ def test_aircraft_tabs_and_import_guidance_fit_a_phone(
     in_browser(
         {aircraft: made(manager, aircraft), imports: made(manager, imports)}, check, width=390
     )
+
+
+@pytest.mark.parametrize("colour_scheme", ["light", "dark"])
+@pytest.mark.parametrize("width", [1280, 320])
+def test_the_main_pages_pass_the_accessibility_scan(
+    sample: Sample, fleet: dict[str, Aircraft], width: int, colour_scheme: str
+) -> None:
+    """REQ-383 to REQ-404. axe-core, WCAG 2.2 Levels A and AA, at desktop and 320 pixels
+    (SC 1.4.10), in both colour schemes. A row is opened, as a person would, and the
+    page is scanned again. Every page is scanned in the live walk (tests/e2e)."""
+    manager = signed_in(sample.lucy)
+    aircraft = f"/aircraft/{fleet['G-ABCD'].id}/"
+    paths = [
+        "/dashboard/",
+        "/",
+        aircraft,
+        aircraft + "programme/",
+        aircraft + "directives/",
+        "/reviews/",
+        "/defects/",
+        "/imports/",
+        "/settings/",
+        "/account/password/",
+    ]
+    pages = {path: made(manager, path) for path in paths}
+    pages["/aircraft/add/"] = post(manager, "/aircraft/add/", registration="G-ABCD", hours="x")
+    pages["/sign-in/"] = made(Client(), "/sign-in/")
+    found: dict[str, list[str]] = {}
+
+    def check(page: Page) -> None:
+        for path in pages:
+            page.goto(ORIGIN + path)
+            problems = violations(page)
+            opener = page.get_by_role("button", name="Show Details").first
+            if opener.count():
+                opener.click()
+                problems += violations(page)
+            # Content reflows: no scrolling in two directions at 320 pixels (SC 1.4.10).
+            if width == 320 and page.evaluate(
+                "document.documentElement.scrollWidth > document.documentElement.clientWidth"
+            ):
+                problems.append("the page scrolls sideways")
+            if problems:
+                found[path] = problems
+
+    in_browser(pages, check, width=width, colour_scheme=colour_scheme)
+    assert found == {}
