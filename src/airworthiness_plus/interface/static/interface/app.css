@@ -20,17 +20,22 @@
 
 :root {
   color-scheme: light dark;
-  --background-100: #ffffff;
-  --background-200: #fafafa;
-  --gray-100: #f2f2f2;
-  --gray-200: #ebebeb;
-  --gray-400: #ebebeb;
-  --gray-500: #c9c9c9;
-  --gray-900: #666666;
-  --gray-1000: #171717;
+  --background-100: light-dark(#ffffff, #0a0a0a);
+  --background-200: light-dark(#fafafa, #000000);
+  --gray-100: light-dark(#f2f2f2, #1a1a1a);
+  --gray-200: light-dark(#ebebeb, #1f1f1f);
+  --gray-400: light-dark(#ebebeb, #2e2e2e);
+  --gray-500: light-dark(#c9c9c9, #454545);
+  --gray-900: light-dark(#666666, #a1a1a1);
+  --gray-1000: light-dark(#171717, #ededed);
+  --control-border: light-dark(#7d7d7d, #7c7c7c);
+  --focus-ring: light-dark(#171717, #ededed);
   --status-ok: #1fcb6e;
   --status-due: #ffb224;
   --status-stop: #ff5a4e;
+  --status-ok-edge: light-dark(#107a3f, #1fcb6e);
+  --status-due-edge: light-dark(#9a6700, #ffb224);
+  --status-stop-edge: light-dark(#c4291c, #ff5a4e);
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -43,21 +48,73 @@
   --material-fullscreen: 16px;
   --status-dot: 9999px;
   --hairline: 1px;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --text-scale: 1;
+  --target-minimum: 24px;
+  --control-height: 40px;
+  --row-padding: 12px;
+  --motion: 120ms;
   --sans: Geist, system-ui, sans-serif;
   --mono: "Geist Mono", ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background-100: #0a0a0a;
-    --background-200: #000000;
-    --gray-100: #1a1a1a;
-    --gray-200: #1f1f1f;
-    --gray-400: #2e2e2e;
-    --gray-500: #454545;
-    --gray-900: #a1a1a1;
-    --gray-1000: #ededed;
+/* Display settings (REQ-405 to REQ-410, design-system/Accessibility.md). Until a
+   person chooses, the device decides: colour scheme, contrast and motion follow
+   the browser. A choice is written on <html> by base.html. */
+
+:root[data-appearance="light"] {
+  color-scheme: light;
+}
+
+:root[data-appearance="dark"] {
+  color-scheme: dark;
+}
+
+/* High contrast: muted text and every line at 7:1 or more (WCAG 2.2 SC 1.4.6). */
+
+@media (prefers-contrast: more) {
+  :root:not([data-contrast="standard"]) {
+    --gray-400: light-dark(#4d4d4d, #a1a1a1);
+    --gray-500: light-dark(#4d4d4d, #a1a1a1);
+    --gray-900: light-dark(#4d4d4d, #c7c7c7);
+    --control-border: light-dark(#4d4d4d, #a1a1a1);
+    --focus-ring: light-dark(#000000, #ffffff);
   }
+}
+
+:root[data-contrast="high"] {
+  --gray-400: light-dark(#4d4d4d, #a1a1a1);
+  --gray-500: light-dark(#4d4d4d, #a1a1a1);
+  --gray-900: light-dark(#4d4d4d, #c7c7c7);
+  --control-border: light-dark(#4d4d4d, #a1a1a1);
+  --focus-ring: light-dark(#000000, #ffffff);
+}
+
+:root[data-text-size="large"] {
+  --text-scale: 1.125;
+}
+
+:root[data-text-size="larger"] {
+  --text-scale: 1.25;
+}
+
+/* Comfortable: 44 pixel targets and taller rows, for gloves and tablets (SC 2.5.5). */
+
+:root[data-density="comfortable"] {
+  --target-minimum: 44px;
+  --control-height: 44px;
+  --row-padding: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduce-motion="off"]) {
+    --motion: 0ms;
+  }
+}
+
+:root[data-reduce-motion="on"] {
+  --motion: 0ms;
 }
 
 *,
@@ -68,8 +125,8 @@
 
 html {
   font-family: var(--sans);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: calc(14px * var(--text-scale));
+  line-height: calc(20px * var(--text-scale));
   font-variant-numeric: tabular-nums;
   color: var(--gray-1000);
   background: var(--background-100);
@@ -107,9 +164,16 @@ a {
   top: var(--space-2);
 }
 
+/* One focus ring for everything, 3:1 or more in both themes (SC 2.4.7, 2.4.11). */
+
 :focus-visible {
-  outline: 2px solid var(--gray-1000);
-  outline-offset: 2px;
+  outline: var(--focus-width) solid var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+[data-error-summary]:focus {
+  outline: var(--focus-width) solid var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 /* Layout: the sidebar, then the page */
@@ -138,8 +202,8 @@ a {
 .sidebar h2 {
   margin: 0 0 var(--space-1);
   padding: 0 var(--space-2);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: calc(16px * var(--text-scale));
   font-weight: 400;
   letter-spacing: 0;
   color: var(--gray-900);
@@ -176,12 +240,12 @@ a {
 }
 
 .sidebar .account p {
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2);
 }
 
 .sidebar .account .roles {
-  font-size: 13px;
-  line-height: 16px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: calc(16px * var(--text-scale));
   color: var(--gray-900);
 }
 
@@ -264,8 +328,8 @@ main.alone {
 
 h1 {
   margin: 0;
-  font-size: 24px;
-  line-height: 32px;
+  font-size: calc(24px * var(--text-scale));
+  line-height: calc(32px * var(--text-scale));
   font-weight: 600;
   letter-spacing: -0.96px;
 }
@@ -282,16 +346,16 @@ h1 + dl {
 
 h2 {
   margin: var(--space-10) 0 var(--space-3);
-  font-size: 16px;
-  line-height: 24px;
+  font-size: calc(16px * var(--text-scale));
+  line-height: calc(24px * var(--text-scale));
   font-weight: 600;
   letter-spacing: -0.32px;
 }
 
 h3 {
   margin: var(--space-6) 0 var(--space-3);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: calc(14px * var(--text-scale));
+  line-height: calc(20px * var(--text-scale));
   font-weight: 600;
   letter-spacing: -0.28px;
 }
@@ -300,15 +364,19 @@ p {
   margin: var(--space-3) 0;
 }
 
+/* Links set in a row of their own are targets of 24 pixels or more when they wrap (SC 2.5.8). */
+
 main > p > a,
 .actions a {
+  display: inline-block;
   margin-right: var(--space-4);
+  padding-block: var(--space-1);
 }
 
 .reference {
   font-family: var(--mono);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: calc(16px * var(--text-scale));
 }
 
 /* Facts: a label over its value */
@@ -347,14 +415,17 @@ dd {
 
 .status-ok::before {
   background: var(--status-ok);
+  box-shadow: inset 0 0 0 var(--hairline) var(--status-ok-edge);
 }
 
 .status-due::before {
   background: var(--status-due);
+  box-shadow: inset 0 0 0 var(--hairline) var(--status-due-edge);
 }
 
 .status-stop::before {
   background: var(--status-stop);
+  box-shadow: inset 0 0 0 var(--hairline) var(--status-stop-edge);
 }
 
 /* Callout: one sentence that needs attention */
@@ -380,6 +451,7 @@ dd {
   height: 10px;
   border-radius: var(--status-dot);
   background: var(--status-stop);
+  box-shadow: inset 0 0 0 var(--hairline) var(--status-stop-edge);
 }
 
 /* Data table: one line for each row */
@@ -396,8 +468,8 @@ table {
 th {
   padding: var(--space-3) var(--space-4);
   background: var(--background-200);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: calc(16px * var(--text-scale));
   font-weight: 400;
   color: var(--gray-900);
   white-space: nowrap;
@@ -412,7 +484,7 @@ thead th:last-child {
 }
 
 td {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--row-padding) var(--space-4);
   border-top: var(--hairline) solid var(--gray-400);
   vertical-align: top;
 }
@@ -422,7 +494,7 @@ td {
 }
 
 .js table.compact th:first-child {
-  width: 52px;
+  width: calc(var(--target-minimum) + var(--space-4) + var(--space-1));
 }
 
 .js table.compact th {
@@ -461,8 +533,8 @@ td {
 
 .table-count {
   margin: 0 0 var(--space-3);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: calc(16px * var(--text-scale));
   color: var(--gray-900);
 }
 
@@ -511,8 +583,8 @@ th[aria-sort="descending"] button.sort::after {
 .disclosure button {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: var(--target-minimum);
+  height: var(--target-minimum);
   min-height: 0;
   padding: 0;
   border: 0;
@@ -525,7 +597,7 @@ th[aria-sort="descending"] button.sort::after {
 }
 
 .disclosure svg {
-  transition: transform 120ms;
+  transition: transform var(--motion);
 }
 
 .disclosure button[aria-expanded="true"] svg {
@@ -540,7 +612,7 @@ th[aria-sort="descending"] button.sort::after {
 .js table.compact tr.detail > td {
   border-top: 0;
   white-space: normal;
-  padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 20px + var(--space-4));
+  padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + var(--target-minimum) + var(--space-4));
 }
 
 tr.detail dl {
@@ -550,8 +622,8 @@ tr.detail dl {
 }
 
 tr.detail dt {
-  font-size: 13px;
-  line-height: 16px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: calc(16px * var(--text-scale));
   margin-bottom: var(--space-1);
 }
 
@@ -599,9 +671,9 @@ textarea {
 
 button,
 .button {
-  min-height: 40px;
+  min-height: var(--control-height);
   padding: 0 var(--space-4);
-  border: var(--hairline) solid var(--gray-400);
+  border: var(--hairline) solid var(--control-border);
   border-radius: var(--material-base);
   background: var(--background-100);
   font-weight: 500;
@@ -609,7 +681,7 @@ button,
 }
 
 button:hover {
-  border-color: var(--gray-500);
+  border-color: var(--gray-1000);
 }
 
 button.primary {
@@ -621,11 +693,11 @@ button.primary {
 input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
 select,
 textarea {
-  min-height: 40px;
+  min-height: var(--control-height);
   width: 100%;
   max-width: 480px;
   padding: var(--space-2) var(--space-3);
-  border: var(--hairline) solid var(--gray-400);
+  border: var(--hairline) solid var(--control-border);
   border-radius: var(--material-base);
   background: var(--background-100);
 }
@@ -633,7 +705,48 @@ textarea {
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: var(--gray-500);
+  border-color: var(--gray-1000);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gray-1000);
+}
+
+/* A field with an error: a heavier line and the message beside it, never colour alone. */
+
+[aria-invalid="true"] {
+  border-color: var(--gray-1000) !important;
+  box-shadow: 0 0 0 var(--hairline) var(--gray-1000);
+}
+
+.field-error {
+  display: block;
+  margin-top: var(--space-1);
+  font-weight: 500;
+}
+
+.error-summary {
+  margin: var(--space-6) 0;
+  padding: var(--space-4);
+  border: var(--focus-width) solid var(--gray-1000);
+  border-radius: var(--material-base);
+}
+
+.error-summary h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.error-summary ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.error-summary li + li {
+  margin-top: var(--space-2);
 }
 
 textarea {
@@ -644,6 +757,24 @@ label {
   display: inline-block;
   margin-bottom: var(--space-1);
   color: var(--gray-900);
+}
+
+/* The search above a table keeps its visible label (REQ-396). */
+
+.table-search label {
+  margin-right: var(--space-2);
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* The chosen filter: heavier and with a thicker underline, not only a colour. */
+
+.filter a[aria-current] {
+  font-weight: 600;
+  text-decoration-thickness: var(--focus-width);
 }
 
 main.alone h1 {
@@ -693,6 +824,42 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
   main {
     padding-left: var(--space-4);
     padding-right: var(--space-4);
+  }
+}
+
+/* Comfortable density: every control and link that is a target reaches 44 pixels. */
+
+:root[data-density="comfortable"] .sidebar li a,
+:root[data-density="comfortable"] .tabs a,
+:root[data-density="comfortable"] .sidebar .account a,
+:root[data-density="comfortable"] main > p > a,
+:root[data-density="comfortable"] .actions a,
+:root[data-density="comfortable"] th button.sort {
+  display: flex;
+  align-items: center;
+  min-height: var(--target-minimum);
+}
+
+/* Windows contrast themes: state is shown by lines and text, never by a fill alone. */
+
+@media (forced-colors: active) {
+  .status::before,
+  [role="alert"]::before {
+    forced-color-adjust: none;
+    border: var(--hairline) solid CanvasText;
+  }
+
+  .sidebar li a[aria-current] {
+    outline: var(--focus-width) solid CanvasText;
+  }
+
+  .tabs a[aria-current] {
+    border-bottom-color: CanvasText;
+    text-decoration: underline;
+  }
+
+  .js table.compact tr.open > td {
+    border-top: var(--hairline) solid CanvasText;
   }
 }
 
@@ -746,7 +913,7 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
 
 .dashboard h2 {
   margin: 0 0 var(--space-3);
-  font-size: 18px;
+  font-size: calc(18px * var(--text-scale));
 }
 
 .dashboard-restrictions,
@@ -788,7 +955,7 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
   align-items: center;
   gap: var(--space-3);
   margin: 0 0 var(--space-2);
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale));
 }
 
 .dashboard-subject {
@@ -797,7 +964,7 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
   align-items: baseline;
   justify-content: space-between;
   column-gap: var(--space-3);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
 }
 
 .dashboard-subject > span:first-child {
@@ -813,7 +980,7 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
 .dashboard-detail {
   margin: 0;
   color: var(--gray-900);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale));
   overflow-wrap: anywhere;
 }
 
