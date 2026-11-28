@@ -167,8 +167,6 @@ def issue_timestamp(authority: SyntheticTimestampAuthority, signature_bytes: byt
             "signature.bin",
             "-sha256",
             "-cert",
-            "-policy",
-            POLICY_OID,
             "-out",
             "request.tsq",
         )

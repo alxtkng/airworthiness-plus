@@ -10,17 +10,20 @@ import importlib
 import io
 import json
 import secrets
+import shutil
 import sqlite3
 import subprocess
 import sys
 import warnings
 import zipfile
 from base64 import b64encode
+from collections.abc import Callable
 from contextlib import closing
 from copy import deepcopy
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from time import perf_counter, sleep
 from typing import Any
 
@@ -953,6 +956,128 @@ def _receiver_archive_with_changed_reading(content: bytes, original_id: str) -> 
     return altered
 
 
+def _exercise_trial_timestamps(
+    command: list[str],
+    run: Callable[[list[str]], subprocess.CompletedProcess[str]],
+    signatures: list[dict[str, Any]],
+    prior_verdict: dict[str, Any],
+    receiver: Path,
+    sender: Path,
+    custodian: Path,
+) -> None:
+    issuer = importlib.import_module("timestamp_handover")
+    with TemporaryDirectory(prefix="aw-trial-tsa-") as scratch:
+        tsa = issuer.make_timestamp_authority(Path(scratch))
+        root_pem = tsa.root_pem
+        envelope = issuer.timestamp_envelope(tsa, signatures)
+        wrong_imprint = issuer.issue_timestamp(tsa, bytes(64))
+    with TemporaryDirectory(prefix="aw-trial-unrelated-tsa-") as scratch:
+        unrelated_pem = issuer.make_timestamp_authority(Path(scratch)).root_pem
+
+    root_pin = hashlib.sha256(root_pem).hexdigest()
+    trust_root = custodian / "tsa-root.pem"
+    trust_root.write_bytes(root_pem)
+    (custodian / "tsa-root.sha256").write_text(root_pin + "\n")
+    timestamp_file = sender / "03-timestamps.json"
+    timestamp_file.write_bytes(_trial_json(envelope))
+
+    database = receiver / "timestamped.sqlite"
+    invocation = command.copy()
+    invocation[command.index(str(receiver / "receiver.sqlite"))] = str(database)
+    invocation += [
+        "--timestamps",
+        str(timestamp_file),
+        "--tsa-root",
+        str(trust_root),
+        "--tsa-root-sha256",
+        root_pin,
+    ]
+    if sandbox := shutil.which("sandbox-exec"):
+        invocation = [sandbox, "-p", "(version 1)(allow default)(deny network*)", *invocation]
+
+    missing = run(invocation[:-2])
+    assert missing.returncode != 0
+    assert "Timestamped import requires" in missing.stderr
+    assert not database.exists()
+
+    first = run(invocation)
+    assert first.returncode == 0, first.stderr
+    verdict = json.loads(first.stdout)
+    assert verdict["imported"] is True
+    assert verdict["tsa_root_sha256"] == root_pin
+    assert verdict["signing_time"] == prior_verdict["signing_time"]
+    assert verdict["maintenance_authorisation"] == prior_verdict["maintenance_authorisation"]
+    assert verdict["signatures"] == signatures
+    assert verdict["next_due"] == prior_verdict["next_due"]
+    assert verdict["defect"] == prior_verdict["defect"]
+    observed = verdict["trusted_timestamps"]
+    assert [row["record_id"] for row in observed] == [
+        item["claim"]["record_id"] for item in signatures
+    ]
+    assert [row["response"] for row in observed] == [
+        item["response"] for item in envelope["timestamps"]
+    ]
+    observed_times = [datetime.fromisoformat(row["gen_time"]) for row in observed]
+    assert observed_times == sorted(observed_times)
+    for observed_time, signature in zip(observed_times, signatures, strict=True):
+        assert observed_time >= datetime.fromisoformat(signature["claim"]["signed_at"])
+
+    replay = run(invocation)
+    assert replay.returncode == 0, replay.stderr
+    assert json.loads(replay.stdout) == {**verdict, "imported": False}
+
+    results = {"missing_pin": missing.stderr.strip().splitlines()[-1]}
+
+    def refused(name: str, arguments: list[str]) -> None:
+        result = run(arguments)
+        assert result.returncode != 0, name
+        assert result.stderr.strip(), name
+        results[name] = result.stderr.strip().splitlines()[-1]
+
+    refused("mismatched_root_pin", [*invocation[:-1], "0" * 64])
+    unrelated = receiver / "unrelated-tsa.pem"
+    unrelated.write_bytes(unrelated_pem)
+    refused(
+        "unrelated_pinned_root",
+        [
+            *invocation[:-3],
+            str(unrelated),
+            "--tsa-root-sha256",
+            hashlib.sha256(unrelated_pem).hexdigest(),
+        ],
+    )
+
+    rejected_file = receiver / "rejected-timestamps.json"
+    rejected_invocation = invocation.copy()
+    rejected_invocation[invocation.index("--timestamps") + 1] = str(rejected_file)
+    original, correction = envelope["timestamps"]
+    for name, rows in (
+        ("missing_original", [correction]),
+        (
+            "swapped_responses",
+            [
+                {**original, "response": correction["response"]},
+                {**correction, "response": original["response"]},
+            ],
+        ),
+        (
+            "same_tsa_wrong_imprint",
+            [{**original, "response": b64encode(wrong_imprint).decode("ascii")}, correction],
+        ),
+        ("malformed_response", [{**original, "response": "AA=="}, correction]),
+    ):
+        rejected_file.write_bytes(_trial_json({**envelope, "timestamps": rows}))
+        refused(name, rejected_invocation)
+
+    with closing(sqlite3.connect(database)) as db:
+        (row,) = db.execute("SELECT evidence FROM handover").fetchall()
+        assert json.loads(row[0]) == {
+            key: value for key, value in verdict.items() if key != "imported"
+        }
+    (receiver / "timestamp-verdict.json").write_bytes(_trial_json(verdict))
+    (receiver / "timestamp-results.json").write_bytes(_trial_json(results))
+
+
 def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
     sample: Sample, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1226,6 +1351,9 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
             key: value for key, value in evidence.items() if key != "imported"
         }
     (receiver / "results.json").write_bytes(_trial_json(results))
+    _exercise_trial_timestamps(
+        command, run, envelope["signatures"], evidence, receiver, sender, custodian
+    )
 
 
 # Verification (T-SEC-019)

@@ -179,10 +179,21 @@ def main() -> None:
     parser.add_argument(
         "--trust-sha256", help="Trust digest supplied independently to the receiver"
     )
+    parser.add_argument("--timestamps", type=Path, help="RFC 3161 responses for both signatures")
+    parser.add_argument(
+        "--tsa-root", type=Path, help="TSA root certificate from the trust custodian"
+    )
+    parser.add_argument("--tsa-root-sha256", help="TSA root digest supplied independently")
     options = parser.parse_args()
     signing = (options.signatures, options.trust, options.trust_sha256)
     if any(value is not None for value in signing) and not all(signing):
         parser.error("Signed import requires --signatures, --trust and --trust-sha256")
+    timing = (options.timestamps, options.tsa_root, options.tsa_root_sha256)
+    if any(value is not None for value in timing) and (not all(timing) or not all(signing)):
+        parser.error(
+            "Timestamped import requires signed evidence, --timestamps, --tsa-root "
+            "and --tsa-root-sha256"
+        )
     try:
         received = read_transfer(
             options.archive.read_bytes(),
@@ -201,6 +212,17 @@ def main() -> None:
                     options.signatures.read_bytes(),
                     options.trust.read_bytes(),
                     options.trust_sha256,
+                )
+            )
+        if options.timestamps is not None:
+            from verify_handover_timestamps import verify_timestamps
+
+            received.update(
+                verify_timestamps(
+                    received["signatures"],
+                    options.timestamps.read_bytes(),
+                    options.tsa_root.read_bytes(),
+                    options.tsa_root_sha256,
                 )
             )
         imported = import_transfer(options.database, received)
