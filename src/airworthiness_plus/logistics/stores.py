@@ -8,15 +8,13 @@ and posts once per disposition. The database enforces the same rules
 """
 
 import re
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from uuid import UUID
 
-from django.db import DatabaseError, IntegrityError, transaction
-from django.db.models import Q
+from django.db import DatabaseError, IntegrityError, connection, transaction
 
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.logistics.models import (
@@ -139,8 +137,12 @@ def add_location(
     holds_materials: bool,
     secure: bool,
     storage_conditions: str = "",
+    station: str = "",
 ) -> StoreLocation:
     name = _text(name)
+    station = station.strip().upper()
+    if station and not re.fullmatch(r"[A-Z0-9-]{1,12}", station):
+        raise RefusedError("Use up to 12 letters, numbers or hyphens for the Station Code")
     if not name:
         raise RefusedError("Give the Location a Name")
     if kind not in LocationKind.values:
@@ -156,6 +158,7 @@ def add_location(
             return StoreLocation.objects.create(
                 organisation=organisation,
                 name=name,
+                station=station,
                 kind=kind,
                 holds_components=holds_components,
                 holds_standard_parts=holds_standard_parts,
@@ -335,8 +338,6 @@ def resolve(
 
 
 def _lock(disposition: ReceivingDisposition) -> None:
-    from django.db import connection
-
     with connection.cursor() as cursor:
         cursor.execute("SELECT logistics_lock_stock('posting', %s)", [disposition.pk])
 
@@ -421,13 +422,20 @@ def reconcile(
 
 
 def balance(lot: StockPosting, location: StoreLocation) -> Decimal:
-    total = Decimal(0)
-    for movement in lot.movements.all():
-        if movement.to_location_id == location.pk:
-            total += movement.quantity
-        if movement.from_location_id == location.pk:
-            total -= movement.quantity
-    return total
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT logistics_stock_balance(%s, %s)", [lot.pk, location.pk])
+        (amount,) = cursor.fetchone()
+    return Decimal(amount)
+
+
+def unreserved(lot: StockPosting, location: StoreLocation) -> Decimal:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT logistics_stock_balance(%s, %s) - logistics_stock_reserved(%s, %s)",
+            [lot.pk, location.pk, lot.pk, location.pk],
+        )
+        (amount,) = cursor.fetchone()
+    return Decimal(amount)
 
 
 def custody(lot: StockPosting) -> Decimal:
@@ -476,6 +484,13 @@ def move(
         raise RefusedError("The Destination Does Not Accept This Class")
     if to_location.kind == LocationKind.SERVICEABLE and lot.held:
         raise RefusedError("An Open Quarantine Hold Cannot Move to Serviceable Stores")
+    if (
+        from_location.kind == LocationKind.QUARANTINE
+        and to_location.kind == LocationKind.SERVICEABLE
+    ):
+        raise RefusedError(
+            "Quarantined Stock Needs a New Receiving Decision Before Serviceable Use"
+        )
     if not lot.physical_on <= moved_on <= aircraft_services.today():
         raise RefusedError("The Movement Date Must Be on or After Intake, Not Later")
     _active_on(actor, lot.organisation_id, moved_on)
@@ -484,6 +499,8 @@ def move(
     _lock_lot(lot)
     if balance(lot, from_location) < amount:
         raise RefusedError("The Source Location Does Not Hold That Quantity")
+    if unreserved(lot, from_location) < amount:
+        raise RefusedError("The Source Location Holds Less Unreserved Stock Than This Quantity")
     return _write(
         organisation_id=lot.organisation_id,
         lot=lot,
@@ -500,8 +517,6 @@ def move(
 
 
 def _lock_lot(lot: StockPosting) -> None:
-    from django.db import connection
-
     with connection.cursor() as cursor:
         cursor.execute("SELECT logistics_lock_stock('lot', %s)", [lot.pk])
 
@@ -558,6 +573,8 @@ def adjust(
         raise RefusedError("The Count Agrees With the Ledger. Nothing to Adjust")
     if balance(lot, tally.location) != tally.ledger_quantity:
         raise RefusedError("The Ledger Has Moved Since This Count. Count Again")
+    if variance < 0 and abs(variance) > unreserved(lot, tally.location):
+        raise RefusedError("Release the Reservations Covering the Count Shortfall First")
     if not tally.counted_on <= moved_on <= aircraft_services.today():
         raise RefusedError("The Adjustment Date Must Be on or After the Count, Not Later")
     _active_on(actor, lot.organisation_id, moved_on)
@@ -599,36 +616,53 @@ def lot_shelf(lot: StockPosting, today: date, lead_days: int) -> str:
 
 
 def positions(lots: list[StockPosting], today: date, lead_days: int) -> list[Position]:
-    """Physical custody by lot and location, with reserved and available (PR 1: none reserved)."""
-    places = {
-        place.pk: place
-        for place in StoreLocation.objects.filter(
-            Q(pk__in=[lot.location_id for lot in lots])
-            | Q(pk__in=StockMovement.objects.filter(lot__in=lots).values("to_location"))
+    """Read physical custody and reservations together from the protected ledger."""
+    indexed = {lot.pk: lot for lot in lots}
+    if not indexed:
+        return []
+    identifiers = list(indexed)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            WITH ledger_positions(lot, place) AS (
+                SELECT lot_id, to_location_id FROM logistics_stockmovement WHERE lot_id = ANY(%s)
+                UNION
+                SELECT lot_id, from_location_id FROM logistics_stockmovement WHERE lot_id = ANY(%s)
+                UNION
+                SELECT posting_id, destination_id FROM logistics_stockallocation
+                 WHERE posting_id = ANY(%s)
+                UNION
+                SELECT posting_id, source_id FROM logistics_stockallocation
+                 WHERE posting_id = ANY(%s)
+            )
+            SELECT lot, place, logistics_stock_balance(lot, place),
+                   logistics_stock_reserved(lot, place)
+              FROM ledger_positions WHERE place IS NOT NULL
+            """,
+            [identifiers, identifiers, identifiers, identifiers],
         )
-    }
-    result: list[Position] = []
-    for lot in lots:
-        held: dict[UUID, Decimal] = defaultdict(Decimal)
-        for movement in lot.movements.all():
-            if movement.to_location_id is not None:
-                held[movement.to_location_id] += movement.quantity
-            if movement.from_location_id is not None:
-                held[movement.from_location_id] -= movement.quantity
+        balances = [row for row in cursor.fetchall() if row[2]]
+    places = StoreLocation.objects.in_bulk({place for _, place, _, _ in balances})
+    result = []
+    for lot_id, place_id, amount, reserved in balances:
+        lot, place = indexed[lot_id], places[place_id]
         shelf = lot_shelf(lot, today, lead_days)
-        for place_id, on_hand in held.items():
-            if on_hand == 0:
-                continue
-            place = places[place_id]
-            usable = (
-                not lot.held
-                and place.kind == LocationKind.SERVICEABLE
-                and place.active
-                and shelf in USABLE
+        usable = (
+            not lot.held
+            and place.kind == LocationKind.SERVICEABLE
+            and place.active
+            and shelf in USABLE
+        )
+        result.append(
+            Position(
+                lot,
+                place,
+                amount,
+                reserved,
+                max(amount - reserved, Decimal(0)) if usable else Decimal(0),
+                shelf,
             )
-            result.append(
-                Position(lot, place, on_hand, Decimal(0), on_hand if usable else Decimal(0), shelf)
-            )
+        )
     return sorted(result, key=lambda one: (one.location.name, str(one.lot.pk)))
 
 

@@ -214,6 +214,8 @@ def test_a_record_page_shows_the_record_its_type_and_its_own_tabs(
         (f"/aircraft/{ejkl.id}/directives/", "Airworthiness Directives"),
         (f"/aircraft/{ejkl.id}/maintenance-data/", "Maintenance Data"),
         (f"/aircraft/{ejkl.id}/review/", "Airworthiness Review"),
+        (f"/aircraft/{ejkl.id}/damage/", "Damage Register"),
+        (f"/aircraft/{ejkl.id}/technical-log/", "Technical Log"),
     ):
         body = page(client, path)
         assert "<h1>G-EJKL</h1>\n<p>Cessna/Reims-Cessna 152/F152 Series (Lycoming)</p>" in body, (

@@ -22,6 +22,7 @@ from airworthiness_plus.components import forms as components
 from airworthiness_plus.configuration import forms as configuration
 from airworthiness_plus.contracts import forms as contracts
 from airworthiness_plus.customers import forms as customers
+from airworthiness_plus.defects import aircraft_records_forms
 from airworthiness_plus.defects import forms as defects
 from airworthiness_plus.directives import forms as directives
 from airworthiness_plus.imports import forms as imports
@@ -34,6 +35,7 @@ from airworthiness_plus.planning import forms as planning
 from airworthiness_plus.programme import forms as programme
 from airworthiness_plus.releases import forms as releases
 from airworthiness_plus.reviews import forms as reviews
+from airworthiness_plus.staffing import dispatch_forms as dispatch
 from airworthiness_plus.staffing import forms as staffing
 from airworthiness_plus.staffing import roster_forms as roster
 from airworthiness_plus.tooling import calibration_forms as calibration
@@ -62,13 +64,26 @@ WRITES: dict[str, Sets] = {
     "receive_item": (logistics.ReceiptForm,),
     "record_receiving_check": (logistics.ReceivingCheckForm,),
     "record_receiving_disposition": (logistics.ReceivingDispositionForm,),
+    "stores_lookup_exercise": (logistics.StoresExerciseForm,),
     "add_store_location": (logistics.StoreLocationForm,),
     "resolve_stock": (logistics.StockResolutionForm,),
     "post_stock": (logistics.PostStockForm,),
     "move_stock": (logistics.StockMovementForm,),
+    "reserve_stock": (logistics.ReserveAllocationForm,),
+    "approve_stock_substitution": (logistics.StockSubstitutionForm,),
+    "release_stock_reservation": (logistics.AllocationForm,),
+    "issue_reserved_stock": (logistics.AllocationForm,),
+    "return_issued_stock": (logistics.ReturnAllocationForm,),
+    "quarantine_stock": (logistics.QuarantineAllocationForm,),
+    "add_custody_appointment": (logistics.StockAppointmentForm,),
+    "withdraw_custody_appointment": (logistics.StockAppointmentWithdrawalForm,),
     "count_stock": (logistics.StockCountForm,),
     "adjust_stock": (logistics.StockAdjustmentForm,),
     "add_roster_shift": (roster.ShiftForm,),
+    "dispatch_assign": (dispatch.AssignmentForm,),
+    "dispatch_move": (dispatch.MoveAssignmentForm,),
+    "dispatch_break": (dispatch.BreakForm,),
+    "dispatch_turnaround": (dispatch.TurnaroundForm,),
     "withdraw_roster_shift": (roster.WithdrawShiftForm,),
     "publish_roster": (roster.PublicationForm,),
     "record_handover": (roster.HandoverForm,),
@@ -86,6 +101,8 @@ WRITES: dict[str, Sets] = {
     "add_work_card": (planning.WorkCardForm,),
     "issue_work_package": (),
     "complete_work_card": (planning.WorkCompletionForm,),
+    "attest_work_card": (planning.AttestationForm, "Signature Request", "Request Action"),
+    "sign_work_card_step": (planning.StepSignOffForm,),
     "inspect_work_card": (planning.InspectionForm,),
     "release_work_package": (planning.PackageReleaseForm,),
     "add_aircraft": (aircraft.AddAircraftForm,),
@@ -101,6 +118,16 @@ WRITES: dict[str, Sets] = {
     "record_historical_release_evidence": (releases.HistoricalReleaseEvidenceForm,),
     "record_release_certificate": (releases.CertificateForm,),
     "record_defect": (defects.DefectForm,),
+    "record_damage_drawing": (aircraft_records_forms.DrawingForm,),
+    "revise_damage_drawing": (aircraft_records_forms.DrawingForm,),
+    "record_damage_entry": (aircraft_records_forms.DamageForm,),
+    "revise_damage_entry": (aircraft_records_forms.DamageForm,),
+    "record_technical_log_flight": (aircraft_records_forms.FlightForm,),
+    "transcribe_technical_log_report": (
+        aircraft_records_forms.FlightReportForm,
+        "Password and Authenticator Code",
+    ),
+    "link_technical_log_release": (aircraft_records_forms.ReportReleaseForm,),
     "close_defect": (defects.CloseForm,),
     "record_repeat_action": (defects.RepeatActionForm,),
     "add_component": (components.ComponentForm,),
@@ -216,6 +243,7 @@ READS = frozenset(
     {
         "home",
         "staff_roster",
+        "dispatch_board",
         "load_and_capacity",
         "planning_settings",
         "suppliers",
@@ -224,6 +252,7 @@ READS = frozenset(
         "stores_stock",
         "stock_entry",
         "store_locations",
+        "custody_appointments",
         "stores_disposition",
         "tool_register",
         "tool_providers",
@@ -252,6 +281,14 @@ READS = frozenset(
         "weight_and_balance",
         "component",
         "defects",
+        "damage_register",
+        "damage_drawing",
+        "damage_entry",
+        "technical_log",
+        "technical_log_flight",
+        "technical_log_report",
+        "maintenance_history",
+        "aircraft_maintenance_history",
         "defect",
         "repeat_defects",
         "aircraft",

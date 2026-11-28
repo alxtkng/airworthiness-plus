@@ -346,8 +346,7 @@ def test_the_configuration_of_the_sample_on_18_november_2026(
 def test_the_record_of_an_aircraft_has_its_forecast_and_configuration_among_its_views(
     sample: Sample, fleet: dict[str, Aircraft]
 ) -> None:
-    """REQ-293. Seven views, the forecast after the programme and the configuration
-    after the directives. Every role reads them; another organisation finds neither."""
+    """REQ-293. Every role sees the aircraft tabs and reads forecast and configuration."""
     abcd = fleet["G-ABCD"]
     for user in (sample.administrator, sample.lucy, sample.planner, sample.reviewer,
                  sample.reader):  # fmt: skip
@@ -360,11 +359,14 @@ def test_the_record_of_an_aircraft_has_its_forecast_and_configuration_among_its_
             assert re.findall(r">([^<]+)</a>", tabs) == [
                 "Record",
                 "Maintenance Programme",
+                "Maintenance History",
                 "Maintenance Forecast",
                 "Airworthiness Directives",
                 "Configuration",
                 "Maintenance Data",
                 "Airworthiness Review",
+                "Damage Register",
+                "Technical Log",
             ]
             assert re.findall(r'aria-current="page">([^<]+)</a>', tabs) == [active]
             assert "<form" not in body.split("<main", 1)[1]

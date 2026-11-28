@@ -84,6 +84,15 @@ class WorkForm(Form):
     )
     by_pilot_owner = forms.BooleanField(label="Pilot-Owner Maintenance", required=False)
     pilot_owner_told_on = forms.DateField(label="Organisation Told", required=False)
+    instruction_reference = forms.CharField(
+        label="Issued Instruction Reference", max_length=200, required=False
+    )
+    instruction_revision = forms.CharField(
+        label="Issued Instruction Revision", max_length=80, required=False
+    )
+    completion_measurements = forms.CharField(
+        label="Completion Measurements and Units", max_length=500, required=False
+    )
 
     def __init__(self, *args: object, aircraft_id: uuid.UUID, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)

@@ -8,6 +8,7 @@
 <label>Week <input name="week" type="date" value="{{ week|date:'Y-m-d' }}"></label>
 <button type="submit">Show Week</button>
 </form>
+<p><a href="{% url 'dispatch_board' %}?day={{ week|date:'Y-m-d' }}">Dispatch for This Week</a></p>
 <h2>Week of {{ week|long_date }}</h2>
 {% if may_roster %}
 <p><a href="{% url 'add_roster_shift' %}">Add Shift</a>
@@ -29,7 +30,7 @@
 <thead><tr><th>Handed Over</th><th>Work Package</th><th>From</th><th>To</th><th>Status</th><th data-detail>Stage Reached and Open Tasks</th><th data-detail>Parts, Tools and Warnings</th><th data-detail>Planned Overlap</th><th data-detail>Acknowledge</th></tr></thead>
 <tbody>
 {% for handover in handovers %}
-<tr><td>{{ handover.handed_at|date:"j F, H:i" }}</td><td>{% if handover.package %}<a href="{% url 'work_package' handover.package_id %}">{{ handover.package }}</a>{% endif %}</td><td>{{ handover.outgoing }}</td><td>{{ handover.incoming }}</td><td>{{ handover.acknowledged_at|date:"j F, H:i"|default:"Awaiting Acknowledgement" }}</td><td>{{ handover.stage }}</td><td>{{ handover.parts }}</td><td>{% if handover.overlap is not None %}{{ handover.overlap }} of {{ handover.overlap_target }} Minutes{% else %}Not Established{% endif %}</td><td>{% if may_acknowledge and not handover.acknowledged_at and handover.incoming.user_id == user.id %}<a href="{% url 'acknowledge_handover' handover.id %}">Acknowledge</a>{% endif %}</td></tr>
+<tr><td>{{ handover.handed_at|date:"j F, H:i" }}</td><td>{% if handover.package %}<a href="{% url 'work_package' handover.package_id %}">{{ handover.package }}</a>{% endif %}</td><td>{{ handover.outgoing }}</td><td>{{ handover.incoming }}</td><td>{{ handover.acknowledged_at|date:"j F, H:i"|default:"Awaiting Acknowledgement" }}</td><td>{% if handover.card_id %}{{ handover.card }}: {% endif %}{{ handover.stage }}</td><td>{{ handover.parts }}</td><td>{% if handover.overlap is not None %}{{ handover.overlap }} of {{ handover.overlap_target }} Minutes{% else %}Not Established{% endif %}</td><td>{% if may_acknowledge and not handover.acknowledged_at and handover.incoming.user_id == user.id %}<a href="{% url 'acknowledge_handover' handover.id %}">Acknowledge</a>{% endif %}</td></tr>
 {% empty %}<tr><td colspan="9">No Handovers Recorded</td></tr>
 {% endfor %}
 </tbody>

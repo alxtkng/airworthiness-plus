@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Stores Appointments{% endblock %}
+{% block content %}
+<h1>Stores Appointments</h1>
+<p><a href="{% url 'store_locations' %}">Stores Locations</a></p>
+{% if may_grant %}<p><a class="button" href="{% url 'add_custody_appointment' %}">Record a Stores Appointment</a></p>{% endif %}
+{% if appointments %}
+<table>
+<thead><tr><th scope="col">Person</th><th scope="col">Action</th><th scope="col">Approval</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Evidence</th><th scope="col">Status</th></tr></thead>
+<tbody>
+{% for appointment in appointments %}
+<tr><td>{{ appointment.person }}</td><td>{{ appointment.get_action_display }}</td><td>{{ appointment.approval }}</td>
+<td>{{ appointment.starts_on|long_date }}</td><td>{{ appointment.ends_on|long_date }}</td><td>{{ appointment.evidence }}</td>
+<td>{% if appointment.withdrawal %}Withdrawn {{ appointment.withdrawal.withdrawn_on|long_date }} · {{ appointment.withdrawal.evidence }}
+{% elif appointment.ends_on < today %}Ended{% elif appointment.starts_on > today %}Not Started
+{% else %}Current{% endif %}
+{% if may_grant and not appointment.withdrawal %}<a href="{% url 'withdraw_custody_appointment' appointment.id %}">Withdraw Appointment</a>{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Stores Appointments Recorded</p>{% endif %}
+{% endblock %}

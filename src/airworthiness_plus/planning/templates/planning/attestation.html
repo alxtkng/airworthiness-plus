@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Synthetic Work Card Attestation{% endblock %}
+{% block content %}
+<h1>Synthetic Work Card Attestation</h1>
+<p>Training evidence for the recorded completion. Independent inspection and release to service use their own procedures.</p>
+{% if error %}
+<p role="alert">{{ error }}</p>
+<p><a href="{% url 'attest_work_card' package.id card.id %}">Review Current Evidence</a></p>
+{% endif %}
+{% if job %}
+<h2>Signature Request</h2>
+<p>{{ job.get_status_display }}. Provider {{ job.provider }}.</p>
+{% if job.archive_failed %}<p role="alert">The archive write failed. The verified provider result is retained. Retry archiving this request.</p>{% endif %}
+<details><summary>Exact Requested Evidence</summary><textarea readonly rows="8" aria-label="Exact Requested Evidence">{{ job.document }}</textarea></details>
+
+{% if job.status == "pending" or job.status == "signed" %}
+<form method="post">
+{% csrf_token %}
+<input type="hidden" name="job" value="{{ job.id }}">
+<p><button class="primary" type="submit" name="command" value="{% if job.status == 'signed' %}archive{% else %}check{% endif %}">{% if job.archive_failed %}Retry Archive{% elif job.status == "signed" %}Archive Verified Evidence{% else %}Check Signature Status{% endif %}</button></p>
+{% if job.status == "pending" %}<p><button type="submit" name="command" value="cancel">Cancel Signature Request</button></p>{% endif %}
+</form>
+{% endif %}
+{% endif %}
+{% if content %}
+<dl>
+<dt>Work Package</dt><dd>{{ content.work_package }}</dd>
+<dt>Aircraft</dt><dd>{{ content.aircraft_registration }}, {{ content.aircraft_type }}</dd>
+<dt>Task and Instruction</dt><dd>{{ content.task }}. {{ content.instruction }}</dd>
+<dt>Work Card Version</dt><dd>{{ content.card_version }}</dd>
+<dt>Issued Revision</dt><dd>{{ content.issued_revision }}</dd>
+<dt>Revision Used</dt><dd>{{ content.used_revision }}</dd>
+<dt>Completion Date</dt><dd>{{ content.completed_on }}</dd>
+<dt>Source Evidence</dt><dd>{{ content.source_evidence }}</dd>
+<dt>Counter Hours and Cycles</dt><dd>{{ content.hours }} hours, {{ content.cycles }} cycles</dd>
+{% if content.steps %}
+<dt>Step Results</dt><dd><ol>{% for step in content.steps %}<li>{{ step.instruction }}{% if step.critical %} (Critical){% endif %}. {{ step.evidence }} ({{ step.signed_on }}).</li>{% endfor %}</ol></dd>
+{% endif %}
+<dt>Independent Inspection</dt><dd>{{ content.inspection_status }}</dd>
+<dt>Person Attesting</dt><dd>{{ content.actor_name }}</dd>
+<dt>Authorisation</dt><dd>{{ content.authorisation_reference }}. {{ content.authorisation_scope }}.
+Valid from {{ content.authorisation_valid_from }}{% if content.authorisation_valid_to %} to {{ content.authorisation_valid_to }}{% endif %}.</dd>
+</dl>
+{% if job.status != "pending" and job.status != "signed" and job.status != "archived" %}
+<form method="post">
+{% csrf_token %}
+<input type="hidden" name="intent" value="{{ intent }}">
+<p><label><input type="checkbox" name="consent" value="yes" required> {{ content.consent }}</label></p>
+<p><button class="primary" type="submit">Request Synthetic Attestation</button></p>
+</form>
+{% endif %}
+{% endif %}
+<p><a href="{% url 'work_package' package.id %}">Return to Work Package</a></p>
+{% endblock %}

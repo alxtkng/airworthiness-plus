@@ -19,7 +19,7 @@ from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.defects import services
 from airworthiness_plus.defects.forms import CloseForm, DefectForm, RepeatActionForm
-from airworthiness_plus.defects.models import Defect
+from airworthiness_plus.defects.models import Defect, FlightReport
 from airworthiness_plus.organisations import configuration
 
 
@@ -81,6 +81,7 @@ def _defect_page(request: HttpRequest, defect: Defect, form: CloseForm) -> HttpR
         "defects/defect.html",
         {
             "defect": defect,
+            "flight_reports": FlightReport.objects.filter(defect=defect),
             "line": services.defect_line(defect, aircraft_services.today()),
             "form": form,
             "may_record": _user(request).may(Action.RECORD_DEFECT),

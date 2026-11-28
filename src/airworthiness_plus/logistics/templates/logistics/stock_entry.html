@@ -17,7 +17,7 @@
 {% include "logistics/verified_evidence.html" %}
 {% if disposition.outcome != "Returned to Supplier" %}
 <dt>On Hand</dt><dd>{{ on_hand }}{% if unit %} {{ unit }}{% endif %}</dd>
-<dt>Reserved Quantity</dt><dd>0</dd>
+<dt>Reserved Quantity</dt><dd>{{ reserved }}</dd>
 <dt>Available Quantity</dt><dd>{{ available }}</dd>
 {% if lot %}<dt>Shelf-Life State</dt><dd>{{ shelf }}</dd>{% endif %}
 {% endif %}
@@ -54,6 +54,7 @@
 </table>
 {% if may_move %}<p><a class="button" href="{% url 'move_stock' lot.id %}">Move Stock</a></p>{% endif %}
 {% if may_count %}<p><a class="button" href="{% url 'count_stock' lot.id %}">Record a Stock Count</a></p>{% endif %}
+{% include "logistics/stock_allocations.html" %}
 <h2>Movements</h2>
 <table>
 <thead><tr><th scope="col">Movement</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Quantity</th><th scope="col">Moved On</th><th scope="col">By</th><th scope="col">Authority</th><th scope="col">Evidence</th></tr></thead>

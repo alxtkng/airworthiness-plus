@@ -227,6 +227,15 @@ class WorkDone(Record):
     dated = models.DateField("Completed")
     hours = models.DecimalField("Hours", max_digits=8, decimal_places=1)
     cycles = models.PositiveIntegerField("Cycles")
+    instruction_reference = models.CharField(
+        "Issued Instruction Reference", max_length=200, blank=True
+    )
+    instruction_revision = models.CharField(
+        "Issued Instruction Revision", max_length=80, blank=True
+    )
+    completion_measurements = models.CharField(
+        "Completion Measurements and Units", max_length=500, blank=True
+    )
     release_reference = models.CharField(
         "Certificate of Release to Service", max_length=100, blank=True
     )
@@ -238,6 +247,17 @@ class WorkDone(Record):
         ordering = ["dated", "hours"]
         constraints = [
             models.CheckConstraint(condition=Q(hours__gte=0), name="work_hours_not_below_zero"),
+            models.CheckConstraint(
+                condition=Q(
+                    instruction_reference="", instruction_revision="", completion_measurements=""
+                )
+                | (
+                    ~Q(instruction_reference="")
+                    & ~Q(instruction_revision="")
+                    & ~Q(completion_measurements="")
+                ),
+                name="work_completion_evidence_is_complete",
+            ),
             # A release has a reference and the date it went into the records, or neither.
             models.CheckConstraint(
                 condition=Q(release_reference="", release_recorded_on__isnull=True)

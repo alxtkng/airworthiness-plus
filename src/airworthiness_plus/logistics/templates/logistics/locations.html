@@ -2,11 +2,12 @@
 {% block title %}Stores Locations{% endblock %}
 {% block content %}
 <h1>Locations</h1>
+<p><a href="{% url 'custody_appointments' %}">Stores Appointments</a></p>
 {% if may_add %}<p><a class="button" href="{% url 'add_store_location' %}">Add a Stores Location</a></p>{% endif %}
 {% if locations %}
 <table>
-<thead><tr><th scope="col">Location</th><th scope="col">Kind</th><th scope="col">Holds</th><th scope="col">Secure and Segregated</th><th scope="col">Storage Conditions</th><th scope="col">State</th></tr></thead>
-<tbody>{% for place in locations %}<tr><td>{{ place.name }}</td><td>{{ place.kind }}</td><td>{% if place.holds_components %}Components {% endif %}{% if place.holds_standard_parts %}Standard Parts {% endif %}{% if place.holds_materials %}Materials{% endif %}</td><td>{{ place.secure|yesno:"Yes,No" }}</td><td>{{ place.storage_conditions|default:"Not Recorded" }}</td><td>{{ place.active|yesno:"Active,Withdrawn" }}</td></tr>{% endfor %}</tbody>
+<thead><tr><th scope="col">Location</th><th scope="col">Station</th><th scope="col">Kind</th><th scope="col">Holds</th><th scope="col">Secure and Segregated</th><th scope="col">Storage Conditions</th><th scope="col">State</th></tr></thead>
+<tbody>{% for place in locations %}<tr><td>{{ place.name }}</td><td>{{ place.station|default:"Unassigned" }}</td><td>{{ place.kind }}</td><td>{% if place.holds_components %}Components {% endif %}{% if place.holds_standard_parts %}Standard Parts {% endif %}{% if place.holds_materials %}Materials{% endif %}</td><td>{{ place.secure|yesno:"Yes,No" }}</td><td>{{ place.storage_conditions|default:"Not Recorded" }}</td><td>{{ place.active|yesno:"Active,Withdrawn" }}</td></tr>{% endfor %}</tbody>
 </table>
 {% else %}<p>No Locations Recorded</p>{% endif %}
 {% endblock %}

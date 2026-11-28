@@ -57,6 +57,7 @@ class Defect(Record):
     note = models.CharField("Note", max_length=200, blank=True)
     found_on = models.DateField("Found")
     chapter = models.PositiveSmallIntegerField("Chapter")
+    section = models.CharField("ATA Section", max_length=2, blank=True)
     system = models.CharField("System", max_length=100)
 
     decision = models.CharField("Decision", max_length=20, choices=Decision.choices)
@@ -97,6 +98,10 @@ class Defect(Record):
                 & Q(chapter__gte=FIRST_CHAPTER, chapter__lte=LAST_CHAPTER)
                 & Q(decided_on__gte=F("found_on")),
                 name="defect_has_a_title_a_system_and_a_decision_not_before_it_was_found",
+            ),
+            models.CheckConstraint(
+                condition=Q(section="") | Q(section__regex=r"^[0-9]{2}$"),
+                name="defect_ata_section_is_two_digits_or_blank",
             ),
             # Not Deferrable has no basis and no limit; Deferred has both.
             models.CheckConstraint(
@@ -175,7 +180,8 @@ class Defect(Record):
     @property
     def system_text(self) -> str:
         """Return the system as the Repeat Defects board writes it: Chapter 33, Lights."""
-        return f"Chapter {self.chapter}, {self.system}"
+        classification = f"{self.chapter:02d}-{self.section}" if self.section else str(self.chapter)
+        return f"Chapter {classification}, {self.system}"
 
 
 class RepeatAction(Record):
@@ -214,3 +220,142 @@ class RepeatAction(Record):
         if not self._state.adding:
             raise RecordsAreNeverDeletedError("An action is added, never changed")
         super().save(*args, **kwargs)
+
+
+class AircraftDrawing(Record):
+    """A plotted aircraft view pinned to a named drawing revision."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    aircraft = models.ForeignKey(Aircraft, on_delete=models.PROTECT, related_name="+")
+    reference = models.CharField("Drawing Reference", max_length=100)
+    revision = models.CharField(max_length=40)
+    view = models.CharField("View Name", max_length=100)
+    outline = models.CharField("Outline Points", max_length=1000)
+    supersedes = models.OneToOneField(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="superseded_by"
+    )
+
+    class Meta:
+        ordering = ["reference", "view", "revision"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["aircraft", "reference", "view", "revision"], name="unique_aircraft_drawing"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.reference}, {self.view}, revision {self.revision}"
+
+
+class DamageEntry(Record):
+    """One version of a physical finding and the evidence that supports its disposition."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    aircraft = models.ForeignKey(Aircraft, on_delete=models.PROTECT, related_name="+")
+    drawing = models.ForeignKey(AircraftDrawing, on_delete=models.PROTECT, related_name="markers")
+    title = models.CharField("Finding", max_length=200)
+    found_on = models.DateField("Found On")
+    frame_or_zone = models.CharField("Physical Frame or Zone", max_length=150)
+    dimensions = models.CharField("Dimensions and Units", max_length=150)
+    evidence = models.CharField("Finding Evidence Reference", max_length=200)
+    applicable_reference = models.CharField("Applicable Reference and Revision", max_length=200)
+    disposition = models.CharField(max_length=200)
+    marker_x = models.PositiveSmallIntegerField("Marker X")
+    marker_y = models.PositiveSmallIntegerField("Marker Y")
+    defect = models.ForeignKey(Defect, on_delete=models.PROTECT, null=True, blank=True)
+    repair = models.ForeignKey(
+        WorkDone, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Repair Work Done"
+    )
+    follow_up = models.ForeignKey(
+        "programme.Task",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="Follow-up Programme Task",
+    )
+    supersedes = models.OneToOneField(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="superseded_by"
+    )
+
+    class Meta:
+        ordering = ["-found_on", "title", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(marker_x__lte=100, marker_y__lte=100), name="damage_marker_in_view"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class FlightEvent(Record):
+    """An identified flight on the aircraft, from the original flight record."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    aircraft = models.ForeignKey(Aircraft, on_delete=models.PROTECT, related_name="+")
+    reference = models.CharField("Flight Reference", max_length=100)
+    flown_on = models.DateField("Flight Date")
+    departure = models.CharField(max_length=100)
+    arrival = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ["-flown_on", "reference"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["aircraft", "reference", "flown_on"], name="unique_aircraft_flight_event"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.reference}, {self.flown_on}"
+
+
+class ReportKind(models.TextChoices):
+    PILOT = "Pilot Report", "Pilot Report"
+    MAINTENANCE = "Maintenance Finding", "Maintenance Finding"
+
+
+class FlightReport(Record):
+    """The original attribution and text of a source report, with structured links."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    flight = models.ForeignKey(FlightEvent, on_delete=models.PROTECT, related_name="reports")
+    kind = models.CharField(max_length=24, choices=ReportKind.choices)
+    chapter = models.PositiveSmallIntegerField("ATA Chapter")
+    section = models.CharField("ATA Section", max_length=2, blank=True)
+    component = models.ForeignKey(
+        "components.Component", on_delete=models.PROTECT, null=True, blank=True
+    )
+    part_number = models.CharField(max_length=60, blank=True)
+    defect = models.ForeignKey(Defect, on_delete=models.PROTECT, null=True, blank=True)
+    source_reference = models.CharField(max_length=150)
+    reporter = models.CharField("Original Reporter", max_length=200)
+    report = models.TextField("Original Report", max_length=4000)
+    recorded_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    recorder_name = models.CharField(max_length=200)
+    verification_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-flight__flown_on", "flight", "kind", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["flight", "kind", "source_reference"], name="unique_flight_report_source"
+            ),
+            models.CheckConstraint(
+                condition=Q(chapter__gte=FIRST_CHAPTER, chapter__lte=LAST_CHAPTER)
+                & (Q(section="") | Q(section__regex=r"^[0-9]{2}$"))
+                & Q(kind__in=ReportKind.values),
+                name="flight_report_has_ata_and_kind",
+            ),
+        ]
+
+
+class FlightReportRelease(Record):
+    """Link a separate certificate that addresses a report, with the linking action audited."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    report = models.OneToOneField(
+        FlightReport, on_delete=models.PROTECT, related_name="certification"
+    )
+    release = models.ForeignKey("releases.Release", on_delete=models.PROTECT, related_name="+")

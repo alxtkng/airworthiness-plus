@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Sign Synthetic Work Card Step{% endblock %}
+{% block content %}
+<h1>Sign Synthetic Work Card Step</h1>
+<dl>
+<dt>Task</dt><dd>{{ card.title }}</dd>
+<dt>Issued Revision</dt><dd>{{ card.revision }}</dd>
+<dt>Step {{ number }}{% if step.critical %} (Critical){% endif %}</dt><dd>{{ step.instruction }}</dd>
+<dt>Performer</dt><dd>{{ request.user }}</dd>
+</dl>
+<form method="post">
+{% csrf_token %}
+{{ form }}
+<p><button class="primary" type="submit">Sign Step {{ number }}</button></p>
+</form>
+<p><a href="{% url 'work_package' card.package_id %}">Return to Work Package</a></p>
+{% endblock %}

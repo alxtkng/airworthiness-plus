@@ -3,7 +3,17 @@
 {% block title %}Stores Stock{% endblock %}
 {% block content %}
 <h1>Stock</h1>
+<p><a href="{% url 'stores_lookup_exercise' %}">Practise Stock Lookup</a></p>
 <p><a href="{% url 'store_locations' %}">Stores Locations</a></p>
+<form method="get" aria-label="Stock Identity Filter">
+<p><label for="stock-identity">Part Number or Specification</label>
+<input id="stock-identity" name="identity" maxlength="160" value="{{ identity }}">
+<button type="submit">Filter Stock</button>
+{% if identity %}<a href="{% url 'stores_stock' %}">Clear Filter</a>{% endif %}</p>
+</form>
+{% include "logistics/stock_totals.html" with heading="Network Stock" heading_id="network-stock" totals=summary.network %}
+{% if summary.stations %}{% include "logistics/stock_totals.html" with heading="Stock by Station" heading_id="station-stock" totals=summary.stations %}{% endif %}
+{% if summary.locations %}{% include "logistics/stock_totals.html" with heading="Stock by Store" heading_id="store-stock" totals=summary.locations %}{% endif %}
 <h2>Acceptances</h2>
 {% if entries %}
 <table data-search="always">

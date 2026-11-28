@@ -1,0 +1,10 @@
+{% load writing %}
+<h2 id="{{ heading_id }}">{{ heading }}</h2>
+<table aria-labelledby="{{ heading_id }}">
+<thead><tr><th scope="col">Location</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
+<tbody>
+{% for total in totals %}
+<tr><th scope="row">{{ total.name }}</th><td>{{ total.unit }}</td><td>{{ total.on_hand|stock_quantity }}</td><td>{{ total.reserved|stock_quantity }}</td><td>{{ total.available|stock_quantity }}</td></tr>
+{% endfor %}
+</tbody>
+</table>

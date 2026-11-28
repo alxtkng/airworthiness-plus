@@ -19,18 +19,30 @@ from airworthiness_plus.components.models import Component, Installation
 from airworthiness_plus.configuration.models import Baseline, Position, Transfer, TransferItem
 from airworthiness_plus.contracts.models import Contract, WorkOrder
 from airworthiness_plus.customers.models import Customer
-from airworthiness_plus.defects.models import Defect, RepeatAction
+from airworthiness_plus.defects.models import (
+    AircraftDrawing,
+    DamageEntry,
+    Defect,
+    FlightEvent,
+    FlightReport,
+    FlightReportRelease,
+    RepeatAction,
+)
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive, Source
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.logistics.models import (
     Receipt,
     ReceivingCheck,
     ReceivingDisposition,
+    StockAllocation,
+    StockAppointment,
+    StockAppointmentWithdrawal,
     StockCount,
     StockEntry,
     StockMovement,
     StockPosting,
     StockResolution,
+    StockSubstitution,
     StoreLocation,
     SubcontractorAssessment,
     Supplier,
@@ -47,7 +59,13 @@ from airworthiness_plus.people.models import (
     Person,
     RecurrentTraining,
 )
-from airworthiness_plus.planning.models import WorkCard, WorkPackage
+from airworthiness_plus.planning.models import (
+    WorkCard,
+    WorkCardAttestation,
+    WorkCardSigningJob,
+    WorkCardStepSignOff,
+    WorkPackage,
+)
 from airworthiness_plus.programme.models import (
     AnnualReview,
     Departure,
@@ -64,6 +82,7 @@ from airworthiness_plus.reviews.models import (
     ReviewStaff,
 )
 from airworthiness_plus.sample.models import Added
+from airworthiness_plus.staffing.dispatch_models import DispatchAssignment, DispatchWindow
 from airworthiness_plus.staffing.models import Absence, Demand, Report
 from airworthiness_plus.staffing.models import Review as StaffingReview
 from airworthiness_plus.staffing.roster_models import (
@@ -164,11 +183,24 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(WorkOrder, _by("aircraft")),
     Exported(WorkPackage, _by("aircraft")),
     Exported(WorkCard, _by("package__aircraft")),
+    Exported(WorkCardAttestation, _by("card__package__aircraft")),
+    Exported(WorkCardSigningJob, _by("card__package__aircraft")),
+    Exported(WorkCardStepSignOff, _by("card__package__aircraft")),
     Exported(Defect, _by("aircraft")),
+    Exported(AircraftDrawing, _by("aircraft")),
+    Exported(DamageEntry, _by("aircraft")),
+    Exported(FlightEvent, _by("aircraft")),
+    Exported(FlightReport, _by("flight__aircraft")),
+    Exported(FlightReportRelease, _by("report__flight__aircraft")),
     # What was done about the same defect on the aircraft's type.
     Exported(RepeatAction, lambda aircraft: Q(type_rating=aircraft.type_rating)),
-    # Every component that has ever been fitted to the aircraft, and where each has been.
-    Exported(Component, lambda aircraft: Q(installations__aircraft=aircraft)),
+    # Components fitted to the aircraft or named in a flight report, with fitting history.
+    Exported(
+        Component,
+        lambda aircraft: (
+            Q(installations__aircraft=aircraft) | Q(flightreport__flight__aircraft=aircraft)
+        ),
+    ),
     Exported(Installation, lambda aircraft: Q(component__installations__aircraft=aircraft)),
     Exported(Bulletin, _by("aircraft")),
     Exported(Change, _by("aircraft")),
@@ -211,6 +243,10 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(StockPosting, None),
     Exported(StockCount, None),
     Exported(StockMovement, None),
+    Exported(StockAppointment, None),
+    Exported(StockAppointmentWithdrawal, None),
+    Exported(StockAllocation, None),
+    Exported(StockSubstitution, None),
     Exported(SubcontractorAssessment, None),
     Exported(Tool, None),
     Exported(ToolServiceProviderAuthorisation, None),
@@ -231,6 +267,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(ShiftPattern, None),
     Exported(StaffingMinimum, None),
     Exported(PublishedShift, None),
+    Exported(DispatchAssignment, _by("card__package__aircraft")),
+    Exported(DispatchWindow, _by("package__aircraft")),
     Exported(Handover, _by("package__aircraft")),
     Exported(PublishedRoster, None),
     Exported(Settings, None),

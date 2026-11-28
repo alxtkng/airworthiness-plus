@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}{{ entry.title }} · {{ aircraft.registration }}{% endblock %}
+{% block content %}
+<h1>{{ entry.title }}</h1>
+<p><a href="{% url 'damage_register' aircraft.id %}">{{ aircraft.registration }} Damage Register</a></p>
+{% if entry.supersedes %}<p><a href="{% url 'damage_entry' aircraft.id entry.supersedes_id %}">Previous Finding Version</a></p>{% endif %}
+{% if entry.superseded_by %}
+<p><a href="{% url 'damage_entry' aircraft.id entry.superseded_by.id %}">Newer Finding Version</a></p>
+{% elif may_record %}
+<p><a href="{% url 'revise_damage_entry' aircraft.id entry.id %}">Revise Finding or Remap Marker</a></p>
+{% endif %}
+<dl>
+<dt>Found On</dt><dd>{{ entry.found_on|long_date }}</dd>
+<dt>Physical Frame or Zone</dt><dd>{{ entry.frame_or_zone }}</dd>
+<dt>Dimensions</dt><dd>{{ entry.dimensions }}</dd>
+<dt>Evidence Reference</dt><dd>{{ entry.evidence }}</dd>
+<dt>Applicable Reference and Revision</dt><dd>{{ entry.applicable_reference }}</dd>
+<dt>Disposition</dt><dd>{{ entry.disposition }}</dd>
+<dt>Drawing Revision</dt><dd><a href="{% url 'damage_drawing' aircraft.id entry.drawing_id %}#marker-{{ entry.id }}">Locate Marker on {{ entry.drawing }}</a></dd>
+{% if entry.defect %}<dt>Defect</dt><dd><a href="{% url 'defect' entry.defect_id %}">{{ entry.defect }}</a></dd>{% endif %}
+{% if entry.repair %}<dt>Repair Work Done</dt><dd><a href="{% url 'programme' aircraft.id %}#work-{{ entry.repair_id }}">{{ entry.repair }}</a></dd>{% endif %}
+{% if entry.follow_up %}<dt>Follow-Up Inspection</dt><dd><a href="{% url 'programme' aircraft.id %}#task-{{ entry.follow_up_id }}">{{ entry.follow_up }}</a></dd>{% endif %}
+</dl>
+{% endblock %}

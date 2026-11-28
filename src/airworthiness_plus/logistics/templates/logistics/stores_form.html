@@ -3,6 +3,8 @@
 {% block content %}
 <h1>{{ heading }}</h1>
 <p><a href="{{ back }}">Back</a></p>
+{% if custody %}<p>{{ custody.quantity }} {{ custody.posting.unit }} for {{ custody.card.package }} · {{ custody.card }}. Part {{ custody.required_identity }} · {{ custody.applicable_source }}.</p>{% endif %}
+{% if alternate_identity %}<p>Traced alternate in this lot: {{ alternate_identity }}</p>{% endif %}
 <form method="post">
 {% csrf_token %}
 {% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}

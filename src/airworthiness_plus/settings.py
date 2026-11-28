@@ -15,6 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent
 SECRET_KEY = required("AIRWORTHINESS_SECRET_KEY")
 DEBUG = flag("AIRWORTHINESS_DEBUG")
 ALLOWED_HOSTS = listed("AIRWORTHINESS_ALLOWED_HOSTS")
+SYNTHETIC_WORK_CARD_ATTESTATION = flag("AIRWORTHINESS_SYNTHETIC_WORK_CARD_ATTESTATION")
 
 # The administration interface is deliberately absent: there is no vendor or
 # support route into an organisation's records (REQ-004, threat TH-024).

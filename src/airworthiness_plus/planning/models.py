@@ -99,6 +99,13 @@ class WorkCard(Record):
         Revision, on_delete=models.PROTECT, null=True, related_name="+"
     )
     instruction = models.CharField("Instruction Reference", max_length=200)
+    structured_revision = models.ForeignKey(
+        Revision, on_delete=models.PROTECT, null=True, related_name="+"
+    )
+    steps = models.JSONField(default=list, blank=True)
+    inspection_authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, null=True, related_name="+"
+    )
     planned_hours = models.DecimalField("Planned Hours", max_digits=6, decimal_places=1)
     inspection_hours = models.DecimalField(
         "Planned Inspection Hours", max_digits=6, decimal_places=1, default=0
@@ -202,3 +209,83 @@ class WorkCard(Record):
         return self.completed_on is not None and (
             not self.critical or self.inspected_on is not None
         )
+
+
+class WorkCardAttestation(Record):
+    """The synthetic actor's explicit consent and the exact evidence archived."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    card = models.OneToOneField(WorkCard, on_delete=models.PROTECT, related_name="attestation")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    evidence = models.TextField()
+    sha256 = models.CharField(max_length=64)
+
+
+class SigningState(models.TextChoices):
+    PENDING = "pending", "Pending Signature"
+    SIGNED = "signed", "Signed, Awaiting Archive"
+    ARCHIVED = "archived", "Archive Confirmed"
+    CANCELLED = "cancelled", "Cancelled"
+    DECLINED = "declined", "Declined"
+    STALE = "stale", "Review Superseded"
+    REJECTED = "rejected", "Provider Evidence Rejected"
+
+
+class WorkCardSigningJob(Record):
+    """Exact application evidence and provider result, recoverable across requests."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    card = models.ForeignKey(WorkCard, on_delete=models.PROTECT, related_name="signing_jobs")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    provider = models.CharField(max_length=80)
+    document = models.TextField()
+    sha256 = models.CharField(max_length=64)
+    requested_at = models.DateTimeField()
+    status = models.CharField(max_length=12, choices=SigningState, default=SigningState.PENDING)
+    result = models.JSONField(default=dict)
+    archive_failed = models.BooleanField(default=False)
+    archive = models.OneToOneField(
+        WorkCardAttestation, on_delete=models.PROTECT, null=True, related_name="signing_job"
+    )
+
+    class Meta:
+        ordering = ["-requested_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["card"],
+                condition=Q(status__in=["pending", "signed", "archived"]),
+                name="one_active_work_card_signature",
+            ),
+            models.CheckConstraint(
+                condition=Q(status="archived", archive__isnull=False)
+                | (~Q(status="archived") & Q(archive__isnull=True)),
+                name="work_card_signature_archive_matches_state",
+            ),
+        ]
+
+
+class WorkCardStepSignOff(Record):
+    """One signed synthetic step of a pinned work card."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    card = models.ForeignKey(WorkCard, on_delete=models.PROTECT, related_name="step_signoffs")
+    number = models.PositiveSmallIntegerField()
+    performer = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="+")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    signed_on = models.DateField()
+    evidence = models.CharField(max_length=500)
+
+    class Meta:
+        ordering = ["number"]
+        constraints = [
+            models.UniqueConstraint(fields=["card", "number"], name="one_sign_off_per_card_step"),
+        ]

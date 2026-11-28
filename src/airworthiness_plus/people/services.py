@@ -563,6 +563,8 @@ def check_certification_evidence(
         raise RefusedError(
             "The Maintenance Authorisation Must Belong to the Named Certifying Staff"
         )
+    if authorisation.scope.startswith(MaintenanceAuthorisation.SYNTHETIC_COMPLETION_SCOPE):
+        raise RefusedError("Synthetic Authorisation Is Only for Work Card Attestation")
     if authorisation.term_on(on) != "Within Recorded Dates":
         raise RefusedError("No Recorded Maintenance Authorisation Covers the Activity Date")
 

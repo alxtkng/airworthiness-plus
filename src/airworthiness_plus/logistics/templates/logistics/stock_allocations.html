@@ -1,0 +1,44 @@
+{% load writing %}
+{% if lot and not lot.held %}
+<p>{% if may_reserve %}<a class="button" href="{% url 'reserve_stock' lot.id %}">Reserve Stock</a>{% endif %}
+{% if may_quarantine %}<a class="button" href="{% url 'quarantine_stock' lot.id %}">Quarantine Stock</a>{% endif %}</p>
+{% endif %}
+{% if lot and not lot.held and may_approve_substitution %}
+<p><a class="button" href="{% url 'approve_stock_substitution' lot.id %}">Approve an Alternate</a></p>
+{% endif %}
+{% if approved_alternates %}
+<h2>Applicable Approved Alternates</h2>
+<ul>
+{% for approval in approved_alternates %}
+<li>{{ approval.substitute_identity }} for {{ approval.required_identity }} on
+<a href="{% url 'work_package' approval.card.package_id %}#card-{{ approval.card_id }}">{{ approval.card.package }} · {{ approval.card }}</a>.
+{{ approval.applicable_source }}. Issued work card revision {{ approval.revision.revision }}.
+Approved by {{ approval.authorisation.person }} under {{ approval.authorisation.reference }} on {{ approval.recorded_on|long_date }}.
+{{ approval.evidence }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if allocations %}
+<h2>Reservations, Issues and Returns</h2>
+<table>
+<thead><tr><th scope="col">Event</th><th scope="col">Work Card</th><th scope="col">Location</th><th scope="col">Quantity</th><th scope="col">Evidence</th><th scope="col">Recorded By</th><th scope="col">Actions</th></tr></thead>
+<tbody>
+{% for event in allocations %}
+<tr>
+<td>{{ event.get_kind_display }}{% if event.kind == "Reserve" and not event.following %} · Open{% endif %}</td>
+<td>{% if event.card_id %}<a href="{% url 'work_package' event.card.package_id %}#card-{{ event.card_id }}">{{ event.card.package }} · {{ event.card }}</a>{% endif %}</td>
+<td>{% if event.source %}{{ event.source }}{% endif %}{% if event.destination %}{% if event.source %} to {% endif %}{{ event.destination }}{% endif %}</td>
+<td>{{ event.quantity }} {{ lot.unit }}</td>
+<td>{% if event.required_identity %}{{ event.required_identity }} · {{ event.applicable_source }}<br>{% endif %}{{ event.evidence }}{% if event.substitution %}<br>Alternate {{ event.substitution.substitute_identity }} approved by {{ event.substitution.authorisation.person }} under {{ event.substitution.authorisation.reference }}{% endif %}</td>
+<td>{{ event.appointment.person.full_name }}, {{ event.recorded_on|long_date }}</td>
+<td>{% if not event.following %}
+{% if event.kind == "Reserve" %}{% if may_issue %}<a href="{% url 'issue_reserved_stock' event.id %}">Issue Reserved Stock</a>{% endif %}
+{% if may_reserve %}<a href="{% url 'release_stock_reservation' event.id %}">Release Reservation</a>{% endif %}
+{% elif event.kind == "Issue" and may_return %}<a href="{% url 'return_issued_stock' event.id %}">Return Stock to Quarantine</a>{% endif %}
+{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}

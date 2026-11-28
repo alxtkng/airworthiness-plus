@@ -55,6 +55,24 @@
 <summary>{{ card.title }}</summary>
 <dl>
 <dt>Instruction Reference</dt><dd>{{ card.instruction }}</dd>
+{% if card.steps %}
+<dt>Structured Source Revision</dt><dd>{{ card.structured_revision }}</dd>
+<dt>Steps</dt>
+<dd><ol>
+{% for step in card.steps %}
+<li>{{ step.instruction }}{% if step.critical %} (Critical){% endif %}
+{% for signoff in card.step_signoffs.all %}
+{% if signoff.number == forloop.parentloop.counter %}
+<p>{{ signoff.performer }}, {{ signoff.signed_on|date:"j F Y" }}. {{ signoff.evidence }}. {{ signoff.authorisation.reference }}.</p>
+{% endif %}
+{% endfor %}
+{% if card.step_signoffs.all|length < forloop.counter %}
+<p>Awaiting Sign-Off{% if forloop.counter == card.step_signoffs.all|length|add:"1" and may_attest and package.issued_on and not card.completed_on and not package.released_on %}. <a href="{% url 'sign_work_card_step' package.id card.id forloop.counter %}">Sign Step {{ forloop.counter }}</a>{% endif %}</p>
+{% endif %}
+</li>
+{% endfor %}
+</ol></dd>
+{% endif %}
 {% if card.completed_on %}
 <dt>Completed</dt><dd>{{ card.completed_on|date:"j F Y" }}</dd>
 <dt>Revision Used</dt><dd>{{ card.performed_revision }}</dd>
@@ -62,10 +80,19 @@
 <dt>Signed Work Evidence</dt><dd>{{ card.sign_off_reference }}</dd>
 <dt>Counter Hours</dt><dd>{{ card.hours }}</dd>
 <dt>Counter Cycles</dt><dd>{{ card.cycles }}</dd>
+{% if card.attestation %}
+<dt>Synthetic Attestation</dt><dd>Archived. Evidence ID {{ card.attestation.id }}.
+{% if may_attest and card.performed_by.user_id == actor_id and card.signing_jobs.all.0 %}<a href="{% url 'attest_work_card' package.id card.id %}">View Archive Confirmation</a>{% endif %}</dd>
+{% elif card.signing_jobs.all.0 %}
+<dt>Synthetic Attestation</dt><dd>{{ card.signing_jobs.all.0.get_status_display }}.
+{% if may_attest and card.performed_by.user_id == actor_id %}<a href="{% url 'attest_work_card' package.id card.id %}">Open Signature Request</a>{% endif %}</dd>
+{% elif may_attest and card.performed_by.user_id == actor_id %}
+<dt>Synthetic Attestation</dt><dd><a href="{% url 'attest_work_card' package.id card.id %}">Review Synthetic Attestation</a></dd>
+{% endif %}
 {% endif %}
 {% if card.inspector %}
 <dt>Inspected</dt><dd>{{ card.inspected_on|date:"j F Y" }}</dd>
-<dt>Inspector Qualification Evidence</dt><dd>{{ card.qualification }}</dd>
+<dt>Inspector Qualification Evidence</dt><dd>{{ card.qualification }}{% if card.inspection_authorisation %}. {{ card.inspection_authorisation.reference }}{% endif %}</dd>
 <dt>Satisfactory Inspection Evidence</dt><dd>{{ card.inspection_evidence }}</dd>
 {% endif %}
 </dl>
@@ -75,6 +102,7 @@
 <ul>
 <li>Signed Work Cards, {{ signed }} of {{ cards|length }}</li>
 <li>Independent Inspections{% if missing_inspections %}, {{ missing_inspections }} Outstanding{% else %}, None Outstanding{% endif %}</li>
+{% if has_structured_pilot %}<li>Synthetic Structured Work Cards Cannot Be Used for a Release Certificate</li>{% endif %}
 <li>General Verification, {{ package.verification|default:"Awaiting Evidence" }}</li>
 {% if package.defect %}
 <li>Defect <a href="{% url 'defect' package.defect_id %}">{{ package.defect }}</a>, {% if package.defect.closed_on %}Closed{% else %}Open{% endif %}</li>

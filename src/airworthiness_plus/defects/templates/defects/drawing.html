@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ drawing }} · {{ aircraft.registration }}{% endblock %}
+{% block content %}
+<h1>{{ drawing }}</h1>
+<p><a href="{% url 'damage_register' aircraft.id %}">{{ aircraft.registration }} Damage Register</a></p>
+{% if drawing.supersedes %}<p><a href="{% url 'damage_drawing' aircraft.id drawing.supersedes_id %}">Previous Drawing Revision</a></p>{% endif %}
+{% if drawing.superseded_by %}
+<p><a href="{% url 'damage_drawing' aircraft.id drawing.superseded_by.id %}">Newer Drawing Revision</a></p>
+{% elif may_record %}
+<p><a href="{% url 'revise_damage_drawing' aircraft.id drawing.id %}">Revise Drawing</a></p>
+{% endif %}
+<svg viewBox="-8 -8 116 116" width="420" height="420" class="aircraft-drawing" aria-label="{{ aircraft.registration }} {{ drawing }}">
+<polygon points="{{ drawing.outline }}" fill="none" stroke="currentColor" stroke-width="0.5"/>
+{% for entry in markers %}
+<a id="marker-{{ entry.id }}" href="{% url 'damage_entry' aircraft.id entry.id %}" tabindex="0" aria-label="Marker {{ forloop.counter }}, {{ entry.title }}">
+<title>{{ entry.title }} · {{ entry.frame_or_zone }}</title>
+<circle cx="{{ entry.marker_x }}" cy="{{ entry.marker_y }}" r="4" fill="currentColor"/>
+<text x="{{ entry.marker_x }}" y="{{ entry.marker_y }}" text-anchor="middle" dominant-baseline="central" font-size="4" fill="Canvas">{{ forloop.counter }}</text>
+</a>
+{% endfor %}
+</svg>
+<h2>Findings on This Revision</h2>
+<ol>
+{% for entry in markers %}
+<li><a href="{% url 'damage_entry' aircraft.id entry.id %}">{{ entry.title }}</a> · {{ entry.frame_or_zone }}{% if entry.superseded_by %} · Superseded{% endif %}</li>
+{% empty %}<li>No Markers Recorded for This Revision</li>
+{% endfor %}
+</ol>
+{% endblock %}

@@ -1,0 +1,21 @@
+{
+  "format": "Airworthiness+ Aircraft Handover Reconciliation",
+  "records": {
+    "aircraft_id": "9d4b8564-2c2b-494f-96d4-8a814009ee74",
+    "completion_id": "bbf6d9d6-5db2-4da1-95af-6865eaf54681",
+    "completion_measurements": "Clearance 1.2 mm",
+    "corrected_hours": 11206.8,
+    "corrected_reading_id": "eb88bddb-e0a9-4ebd-9c85-fb7384bc89bd",
+    "defect_id": "e1ccccce-de67-4650-a675-668f10e3f5a6",
+    "defect_limit_on": "2026-11-25",
+    "inspection_id": "b02b31f8-d97d-4840-8457-db7188324ba3",
+    "inspection_source": "Synthetic inspection instructions, revision 1",
+    "instruction_reference": "Synthetic instruction AW-I-05",
+    "instruction_revision": "2",
+    "next_due": "2026-12-08",
+    "original_hours": 11208.6,
+    "original_reading_id": "015db952-7486-44b5-8df4-86c46871a422",
+    "source_organisation_id": "ab59164a-3a4a-4d5d-9bba-d0abc7f0802b"
+  },
+  "version": 1
+}

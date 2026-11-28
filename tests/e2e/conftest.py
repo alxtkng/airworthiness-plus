@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from functools import partial
@@ -94,6 +95,7 @@ def seeded_database(
         AIRWORTHINESS_DATABASE_PORT=str(params.get("port") or "5432"),
         AIRWORTHINESS_ALLOWED_HOSTS="127.0.0.1,localhost",
         AIRWORTHINESS_DEBUG="false",
+        AIRWORTHINESS_SYNTHETIC_WORK_CARD_ATTESTATION="true",
         AIRWORTHINESS_BEHIND_PROXY="false",
         AIRWORTHINESS_SECRET_KEY=secrets.token_urlsafe(50),
         AIRWORTHINESS_STATIC_ROOT=str(tmp_path_factory.mktemp("e2e-static")),
@@ -154,6 +156,24 @@ class RunningSite:
     address: str
     name: str
     database: Database
+
+    @contextmanager
+    def block_synthetic_archive_insert(self) -> Iterator[None]:
+        """Make PostgreSQL reject an archive insert in this test's disposable database."""
+        with psycopg.connect(
+            self.database.admin.info.dsn, dbname=self.name, autocommit=True
+        ) as connection:
+            connection.execute(
+                "ALTER TABLE planning_workcardattestation "
+                "ADD CONSTRAINT rehearsal_archive_unavailable CHECK (false) NOT VALID"
+            )
+            try:
+                yield
+            finally:
+                connection.execute(
+                    "ALTER TABLE planning_workcardattestation "
+                    "DROP CONSTRAINT rehearsal_archive_unavailable"
+                )
 
     def advance_verification_age(self, session_key: str) -> None:
         """Move the test session beyond the fresh-verification window."""

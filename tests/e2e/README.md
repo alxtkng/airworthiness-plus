@@ -50,7 +50,11 @@ the programme departures, annual review checklist and directive sources
 added in pull request 134, plus the transfer checklist and configuration
 positions from pull request 135. Export tests download
 both archives, run `verify_export` and check the result against the page and
-selected archive contents. The fleet keyboard test operates a row at 390 pixels.
+selected archive contents. The fleet keyboard test operates a row at 390 pixels. The synthetic work card
+attestation journey uses a 390-pixel viewport. It exercises cancellation and
+password plus authenticator step-up, then checks the archive confirmation after
+reload while a critical inspection is still outstanding. The synthetic pilot is
+enabled for the disposable browser service.
 
 [Form coverage](form-coverage.tsv) maps each form route to a browser scenario.
 It includes the maintenance programme's retirement control and checks that
@@ -68,3 +72,25 @@ preservation of the original records date.
 When adding a journey, browse through the form, check the saved value after a
 reload, and check what survives any refusal. Add or update the scenario in the
 inventory and the relevant row in `requirements/traceability.csv`.
+
+## AMOS workflow checks
+
+`test_maintenance_history.py` exercises the aircraft and planning entry points,
+chapter and section filtering, separate text searches, keyboard navigation and
+tenant isolation. `test_stores_exercise.py` follows the sample lookup from Stores
+and resumes its checkpoint. `test_parallel_handover.py` uses the two sample
+organisations to rehearse a stop and compare the source records after fallback.
+`test_dispatch.py` records overlapping assignments and a break, moves an
+inspection to the incoming shift, checks text warnings with keyboard navigation,
+and verifies acknowledgement and tenant isolation at a 390-pixel viewport.
+`test_aircraft_records.py` remaps a synthetic lightning finding to a revised
+drawing, follows both keyboard and list links, and checks tenant separation.
+It also transcribes source flight reports, filters on the linked part, and
+checks the downloaded report and release attribution. The mobile synthetic
+attestation journey is in `test_records.py`. It recovers after a real PostgreSQL
+archive insert refusal.
+
+`test_maintenance_custody.py` runs the normal Stores appointments, reservation, alternate, issue and quarantine screens against published PR #167's ledger. Two independent PostgreSQL sessions compete to issue the same reservation. The live form sees the recorded outcome, and the test confirms that the second organisation cannot access the lot. `test_dispatch.py` exercises the previous and next day links. The exhaustive persona walk skips repeated date pagination and follows the finite application links.
+
+`test_parallel_handover.py` also records the inspection and readings through the normal aircraft forms before verifying the signed transfer offline and replaying it. The published-schema migration fixture and retained results are linked from the completion report.
+[Case evidence and scope](../../assurance/amos-evidence-matrix.md)

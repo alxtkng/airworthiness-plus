@@ -12,12 +12,15 @@ from airworthiness_plus.configuration import views as configuration
 from airworthiness_plus.contracts import views as contracts
 from airworthiness_plus.customers import views as customers
 from airworthiness_plus.dashboard import views as dashboard
+from airworthiness_plus.defects import aircraft_records, maintenance_history
 from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
+from airworthiness_plus.logistics import allocation_views
 from airworthiness_plus.logistics import stores_views as stores
 from airworthiness_plus.logistics import views as logistics
+from airworthiness_plus.logistics.models import AllocationKind
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.modifications import views as modifications
 from airworthiness_plus.organisations import views as settings
@@ -26,6 +29,7 @@ from airworthiness_plus.planning import views as planning
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
+from airworthiness_plus.staffing import dispatch_views as dispatch
 from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
 from airworthiness_plus.tooling import calibration_views as calibration
@@ -47,6 +51,9 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     path("stores/", logistics.stores_stock, name="stores_stock"),
     path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
+    path(
+        "stores/lookup-exercise/", logistics.stores_lookup_exercise, name="stores_lookup_exercise"
+    ),
     path("tools/providers/", calibration.providers, name="tool_providers"),
     path(
         "tools/providers/authorise/", calibration.authorise_provider, name="authorise_tool_provider"
@@ -99,6 +106,54 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="resolve_stock",
     ),
     path("stores/dispositions/<uuid:disposition_id>/post/", stores.post_stock, name="post_stock"),
+    path(
+        "stores/appointments/", allocation_views.custody_appointments, name="custody_appointments"
+    ),
+    path(
+        "stores/appointments/add/",
+        allocation_views.add_custody_appointment,
+        name="add_custody_appointment",
+    ),
+    path(
+        "stores/appointments/<uuid:appointment_id>/withdraw/",
+        allocation_views.withdraw_custody_appointment,
+        name="withdraw_custody_appointment",
+    ),
+    path(
+        "stores/lots/<uuid:posting_id>/reserve/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.RESERVE},
+        name="reserve_stock",
+    ),
+    path(
+        "stores/lots/<uuid:posting_id>/quarantine/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.QUARANTINE},
+        name="quarantine_stock",
+    ),
+    path(
+        "stores/allocations/<uuid:allocation_id>/release/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.RELEASE},
+        name="release_stock_reservation",
+    ),
+    path(
+        "stores/allocations/<uuid:allocation_id>/issue/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.ISSUE},
+        name="issue_reserved_stock",
+    ),
+    path(
+        "stores/allocations/<uuid:allocation_id>/return/",
+        allocation_views.change_custody,
+        {"kind": AllocationKind.RETURN},
+        name="return_issued_stock",
+    ),
+    path(
+        "stores/lots/<uuid:posting_id>/approve-alternate/",
+        allocation_views.approve_substitution,
+        name="approve_stock_substitution",
+    ),
     path("stores/lots/<uuid:lot_id>/move/", stores.move_stock, name="move_stock"),
     path("stores/lots/<uuid:lot_id>/count/", stores.count_stock, name="count_stock"),
     path("stores/counts/<uuid:count_id>/adjust/", stores.adjust_stock, name="adjust_stock"),
@@ -130,6 +185,20 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
     path("staffing/capacity/", roster.load_and_capacity, name="load_and_capacity"),
     path("staffing/roster/", roster.staff_roster, name="staff_roster"),
+    path("staffing/dispatch/", dispatch.dispatch_board, name="dispatch_board"),
+    path("staffing/dispatch/assign/", dispatch.dispatch_assignment, name="dispatch_assign"),
+    path(
+        "staffing/dispatch/<uuid:assignment_id>/move/",
+        dispatch.dispatch_assignment,
+        name="dispatch_move",
+    ),
+    path("staffing/dispatch/break/", dispatch.dispatch_window, name="dispatch_break"),
+    path(
+        "staffing/dispatch/turnaround/",
+        dispatch.dispatch_window,
+        {"turnaround": True},
+        name="dispatch_turnaround",
+    ),
     path("staffing/roster/add/", roster.add_roster_shift, name="add_roster_shift"),
     path("staffing/roster/publish/", roster.publish_roster, name="publish_roster"),
     path(
@@ -164,6 +233,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="record_staffing_shortfall",
     ),
     path("work-packages/", planning.work_packages, name="work_packages"),
+    path("maintenance-history/", maintenance_history.page, name="maintenance_history"),
+    path(
+        "aircraft/<uuid:aircraft_id>/maintenance-history/",
+        maintenance_history.page,
+        name="aircraft_maintenance_history",
+    ),
     path("work-packages/build/", planning.build_work_package, name="build_work_package"),
     path("work-packages/<uuid:package_id>/", planning.work_package, name="work_package"),
     path(
@@ -181,6 +256,16 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "work-packages/<uuid:package_id>/cards/<uuid:card_id>/completion/",
         planning.complete_work_card,
         name="complete_work_card",
+    ),
+    path(
+        "work-packages/<uuid:package_id>/cards/<uuid:card_id>/attestation/",
+        planning.attest_work_card,
+        name="attest_work_card",
+    ),
+    path(
+        "work-packages/<uuid:package_id>/cards/<uuid:card_id>/steps/<int:number>/",
+        planning.sign_work_card_step,
+        name="sign_work_card_step",
     ),
     path(
         "work-packages/<uuid:package_id>/cards/<uuid:card_id>/inspection/",
@@ -363,6 +448,71 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("defects/repeat/action/", defects.record_repeat_action, name="record_repeat_action"),
     path("defects/<uuid:defect_id>/", defects.defect_page, name="defect"),
     path("defects/<uuid:defect_id>/close/", defects.close_defect, name="close_defect"),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/",
+        aircraft_records.damage_register,
+        name="damage_register",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/drawings/add/",
+        aircraft_records.record_drawing,
+        name="record_damage_drawing",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/drawings/<uuid:drawing_id>/",
+        aircraft_records.drawing_page,
+        name="damage_drawing",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/drawings/<uuid:drawing_id>/revise/",
+        aircraft_records.record_drawing,
+        name="revise_damage_drawing",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/findings/add/",
+        aircraft_records.record_damage,
+        name="record_damage_entry",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/findings/<uuid:damage_id>/",
+        aircraft_records.damage_page,
+        name="damage_entry",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/findings/<uuid:damage_id>/revise/",
+        aircraft_records.record_damage,
+        name="revise_damage_entry",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/",
+        aircraft_records.technical_log,
+        name="technical_log",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/flights/add/",
+        aircraft_records.record_flight,
+        name="record_technical_log_flight",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/flights/<uuid:flight_id>/",
+        aircraft_records.flight_page,
+        name="technical_log_flight",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/flights/<uuid:flight_id>/transcribe/",
+        aircraft_records.transcribe_report,
+        name="transcribe_technical_log_report",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/reports/<uuid:report_id>/",
+        aircraft_records.report_page,
+        name="technical_log_report",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/reports/<uuid:report_id>/release/",
+        aircraft_records.link_report_release,
+        name="link_technical_log_release",
+    ),
     path("aircraft/add/", aircraft.add_aircraft, name="add_aircraft"),
     path("aircraft/<uuid:aircraft_id>/", aircraft.aircraft_page, name="aircraft"),
     path("aircraft/<uuid:aircraft_id>/details/", aircraft.record_details, name="aircraft_details"),

@@ -71,3 +71,11 @@ reservations, work-package issue, final disposal and dated appointment records f
 Stores actions. Organisation procedures, appointments and the manufacturer's shelf-life
 convention stay **To Be Checked**. The warning lead time uses the organisation's Due
 Soon days.
+
+## Work-package custody and station balances
+
+The AMOS pilot extends PR #167 with Logistics `0009_station` and `0010_maintenance_custody`. Existing ledger rows, identifiers and event hashes carry forward. Station and location codes are separate. Earlier locations stay unassigned. The Stock board shows exact identity and condition by station, location and unit, including configured zero-quantity locations when an identity is selected.
+
+New custody actions use a dated appointment, the signed-in person and the current maintenance approval. Reservation and issue require unfinished work on an issued card and an open written order. Issue rechecks shelf life, eligibility, physical custody and the active reservation. A return restores physical custody in secure quarantine. A later new receiving decision governs any subsequent admission to serviceable stock. PostgreSQL serialises the new custody actions with published movements using the existing lot lock. An identical replay returns its original result.
+
+An alternate approval requires a current certifying grant naming the actual aircraft. It binds the required and substitute identities, lot, issued card revision and applicable parts-data reference. Reservation and issue check that the linked approval, grant, work and revision still apply. The operator confirms its appointment, approval and actual source procedures before operational use. [Stores acceptance and scope](../../assurance/amos-evidence-matrix.md)

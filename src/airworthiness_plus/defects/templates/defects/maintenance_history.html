@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Maintenance History{% if aircraft %} for {{ aircraft.registration }}{% endif %}{% endblock %}
+{% block content %}
+<h1>Maintenance History{% if aircraft %} for {{ aircraft.registration }}{% endif %}</h1>
+{% if aircraft %}{% include "interface/aircraft_tabs.html" with active="Maintenance History" %}{% endif %}
+<form method="get" aria-label="Maintenance History Filters">
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.help_text %}<br>{{ field.help_text }}{% endif %}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% endfor %}
+<button type="submit">Search History</button>
+</form>
+{% if defects %}
+<h2>Defects</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aircraft</th><th>Report</th><th>System</th><th>Found</th><th>Status</th><th>Corrective Action</th><th>Linked Maintenance</th></tr></thead>
+<tbody>
+{% for defect in defects %}
+<tr>
+<td><a href="{% url 'aircraft' defect.aircraft_id %}">{{ defect.aircraft.registration }}</a></td>
+<td><a href="{% url 'defect' defect.id %}">{{ defect.title }}</a>{% if defect.note %}<br>{{ defect.note }}{% endif %}</td>
+<td>{{ defect.system_text }}</td><td>{{ defect.found_on|long_date }}</td>
+<td>{% if defect.closed_on %}Closed{% else %}{{ defect.decision }}{% endif %}</td>
+<td>{{ defect.rectification }}</td>
+<td>{% for package in defect.work_packages.all %}<a href="{% url 'work_package' package.id %}">{{ package.reference }}</a>{% if package.order %}<br><a href="{% url 'contracts' %}#order-{{ package.order_id }}">{{ package.order.work }}</a>{% endif %}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% if orders %}
+<h2>Written Work Orders</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aircraft</th><th>Work Ordered</th><th>Agreed</th><th>Outcome</th></tr></thead>
+<tbody>{% for order in orders %}
+<tr><td>{{ order.aircraft.registration }}</td><td><a href="{% url 'contracts' %}#order-{{ order.id }}">{{ order.work }}</a></td><td>{{ order.agreed_on|long_date }}</td><td>{{ order.outcome|default:"Open" }}</td></tr>
+{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if packages %}
+<h2>Work Packages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aircraft</th><th>Package</th><th>Planned Start</th><th>Status</th><th>Source Records</th></tr></thead>
+<tbody>{% for package in packages %}
+<tr><td>{{ package.aircraft.registration }}</td><td><a href="{% url 'work_package' package.id %}">{{ package.reference }} · {{ package.title }}</a></td><td>{{ package.starts_on|long_date }}</td><td>{{ package.status }}</td>
+<td>{% if package.defect %}<a href="{% url 'defect' package.defect_id %}">{{ package.defect.title }}</a>{% endif %}{% if package.order %}<br><a href="{% url 'contracts' %}#order-{{ package.order_id }}">{{ package.order.work }}</a>{% endif %}</td></tr>
+{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if not form.errors and not defects and not orders and not packages %}<p>No Records Match the Filters</p>{% endif %}
+{% endblock %}

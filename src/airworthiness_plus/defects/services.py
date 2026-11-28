@@ -7,6 +7,7 @@ points (b)(1) to (4) name, and is rectified within the limits specified
 in the maintenance data.
 """
 
+import re
 from dataclasses import dataclass
 from datetime import date
 
@@ -59,6 +60,7 @@ def record_defect(
     decision: Decision | str,
     decided_on: date,
     note: str = "",
+    section: str = "",
     basis: Basis | str = "",
     decided_by: Person | None = None,
     data_limit_on: date | None = None,
@@ -89,6 +91,9 @@ def record_defect(
         raise RefusedError("A Defect Names Its System")
     if not rules.FIRST_CHAPTER <= chapter <= rules.LAST_CHAPTER:
         raise RefusedError("A Chapter Is From 1 to 99")
+    section = section.strip()
+    if section and re.fullmatch(r"[0-9]{2}", section) is None:
+        raise RefusedError("An ATA Section Is Two Digits")
     if found_on > today or decided_on > today:
         raise RefusedError("A Defect Is Not Found or Decided After Today")
     if decided_on < found_on:
@@ -144,6 +149,7 @@ def record_defect(
         _check_closure(aircraft, found_on, decided_on, rectification, closed_on, work_done, today)
         if matching.filter(
             chapter=chapter,
+            section=section,
             system=system,
             note=note,
             decision=decision,
@@ -166,6 +172,7 @@ def record_defect(
         note=note,
         found_on=found_on,
         chapter=chapter,
+        section=section,
         system=system,
         decision=decision,
         basis=basis,

@@ -229,4 +229,15 @@ On a fictitious calibration order that requires measurement uncertainty, enter a
 
 ## What Cannot Be Shown Yet
 
-The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: further Stores and tooling workflows, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.
+Choosing the type from the SRG1782 list (REQ-021) and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md` remain outside this demo. These include further Stores and tooling controls, hazards, audits, training, documents, quotes, invoices and the Marketplace.
+
+## AMOS workflow rehearsal
+
+Open **Maintenance History** from an aircraft or **Work Packages** to search by
+aircraft, chapter or section, date and status. Use the **Report Text** and
+**Corrective Action** fields to locate the corresponding evidence. From
+an aircraft record, open **Damage Register** to follow a drawing marker and its equivalent list entry to the physical reference, repair and follow-up inspection. In **Technical Log**, start with a flight and filter reports by ATA and the linked part. Review the original reporter and the separately recorded recorder and certifier.
+
+In **Stores**, open **Practise Stock Lookup** and compare ZRH Main, ZRH and the network totals. The checkpoint follows the session. With the prepared fictitious lot, use the part-number or specification lookup, reserve against issued work, issue and return it to secure quarantine under the appropriate Stores appointments. The certifying person records any applicable alternate approval separately. In **Dispatch**, move an assignment across shifts, read the conflict reasons and acknowledge an incoming handover as the named recipient.
+
+The structured work-card signing queue needs the synthetic trial setting enabled in an isolated local environment. Follow the mobile journey and review the archived version while independent inspection is outstanding. For the two-organisation stop, fallback and cutover exercises, follow the [parallel handover protocol](amos-parallel-handover.md). The locally tested outcomes and outstanding operational evidence are in the [case matrix](../assurance/amos-evidence-matrix.md).

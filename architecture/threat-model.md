@@ -104,6 +104,8 @@ Severity uses the hazard log scale: High, Medium, Low.
 | TH-080 | Information Disclosure | Export of another organisation's aircraft | High | Export runs through the same data-layer scoping; export is a logged event, with the SHA-256 of its manifest | REQ-003, REQ-134, REQ-009 | T-SEC-010 includes export endpoints: test_exports: another_organisations_aircraft_cannot_be_exported |
 | TH-081 | Tampering | Exported file altered after export and presented as the record | Medium | Export carries the event hash chain and a checksum, so it can be verified against the system | REQ-134 | T-SEC-019 altered export fails verification |
 | TH-082 | Information Disclosure | Formula injection when a CSV export is opened in a spreadsheet | Low | Cells beginning with =, +, - or @ are neutralised in CSV | REQ-134 | T-SEC-020 |
+| TH-083 | Spoofing, Tampering | A received transfer is paired with the wrong aircraft, a substitute trust bundle or a different inception timestamp | High | Independently supplied pins, stable sender and record IDs, signed reading and predecessor binding, and separate validation outcomes for issuer, time and authority | REQ-134, REQ-382 | Signed G-EJKL export, historical timestamp and renewal regressions, independent receiver replay and refusal selection |
+| TH-084 | Repudiation, Tampering | A stale or differently signed work card reaches the archive, or archive retry repeats an accepted signing result | High | Current version review, recent identity verification, action authority, digest- and signer-bound provider result and durable state separating signed from archived | REQ-380 | Work card attestation exact-version, provider mismatch, archive failure and retry checks |
 
 ## Design Additions From This Model
 
@@ -251,6 +253,7 @@ The canvas build, Phase 1 (`prompts/canvas-build.md`): Continuing Airworthiness,
 | Maintenance subcontractor evidence | TH-008, TH-020, TH-021 | The server checks the role and approval on the assessment date. The database restricts both parent references to the tenant and grants append-only access. The evidence is included in the organisation export. |
 
 | Receipt, receiving checks and first disposition | TH-008, TH-020, TH-021, TH-025 | Role checks and CSRF guard form writes. PostgreSQL scopes receipts and parent references, captures the inspection reference and inspector name, and serializes checks and final decisions per receipt. Checks and disposition are append-only and included in organisation exports. A restricted database trigger creates the stock entry from the accepted disposition in the same transaction. The application role has read-only access to stock entries. |
+| Stores posting, custody movements and counts | TH-008, TH-020, TH-021, TH-023, TH-025 | The published ledger uses role, active maintenance approval and CSRF checks. The separate work-package custody workflow checks dated scoped authority. Submission references make a repeated form submission return the first record. PostgreSQL scopes every record and parent reference to the tenant, keeps one posting per disposition with its opening movement in the same statement, and serialises movements per lot so that a concurrent overspend or a stale adjustment is refused. The runtime role can only insert and read. The records and their history are in the organisation export. |
 
 ## Not Yet Covered
 

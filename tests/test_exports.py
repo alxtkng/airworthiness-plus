@@ -6,17 +6,30 @@ type of record so that every type is compared with the database.
 
 import csv
 import hashlib
+import importlib
 import io
 import json
+import os
 import secrets
+import shutil
+import sqlite3
+import subprocess
+import sys
 import warnings
 import zipfile
+from base64 import b64encode
+from collections.abc import Callable
+from contextlib import closing
+from copy import deepcopy
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from time import perf_counter, sleep
 from typing import Any
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection
@@ -32,7 +45,9 @@ from airworthiness_plus.accounts.roles import Action, permitted
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
 from airworthiness_plus.configuration import services as configuration_services
+from airworthiness_plus.configuration.forecast import forecast_lines
 from airworthiness_plus.configuration.models import Product
+from airworthiness_plus.defects import services as defect_services
 from airworthiness_plus.defects.models import Basis as DeferralBasis
 from airworthiness_plus.defects.models import Decision as DefectDecision
 from airworthiness_plus.directives import services as directive_services
@@ -59,7 +74,7 @@ from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.sample import goods_in, phase1, suppliers, tools
-from airworthiness_plus.staffing import roster
+from airworthiness_plus.staffing import dispatch, roster
 from airworthiness_plus.staffing import services as staffing_services
 from airworthiness_plus.staffing.models import AbsenceType, Function
 from airworthiness_plus.staffing.roster_models import (
@@ -68,7 +83,7 @@ from airworthiness_plus.staffing.roster_models import (
     ShiftPattern,
     StaffingMinimum,
 )
-from airworthiness_rules.intervals import Interval, Reading
+from airworthiness_rules.intervals import Interval, Reading, TaskKind
 from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import (
     TODAY,
@@ -357,7 +372,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             revision_date=TODAY,
             check_due=TODAY,
         )
-        planning_services.add_card(
+        card = planning_services.add_card(
             package,
             title="Install New Stabilator Trim Cable",
             data_set=data_set,
@@ -422,7 +437,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             normal=2,
             applies_on="Hangar Working Days",
         )
-        roster.add_shift(
+        dispatch_shift = roster.add_shift(
             actor=sample.planner,
             approval=approval,
             person=Person.objects.get(full_name="Chris Moore"),
@@ -433,6 +448,21 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             break_minutes=30,
             other_minutes=0,
             maintenance=True,
+        )
+        dispatch.assign(
+            actor=sample.planner,
+            card=card,
+            shift=dispatch_shift,
+            starts_at=datetime(2026, 11, 18, 10, tzinfo=UTC),
+            ends_at=datetime(2026, 11, 18, 11, tzinfo=UTC),
+            reason="Reserve time for cable installation",
+        )
+        dispatch.add_window(
+            actor=sample.planner,
+            shift=dispatch_shift,
+            starts_at=datetime(2026, 11, 18, 12, tzinfo=UTC),
+            ends_at=datetime(2026, 11, 18, 12, 30, tzinfo=UTC),
+            note="Protected break",
         )
         roster.publish(actor=sample.planner, week=date(2026, 11, 16), note="Reviewed and Published")
         roster.record_handover(
@@ -540,7 +570,22 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
             ["password", "second_factor_secret", "passkeys"] if one.table == "accounts_user" else []
         )
         held = rows(one.table, column, sample.ours.id, omitted)
-        assert held, one.table  # the sample has at least one record of every type
+        # Individually seeded workflows have their own populated export tests.
+        if one.table not in {
+            "logistics_stockallocation",
+            "logistics_stockappointment",
+            "logistics_stockappointmentwithdrawal",
+            "logistics_stocksubstitution",
+            "planning_workcardattestation",
+            "defects_aircraftdrawing",
+            "defects_damageentry",
+            "defects_flightevent",
+            "defects_flightreport",
+            "defects_flightreportrelease",
+            "planning_workcardsigningjob",
+            "planning_workcardstepsignoff",
+        }:
+            assert held, one.table
         assert files[f"records/{one.table}.json"] == held, one.table
         with as_owner():
             entries = Event.objects.filter(
@@ -572,7 +617,8 @@ def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
-        old_apps = executor.migrate(old_targets).apps
+        executor.migrate(old_targets)
+        old_apps = executor.loader.project_state(old_targets).apps
     release_model = old_apps.get_model("releases", "Release")
     defect_model = old_apps.get_model("defects", "Defect")
     with working_for(sample.ours.id, sample.planner.id):
@@ -617,7 +663,7 @@ def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history
         }
         Person.objects.filter(pk=chris.id).update(full_name="Chris Moore Updated")
         Person.objects.filter(pk=sam.id).update(full_name="Sam Patel Updated")
-    with as_owner_who_is_not_a_superuser():
+    with as_owner_who_is_not_a_superuser(functions=("logistics_stock_balance(uuid, uuid)",)):
         MigrationExecutor(connection).migrate(latest)
 
     client = signed_in(sample.planner)
@@ -728,6 +774,864 @@ def test_the_export_of_an_aircraft_is_its_complete_record_and_no_other(
     assert {"id": str(sample.lucy.id), "full_name": "Lucy Grant"} in files["people.json"]["users"]
     assert "@" not in json.dumps(files["people.json"])  # names, not user names
     assert "access-log.json" not in files
+
+
+def test_handover_archive_preserves_deferral_inspection_and_correction(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-134 and REQ-290. Reconcile one synthetic aircraft using only its archive."""
+    aircraft = fleet["G-EJKL"]
+    inspection_title = "Handover Trial Recurring Inspection"
+    with working_for(sample.ours.id, sample.planner.id):
+        counter = Counter.objects.get(aircraft=aircraft, kind=CounterKind.AIRFRAME)
+        inspection = programme_services.add_task(
+            aircraft.programme,
+            title=inspection_title,
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=counter,
+            source="Synthetic inspection reference",
+            interval=Interval(days=30),
+        )
+        programme_services.record_work(
+            aircraft,
+            task=inspection,
+            description=inspection_title,
+            dated=TODAY - timedelta(days=10),
+            hours=D("11206.8"),
+            cycles=0,
+        )
+        defect_title = "Right Headset Socket Crackle"
+        forecast = {line.item: line for line in forecast_lines(aircraft, TODAY)}
+        export = build(sample.ours, by=sample.planner, aircraft=aircraft)
+
+    # Receiver checks the archive without reading the issuing database. The
+    # expected digest represents the value received separately from the issuer.
+    verdict = verify(export.content)
+    assert verdict.problems == ()
+    assert verdict.manifest_sha256 == export.manifest_sha256
+    files = opened(export.content)
+    defects = files["records/defects_defect.json"]
+    (defect,) = [record for record in defects if record["title"] == defect_title]
+    assert defect["aircraft_id"] == str(aircraft.pk)
+    assert defect["closed_on"] is None
+    assert defect["decision"] == DefectDecision.DEFERRED
+    defect_due = forecast[f"Deferred Defect Limit, {defect_title}"]
+    assert date.fromisoformat(defect["limit_on"]) == defect_due.forecast
+
+    tasks = files["records/programme_task.json"]
+    (task,) = [record for record in tasks if record["title"] == inspection_title]
+    work = files["records/programme_workdone.json"]
+    (completion,) = [record for record in work if record["task_id"] == task["id"]]
+    next_due = date.fromisoformat(completion["dated"]) + timedelta(days=task["interval_days"])
+    assert next_due == TODAY + timedelta(days=20) == forecast[inspection_title].forecast
+
+    readings = files["records/aircraft_utilisationentry.json"]
+    (correction,) = [record for record in readings if record["supersedes_id"]]
+    (original,) = [record for record in readings if record["id"] == correction["supersedes_id"]]
+    assert (original["hours"], correction["hours"]) == (11208.6, 11206.8)
+
+
+def test_independent_receiver_imports_the_unsigned_trial_and_rejects_invalid_transfers(
+    sample: Sample, fleet: dict[str, Aircraft], tmp_path: Path
+) -> None:
+    """REQ-134, REQ-290 and AMOS case 6. Reconstruct and replay on a separate database."""
+    aircraft = fleet["G-EJKL"]
+    title = "Receiver Trial Inspection"
+    with working_for(sample.ours.id, sample.planner.id):
+        counter = aircraft.counters.get(kind=CounterKind.AIRFRAME)
+        task = programme_services.add_task(
+            aircraft.programme,
+            title=title,
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=counter,
+            source="Synthetic receiver trial reference",
+            interval=Interval(days=30),
+        )
+        programme_services.record_work(
+            aircraft,
+            task=task,
+            description=title,
+            dated=TODAY - timedelta(days=10),
+            hours=D("11206.8"),
+            cycles=0,
+        )
+        sender_forecast = {line.item: line.forecast for line in forecast_lines(aircraft, TODAY)}
+        export = build(sample.ours, by=sample.planner, aircraft=aircraft)
+
+    files = opened(export.content)
+    defect_title = "Right Headset Socket Crackle"
+    (defect,) = [
+        item for item in files["records/defects_defect.json"] if item["title"] == defect_title
+    ]
+    (correction,) = [
+        row for row in files["records/aircraft_utilisationentry.json"] if row["supersedes_id"]
+    ]
+    database = tmp_path / "receiver.sqlite"
+    archive_path = tmp_path / "transfer.zip"
+    project = Path(__file__).resolve().parents[1]
+
+    def receive(
+        content: bytes, digest: str = export.manifest_sha256, aircraft_id: str = str(aircraft.id)
+    ) -> subprocess.CompletedProcess[str]:
+        archive_path.write_bytes(content)
+        return subprocess.run(  # noqa: S603  fixed executable and synthetic fixture
+            [
+                sys.executable,
+                str(project / "tools" / "receive_handover.py"),
+                str(archive_path),
+                str(database),
+                "--manifest-digest",
+                digest,
+                "--aircraft-id",
+                aircraft_id,
+                "--defect-id",
+                defect["id"],
+                "--inspection-id",
+                str(task.id),
+                "--correction-id",
+                correction["id"],
+            ],
+            env={"PYTHONPATH": str(project / "src")},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    first = receive(export.content)
+    assert first.returncode == 0, first.stderr
+    received = json.loads(first.stdout)
+    assert received.pop("imported") is True
+    assert date.fromisoformat(received["next_due"]) == sender_forecast[title]
+    assert (
+        date.fromisoformat(received["defect"]["limit_on"])
+        == sender_forecast[f"Deferred Defect Limit, {defect_title}"]
+    )
+    assert received["defect"]["closed_on"] is None
+    assert received["original_reading"]["hours"] == 11208.6
+    assert received["corrected_reading"]["hours"] == 11206.8
+    assert received["issuer_trust"] == "Indeterminate"
+    assert received["history"]["defects_defect"] == [
+        event
+        for event in files["history/defects_defect.json"]
+        if event["record_id"] == defect["id"]
+    ]
+    readings = received["history"]["aircraft_utilisationentry"]
+    assert {entry["record_id"] for entry in readings} == {
+        correction["id"],
+        correction["supersedes_id"],
+    }
+
+    replay = receive(export.content)
+    assert replay.returncode == 0, replay.stderr
+    assert json.loads(replay.stdout) == {"imported": False, **received}
+
+    def refused(result: subprocess.CompletedProcess[str], reason: str) -> None:
+        assert result.returncode == 1
+        assert reason in result.stderr
+
+    forwarded_manifest = json.dumps({**files["manifest.json"], "exported_by": "Trial"}).encode()
+    forwarded = rewritten(export.content, {"manifest.json": forwarded_manifest}, fix_manifest=False)
+    refused(
+        receive(forwarded, hashlib.sha256(forwarded_manifest).hexdigest()),
+        "needs reconciliation",
+    )
+    refused(receive(export.content, aircraft_id=str(fleet["G-CDEF"].id)), "different aircraft")
+    changed = rewritten(export.content, {"README.txt": b"Altered"}, fix_manifest=False)
+    refused(receive(changed), "altered")
+
+    for table in ("defects_defect", "programme_programme"):
+        missing = rewritten(
+            export.content,
+            {f"records/{table}.json": b"[]", f"history/{table}.json": b"[]"},
+            fix_manifest=True,
+        )
+        refused(receive(missing, verify(missing).manifest_sha256), "record or dependency")
+
+    manifest = json.dumps({**files["manifest.json"], "version": 2}).encode()
+    unsupported = rewritten(export.content, {"manifest.json": manifest}, fix_manifest=False)
+    refused(receive(unsupported, hashlib.sha256(manifest).hexdigest()), "Unsupported")
+
+    duplicate = io.BytesIO(export.content)
+    with zipfile.ZipFile(duplicate, "a") as archive, pytest.warns(UserWarning, match="Duplicate"):
+        archive.writestr("README.txt", files["README.txt"])
+    refused(receive(duplicate.getvalue()), "more than once")
+
+    with closing(sqlite3.connect(database)) as db:
+        snapshots = db.execute("SELECT evidence FROM handover").fetchall()
+        assert len(snapshots) == 1
+        assert json.loads(snapshots[0][0]) == received
+
+
+# The receiver process has only file inputs. It fails immediately if it attempts a network call.
+OFFLINE_RECEIVER = """
+import runpy, sys
+from pathlib import Path
+
+def offline(event, args):
+    if event.startswith("socket."):
+        raise RuntimeError("The trial receiver has no network access")
+
+sys.addaudithook(offline)
+script = sys.argv.pop(1)
+sys.path.insert(0, str(Path(script).parent))
+runpy.run_path(script, run_name="__main__")
+"""
+READING_TABLE = "aircraft_utilisationentry"
+TRIAL_CORRECTION_REASON = "Reconciled the transcription against the synthetic airframe log."
+
+
+def _whole_signing_time(earliest: datetime) -> datetime:
+    next_second = earliest.replace(microsecond=0) + timedelta(seconds=1)
+    delay = (next_second - datetime.now(UTC)).total_seconds()
+    if delay > 0:
+        sleep(delay)
+    return datetime.now(UTC).replace(microsecond=0)
+
+
+def _stamp(value: datetime) -> str:
+    return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _signed_fixture_key(
+    identity: dict[str, str], public_key: bytes, started_at: datetime, observed_at: datetime
+) -> dict[str, Any]:
+    """The fixture custodian supplies the enrolled public key and authority status."""
+    bounds = {
+        "valid_from": _stamp(started_at - timedelta(minutes=1)),
+        "valid_to": _stamp(observed_at + timedelta(hours=1)),
+        "revoked_at": None,
+        "status_as_of": _stamp(observed_at),
+    }
+    subject = {name: identity[name] for name in ("signer_id", "organisation_id")}
+    return {
+        "format": "Airworthiness+ Synthetic Reading Trust",
+        "version": 1,
+        "keys": [
+            {
+                **subject,
+                **bounds,
+                "key_id": identity["key_id"],
+                "public_key": b64encode(public_key).decode("ascii"),
+            }
+        ],
+        "authorities": [
+            {
+                **subject,
+                **bounds,
+                "authority_id": identity["authority_id"],
+                "aircraft_id": identity["aircraft_id"],
+                "scope": "airworthiness-plus:synthetic-utilisation-reading:v1",
+            }
+        ],
+    }
+
+
+def _trial_json(value: Any) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+
+
+def _receiver_archive_with_changed_reading(content: bytes, original_id: str) -> bytes:
+    records_path = f"records/{READING_TABLE}.json"
+    history_path = f"history/{READING_TABLE}.json"
+    files = opened(content)
+    records = files[records_path]
+    history = files[history_path]
+    record = next(row for row in records if row["id"] == original_id)
+    event = next(row for row in history if row["record_id"] == original_id)
+    record["hours"] = 11208.7
+    event["after"] = json.dumps(record)
+    event["hash"] = entry_hash(event)
+    altered = rewritten(
+        content,
+        {records_path: _trial_json(records), history_path: _trial_json(history)},
+        fix_manifest=True,
+    )
+    assert verify(altered).problems == ()
+    return altered
+
+
+def _exercise_trial_timestamps(
+    command: list[str],
+    run: Callable[[list[str]], subprocess.CompletedProcess[str]],
+    signatures: list[dict[str, Any]],
+    prior_verdict: dict[str, Any],
+    receiver: Path,
+    sender: Path,
+    custodian: Path,
+) -> None:
+    issuer = importlib.import_module("timestamp_handover")
+    with TemporaryDirectory(prefix="aw-trial-tsa-") as scratch:
+        tsa = issuer.make_timestamp_authority(Path(scratch))
+        root_pem = tsa.root_pem
+        envelope = issuer.timestamp_envelope(tsa, signatures)
+        wrong_imprint = issuer.issue_timestamp(tsa, bytes(64))
+    with TemporaryDirectory(prefix="aw-trial-unrelated-tsa-") as scratch:
+        unrelated_pem = issuer.make_timestamp_authority(Path(scratch)).root_pem
+
+    root_pin = hashlib.sha256(root_pem).hexdigest()
+    trust_root = custodian / "tsa-root.pem"
+    trust_root.write_bytes(root_pem)
+    (custodian / "tsa-root.sha256").write_text(root_pin + "\n")
+    timestamp_file = sender / "03-timestamps.json"
+    timestamp_file.write_bytes(_trial_json(envelope))
+
+    database = receiver / "timestamped.sqlite"
+    invocation = command.copy()
+    invocation[command.index(str(receiver / "receiver.sqlite"))] = str(database)
+    invocation += [
+        "--timestamps",
+        str(timestamp_file),
+        "--tsa-root",
+        str(trust_root),
+        "--tsa-root-sha256",
+        root_pin,
+    ]
+    if sandbox := shutil.which("sandbox-exec"):
+        invocation = [sandbox, "-p", "(version 1)(allow default)(deny network*)", *invocation]
+
+    missing = run(invocation[:-2])
+    assert missing.returncode != 0
+    assert "Timestamped import requires" in missing.stderr
+    assert not database.exists()
+
+    first = run(invocation)
+    assert first.returncode == 0, first.stderr
+    verdict = json.loads(first.stdout)
+    assert verdict["imported"] is True
+    assert verdict["tsa_root_sha256"] == root_pin
+    assert verdict["signing_time"] == prior_verdict["signing_time"]
+    assert verdict["maintenance_authorisation"] == prior_verdict["maintenance_authorisation"]
+    assert verdict["signatures"] == signatures
+    assert verdict["next_due"] == prior_verdict["next_due"]
+    assert verdict["defect"] == prior_verdict["defect"]
+    observed = verdict["trusted_timestamps"]
+    assert [row["record_id"] for row in observed] == [
+        item["claim"]["record_id"] for item in signatures
+    ]
+    assert [row["response"] for row in observed] == [
+        item["response"] for item in envelope["timestamps"]
+    ]
+    observed_times = [datetime.fromisoformat(row["gen_time"]) for row in observed]
+    assert observed_times == sorted(observed_times)
+    for observed_time, signature in zip(observed_times, signatures, strict=True):
+        assert observed_time >= datetime.fromisoformat(signature["claim"]["signed_at"])
+
+    replay = run(invocation)
+    assert replay.returncode == 0, replay.stderr
+    assert json.loads(replay.stdout) == {**verdict, "imported": False}
+
+    results = {"missing_pin": missing.stderr.strip().splitlines()[-1]}
+
+    def refused(name: str, arguments: list[str]) -> None:
+        result = run(arguments)
+        assert result.returncode != 0, name
+        assert result.stderr.strip(), name
+        results[name] = result.stderr.strip().splitlines()[-1]
+
+    refused("mismatched_root_pin", [*invocation[:-1], "0" * 64])
+    unrelated = receiver / "unrelated-tsa.pem"
+    unrelated.write_bytes(unrelated_pem)
+    refused(
+        "unrelated_pinned_root",
+        [
+            *invocation[:-3],
+            str(unrelated),
+            "--tsa-root-sha256",
+            hashlib.sha256(unrelated_pem).hexdigest(),
+        ],
+    )
+
+    rejected_file = receiver / "rejected-timestamps.json"
+    rejected_invocation = invocation.copy()
+    rejected_invocation[invocation.index("--timestamps") + 1] = str(rejected_file)
+    original, correction = envelope["timestamps"]
+    for name, rows in (
+        ("missing_original", [correction]),
+        (
+            "swapped_responses",
+            [
+                {**original, "response": correction["response"]},
+                {**correction, "response": original["response"]},
+            ],
+        ),
+        (
+            "same_tsa_wrong_imprint",
+            [{**original, "response": b64encode(wrong_imprint).decode("ascii")}, correction],
+        ),
+        ("malformed_response", [{**original, "response": "AA=="}, correction]),
+    ):
+        rejected_file.write_bytes(_trial_json({**envelope, "timestamps": rows}))
+        refused(name, rejected_invocation)
+
+    with closing(sqlite3.connect(database)) as db:
+        (row,) = db.execute("SELECT evidence FROM handover").fetchall()
+        assert json.loads(row[0]) == {
+            key: value for key, value in verdict.items() if key != "imported"
+        }
+    (receiver / "timestamp-verdict.json").write_bytes(_trial_json(verdict))
+    (receiver / "timestamp-results.json").write_bytes(_trial_json(results))
+
+
+def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
+    sample: Sample, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project = Path(__file__).resolve().parents[1]
+    monkeypatch.syspath_prepend(str(project / "tools"))
+    signing = importlib.import_module("sign_handover")
+
+    sender = tmp_path / "sender"
+    custodian = tmp_path / "custodian"
+    receiver = tmp_path / "receiver"
+    for directory in (sender, custodian, receiver):
+        directory.mkdir()
+
+    fleet = add_sample_fleet(sample)
+    add_sample_programmes(sample, fleet)
+    aircraft = fleet["G-EJKL"]
+    private_key = Ed25519PrivateKey.generate()
+    enrolled_public_key = private_key.public_key().public_bytes_raw()
+    started_at = datetime.now(UTC).replace(microsecond=0)
+    identity = {
+        "signer_id": str(sample.planner.id),
+        "organisation_id": str(sample.ours.id),
+        "aircraft_id": str(aircraft.id),
+        "key_id": "GEJKL-TRIAL-KEY",
+        "authority_id": "GEJKL-TRIAL-UTILISATION",
+    }
+    inspection_title = "Signed Handover Trial Recurring Inspection"
+    with working_for(sample.ours.id, sample.planner.id):
+        counter = aircraft.counters.get(kind=CounterKind.AIRFRAME)
+        programme = programme_services.set_up_programme(
+            aircraft, basis=Basis.INSTRUCTIONS, reference="Synthetic trial programme"
+        )
+        defect = defect_services.record_defect(
+            aircraft,
+            title="Right Headset Socket Crackle",
+            note="Synthetic pilot report. Use the left socket during the deferral.",
+            found_on=TODAY,
+            chapter=23,
+            system="Communications",
+            decision=DefectDecision.DEFERRED,
+            basis=DeferralBasis.PILOT_NON_REQUIRED,
+            decided_on=TODAY,
+            data_limit_on=TODAY + timedelta(days=7),
+        )
+        inspection = programme_services.add_task(
+            programme,
+            title=inspection_title,
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=counter,
+            source="Synthetic inspection instructions, revision 1",
+            interval=Interval(days=30),
+        )
+        completion = programme_services.record_work(
+            aircraft,
+            task=inspection,
+            description="Synthetic inspection completed. Airframe reading 11206.8 hours.",
+            dated=TODAY - timedelta(days=10),
+            hours=D("11206.8"),
+            cycles=0,
+            instruction_reference="Synthetic instruction AW-I-05",
+            instruction_revision="2",
+            completion_measurements="Clearance 1.2 mm",
+        )
+        original = aircraft_services.enter_utilisation(counter, Reading(TODAY, D("11208.6"), 0))
+        before = build(sample.ours, by=sample.planner, aircraft=aircraft)
+        original_at = _whole_signing_time(Event.of(original).get().at)
+        original_record = next(
+            row
+            for row in opened(before.content)[f"records/{READING_TABLE}.json"]
+            if row["id"] == str(original.id)
+        )
+        original_signature = signing.sign_original(
+            original_record, private_key=private_key, signed_at=_stamp(original_at), **identity
+        )
+        (sender / "01-original.zip").write_bytes(before.content)
+        (sender / "01-original-signature.json").write_bytes(_trial_json(original_signature))
+
+        correction = aircraft_services.enter_utilisation(
+            counter, Reading(TODAY, D("11206.8"), 0), supersedes=original
+        )
+        final = build(sample.ours, by=sample.planner, aircraft=aircraft)
+        correction_at = _whole_signing_time(max(original_at, Event.of(correction).get().at))
+        forecast = {line.item: line.forecast for line in forecast_lines(aircraft, TODAY)}
+
+    readings = opened(final.content)[f"records/{READING_TABLE}.json"]
+    assert original_record == next(row for row in readings if row["id"] == str(original.id))
+    assert str(correction.id) not in {
+        row["id"] for row in opened(before.content)[f"records/{READING_TABLE}.json"]
+    }
+    corrected_record = next(row for row in readings if row["id"] == str(correction.id))
+    corrected_signature = signing.sign_correction(
+        original_record,
+        corrected_record,
+        original_signature,
+        private_key=private_key,
+        signed_at=_stamp(correction_at),
+        reason=TRIAL_CORRECTION_REASON,
+        **identity,
+    )
+    envelope = signing.signature_envelope(original_signature, corrected_signature)
+    (sender / "02-corrected.zip").write_bytes(final.content)
+    (sender / "02-signatures.json").write_bytes(_trial_json(envelope))
+    (sender / "identifiers.json").write_bytes(
+        _trial_json(
+            {
+                "business_date": TODAY.isoformat(),
+                "aircraft_id": identity["aircraft_id"],
+                "defect_id": str(defect.id),
+                "inspection_id": str(inspection.id),
+                "correction_id": str(correction.id),
+                "original_archive_manifest_sha256": before.manifest_sha256,
+                "corrected_archive_manifest_sha256": final.manifest_sha256,
+            }
+        )
+    )
+
+    trust = _signed_fixture_key(identity, enrolled_public_key, started_at, correction_at)
+    trust_bytes = _trial_json(trust)
+    trust_digest = hashlib.sha256(trust_bytes).hexdigest()
+    trust_file = custodian / "trust.json"
+    trust_file.write_bytes(trust_bytes)
+    (custodian / "trust.sha256").write_text(trust_digest + "\n")
+    database = receiver / "receiver.sqlite"
+    script = project / "tools" / "receive_handover.py"
+    archive = sender / "02-corrected.zip"
+    signatures = sender / "02-signatures.json"
+    command = [
+        sys.executable,
+        "-c",
+        OFFLINE_RECEIVER,
+        str(script),
+        str(archive),
+        str(database),
+        "--manifest-digest",
+        final.manifest_sha256,
+        "--aircraft-id",
+        identity["aircraft_id"],
+        "--defect-id",
+        str(defect.id),
+        "--inspection-id",
+        str(inspection.id),
+        "--correction-id",
+        str(correction.id),
+        "--signatures",
+        str(signatures),
+        "--trust",
+        str(trust_file),
+        "--trust-sha256",
+        trust_digest,
+    ]
+
+    def run(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(  # noqa: S603  fixed Python receiver and synthetic file inputs
+            arguments,
+            env={"PYTHONPATH": str(project / "src"), "PATH": os.environ.get("PATH", os.defpath)},
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+
+    results: dict[str, Any] = {}
+    without_trust = run(command[:-4])
+    assert without_trust.returncode != 0
+    assert "requires --signatures, --trust and --trust-sha256" in without_trust.stderr
+    assert not database.exists()
+    results["missing_trust"] = without_trust.stderr.strip().splitlines()[-1]
+
+    comparison = sender / "comparison.json"
+    report = receiver / "reconciliation.txt"
+    defect_due = forecast["Deferred Defect Limit, Right Headset Socket Crackle"]
+    inspection_due = forecast[inspection_title]
+    assert defect_due is not None and inspection_due is not None
+    expected: dict[str, Any] = {
+        "format": "Airworthiness+ Aircraft Handover Reconciliation",
+        "version": 1,
+        "records": {
+            "source_organisation_id": identity["organisation_id"],
+            "aircraft_id": identity["aircraft_id"],
+            "defect_id": str(defect.id),
+            "defect_limit_on": defect_due.isoformat(),
+            "inspection_id": str(inspection.id),
+            "inspection_source": inspection.source,
+            "completion_id": str(completion.id),
+            "instruction_reference": "Synthetic instruction AW-I-05",
+            "instruction_revision": "2",
+            "completion_measurements": "Clearance 1.2 mm",
+            "next_due": inspection_due.isoformat(),
+            "original_reading_id": str(original.id),
+            "corrected_reading_id": str(correction.id),
+            "original_hours": 11208.6,
+            "corrected_hours": 11206.8,
+        },
+    }
+    comparison_command = [*command, "--compare", str(comparison), "--report", str(report)]
+    comparison.write_bytes(_trial_json({**expected, "version": 2}))
+    unsupported_comparison = run(comparison_command)
+    assert unsupported_comparison.returncode == 1
+    assert "Unsupported reconciliation format or version" in unsupported_comparison.stderr
+    assert not database.exists()
+    inconsistent = deepcopy(expected)
+    inconsistent["records"]["next_due"] = "2026-12-31"
+    comparison.write_bytes(_trial_json(inconsistent))
+    changed_due = run(comparison_command)
+    assert changed_due.returncode == 1
+    assert "Reconciliation differs for next_due" in changed_due.stderr
+    assert not database.exists()
+    comparison.write_bytes(_trial_json(expected))
+
+    collision = run([*command, "--compare", str(comparison), "--report", str(database)])
+    assert collision.returncode == 2 and "separate from the receiver and inputs" in collision.stderr
+    assert not database.exists()
+
+    began = perf_counter()
+    first = run(comparison_command)
+    elapsed = perf_counter() - began
+    assert first.returncode == 0, first.stderr
+    evidence = json.loads(first.stdout)
+    assert evidence["imported"] is True
+    assert evidence["trust_sha256"] == trust_digest
+    assert evidence["signatures"] == envelope["signatures"]
+    assert evidence["issuer_trust"] != "Indeterminate"
+    assert evidence["signing_time"].lower().startswith("signer-asserted")
+    assert evidence["correction_reason"] == TRIAL_CORRECTION_REASON
+    assert (evidence["original_reading"]["hours"], evidence["corrected_reading"]["hours"]) == (
+        11208.6,
+        11206.8,
+    )
+    assert evidence["corrected_reading"]["supersedes_id"] == str(original.id)
+    assert evidence["defect"]["closed_on"] is None
+    assert (
+        date.fromisoformat(evidence["defect"]["limit_on"])
+        == forecast["Deferred Defect Limit, Right Headset Socket Crackle"]
+    )
+    assert date.fromisoformat(evidence["next_due"]) == forecast[inspection_title]
+    (receiver / "verdict.json").write_bytes(_trial_json(evidence))
+    report_text = report.read_text()
+    assert "Imported in" in report_text
+    assert "Rekeyed records: 0" in report_text
+    assert "Missing or changed mapped fields: 0" in report_text
+    assert "Completion measurements: Clearance 1.2 mm" in report_text
+    assert "Operational maintenance authority: Unverified" in report_text
+
+    if (node := os.environ.get("AIRWORTHINESS_NODE24")) is not None:
+        _exercise_independent_node_receiver(node, receiver, archive, comparison, final)
+
+    replay = run(command)
+    assert replay.returncode == 0, replay.stderr
+    assert json.loads(replay.stdout) == {**evidence, "imported": False}
+    results["verification_and_import_seconds"] = round(elapsed, 3)
+    results["replay"] = "One snapshot, replay reported imported=false"
+
+    def refusal(name: str, args: list[str], expected: str) -> None:
+        result = run(args)
+        assert result.returncode != 0, name
+        assert expected.casefold() in result.stderr.casefold(), (name, result.stderr)
+        results[name] = result.stderr.strip().splitlines()[-1]
+
+    refusal("trust_pin_mismatch", [*command[:-1], "0" * 64], "trust")
+    for name, field, scope, value, outcome in (
+        ("unknown_issuer", "keys", None, [], "Unknown"),
+        ("expired_key", "keys", "valid_to", _stamp(original_at), "Inapplicable"),
+        ("revoked_key", "keys", "revoked_at", _stamp(original_at), "Inapplicable"),
+        ("missing_grant", "authorities", None, [], "Unknown"),
+        ("expired_grant", "authorities", "valid_to", _stamp(correction_at), "Inapplicable"),
+        (
+            "wrong_aircraft_grant",
+            "authorities",
+            "aircraft_id",
+            str(fleet["G-CDEF"].id),
+            "Inapplicable",
+        ),
+        (
+            "historical_status_unavailable",
+            "keys",
+            "status_as_of",
+            _stamp(original_at - timedelta(seconds=1)),
+            "Indeterminate",
+        ),
+    ):
+        alternate = deepcopy(trust)
+        if scope is None:
+            alternate[field] = value
+        else:
+            alternate[field][0][scope] = value
+        changed_trust = receiver / "negative-trust.json"
+        synthetic = _trial_json(alternate)
+        changed_trust.write_bytes(synthetic)
+        refusal(
+            name,
+            [
+                *command[:-3],
+                str(changed_trust),
+                "--trust-sha256",
+                hashlib.sha256(synthetic).hexdigest(),
+            ],
+            outcome,
+        )
+
+    modified_archive = receiver / "negative-archive.zip"
+    modified = _receiver_archive_with_changed_reading(final.content, str(original.id))
+    modified_archive.write_bytes(modified)
+    arguments = command.copy()
+    arguments[command.index(str(archive))] = str(modified_archive)
+    arguments[command.index("--manifest-digest") + 1] = verify(modified).manifest_sha256
+    refusal("rehashed_altered_reading", arguments, "Invalid")
+
+    changed_envelope = deepcopy(envelope)
+    changed_envelope["signatures"][1]["claim"]["reason"] = "Changed after endorsement"
+    modified_signatures = receiver / "negative-signatures.json"
+    modified_signatures.write_bytes(_trial_json(changed_envelope))
+    arguments = command.copy()
+    arguments[command.index("--signatures") + 1] = str(modified_signatures)
+    refusal("altered_correction_reason", arguments, "Invalid")
+
+    changed_envelope = deepcopy(envelope)
+    claim = changed_envelope["signatures"][1]["claim"]
+    claim["supersedes_claim_sha256"] = "0" * 64
+    payload = json.dumps(
+        claim, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode()
+    changed_envelope["signatures"][1]["signature"] = b64encode(private_key.sign(payload)).decode()
+    modified_signatures.write_bytes(_trial_json(changed_envelope))
+    refusal("valid_signature_wrong_original_claim", arguments, "Invalid")
+
+    with closing(sqlite3.connect(database)) as db:
+        (row,) = db.execute("SELECT evidence FROM handover").fetchall()
+        assert json.loads(row[0]) == {
+            key: value for key, value in evidence.items() if key != "imported"
+        }
+    (receiver / "results.json").write_bytes(_trial_json(results))
+    _exercise_trial_timestamps(
+        command, run, envelope["signatures"], evidence, receiver, sender, custodian
+    )
+
+
+def _exercise_independent_node_receiver(
+    node: str, receiver: Path, archive: Path, comparison: Path, export: Any
+) -> None:
+    script = Path(__file__).resolve().parents[1] / "tools" / "reconcile_handover.mjs"
+    database = receiver / "node-receiver.sqlite"
+    results: dict[str, Any] = {}
+    signatures = archive.parent / "02-signatures.json"
+    trust = archive.parent.parent / "custodian/trust.json"
+
+    def run(
+        path: Path,
+        digest: str,
+        sidecar: Path = comparison,
+        trust_path: Path = trust,
+        target: Path = database,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(  # noqa: S603  opted-in executable and fixed synthetic inputs
+            [
+                node,
+                str(script),
+                str(path),
+                digest,
+                str(sidecar),
+                str(target),
+                str(signatures),
+                str(trust_path),
+                hashlib.sha256(trust_path.read_bytes()).hexdigest(),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    for label, imported in (("valid", True), ("replay", False)):
+        result = run(archive, export.manifest_sha256)
+        assert result.returncode == 0, result.stderr
+        evidence = json.loads(result.stdout)
+        assert evidence["imported"] is imported
+        assert evidence["checked"] == json.loads(comparison.read_bytes())["records"]
+        assert evidence["issuer_trust"] == "Verified against recipient-pinned synthetic trust"
+        assert evidence["content"] == "Both detached reading signatures verified"
+        assert evidence["signing_time"] == "Signer-asserted"
+        assert (
+            evidence["maintenance_authority"]
+            == "Synthetic authority verified at claimed signing times"
+        )
+        results[label] = evidence
+
+    files = opened(export.content)
+    manifest = _trial_json({**files["manifest.json"], "version": 2})
+    table = "records/defects_defect.json"
+    defects = files[table]
+    assert defects
+    broken_tasks = deepcopy(files["records/programme_task.json"])
+    for row in broken_tasks:
+        row["programme_id"] = row["id"]
+    for label, changes, rehash, reason in (
+        ("unsupported", {"manifest.json": manifest}, False, "Unsupported archive"),
+        ("altered", {"README.txt": b"Altered"}, False, "Altered archive member"),
+        ("missing", {"records/programme_programme.json": b"[]"}, True, "broken dependency"),
+        ("duplicate", {table: _trial_json([*defects, defects[0]])}, True, "Duplicate record"),
+        (
+            "dangling",
+            {"records/programme_task.json": _trial_json(broken_tasks)},
+            True,
+            "broken dependency",
+        ),
+    ):
+        path = receiver / "node-refusal.zip"
+        content = rewritten(export.content, changes, fix_manifest=rehash)
+        path.write_bytes(content)
+        with zipfile.ZipFile(io.BytesIO(content)) as staged:
+            digest = hashlib.sha256(staged.read("manifest.json")).hexdigest()
+        result = run(path, digest)
+        assert result.returncode == 1 and reason in result.stderr, result.stderr
+        results[label] = result.stderr.strip()
+
+    wrong = json.loads(comparison.read_bytes())
+    wrong["records"]["aircraft_id"] = wrong["records"]["defect_id"]
+    path = receiver / "node-wrong-aircraft.json"
+    path.write_bytes(_trial_json(wrong))
+    result = run(archive, export.manifest_sha256, path)
+    assert result.returncode == 1 and "Wrong organisation or aircraft" in result.stderr
+    results["wrong_aircraft"] = result.stderr.strip()
+    held = json.loads(trust.read_bytes())
+    alternate = receiver / "node-trial-trust.json"
+    for label, replaced, reason in (
+        ("unknown_issuer", {**held, "keys": []}, "Issuer key is absent"),
+        ("absent_authority", {**held, "authorities": []}, "Maintenance authority is absent"),
+        (
+            "expired_authority",
+            {
+                **held,
+                "authorities": [
+                    {**grant, "valid_to": grant["valid_from"]} for grant in held["authorities"]
+                ],
+            },
+            "Maintenance authority is outside its validity",
+        ),
+    ):
+        alternate.write_bytes(_trial_json(replaced))
+        result = run(archive, export.manifest_sha256, trust_path=alternate)
+        assert result.returncode == 1 and reason in result.stderr, result.stderr
+        results[label] = result.stderr.strip()
+
+    updated_trust = deepcopy(held)
+    for entry in updated_trust["keys"] + updated_trust["authorities"]:
+        entry["status_as_of"] = _stamp(
+            datetime.fromisoformat(entry["status_as_of"]) + timedelta(seconds=10)
+        )
+    alternate.write_bytes(_trial_json(updated_trust))
+    result = run(
+        archive,
+        export.manifest_sha256,
+        trust_path=alternate,
+        target=receiver / "node-updated-trust.sqlite",
+    )
+    assert result.returncode == 0, result.stderr
+    results["updated_trust"] = json.loads(result.stdout)
+    assert results["updated_trust"]["trust_sha256"] != results["valid"]["trust_sha256"]
+    replay = run(archive, export.manifest_sha256)
+    assert replay.returncode == 0, replay.stderr
+    results["replay_after_refusals"] = json.loads(replay.stdout)
+    assert results["replay_after_refusals"]["imported"] is False
+    (receiver / "node-results.json").write_bytes(_trial_json(results))
 
 
 # Verification (T-SEC-019)

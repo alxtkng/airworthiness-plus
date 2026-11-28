@@ -130,6 +130,7 @@ class PublishedShift(Record):
 class Handover(Record):
     organisation = models.ForeignKey("organisations.Organisation", on_delete=models.PROTECT)
     package = models.ForeignKey("planning.WorkPackage", on_delete=models.PROTECT, null=True)
+    card = models.ForeignKey("planning.WorkCard", on_delete=models.PROTECT, null=True)
     outgoing = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
     incoming = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
     handed_at = models.DateTimeField("Handed Over")
