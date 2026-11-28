@@ -520,3 +520,192 @@ class StockMovement(Record):
                 name="stock_lot_has_one_intake",
             ),
         ]
+
+
+class StoresRecord(Record):
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    submission = models.UUIDField()
+    entered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+
+def _once(name: str) -> models.UniqueConstraint:
+    return models.UniqueConstraint(fields=["organisation", "submission"], name=name)
+
+
+class StockDuty(models.TextChoices):
+    RESERVE = "Reserve", "Reserve Stock for a Work Card"
+    ISSUE = "Issue", "Issue Stock to Maintenance"
+    RETURN = "Return", "Accept Maintenance Returns to Quarantine"
+    QUARANTINE = "Quarantine", "Move Unreserved Stock to Quarantine"
+
+
+class StockAppointment(StoresRecord):
+    person = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    approval = models.ForeignKey("organisations.Approval", on_delete=models.PROTECT)
+    action = models.CharField(max_length=12, choices=StockDuty.choices)
+    starts_on = models.DateField("From")
+    ends_on = models.DateField("To")
+    evidence = models.TextField("Signed Appointment and Exposition Evidence", max_length=1000)
+
+    class Meta:
+        constraints = [
+            _once("stock_appointment_once"),
+            models.CheckConstraint(
+                condition=Q(ends_on__gte=F("starts_on"), action__in=StockDuty.values)
+                & ~Q(evidence=""),
+                name="stock_appointment_has_dated_scope_and_evidence",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.person} · {self.get_action_display()}"
+
+
+class StockAppointmentWithdrawal(Record):
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    appointment = models.OneToOneField(
+        StockAppointment, on_delete=models.PROTECT, related_name="withdrawal"
+    )
+    withdrawn_on = models.DateField()
+    evidence = models.TextField(max_length=1000)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(evidence=""), name="stock_appointment_withdrawal_reason"
+            )
+        ]
+
+
+class AllocationKind(models.TextChoices):
+    RESERVE = "Reserve", "Reserved"
+    RELEASE = "Release", "Reservation Released"
+    ISSUE = "Issue", "Issued to Maintenance"
+    RETURN = "Return", "Returned to Quarantine"
+    QUARANTINE = "Quarantine", "Moved to Quarantine"
+
+
+class StockSubstitution(StoresRecord):
+    """A certifier's approval of one substitute for one issued card and traced lot."""
+
+    posting = models.ForeignKey(
+        StockPosting, on_delete=models.PROTECT, related_name="substitutions"
+    )
+    card = models.ForeignKey("planning.WorkCard", on_delete=models.PROTECT, related_name="+")
+    revision = models.ForeignKey(
+        "maintenance_data.Revision", on_delete=models.PROTECT, related_name="+"
+    )
+    authorisation = models.ForeignKey(
+        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
+    )
+    required_identity = models.CharField("Required Part Number or Specification", max_length=100)
+    substitute_identity = models.CharField("Approved Alternate Identity", max_length=160)
+    applicable_source = models.CharField(
+        "Applicable Parts Data Reference and Revision", max_length=300
+    )
+    evidence = models.CharField("Approval and Applicability Evidence", max_length=1000)
+    scope_confirmed = models.BooleanField()
+    recorded_on = models.DateField()
+
+    class Meta:
+        ordering = ["-recorded_on", "-entered_at", "pk"]
+        constraints = [
+            _once("stores_substitution_once"),
+            models.CheckConstraint(
+                condition=Q(scope_confirmed=True)
+                & ~Q(required_identity__in=["", F("substitute_identity")])
+                & ~Q(substitute_identity="")
+                & ~Q(applicable_source="")
+                & ~Q(evidence=""),
+                name="stores_substitution_has_separate_identity_and_evidence",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"{self.card.package} · {self.card}: {self.substitute_identity} "
+            f"for {self.required_identity}"
+        )
+
+
+class StockAllocation(StoresRecord):
+    """One append-only allocation or custody change against the lot ledger."""
+
+    posting = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="allocations")
+    kind = models.CharField(max_length=12, choices=AllocationKind.choices)
+    source = models.ForeignKey(StoreLocation, null=True, on_delete=models.PROTECT, related_name="+")
+    destination = models.ForeignKey(
+        StoreLocation, null=True, on_delete=models.PROTECT, related_name="+"
+    )
+    card = models.ForeignKey(
+        "planning.WorkCard", null=True, on_delete=models.PROTECT, related_name="+"
+    )
+    preceding = models.OneToOneField(
+        "self", null=True, on_delete=models.PROTECT, related_name="following"
+    )
+    substitution = models.ForeignKey(
+        StockSubstitution, null=True, on_delete=models.PROTECT, related_name="+"
+    )
+    quantity = models.DecimalField("Quantity", max_digits=13, decimal_places=3)
+    required_identity = models.CharField(
+        "Required Part Number or Specification", max_length=100, blank=True
+    )
+    applicable_source = models.CharField(
+        "Applicable Parts Data Reference and Revision", max_length=300, blank=True
+    )
+    evidence = models.CharField("Custody Evidence", max_length=1000)
+    recorded_on = models.DateField()
+    appointment = models.ForeignKey(StockAppointment, on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        ordering = ["recorded_on", "entered_at", "pk"]
+        constraints = [
+            _once("stores_allocation_once"),
+            models.CheckConstraint(
+                condition=Q(quantity__gt=0)
+                & ~Q(evidence="")
+                & (
+                    Q(
+                        kind=AllocationKind.RESERVE,
+                        preceding__isnull=True,
+                        card__isnull=False,
+                        source__isnull=False,
+                        destination__isnull=True,
+                    )
+                    & ~Q(required_identity="")
+                    & ~Q(applicable_source="")
+                    | Q(
+                        kind__in=[AllocationKind.RELEASE, AllocationKind.ISSUE],
+                        preceding__isnull=False,
+                        card__isnull=False,
+                        source__isnull=False,
+                        destination__isnull=True,
+                    )
+                    & ~Q(required_identity="")
+                    & ~Q(applicable_source="")
+                    | Q(
+                        kind=AllocationKind.RETURN,
+                        preceding__isnull=False,
+                        card__isnull=False,
+                        source__isnull=True,
+                        destination__isnull=False,
+                    )
+                    & ~Q(required_identity="")
+                    & ~Q(applicable_source="")
+                    | Q(
+                        kind=AllocationKind.QUARANTINE,
+                        preceding__isnull=True,
+                        card__isnull=True,
+                        source__isnull=False,
+                        destination__isnull=False,
+                        required_identity="",
+                        applicable_source="",
+                    )
+                    & ~Q(source=F("destination"))
+                ),
+                name="stores_allocation_has_scope_and_evidence",
+            ),
+        ]

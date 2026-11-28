@@ -1,8 +1,11 @@
 """Forms for the supplier register (REQ-340 to REQ-343)."""
 
+from decimal import Decimal
 from typing import Any
+from uuid import uuid4
 
 from django import forms
+from django.db.models import QuerySet
 
 from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.logistics.models import (
@@ -14,13 +17,16 @@ from airworthiness_plus.logistics.models import (
     LocationKind,
     ShelfLifeBasis,
     ShelfLifeRule,
+    StockDuty,
+    StockSubstitution,
     StockUnit,
     StoreLocation,
     SubcontractorOutcome,
     SupplierStatus,
 )
-from airworthiness_plus.organisations.models import ApprovalType, Organisation
-from airworthiness_plus.people.models import Person
+from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation
+from airworthiness_plus.people.models import MaintenanceAuthorisation, Person
+from airworthiness_plus.planning.models import WorkCard
 
 
 class EvaluationForm(Form):
@@ -260,3 +266,145 @@ class StockAdjustmentForm(Form):
 class StoresExerciseForm(Form):
     question = forms.CharField(label="Exercise Question", widget=forms.HiddenInput)
     quantity = forms.IntegerField(min_value=0, label="Quantity")
+
+
+def submission_field() -> forms.UUIDField:
+    return forms.UUIDField(label="Submission Reference", widget=forms.HiddenInput, initial=uuid4)
+
+
+def quantity_field(label: str) -> forms.DecimalField:
+    return forms.DecimalField(
+        label=label, max_digits=13, decimal_places=3, min_value=Decimal("0.001")
+    )
+
+
+class AllocationForm(Form):
+    request_id = submission_field()
+    evidence = forms.CharField(label="Custody Evidence", max_length=1000, widget=forms.Textarea)
+
+
+class AllocationCardChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
+    def label_from_instance(self, obj: WorkCard) -> str:
+        return f"{obj.package.reference} · {obj.package.aircraft.registration} · {obj.title}"
+
+
+class ReserveAllocationForm(AllocationForm):
+    field_order = [
+        "source",
+        "card",
+        "quantity",
+        "required_identity",
+        "applicable_source",
+        "substitution",
+        "evidence",
+    ]
+
+    source = forms.ModelChoiceField(label="Source Location", queryset=StoreLocation.objects.all())
+    card = AllocationCardChoice(
+        label="Work Card",
+        queryset=WorkCard.objects.select_related("package__aircraft"),
+    )
+    quantity = quantity_field("Quantity to Reserve")
+    required_identity = forms.CharField(
+        label="Required Part Number or Specification", max_length=100
+    )
+    applicable_source = forms.CharField(
+        label="Applicable Parts Data Reference and Revision", max_length=300
+    )
+
+    substitution = forms.ModelChoiceField(
+        label="Applicable Approved Alternate",
+        queryset=StockSubstitution.objects.none(),
+        required=False,
+        help_text="Select the recorded approval only when the received identity differs.",
+    )
+
+    def __init__(
+        self, *args: Any, substitutes: QuerySet[StockSubstitution] | None = None, **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        if substitutes is not None:
+            self.fields["substitution"].queryset = substitutes  # type: ignore[attr-defined]
+
+
+class SubstitutionAuthorisationChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
+    def label_from_instance(self, obj: MaintenanceAuthorisation) -> str:
+        return f"{obj.reference} · {obj.scope}"
+
+
+class StockSubstitutionForm(Form):
+    request_id = submission_field()
+    card = AllocationCardChoice(
+        label="Work Card",
+        queryset=WorkCard.objects.select_related("package__aircraft"),
+    )
+    required_identity = forms.CharField(
+        label="Required Part Number or Specification", max_length=100
+    )
+    applicable_source = forms.CharField(
+        label="Applicable Parts Data Reference and Revision", max_length=300
+    )
+    authorisation = SubstitutionAuthorisationChoice(
+        label="Maintenance Authorisation",
+        queryset=MaintenanceAuthorisation.objects.none(),
+    )
+    scope_confirmed = forms.BooleanField(
+        label="I Confirm My Recorded Scope Covers This Aircraft and Part Substitution"
+    )
+    evidence = forms.CharField(
+        label="Approval and Applicability Evidence", max_length=1000, widget=forms.Textarea
+    )
+
+    def __init__(
+        self,
+        *args: Any,
+        authorisations: QuerySet[MaintenanceAuthorisation] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        if authorisations is not None:
+            self.fields["authorisation"].queryset = authorisations  # type: ignore[attr-defined]
+
+
+class ReturnAllocationForm(AllocationForm):
+    field_order = ["destination", "evidence"]
+
+    destination = forms.ModelChoiceField(
+        label="Secure Quarantine Location",
+        queryset=StoreLocation.objects.filter(
+            kind=LocationKind.QUARANTINE, secure=True, active=True
+        ),
+    )
+
+
+class QuarantineAllocationForm(ReturnAllocationForm):
+    field_order = ["source", "destination", "quantity", "evidence"]
+
+    source = forms.ModelChoiceField(label="Source Location", queryset=StoreLocation.objects.all())
+    quantity = quantity_field("Quantity to Quarantine")
+
+
+class StockAppointmentForm(Form):
+    request_id = submission_field()
+    person = forms.ModelChoiceField(
+        label="Person", queryset=Person.objects.filter(user__isnull=False)
+    )
+    approval = forms.ModelChoiceField(
+        label="Maintenance Approval", queryset=Approval.objects.none()
+    )
+    action = forms.ChoiceField(label="Stores Action", choices=StockDuty.choices)
+    starts_on = forms.DateField(label="First Day", widget=forms.DateInput(attrs={"type": "date"}))
+    ends_on = forms.DateField(label="Last Day", widget=forms.DateInput(attrs={"type": "date"}))
+    evidence = forms.CharField(
+        label="Signed Appointment and Exposition Evidence", widget=forms.Textarea, max_length=1000
+    )
+
+    def __init__(self, *args: Any, approvals: list[Approval], **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["approval"].queryset = Approval.objects.filter(  # type: ignore[attr-defined]
+            pk__in=[approval.pk for approval in approvals]
+        )
+
+
+class StockAppointmentWithdrawalForm(Form):
+    evidence = forms.CharField(label="Withdrawal Evidence", widget=forms.Textarea, max_length=1000)

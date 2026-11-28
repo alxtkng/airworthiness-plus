@@ -2,6 +2,7 @@
 {% block title %}Stores Locations{% endblock %}
 {% block content %}
 <h1>Locations</h1>
+<p><a href="{% url 'custody_appointments' %}">Stores Appointments</a></p>
 {% if may_add %}<p><a class="button" href="{% url 'add_store_location' %}">Add a Stores Location</a></p>{% endif %}
 {% if locations %}
 <table>

@@ -14,7 +14,13 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.logistics import services, station_stock, stores
+from airworthiness_plus.logistics import (
+    services,
+    station_stock,
+    stock_appointments,
+    stores,
+    substitutions,
+)
 from airworthiness_plus.logistics.forms import (
     PostStockForm,
     StockAdjustmentForm,
@@ -27,6 +33,7 @@ from airworthiness_plus.logistics.models import (
     Destination,
     ReceivingDisposition,
     StockCount,
+    StockDuty,
     StockEntry,
     StockPosting,
     StoreLocation,
@@ -77,6 +84,7 @@ def _line(decision: ReceivingDisposition, today: date, lead: int) -> dict[str, A
         "positions": lines,
         "on_hand": stores.display(sum((one.on_hand for one in lines), Decimal(0))),
         "available": stores.display(sum((one.available for one in lines), Decimal(0))),
+        "reserved": stores.display(sum((one.reserved for one in lines), Decimal(0))),
         "shelf": stores.lot_shelf(lot, today, lead) if lot is not None else "",
         "unit": lot.unit if lot is not None else (resolution.unit if resolution else ""),
     }
@@ -140,6 +148,27 @@ def _detail(request: HttpRequest, user: User, decision: ReceivingDisposition) ->
             if lot
             else [],
             "counts": list(lot.counts.select_related("location", "adjustment")) if lot else [],
+            "allocations": lot.allocations.select_related(
+                "source",
+                "destination",
+                "card__package",
+                "appointment__person",
+                "following",
+                "substitution__authorisation__person",
+            )
+            if lot
+            else [],
+            "approved_alternates": substitutions.available(lot, today) if lot else [],
+            "may_approve_substitution": bool(
+                lot
+                and user.may(Action.RECORD_RELEASE_CERTIFICATE)
+                and substitutions.authorisations(user, today).exists()
+            ),
+            "may_reserve": stock_appointments.current(user, StockDuty.RESERVE, today) is not None,
+            "may_issue": stock_appointments.current(user, StockDuty.ISSUE, today) is not None,
+            "may_return": stock_appointments.current(user, StockDuty.RETURN, today) is not None,
+            "may_quarantine": stock_appointments.current(user, StockDuty.QUARANTINE, today)
+            is not None,
             "may_post": user.may(Action.POST_STOCK) and lot is None,
             "may_move": user.may(Action.MOVE_STOCK) and lot is not None,
             "may_count": user.may(Action.COUNT_STOCK) and lot is not None,
