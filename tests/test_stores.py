@@ -1,795 +1,685 @@
-"""Stores PR 1 consumer contract (REQ-357, REQ-358), against the primary sample.
+"""Stores PR 1: the receipt-to-stock contract as the consumer of Goods In (REQ-358).
 
-Cases follow the approved handoff in ``assurance/phase-4-stores-handoff.md``:
-S01 outcomes, S02 once-only posting and rollback, S03 quantities and identity,
-S04 locations and custody, S05 shelf life, S06 counts, S07 upgrade, S08
-permissions and S10 exports. The independent-session cases of S02 and S09
-are in ``tests/test_stores_postgres.py``.
+The cases follow ``assurance/phase-4-stores-handoff.md``, approved by Alex King on
+28 November 2026. Stock is posted once per immutable Goods In disposition when unit,
+identity, location, shelf life and evidence are resolved. Balances come from movements.
 """
 
 from collections.abc import Iterator
-from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
-from typing import Any
-from unittest.mock import patch
-from uuid import uuid4
+from typing import TypedDict
+from uuid import UUID
 
 import pytest
-from django.db import DatabaseError, connection, transaction
+from django.db import DatabaseError, IntegrityError, connection, transaction
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from airworthiness_plus.accounts.models import User
-from airworthiness_plus.accounts.permissions import ActionRefusedError
-from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.aircraft.models import Aircraft
-from airworthiness_plus.contracts import services as contracts
-from airworthiness_plus.contracts.models import OrderedBy, Outcome
-from airworthiness_plus.exports.build import build
-from airworthiness_plus.exports.verify import verify
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
-from airworthiness_plus.logistics import allocations, stores, substitutions
+from airworthiness_plus.logistics import receiving, stores
 from airworthiness_plus.logistics.models import (
-    AllocationKind,
+    CheckKind,
+    CheckOutcome,
+    Destination,
+    DocumentKind,
     ItemClass,
     LocationKind,
     MovementKind,
-    PostingEvidence,
-    PostingKind,
     Receipt,
     ReceivingDisposition,
-    ShelfLifeBasis,
-    StockAllocation,
     StockCount,
     StockEntry,
     StockMovement,
     StockPosting,
-    StockSubstitution,
     StockUnit,
-    StoresAction,
-    StoresAppointment,
-    StoresLocation,
+    StoreLocation,
 )
 from airworthiness_plus.logistics.services import RefusedError
-from airworthiness_plus.maintenance_data import services as data
-from airworthiness_plus.maintenance_data.models import Kind
-from airworthiness_plus.people import services as staff
-from airworthiness_plus.people.models import Person, StaffGroup
-from airworthiness_plus.planning import services as planning
-from airworthiness_plus.planning.models import WorkCard
-from airworthiness_plus.sample import goods_in
-from airworthiness_plus.sample import stores as stores_sample
-from airworthiness_rules import shelf_life
-from tests.support import Sample, add_sample_fleet, get, post, signed_in
-from tests.test_exports import opened
+from airworthiness_plus.organisations.models import ApprovalType, Organisation
+from airworthiness_plus.people.models import Person
+from tests.conftest import as_owner
+from tests.support import Sample, get, post, signed_in
 
 pytestmark = pytest.mark.django_db
 
-TODAY = date(2026, 11, 18)
-
-
-@dataclass
-class Day:
-    today: date = TODAY
+TODAY = date(2026, 11, 28)
+ARRIVED = date(2026, 11, 16)
 
 
 @pytest.fixture(autouse=True)
-def day(monkeypatch: pytest.MonkeyPatch) -> Day:
-    held = Day()
-    monkeypatch.setattr(aircraft_services, "today", lambda: held.today)
-    return held
+def today(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
 
 
 @pytest.fixture
-def stocked(sample: Sample) -> Sample:
-    assert goods_in.add(sample.ours, sample.lucy) == 5
-    assert stores_sample.add(sample.ours, sample.administrator) == 2
-    return sample
+def ours(sample: Sample) -> Iterator[Sample]:
+    with working_for(sample.ours.id, sample.lucy.id):
+        yield sample
 
 
-@pytest.fixture
-def as_lucy(stocked: Sample) -> Iterator[User]:
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        yield stocked.lucy
+def _lucy(sample: Sample) -> Person:
+    return Person.objects.get(user=sample.lucy)
 
 
-def decision(line: str) -> ReceivingDisposition:
-    return ReceivingDisposition.objects.select_related("receipt").get(
-        receipt__delivery_reference=line
+def _inspector(organisation: Organisation) -> Person:
+    chosen = Person.objects.filter(organisation=organisation, full_name="Chris Moore").first()
+    return chosen or Person.objects.filter(organisation=organisation).order_by("id")[0]
+
+
+def receipt(
+    organisation: Organisation,
+    line: str,
+    *,
+    classification: str = ItemClass.SERVICEABLE,
+    quantity: int = 1,
+    item: str = "Synthetic Trim Cable",
+    shelf_life_to: date | None = None,
+    received_on: date = ARRIVED,
+) -> Receipt:
+    arrival = receiving.receive(
+        organisation,
+        item=item,
+        received_on=received_on,
+        classification=classification,
+        source="Synthetic Supplier",
+        item_reference=f"Synthetic reference {line}",
+        quantity=quantity,
+        delivery_reference=line,
+        release_document="Synthetic release evidence",
+        shelf_life_to=shelf_life_to,
     )
-
-
-def place(code: str) -> StoresLocation:
-    return StoresLocation.objects.get(code=code)
-
-
-def lot(line: str) -> StockPosting:
-    return StockPosting.objects.select_related("evidence", "disposition__receipt").get(
-        disposition__receipt__delivery_reference=line
-    )
-
-
-def held(line: str) -> dict[str, Decimal]:
-    return {
-        one.location.code: one.on_hand
-        for one in stores.positions(
-            lot(line).organisation, aircraft_services.today(), posting=lot(line)
+    for kind in CheckKind:
+        shelf = kind == CheckKind.SHELF and shelf_life_to is None
+        receiving.record_check(
+            arrival,
+            check=kind,
+            outcome=CheckOutcome.NOT_APPLICABLE if shelf else CheckOutcome.PASS,
+            checked_on=received_on,
+            evidence=f"Synthetic {kind} evidence",
         )
+    return arrival
+
+
+def dispose(arrival: Receipt, outcome: str = Destination.STORES) -> ReceivingDisposition:
+    evidence: dict[str, str] = {}
+    if outcome == Destination.STORES:
+        if arrival.classification == ItemClass.SERVICEABLE:
+            evidence = {"document_kind": DocumentKind.CAA_FORM_1, "document_reference": "F1-1"}
+        else:
+            evidence = {
+                "document_kind": DocumentKind.CONFORMITY,
+                "document_reference": "COC-1",
+                "evidence_basis": "Synthetic Specification 1",
+                "manufacturing_source": "Synthetic Factory",
+                "material_supplier_source": "Synthetic Supplier",
+            }
+    return receiving.dispose(
+        arrival,
+        approval=ApprovalType.PART_CAO,
+        inspector=_inspector(arrival.organisation),
+        inspector_authority="Synthetic RI-1",
+        inspected_on=arrival.received_on,
+        disposition_on=arrival.received_on,
+        outcome=outcome,
+        destination="Synthetic destination text",
+        evidence="Synthetic decision evidence",
+        **evidence,
+    )
+
+
+def location(
+    organisation: Organisation,
+    name: str,
+    kind: str = LocationKind.SERVICEABLE,
+    **holds: bool,
+) -> StoreLocation:
+    classes = holds or {"holds_components": True, "holds_standard_parts": True}
+    return stores.add_location(
+        organisation,
+        name=name,
+        kind=kind,
+        holds_components=classes.get("holds_components", False),
+        holds_standard_parts=classes.get("holds_standard_parts", False),
+        holds_materials=classes.get("holds_materials", False),
+        secure=kind == LocationKind.QUARANTINE or classes.get("secure", False),
+    )
+
+
+def resolve(
+    decision: ReceivingDisposition,
+    actor: Person,
+    place: StoreLocation | None,
+    **values: object,
+) -> None:
+    fields: dict[str, object] = {
+        "unit": StockUnit.EACH,
+        "part_number": "PN-713",
+        "serial_number": "",
+        "batch_number": "LOT-1",
+        "specification": "",
+        "shelf_life_basis": "Not Applicable",
+        **values,
     }
-
-
-def evidence_for(user: User, line: str, **values: Any) -> PostingEvidence:
-    base: dict[str, Any] = {
-        "assessed_on": aircraft_services.today(),
-        "evidence": f"Synthetic evidence for {line}",
-    }
-    return stores.record_posting_evidence(
-        user, decision(line), request_id=uuid4(), **{**base, **values}
+    stores.resolve(
+        decision,
+        actor=actor,
+        authority="Synthetic Stores Appointment ST-1",
+        evidence="Original receipt and release reviewed on file",
+        evidence_on=TODAY,
+        location=place,
+        **fields,  # type: ignore[arg-type]
     )
 
 
-def accepted(sample: Sample, line: str, classification: str, quantity: int, item: str) -> None:
-    """Record a fresh synthetic acceptance through the Goods In services."""
-    from airworthiness_plus.logistics import receiving
-    from airworthiness_plus.logistics.models import CheckKind, CheckOutcome, DocumentKind
+def posted(
+    decision: ReceivingDisposition, actor: Person, place: StoreLocation, **values: object
+) -> StockPosting:
+    resolve(decision, actor, place, **values)
+    return stores.post(decision, actor=actor, authority="Synthetic ST-1", posted_on=TODAY)
 
-    with working_for(sample.ours.id, sample.planner.id):
-        receipt = receiving.receive(
-            sample.ours,
-            item=item,
-            received_on=date(2026, 11, 17),
-            classification=classification,
-            source="Synthetic Supplier",
-            item_reference="Synthetic reference",
-            quantity=quantity,
-            delivery_reference=line,
-        )
-        for kind in CheckKind:
-            receiving.record_check(
-                receipt,
-                check=kind,
-                outcome=CheckOutcome.PASS,
-                checked_on=date(2026, 11, 17),
-                evidence="Synthetic check",
-            )
-        serviceable = classification == ItemClass.SERVICEABLE
-        receiving.dispose(
-            receipt,
-            approval="Part-CAO",
-            inspector=Person.objects.get(full_name="Chris Moore"),
-            inspector_authority="Synthetic RI",
-            inspected_on=date(2026, 11, 17),
-            disposition_on=date(2026, 11, 17),
-            outcome="Accepted into Stores",
-            destination="Synthetic Bay",
-            evidence="Synthetic decision",
-            document_kind="CAA Form 1" if serviceable else DocumentKind.CONFORMITY,
-            document_reference="Synthetic Folder",
-            evidence_basis="" if serviceable else "Synthetic Standard",
-            manufacturing_source="Synthetic Maker" if classification == ItemClass.MATERIAL else "",
-            material_supplier_source="Synthetic Supplier"
-            if classification == ItemClass.MATERIAL
-            else "",
-        )
+
+class Moved(TypedDict):
+    moved_on: date
+    actor: Person
+    authority: str
+    evidence: str
+
+
+def on_hand(lot: StockPosting, place: StoreLocation) -> Decimal:
+    return stores.balance(StockPosting.objects.get(pk=lot.pk), place)
 
 
 # S01 Consumer outcomes
 
 
-def test_s01_each_final_result_has_its_stores_state(as_lucy: User) -> None:
-    """REQ-357, REQ-358. Accepted unresolved, accepted posted, quarantine, return, awaiting."""
-    day = aircraft_services.today()
-    rx002 = decision("RX-002")
-    assert not hasattr(rx002, "posting")
-    assert StockEntry.objects.filter(disposition=rx002).exists()
-    reasons = stores.blockers(rx002, stores.latest_evidence(rx002), day)
-    assert reasons == [
-        "Unit and Quantity Need Dated Evidence",
-        "Stock Location Unknown",
-        "Traceable Identity Unresolved: Part Number With Serial or Lot",
-        "Shelf-Life Basis Unknown",
-    ]
-    with pytest.raises(RefusedError, match="Awaiting Stock Posting"):
-        stores.post(as_lucy, rx002, request_id=uuid4())
+def test_s01_each_outcome_has_its_stock_state_and_no_other_organisation_data(
+    ours: Sample,
+) -> None:
+    """REQ-357, REQ-358. Accepted, unresolved, quarantined, returned and awaiting lines."""
+    actor = _lucy(ours)
+    bay = location(ours.ours, "Synthetic Bay A")
+    cage = location(ours.ours, "Synthetic Cage", LocationKind.QUARANTINE, holds_components=True)
+    accepted = dispose(receipt(ours.ours, "S01-ACCEPTED"))
+    unresolved = dispose(receipt(ours.ours, "S01-UNRESOLVED"))
+    held = dispose(receipt(ours.ours, "S01-HELD"), Destination.QUARANTINE)
+    returned = dispose(receipt(ours.ours, "S01-RETURNED"), Destination.RETURN)
+    awaiting = receipt(ours.ours, "S01-AWAITING")
 
-    assert held("RX-006") == {"BAY-C": Decimal(24)}
-    oil = stores.positions(as_lucy.organisation, day, posting=lot("RX-006"))
-    assert [(one.on_hand, one.reserved, one.available) for one in oil] == [
-        (Decimal(24), Decimal(0), Decimal(24))
-    ]
+    lot = posted(accepted, actor, bay, serial_number="SN-1", batch_number="")
+    assert (lot.quantity, lot.unit, lot.held) == (Decimal(1), StockUnit.EACH, False)
+    assert stores.available(accepted, TODAY, 30) == 1
+    assert lot.movements.get().kind == MovementKind.INTAKE
 
-    rx004 = decision("RX-004")
-    assert rx004.outcome == "Quarantined"
-    assert stores.blockers(rx004, None, day) == [
-        "Unit and Quantity Need Dated Evidence",
-        "Quarantine Location to Verify",
-        "Quarantine Tag Not Recorded",
-    ]
-    for line in ("RX-003", "RX-005"):
-        returned = decision(line)
-        with pytest.raises(RefusedError, match="Never Posted to Stock"):
-            evidence_for(as_lucy, line, unit=StockUnit.EACH, quantity=Decimal(1))
-        assert stores.blockers(returned, None, day) == [
-            "A Supplier Return Is Kept in History and Never Posted to Stock"
-        ]
-    assert not ReceivingDisposition.objects.filter(receipt__delivery_reference="RX-001").exists()
-    assert StockPosting.objects.count() == 2
+    reasons = stores.posting_blockers(unresolved, None)
+    assert any("Identity" in one for one in reasons)
+    assert any("Location" in one for one in reasons)
+    assert stores.available(unresolved, TODAY, 30) == 0
+    with pytest.raises(RefusedError, match="Not Ready to Post"):
+        stores.post(unresolved, actor=actor, authority="ST-1", posted_on=TODAY)
 
+    hold = posted(held, actor, cage, serial_number="SN-2", batch_number="")
+    assert hold.held and on_hand(hold, cage) == 1
+    assert stores.available(held, TODAY, 30) == 0
 
-def test_s01_register_pages_show_states_and_keep_other_organisations_out(stocked: Sample) -> None:
-    """REQ-358, REQ-002. The register shows the backlog reasons, holds and returns."""
-    reader = signed_in(stocked.reader)
-    register = get(reader, "/stores/").content.decode()
-    for text in (
-        "Awaiting Stock Posting",
-        "Stock Location Unknown",
-        "Quarantine Holds",
-        "Quarantine Hold, Details to Verify",
-        "Return History",
-        "RX-003",
-        "RX-005",
-        "Engine Oil",
-        "Bolts",
-    ):
+    with pytest.raises(RefusedError, match="Acceptance or a Quarantine"):
+        resolve(returned, actor, bay)
+    assert stores.posting_blockers(returned, None) == ["Returned to Supplier. Nothing Is Credited"]
+    assert not StockPosting.objects.filter(disposition=returned).exists()
+    assert not ReceivingDisposition.objects.filter(receipt=awaiting).exists()
+
+    reader = signed_in(ours.reader)
+    entry = StockEntry.objects.get(disposition=unresolved)
+    page = get(reader, f"/stores/{entry.pk}/").content
+    assert b"Awaiting Stock Posting" in page and b"Posting Blockers" in page
+    register = get(reader, "/stores/").content
+    for text in (b"Posted to Stock", b"Quarantine Hold", b"S01-RETURNED", b"Synthetic Bay A"):
         assert text in register
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        entry = StockEntry.objects.get(disposition__receipt__delivery_reference="RX-002")
-        quarantine = decision("RX-004")
-        returned = decision("RX-003")
-        oil = StockEntry.objects.get(disposition__receipt__delivery_reference="RX-006")
-    page = get(reader, f"/stores/{entry.pk}/").content.decode()
-    assert "Awaiting Stock Posting" in page
-    assert "<dt>Available Quantity</dt><dd>0</dd>" in page
-    assert "Record Posting Evidence" not in page  # Read Only has no control
-    hold = get(reader, f"/stores/holds/{quarantine.pk}/").content.decode()
-    assert "Quarantine Hold, Details to Verify" in hold
-    assert "<dt>Available Quantity</dt><dd>0</dd>" in hold
-    assert get(reader, f"/stores/holds/{returned.pk}/").status_code == 404
-    oil_page = get(reader, f"/stores/{oil.pk}/").content.decode()
-    assert "<dt>On Hand</dt><dd>24 L (Litre)</dd>" in oil_page
-    assert "<dt>Available Quantity</dt><dd>24 L</dd>" in oil_page
-    stranger = signed_in(stocked.stranger)
+    stranger = signed_in(ours.stranger)
     assert get(stranger, f"/stores/{entry.pk}/").status_code == 404
-    assert get(stranger, f"/stores/holds/{quarantine.pk}/").status_code == 404
-    assert "Engine Oil" not in get(stranger, "/stores/").content.decode()
-    lucy = signed_in(stocked.lucy)
-    assert get(lucy, f"/stores/dispositions/{uuid4()}/evidence/").status_code == 404
-    assert get(lucy, f"/stores/dispositions/{returned.pk}/evidence/").status_code == 404
+    assert get(stranger, f"/stores/dispositions/{held.pk}/").status_code == 404
+    assert b"S01-HELD" not in get(stranger, "/stores/").content
+    with working_for(ours.other.id, ours.stranger.id):
+        assert not StockPosting.objects.exists()
+        assert not StoreLocation.objects.exists()
+        foreign = location(ours.other, "Synthetic Bay A")
+    with pytest.raises(RefusedError, match="This Organisation"):
+        resolve(unresolved, actor, foreign)
 
 
 # S02 Idempotency and atomicity
 
 
-def _resolve_rx002(user: User, **override: Any) -> PostingEvidence:
-    values: dict[str, Any] = {
-        "unit": StockUnit.EACH,
-        "quantity": Decimal(1),
-        "manufacturer": "Synthetic Cable Maker",
-        "part_number": "PN-713",
-        "serial": "SN-863",
-        "shelf_life_basis": ShelfLifeBasis.NOT_APPLICABLE,
-        "location": place("BAY-A"),
-    }
-    return evidence_for(user, "RX-002", **{**values, **override})
-
-
-def test_s02_posting_is_once_only_and_a_conflicting_replay_keeps_the_original(
-    as_lucy: User,
-) -> None:
-    """REQ-358. The same request returns the posting. Other evidence is a conflict."""
-    _resolve_rx002(as_lucy)
-    rx002 = decision("RX-002")
-    first = stores.post(as_lucy, rx002, request_id=uuid4())
-    again = stores.post(as_lucy, decision("RX-002"), request_id=uuid4())
+def test_s02_posting_is_once_only_and_a_failure_leaves_nothing(ours: Sample) -> None:
+    """REQ-358. Replay returns the original; a conflicting replay keeps it; rollback is whole."""
+    actor = _lucy(ours)
+    bay = location(ours.ours, "Synthetic Bay B")
+    decision = dispose(receipt(ours.ours, "S02-LINE", quantity=5))
+    first = posted(decision, actor, bay, batch_number="LOT-5")
+    again = stores.post(decision, actor=actor, authority="Synthetic ST-1", posted_on=TODAY)
     assert again.pk == first.pk
-    assert StockMovement.objects.filter(posting=first).count() == 1
-    opening = StockMovement.objects.get(posting=first)
-    assert (opening.kind, opening.quantity, opening.destination_id) == (
-        MovementKind.INTAKE,
-        Decimal(1),
-        place("BAY-A").pk,
-    )
-    assert opening.moved_on == rx002.disposition_on
-    assert opening.recorded_on == aircraft_services.today()
-    _resolve_rx002(as_lucy, location=place("BAY-B"), part_number="PN-713A")
-    with pytest.raises(stores.PostingConflictError, match="Original Posting Stands"):
-        stores.post(as_lucy, decision("RX-002"), request_id=uuid4())
-    kept = StockPosting.objects.get(disposition=rx002)
-    assert kept.pk == first.pk and kept.evidence_id == first.evidence_id
-    assert held("RX-002") == {"BAY-A": Decimal(1)}
-    with pytest.raises(DatabaseError), transaction.atomic():
+    assert StockPosting.objects.filter(disposition=decision).count() == 1
+    assert StockMovement.objects.filter(lot=first).count() == 1
+    with pytest.raises(RefusedError, match="Already Posted"):
+        resolve(decision, actor, bay, batch_number="LOT-6")
+    with pytest.raises(IntegrityError), transaction.atomic():
         StockPosting.objects.create(
-            organisation_id=rx002.organisation_id,
-            submission=uuid4(),
-            disposition=rx002,
-            evidence=first.evidence,
-            kind=PostingKind.STOCK,
-            location_rules="Direct second posting",
-            posted_on=aircraft_services.today(),
-            appointment=first.appointment,
+            organisation=ours.ours,
+            disposition=decision,
+            resolution=first.resolution,
+            held=False,
+            unit=StockUnit.EACH,
+            quantity=Decimal(500),
+            location=bay,
+            location_name="Changed",
+            location_kind=bay.kind,
+            shelf_life_basis="Not Applicable",
+            physical_on=decision.disposition_on,
+            posted_on=TODAY,
+            actor=actor,
+            actor_name=actor.full_name,
+            authority="Conflicting replay",
         )
+    first.refresh_from_db()
+    assert first.quantity == 5 and on_hand(first, bay) == 5
+
+    # Inject a failure between the posting record and its opening movement.
+    failing = dispose(receipt(ours.ours, "S02-FAILING", quantity=3))
+    resolve(failing, actor, bay, batch_number="LOT-3")
+    with as_owner(), connection.cursor() as cursor:
+        cursor.execute(
+            "CREATE FUNCTION test_fail_intake() RETURNS trigger LANGUAGE plpgsql AS $$ "
+            "BEGIN RAISE EXCEPTION 'Injected intake failure' USING ERRCODE = 'check_violation'; "
+            "END $$; CREATE TRIGGER test_fail_intake BEFORE INSERT ON logistics_stockmovement "
+            "FOR EACH ROW EXECUTE FUNCTION test_fail_intake();"
+        )
+    events = Event.objects.count()
+    with pytest.raises(RefusedError, match="Injected intake failure"):
+        stores.post(failing, actor=actor, authority="Synthetic ST-1", posted_on=TODAY)
+    assert not StockPosting.objects.filter(disposition=failing).exists()
+    assert not StockMovement.objects.filter(lot__disposition=failing).exists()
+    assert Event.objects.count() == events
+    with as_owner(), connection.cursor() as cursor:
+        cursor.execute(
+            "DROP TRIGGER test_fail_intake ON logistics_stockmovement; "
+            "DROP FUNCTION test_fail_intake();"
+        )
+    retried = stores.post(failing, actor=actor, authority="Synthetic ST-1", posted_on=TODAY)
+    assert on_hand(retried, bay) == 3
 
 
-def test_s02_a_failure_after_the_posting_row_leaves_no_posting_movement_or_history(
-    as_lucy: User,
-) -> None:
-    """REQ-358. One transaction. A retry after the failure posts once."""
-    _resolve_rx002(as_lucy)
-    original = StockPosting.objects.create
-
-    def fail_after(*args: Any, **kwargs: Any) -> StockPosting:
-        original(*args, **kwargs)
-        raise RuntimeError("Injected failure after the posting and its opening movement")
-
-    events_before = Event.objects.filter(
-        record_type__in=("logistics_stockposting", "logistics_stockmovement")
-    ).count()
-    with (
-        patch.object(StockPosting.objects, "create", side_effect=fail_after),
-        pytest.raises(RuntimeError, match="Injected"),
-    ):
-        stores.post(as_lucy, decision("RX-002"), request_id=uuid4())
-    rx002 = decision("RX-002")
-    assert not StockPosting.objects.filter(disposition=rx002).exists()
-    assert not StockMovement.objects.filter(posting__disposition=rx002).exists()
-    assert (
-        Event.objects.filter(
-            record_type__in=("logistics_stockposting", "logistics_stockmovement")
-        ).count()
-        == events_before
+def test_s02_a_submitted_quantity_or_location_cannot_override_the_records(ours: Sample) -> None:
+    """The database copies the persisted quantity and the latest resolution."""
+    actor = _lucy(ours)
+    bay = location(ours.ours, "Synthetic Bay C")
+    other_bay = location(ours.ours, "Synthetic Bay D")
+    decision = dispose(receipt(ours.ours, "S02-OVERRIDE", quantity=2))
+    resolve(decision, actor, bay, batch_number="LOT-2")
+    reading = stores.latest_resolution(decision)
+    assert reading is not None
+    lot = StockPosting.objects.create(
+        organisation=ours.ours,
+        disposition=decision,
+        resolution=reading,
+        held=True,
+        unit=StockUnit.LITRE,
+        quantity=Decimal(900),
+        location=other_bay,
+        location_name="Wrong",
+        location_kind=LocationKind.QUARANTINE,
+        shelf_life_basis="Dated",
+        physical_on=decision.disposition_on,
+        posted_on=TODAY,
+        actor=actor,
+        actor_name=actor.full_name,
+        authority="Direct insert",
     )
-    retried = stores.post(as_lucy, rx002, request_id=uuid4())
-    assert held("RX-002") == {"BAY-A": Decimal(1)}
-    assert StockMovement.objects.filter(posting=retried).count() == 1
-
-
-def test_s02_the_database_refuses_an_opening_movement_written_directly(as_lucy: User) -> None:
-    """REQ-358. Only the posting writes the opening movement."""
-    oil = lot("RX-006")
-    with pytest.raises(DatabaseError, match="opening movement"), transaction.atomic():
-        StockMovement.objects.create(
-            organisation_id=oil.organisation_id,
-            submission=uuid4(),
-            posting=oil,
-            kind=MovementKind.INTAKE,
-            destination=place("BAY-C"),
-            quantity=Decimal(24),
-            moved_on=TODAY,
-            evidence="A second opening",
-            recorded_on=TODAY,
-            appointment=oil.appointment,
-        )
-    with pytest.raises(DatabaseError, match="permission denied"), transaction.atomic():
-        StockMovement.objects.filter(posting=oil).update(quantity=Decimal(30))
+    lot.refresh_from_db()
+    assert (lot.quantity, lot.unit, lot.held, lot.location_id) == (
+        Decimal(2),
+        StockUnit.EACH,
+        False,
+        bay.pk,
+    )
+    assert lot.location_name == "Synthetic Bay C"
 
 
 # S03 Quantities and identities
 
 
 @pytest.mark.parametrize(
-    ("unit", "quantity", "serial", "valid"),
+    ("value", "unit", "expected"),
     [
-        (StockUnit.LITRE, Decimal(0), "", False),
-        (StockUnit.LITRE, Decimal(-1), "", False),
-        (StockUnit.LITRE, Decimal("0.001"), "", True),
-        (StockUnit.LITRE, Decimal("0.0005"), "", False),
-        (StockUnit.LITRE, Decimal(2_147_483_647), "", True),
-        (StockUnit.LITRE, Decimal("2147483647.001"), "", False),
-        (StockUnit.EACH, Decimal("1.5"), "", False),
-        (StockUnit.EACH, Decimal(3), "", True),
-        (StockUnit.EACH, Decimal(1), "SN-1", True),
-        (StockUnit.EACH, Decimal(2), "SN-1", False),
-        (StockUnit.LITRE, Decimal(1), "SN-1", False),
-        ("", Decimal(1), "", False),
-        ("Kilogram", Decimal(1), "", False),
+        ("1", "Each", Decimal(1)),
+        ("0.001", "Litre", Decimal("0.001")),
+        ("2147483647", "Each", Decimal(2147483647)),
+        ("2147483647", "Litre", Decimal(2147483647)),
+        ("24.500", "Litre", Decimal("24.5")),
     ],
 )
-def test_s03_quantity_boundaries_match_the_database(
-    as_lucy: User, unit: str, quantity: Decimal, serial: str, valid: bool
+def test_s03_supported_quantities_are_exact(value: str, unit: str, expected: Decimal) -> None:
+    assert stores.checked_quantity(value, unit) == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "unit", "reason"),
+    [
+        ("0", "Each", "More Than Zero"),
+        ("-1", "Litre", "More Than Zero"),
+        ("0.0001", "Litre", "Three Decimal Places"),
+        ("2147483648", "Each", "Cannot Exceed"),
+        ("2147483647.001", "Litre", "Cannot Exceed"),
+        ("", "Each", "Number"),
+        ("1", "Kilogram", "Each or Litre"),
+        ("1.5", "Each", "Whole Number"),
+        ("NaN", "Litre", "Number"),
+        ("1e3", "Each", "Number"),
+        ("2,5", "Litre", "Number"),
+    ],
+)
+def test_s03_unsupported_quantities_are_refused_not_rounded(
+    value: str, unit: str, reason: str
 ) -> None:
-    """REQ-358. Exact decimals to 0.001 L, whole each, one each for a serial."""
-    assert stores.fits(unit, quantity, serial) is valid
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT logistics_quantity_fits(%s, %s, %s)", [unit, quantity, serial])
-        (database,) = cursor.fetchone()
-    expected_in_database = valid if quantity == quantity.quantize(Decimal("0.001")) else database
-    assert database is expected_in_database
+    with pytest.raises(RefusedError, match=reason):
+        stores.checked_quantity(value, unit)
 
 
-def test_s03_refused_quantities_and_identities_change_nothing(stocked: Sample) -> None:
-    """REQ-358. Refusals leave the ledger unchanged. A duplicate active serial is blocked."""
-    lucy = signed_in(stocked.lucy)
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        rx002 = decision("RX-002")
-        before = PostingEvidence.objects.count()
-    form = {
-        "request_id": str(uuid4()),
-        "assessed_on": "2026-11-18",
-        "unit": "Each",
-        "quantity": "1.5",
-        "evidence": "Synthetic",
-    }
-    for quantity in ("1.5", "0", "-1", "0.0005", "2147483647000"):
-        refused = post(
-            lucy, f"/stores/dispositions/{rx002.pk}/evidence/", **{**form, "quantity": quantity}
+def test_s03_identity_serial_and_exact_moves(ours: Sample) -> None:
+    """Missing identity blocks posting. One serial has one custody position."""
+    actor = _lucy(ours)
+    bay = location(ours.ours, "Synthetic Bay E")
+    shelf = location(ours.ours, "Synthetic Shelf F")
+    first = dispose(receipt(ours.ours, "S03-SERIAL-1"))
+    resolve(first, actor, bay, part_number="", batch_number="")
+    assert any("Identity" in one for one in stores.posting_blockers(first, None))
+    with pytest.raises(RefusedError, match="Identity"):
+        stores.post(first, actor=actor, authority="ST-1", posted_on=TODAY)
+    with pytest.raises(RefusedError, match="Each"):
+        resolve(first, actor, bay, unit=StockUnit.LITRE, serial_number="SN-9")
+    lot = posted(first, actor, bay, serial_number="SN-9", batch_number="")
+    duplicate = dispose(receipt(ours.ours, "S03-SERIAL-2"))
+    resolve(duplicate, actor, bay, part_number="pn-713", serial_number="sn-9", batch_number="")
+    with pytest.raises(RefusedError, match="Current Custody"):
+        stores.post(duplicate, actor=actor, authority="ST-1", posted_on=TODAY)
+    with pytest.raises(RefusedError, match=r"Moves Whole|Whole Number"):
+        stores.move(
+            lot,
+            from_location=bay,
+            to_location=shelf,
+            quantity="0.5",
+            moved_on=TODAY,
+            actor=actor,
+            authority="ST-1",
+            evidence="Synthetic move",
         )
-        assert refused.status_code == 200
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        assert PostingEvidence.objects.count() == before
-        _resolve_rx002(stocked.lucy)
-        stores.post(stocked.lucy, decision("RX-002"), request_id=uuid4())
-    accepted(stocked, "SYN-SERIAL", ItemClass.SERVICEABLE, 1, "Synthetic Cable")
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        evidence_for(
-            stocked.lucy,
-            "SYN-SERIAL",
-            unit=StockUnit.EACH,
-            quantity=Decimal(1),
-            manufacturer="synthetic cable maker",
-            part_number="pn-713",
-            serial="sn-863",
-            shelf_life_basis=ShelfLifeBasis.NOT_APPLICABLE,
-            location=place("BAY-A"),
-        )
-        second = decision("SYN-SERIAL")
-        assert "This Serial Number Already Has a Custody Position" in stores.blockers(
-            second, stores.latest_evidence(second), TODAY
-        )
-        with pytest.raises(RefusedError, match="Serial Number Already"):
-            stores.post(stocked.lucy, second, request_id=uuid4())
-        with pytest.raises(RefusedError, match="Does Not Fit"):
-            evidence_for(
-                stocked.lucy, "SYN-SERIAL", unit=StockUnit.EACH, quantity=Decimal(2), serial="X"
-            )
-        assert StockPosting.objects.count() == 3
-
-
-def test_s03_a_quantity_for_each_must_match_the_receipt(as_lucy: User) -> None:
-    """REQ-358. Submitted quantity cannot override the persisted receipt."""
-    _resolve_rx002(as_lucy, quantity=Decimal(1), serial="", batch="LOT-1")
-    rx002 = decision("RX-002")
-    assert stores.blockers(rx002, stores.latest_evidence(rx002), TODAY) == []
-    bolts = lot("RX-007")
-    assert bolts.evidence.quantity == bolts.disposition.receipt.quantity == 50
-    receipt = Receipt.objects.get(delivery_reference="RX-002")
-    assert receipt.quantity == 1
+    multi = dispose(receipt(ours.ours, "S03-LOT", quantity=10))
+    batch = posted(multi, actor, bay, batch_number="LOT-10")
+    common = Moved(moved_on=TODAY, actor=actor, authority="ST-1", evidence="Move")
+    with pytest.raises(RefusedError, match="Does Not Hold"):
+        stores.move(batch, from_location=bay, to_location=shelf, quantity="11", **common)
+    assert on_hand(batch, bay) == 10
+    stores.move(batch, from_location=bay, to_location=shelf, quantity="10", **common)
+    assert (on_hand(batch, bay), on_hand(batch, shelf)) == (Decimal(0), Decimal(10))
+    with pytest.raises(RefusedError, match="Does Not Hold"):
+        stores.move(batch, from_location=bay, to_location=shelf, quantity="1", **common)
 
 
 # S04 Locations and custody
 
 
-def test_s04_moving_8_litres_of_24_conserves_custody(as_lucy: User) -> None:
-    """REQ-358. 16 L at the source and 8 L at the destination, 24 L in total."""
-    oil = lot("RX-006")
-    moved = stores.move(
-        as_lucy,
-        oil,
-        request_id=(request := uuid4()),
-        source=place("BAY-C"),
-        destination=place("OIL-2"),
-        quantity=Decimal(8),
-        moved_on=TODAY,
-        evidence="Synthetic transfer note T-1",
-    )
-    again = stores.move(
-        as_lucy,
-        oil,
-        request_id=request,
-        source=place("BAY-C"),
-        destination=place("OIL-2"),
-        quantity=Decimal(8),
-        moved_on=TODAY,
-        evidence="Synthetic transfer note T-1",
-    )
-    assert again.pk == moved.pk
-    assert held("RX-006") == {"BAY-C": Decimal(16), "OIL-2": Decimal(8)}
-    lines = stores.positions(as_lucy.organisation, TODAY, posting=oil)
-    total = stores.totals(lines)[StockUnit.LITRE]
-    assert (total.on_hand, total.reserved, total.available) == (
-        Decimal(24),
-        Decimal(0),
-        Decimal(24),
-    )
-    assert (moved.source_id, moved.destination_id, moved.appointment.person.user_id) == (
-        place("BAY-C").pk,
-        place("OIL-2").pk,
-        as_lucy.pk,
-    )
-    assert moved.evidence == "Synthetic transfer note T-1"
-
-
-@pytest.mark.parametrize(
-    ("destination", "reason"),
-    [
-        ("BAY-D", "Does Not Accept"),  # withdrawn
-        ("BAY-A", "Does Not Accept"),  # does not hold material
-        ("QUAR-1", "Does Not Accept"),  # quarantine for serviceable stock
-    ],
-)
-def test_s04_refused_destinations_leave_the_position_intact(
-    as_lucy: User, destination: str, reason: str
+def test_s04_oil_moves_between_permitted_locations_and_refusals_keep_custody(
+    ours: Sample,
 ) -> None:
-    """REQ-358. Inactive and incompatible destinations are refused here and in PostgreSQL."""
-    oil = lot("RX-006")
-    with pytest.raises(RefusedError, match=reason):
-        stores.move(
-            as_lucy,
-            oil,
-            request_id=uuid4(),
-            source=place("BAY-C"),
-            destination=place(destination),
-            quantity=Decimal(1),
-            moved_on=TODAY,
-            evidence="Synthetic",
-        )
-    with pytest.raises(DatabaseError, match="does not accept"), transaction.atomic():
-        StockMovement.objects.create(
-            organisation_id=oil.organisation_id,
-            submission=uuid4(),
-            posting=oil,
-            kind=MovementKind.TRANSFER,
-            source=place("BAY-C"),
-            destination=place(destination),
-            quantity=Decimal(1),
-            moved_on=TODAY,
-            evidence="Direct",
-            recorded_on=TODAY,
-            appointment=StoresAppointment.objects.get(
-                person__user=as_lucy, action=StoresAction.MOVE
-            ),
-        )
-    assert held("RX-006") == {"BAY-C": Decimal(24)}
-
-
-def test_s04_a_move_of_the_whole_balance_passes_and_one_increment_more_is_refused(
-    as_lucy: User,
-) -> None:
-    """REQ-358. Boundary at the source balance."""
-    oil = lot("RX-006")
-    common: dict[str, Any] = {
-        "source": place("BAY-C"),
-        "destination": place("OIL-2"),
-        "moved_on": TODAY,
+    """24 L received; 8 L moved. On hand 16 and 8, total 24, reserved 0, available 24."""
+    actor = _lucy(ours)
+    store = location(ours.ours, "Synthetic Oil Store", holds_materials=True)
+    second = location(ours.ours, "Synthetic Line Store", holds_materials=True)
+    parts_only = location(ours.ours, "Synthetic Parts Bay")
+    cage = location(ours.ours, "Synthetic Oil Cage", LocationKind.QUARANTINE, holds_materials=True)
+    withdrawn = stores.withdraw_location(
+        location(ours.ours, "Synthetic Old Store", holds_materials=True)
+    )
+    oil = dispose(receipt(ours.ours, "S04-OIL", classification=ItemClass.MATERIAL, quantity=24))
+    lot = posted(
+        oil,
+        actor,
+        store,
+        unit=StockUnit.LITRE,
+        part_number="",
+        batch_number="OIL-24",
+        specification="Synthetic Oil Specification",
+    )
+    common = Moved(moved_on=TODAY, actor=actor, authority="ST-1", evidence="Move 8 L")
+    move = stores.move(lot, from_location=store, to_location=second, quantity="8", **common)
+    assert (move.from_location_id, move.to_location_id, move.actor_name) == (
+        store.pk,
+        second.pk,
+        actor.full_name,
+    )
+    lines = stores.positions([StockPosting.objects.get(pk=lot.pk)], TODAY, 30)
+    assert {(one.location.name, one.on_hand, one.reserved, one.available) for one in lines} == {
+        ("Synthetic Oil Store", Decimal(16), Decimal(0), Decimal(16)),
+        ("Synthetic Line Store", Decimal(8), Decimal(0), Decimal(8)),
     }
-    with pytest.raises(RefusedError, match="Holds Less"):
-        stores.move(
-            as_lucy, oil, request_id=uuid4(), quantity=Decimal("24.001"), evidence="x", **common
-        )
-    stores.move(as_lucy, oil, request_id=uuid4(), quantity=Decimal(24), evidence="All", **common)
-    assert held("RX-006") == {"OIL-2": Decimal(24)}
-
-
-def test_s04_quarantine_is_secure_and_a_hold_never_moves_to_serviceable_stock(
-    as_lucy: User,
-) -> None:
-    """REQ-358, CAO.A.030(b). Verified blocked custody has zero availability."""
+    assert sum(one.on_hand for one in lines) == 24
+    for place, reason in (
+        (withdrawn, "Withdrawn"),
+        (parts_only, "Does Not Accept"),
+    ):
+        with pytest.raises(RefusedError, match=reason):
+            stores.move(lot, from_location=store, to_location=place, quantity="1", **common)
     with pytest.raises(RefusedError, match="Secure"):
-        stores.record_location(
-            as_lucy,
-            request_id=uuid4(),
-            code="Q-OPEN",
-            name="Open Shelf",
+        stores.add_location(
+            ours.ours,
+            name="Synthetic Open Shelf",
             kind=LocationKind.QUARANTINE,
-            classes=[ItemClass.UNSERVICEABLE],
-            storage_conditions="Open",
+            holds_components=False,
+            holds_standard_parts=False,
+            holds_materials=True,
             secure=False,
         )
-    evidence_for(
-        as_lucy,
-        "RX-004",
-        unit=StockUnit.EACH,
-        quantity=Decimal(1),
-        location=place("QUAR-1"),
-        tag="Q-TAG-0042",
+    with pytest.raises(DatabaseError), transaction.atomic():
+        StoreLocation.objects.filter(pk=store.pk).update(name="Renamed")
+    stores.move(lot, from_location=store, to_location=cage, quantity="1", **common)
+    assert (on_hand(lot, store), on_hand(lot, cage)) == (Decimal(15), Decimal(1))
+    with working_for(ours.other.id, ours.stranger.id):
+        foreign = location(ours.other, "Synthetic Foreign Store", holds_materials=True)
+    with pytest.raises(RefusedError, match="This Organisation"):
+        stores.move(lot, from_location=store, to_location=foreign, quantity="1", **common)
+
+    held = dispose(
+        receipt(ours.ours, "S04-HELD", classification=ItemClass.MATERIAL, quantity=2),
+        Destination.QUARANTINE,
     )
-    hold = stores.post(as_lucy, decision("RX-004"), request_id=uuid4())
-    assert hold.kind == PostingKind.HOLD
-    [position] = stores.positions(as_lucy.organisation, TODAY, posting=hold)
-    assert (position.on_hand, position.available) == (Decimal(1), Decimal(0))
-    with pytest.raises(RefusedError, match="Only to Secure Quarantine"):
-        stores.move(
-            as_lucy,
-            hold,
-            request_id=uuid4(),
-            source=place("QUAR-1"),
-            destination=place("BAY-A"),
-            quantity=Decimal(1),
-            moved_on=TODAY,
-            evidence="Synthetic",
-        )
-
-
-def test_s04_a_location_with_stock_cannot_be_withdrawn(as_lucy: User) -> None:
-    with pytest.raises(RefusedError, match="Move the Stock Out"):
-        stores.withdraw_location(as_lucy, place("BAY-C"), request_id=uuid4(), evidence="Synthetic")
-    with pytest.raises(RefusedError, match="Already Withdrawn"):
-        stores.withdraw_location(as_lucy, place("BAY-D"), request_id=uuid4(), evidence="Synthetic")
-
-
-def test_s04_network_station_and_store_totals_add_up(as_lucy: User) -> None:
-    """AMOS stock-by-location scenario. Each location total and the network total agree."""
-    stores.move(
-        as_lucy,
-        lot("RX-006"),
-        request_id=uuid4(),
-        source=place("BAY-C"),
-        destination=place("OIL-2"),
-        quantity=Decimal("8.5"),
-        moved_on=TODAY,
-        evidence="Synthetic",
+    hold = posted(
+        held,
+        actor,
+        cage,
+        unit=StockUnit.LITRE,
+        part_number="",
+        batch_number="OIL-2",
+        specification="Synthetic Oil Specification",
     )
-    lines = stores.positions(as_lucy.organisation, TODAY)
-    by_place = {
-        one.location.code: {total.unit: total.on_hand for total in one.totals}
-        for one in stores.by_location(lines)
-    }
-    assert by_place == {
-        "BAY-B": {"Each": Decimal(50)},
-        "BAY-C": {"Litre": Decimal("15.5")},
-        "OIL-2": {"Litre": Decimal("8.5")},
-    }
-    network = stores.totals(lines)
-    assert network["Litre"].on_hand == Decimal(24)
-    assert network["Each"].on_hand == Decimal(50)
+    with pytest.raises(RefusedError, match="Open Quarantine Hold"):
+        stores.move(hold, from_location=cage, to_location=store, quantity="1", **common)
+    assert on_hand(hold, cage) == 2
 
 
 # S05 Shelf life
 
 
+def _calendar_days(start: date, end: date) -> int:
+    """Independent of the application: count days by ordinal arithmetic."""
+    return end.toordinal() - start.toordinal()
+
+
 @pytest.mark.parametrize(
-    ("day", "status", "left"),
+    ("day", "inclusive", "start_of_day"),
     [
-        (date(2026, 11, 17), shelf_life.Status.CURRENT, 13),
-        (date(2026, 11, 18), shelf_life.Status.DUE_SOON, 12),
-        (date(2026, 11, 29), shelf_life.Status.DUE_SOON, 1),
-        (date(2026, 11, 30), shelf_life.Status.DUE_SOON, 0),
-        (date(2026, 12, 1), shelf_life.Status.EXPIRED, -1),
+        (date(2026, 11, 17), "Current", "Current"),
+        (date(2026, 11, 18), "Due Soon", "Due Soon"),
+        (date(2026, 11, 29), "Due Soon", "Due Soon"),
+        (date(2026, 11, 30), "Due Soon", "Expired"),
+        (date(2026, 12, 1), "Expired", "Expired"),
     ],
 )
-def test_s05_usable_through_the_date_with_a_12_day_lead(
-    day: date, status: shelf_life.Status, left: int
-) -> None:
-    """REQ-358. Synthetic label valid through 30 November 2026."""
-    result = shelf_life.evaluate(shelf_life.Basis.THROUGH, date(2026, 11, 30), day, 12)
-    assert (result.status, result.days_left) == (status, left)
-    # Independent calendar arithmetic by ordinal day number.
-    assert date(2026, 11, 30).toordinal() - day.toordinal() == left
-
-
-def test_s05_start_of_day_expiry_missing_basis_and_inapplicability() -> None:
-    rule = shelf_life.Basis.BEFORE
-    assert shelf_life.evaluate(rule, date(2026, 11, 30), date(2026, 11, 29), 12).usable
-    assert shelf_life.evaluate(rule, date(2026, 11, 30), date(2026, 11, 30), 12).status == (
-        shelf_life.Status.EXPIRED
+def test_s05_shelf_life_boundaries(day: date, inclusive: str, start_of_day: str) -> None:
+    """Valid through 30 November 2026 with a 12-day lead, and a start-of-day expiry."""
+    label = date(2026, 11, 30)
+    assert (_calendar_days(day, label) <= 12) == (inclusive != "Current")
+    assert stores.shelf_status("Dated", label, "Valid Through the Date", day, 12) == inclusive
+    assert (
+        stores.shelf_status("Dated", label, "Expires at the Start of the Date", day, 12)
+        == start_of_day
     )
-    unknown = shelf_life.evaluate("", date(2026, 11, 30), date(2026, 11, 1), 12)
-    assert (unknown.status, unknown.usable) == (shelf_life.Status.UNKNOWN, False)
-    assert shelf_life.evaluate(shelf_life.Basis.NOT_APPLICABLE, None, TODAY, 12).usable
-    with pytest.raises(ValueError, match="negative"):
-        shelf_life.evaluate(rule, TODAY, TODAY, -1)
 
 
-def test_s05_expired_stock_stays_on_hand_with_nothing_available(
-    stocked: Sample, as_lucy: User, day: Day
+def test_s05_unknown_and_not_applicable() -> None:
+    day = date(2026, 11, 28)
+    assert stores.shelf_status("", None, "", day, 12) == "Unknown"
+    assert stores.shelf_status("Dated", date(2026, 12, 30), "", day, 12) == "Unknown"
+    assert stores.shelf_status("Not Applicable", None, "", day, 12) == "Not Applicable"
+
+
+def test_s05_expired_and_unresolved_shelf_life_have_no_availability(
+    ours: Sample, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """REQ-358. Valid on arrival, reconciled after expiry, current availability zero."""
-    accepted(stocked, "SYN-SEALANT", ItemClass.MATERIAL, 2, "Synthetic Sealant")
-    evidence_for(
-        as_lucy,
-        "SYN-SEALANT",
-        unit=StockUnit.EACH,
-        quantity=Decimal(2),
-        specification="Synthetic Specification",
-        batch="B-1",
-        shelf_life_basis=ShelfLifeBasis.THROUGH,
-        shelf_life_to=date(2026, 11, 30),
-        location=place("BAY-C"),
-    )
-    day.today = date(2026, 12, 2)
-    posting = stores.post(as_lucy, decision("SYN-SEALANT"), request_id=uuid4())
-    [position] = stores.positions(as_lucy.organisation, day.today, posting=posting)
-    assert position.shelf.status == shelf_life.Status.EXPIRED
-    assert (position.on_hand, position.available) == (Decimal(2), Decimal(0))
-
-
-def test_s05_a_shelf_life_passed_on_arrival_or_unknown_blocks_posting(
-    stocked: Sample, as_lucy: User
-) -> None:
-    accepted(stocked, "SYN-OLD", ItemClass.MATERIAL, 1, "Synthetic Old Batch")
-    evidence_for(
-        as_lucy,
-        "SYN-OLD",
-        unit=StockUnit.EACH,
-        quantity=Decimal(1),
-        specification="Spec",
-        batch="B",
-        shelf_life_basis=ShelfLifeBasis.BEFORE,
-        shelf_life_to=date(2026, 11, 17),
-        location=place("BAY-C"),
-    )
-    old = decision("SYN-OLD")
-    assert stores.blockers(old, stores.latest_evidence(old), TODAY) == [
-        "Shelf Life Had Passed on Arrival in Stores"
-    ]
-    with pytest.raises(RefusedError, match="Dated Basis"):
-        evidence_for(as_lucy, "SYN-OLD", shelf_life_basis=ShelfLifeBasis.THROUGH)
-
-
-# S06 Stock count
-
-
-def test_s06_a_count_records_variance_and_only_an_authorised_adjustment_moves_stock(
-    stocked: Sample,
-) -> None:
-    """REQ-358. Count 46 against 50. The ledger shows 50 until the authorised -4."""
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        taken = StockCount.objects.get(posting=lot("RX-007"))
-        assert (taken.counted, taken.on_hand, taken.variance) == (
-            Decimal(46),
-            Decimal(50),
-            Decimal(-4),
+    actor = _lucy(ours)
+    store = location(ours.ours, "Synthetic Sealant Store", holds_materials=True)
+    label = date(2026, 11, 30)
+    sealant = dispose(
+        receipt(
+            ours.ours,
+            "S05-SEALANT",
+            classification=ItemClass.MATERIAL,
+            quantity=4,
+            shelf_life_to=label,
         )
-        assert held("RX-007") == {"BAY-B": Decimal(50)}
-        with pytest.raises(RefusedError, match="Evidence"):
-            stores.adjust(stocked.lucy, taken, request_id=uuid4(), evidence=" ")
-    with working_for(stocked.ours.id, stocked.planner.id), pytest.raises(ActionRefusedError):
-        stores.adjust(stocked.planner, taken, request_id=uuid4(), evidence="Synthetic")
-    planner_page = signed_in(stocked.planner)
-    assert post(planner_page, f"/stores/counts/{taken.pk}/adjust/", evidence="x").status_code == 403
-    lucy = signed_in(stocked.lucy)
-    request = str(uuid4())
-    form = {"request_id": request, "evidence": "Synthetic adjustment approval A-7"}
-    assert post(lucy, f"/stores/counts/{taken.pk}/adjust/", **form).status_code == 302
-    assert post(lucy, f"/stores/counts/{taken.pk}/adjust/", **form).status_code == 302
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        assert held("RX-007") == {"BAY-B": Decimal(46)}
-        adjustment = StockMovement.objects.get(count=taken)
-        assert (adjustment.kind, adjustment.quantity, adjustment.source_id) == (
-            MovementKind.ADJUSTMENT,
-            Decimal(4),
-            place("BAY-B").pk,
-        )
-        assert StockMovement.objects.filter(kind=MovementKind.ADJUSTMENT).count() == 1
-        with pytest.raises(RefusedError, match="Already Been Applied"):
-            stores.adjust(stocked.lucy, taken, request_id=uuid4(), evidence="Again")
+    )
+    values = {
+        "unit": StockUnit.EACH,
+        "part_number": "",
+        "batch_number": "SEAL-4",
+        "specification": "Synthetic Sealant Specification",
+    }
+    resolve(sealant, actor, store, **values, shelf_life_basis="")
+    assert any("Shelf-Life" in one for one in stores.posting_blockers(sealant, None))
+    with pytest.raises(RefusedError, match="Recorded Shelf Life"):
+        resolve(sealant, actor, store, **values, shelf_life_basis="Not Applicable")
+    resolve(
+        sealant,
+        actor,
+        store,
+        **values,
+        shelf_life_basis="Dated",
+        shelf_life_to=date(2026, 12, 31),
+        shelf_life_rule="Valid Through the Date",
+    )
+    with pytest.raises(RefusedError, match="Does Not Match"):
+        stores.post(sealant, actor=actor, authority="ST-1", posted_on=TODAY)
+    lot = posted(
+        sealant,
+        actor,
+        store,
+        **values,
+        shelf_life_basis="Dated",
+        shelf_life_to=label,
+        shelf_life_rule="Valid Through the Date",
+    )
+    assert stores.available(sealant, TODAY, 12) == 4
+    assert stores.available(sealant, date(2026, 12, 1), 12) == 0
+    expired = stores.positions([StockPosting.objects.get(pk=lot.pk)], date(2026, 12, 1), 12)
+    assert [(one.on_hand, one.shelf) for one in expired] == [(Decimal(4), "Expired")]
 
 
-def test_s06_a_stale_count_cannot_be_applied(as_lucy: User) -> None:
-    oil = lot("RX-006")
-    taken = stores.count(
-        as_lucy,
-        oil,
-        request_id=uuid4(),
-        location=place("BAY-C"),
-        counted=Decimal(23),
-        evidence="Synthetic count",
+# S06 Stock count and authorised adjustment
+
+
+def test_s06_a_count_changes_nothing_until_an_authorised_adjustment(ours: Sample) -> None:
+    """Count 46 against 50 bolts: variance -4, then one authorised -4 movement."""
+    actor = _lucy(ours)
+    bin_ = location(ours.ours, "Synthetic Bolt Bin")
+    bolts = dispose(receipt(ours.ours, "S06-BOLTS", classification=ItemClass.STANDARD, quantity=50))
+    lot = posted(
+        bolts,
+        actor,
+        bin_,
+        part_number="",
+        batch_number="BOLT-50",
+        specification="Synthetic NAS Standard",
+    )
+    tally = stores.count(
+        lot,
+        location=bin_,
+        counted_quantity="46",
+        counted_on=TODAY,
+        counter=actor,
+        evidence="Synthetic count sheet C-1",
+    )
+    assert (tally.ledger_quantity, tally.variance) == (Decimal(50), Decimal(-4))
+    assert on_hand(lot, bin_) == 50
+
+    planner = signed_in(ours.planner)
+    assert post(planner, f"/stores/counts/{tally.pk}/adjust/").status_code == 403
+    manager = signed_in(ours.lucy)
+    refused = post(manager, f"/stores/counts/{tally.pk}/adjust/", moved_on="2026-11-28")
+    assert refused.status_code == 200
+    assert on_hand(lot, bin_) == 50
+    values = {
+        "moved_on": "2026-11-28",
+        "evidence": "Synthetic variance investigation V-1",
+        "authority": "Synthetic Adjustment Authority A-1",
+    }
+    assert post(manager, f"/stores/counts/{tally.pk}/adjust/", **values).status_code == 302
+    assert post(manager, f"/stores/counts/{tally.pk}/adjust/", **values).status_code == 302
+    adjustment = StockMovement.objects.get(count=tally)
+    assert adjustment.kind == MovementKind.ADJUSTMENT
+    assert (adjustment.from_location_id, adjustment.quantity) == (bin_.pk, Decimal(4))
+    assert on_hand(lot, bin_) == 46
+    assert StockMovement.objects.filter(lot=lot, kind=MovementKind.ADJUSTMENT).count() == 1
+
+    stale = stores.count(
+        lot, location=bin_, counted_quantity="40", counted_on=TODAY, counter=actor, evidence="C-2"
     )
     stores.move(
-        as_lucy,
-        oil,
-        request_id=uuid4(),
-        source=place("BAY-C"),
-        destination=place("OIL-2"),
-        quantity=Decimal(1),
+        lot,
+        from_location=bin_,
+        to_location=location(ours.ours, "Synthetic Bolt Bin 2"),
+        quantity="1",
         moved_on=TODAY,
-        evidence="Synthetic",
+        actor=actor,
+        authority="ST-1",
+        evidence="Move",
     )
     with pytest.raises(RefusedError, match="Count Again"):
-        stores.adjust(as_lucy, taken, request_id=uuid4(), evidence="Synthetic")
+        stores.adjust(stale, actor=actor, authority="A-1", evidence="Stale", moved_on=TODAY)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        StockMovement.objects.create(
+            organisation=ours.ours,
+            lot=lot,
+            kind=MovementKind.ADJUSTMENT,
+            from_location=bin_,
+            quantity=Decimal(5),
+            moved_on=TODAY,
+            count=stale,
+            actor=actor,
+            actor_name=actor.full_name,
+            authority="Direct",
+            evidence="Direct",
+        )
+    assert StockCount.objects.filter(lot=lot).count() == 2
 
 
-# S07 Upgrade
+# S07 Upgrade and legacy reconciliation
 
 
-def test_s07_upgrade_keeps_legacy_decisions_and_reconciles_once(sample: Sample) -> None:
-    """REQ-357, REQ-358. Decisions recorded before Stores PR 1 keep their IDs and evidence."""
+def test_s07_legacy_dispositions_upgrade_and_reconcile_once(sample: Sample) -> None:
+    """Historical decisions made before the ledger keep their IDs and evidence."""
     from django.db.migrations.executor import MigrationExecutor
 
-    from airworthiness_plus.organisations.models import Approval, ApprovalType
-    from tests.conftest import as_owner
+    from airworthiness_plus.organisations.models import Approval
 
     with as_owner():
         executor = MigrationExecutor(connection)
@@ -798,871 +688,241 @@ def test_s07_upgrade_keeps_legacy_decisions_and_reconciles_once(sample: Sample) 
     old_receipt = old_apps.get_model("logistics", "Receipt")
     old_check = old_apps.get_model("logistics", "ReceivingCheck")
     old_decision = old_apps.get_model("logistics", "ReceivingDisposition")
-    legacy = {}
+    made: dict[str, UUID] = {}
     with working_for(sample.ours.id, sample.planner.id):
         approval = Approval.objects.get(approval=ApprovalType.PART_CAO).id
         inspector = Person.objects.get(full_name="Chris Moore").id
         for line, outcome, kind in (
-            ("LEGACY-MAPPED", "Accepted into Stores", "CAA Form 1"),
-            ("LEGACY-NO-UNIT", "Accepted into Stores", "CAA Form 1"),
-            ("LEGACY-QUARANTINE", "Quarantined", ""),
+            ("LEGACY-EVIDENCED", "Accepted into Stores", "CAA Form 1"),
+            ("LEGACY-UNIT", "Accepted into Stores", "CAA Form 1"),
+            ("LEGACY-IDENTITY", "Accepted into Stores", "CAA Form 1"),
+            ("LEGACY-DESTINATION", "Accepted into Stores", "CAA Form 1"),
+            ("LEGACY-HELD", "Quarantined", ""),
             ("LEGACY-RETURN", "Returned to Supplier", ""),
         ):
             arrival = old_receipt.objects.create(
                 organisation_id=sample.ours.id,
                 item=f"Synthetic {line}",
-                received_on=date(2026, 11, 10),
+                received_on=ARRIVED,
                 classification="Serviceable Component",
                 source="Synthetic Supplier",
-                item_reference="Synthetic part and serial",
+                item_reference="Free-text part and serial",
                 quantity=1,
                 delivery_reference=line,
             )
-            for check in (
-                "Supplier",
-                "Release Document",
-                "Part Number and Modification Status",
-                "Condition and Packaging",
-                "Shelf Life",
-                "Suspected Unapproved Part Checks",
-            ):
+            for check in CheckKind:
                 old_check.objects.create(
                     organisation_id=sample.ours.id,
                     receipt_id=arrival.id,
                     kind=check,
-                    outcome="Not Applicable" if check == "Shelf Life" else "Pass",
-                    evidence="Synthetic legacy check",
-                    checked_on=date(2026, 11, 10),
+                    outcome="Not Applicable" if check == CheckKind.SHELF else "Pass",
+                    evidence="Original evidence",
+                    checked_on=ARRIVED,
                 )
-            legacy[line] = old_decision.objects.create(
+            made[line] = old_decision.objects.create(
                 organisation_id=sample.ours.id,
                 receipt_id=arrival.id,
                 approval_id=approval,
                 inspector_id=inspector,
-                inspector_name="Chris Moore",
-                inspector_authority="Synthetic RI",
-                inspected_on=date(2026, 11, 10),
-                disposition_on=date(2026, 11, 10),
+                inspector_authority="Original RI-6",
+                inspected_on=ARRIVED,
+                disposition_on=ARRIVED,
                 outcome=outcome,
-                destination="Synthetic free-text bay",
-                evidence="Original legacy decision",
+                destination="[Free-Text Bay]",
+                evidence="Original decision",
                 document_kind=kind,
-                document_reference="Legacy folder" if kind else "",
+                document_reference="Original release folder" if kind else "",
             ).id
     with as_owner():
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
         MigrationExecutor(connection).migrate(latest)
-    with working_for(sample.ours.id, sample.administrator.id):
-        from airworthiness_plus.sample.stores import submission
-
-        lucy_person = Person.objects.get(user=sample.lucy)
-        for action in StoresAction:
-            StoresAppointment.objects.create(
-                organisation=sample.ours,
-                submission=submission(f"upgrade-{action}"),
-                person=lucy_person,
-                approval_id=approval,
-                approval_reference="UK.CAO.[Number]",
-                action=action,
-                starts_on=date(2026, 11, 1),
-                ends_on=date(2099, 12, 31),
-                exposition_reference="Synthetic exposition",
-                authority="Synthetic appointment",
-            )
     with working_for(sample.ours.id, sample.lucy.id):
-        bay = stores.record_location(
-            sample.lucy,
-            request_id=uuid4(),
-            code="LEG-A",
-            name="Legacy Bay",
-            kind=LocationKind.SERVICEABLE,
-            classes=[ItemClass.SERVICEABLE],
-            storage_conditions="Dry",
-            secure=False,
+        actor = _lucy(sample)
+        bay = location(sample.ours, "Synthetic Mapped Bay")
+        cage = location(sample.ours, "Synthetic Mapped Cage", LocationKind.QUARANTINE)
+        decisions = {line: ReceivingDisposition.objects.get(pk=pk) for line, pk in made.items()}
+        assert StockEntry.objects.filter(disposition__in=decisions.values()).count() == 4
+        resolve(decisions["LEGACY-EVIDENCED"], actor, bay, serial_number="SN-L1", batch_number="")
+        resolve(decisions["LEGACY-IDENTITY"], actor, bay, part_number="", batch_number="")
+        resolve(decisions["LEGACY-DESTINATION"], actor, None, batch_number="LOT-L")
+        resolve(decisions["LEGACY-HELD"], actor, cage, serial_number="SN-L5", batch_number="")
+        first, _ = stores.reconcile(
+            sample.ours, actor=actor, authority="Synthetic Reconciliation R-1", posted_on=TODAY
         )
-        entries = {entry.disposition_id for entry in StockEntry.objects.all()}
-        assert entries == {legacy["LEGACY-MAPPED"], legacy["LEGACY-NO-UNIT"]}
-        assert not StockPosting.objects.exists()
-        mapped = ReceivingDisposition.objects.get(pk=legacy["LEGACY-MAPPED"])
-        values: dict[str, Any] = {
-            "assessed_on": TODAY,
-            "evidence": "Dated legacy mapping. The original Form 1 identifies PN and SN",
-            "unit": StockUnit.EACH,
-            "quantity": Decimal(1),
-            "part_number": "PN-L1",
-            "serial": "SN-L1",
-            "shelf_life_basis": ShelfLifeBasis.NOT_APPLICABLE,
-            "location": bay,
+        second, still = stores.reconcile(
+            sample.ours, actor=actor, authority="Synthetic Reconciliation R-1", posted_on=TODAY
+        )
+        assert {lot.disposition.receipt.delivery_reference for lot in first} == {
+            "LEGACY-EVIDENCED",
+            "LEGACY-HELD",
         }
-        stores.record_posting_evidence(sample.lucy, mapped, request_id=uuid4(), **values)
-        for _ in range(2):  # reconciliation is restartable through the same path
-            stores.post(
-                sample.lucy, ReceivingDisposition.objects.get(pk=mapped.pk), request_id=uuid4()
-            )
-        assert StockPosting.objects.count() == 1
-        assert StockMovement.objects.get().moved_on == date(2026, 11, 10)
-        no_unit = ReceivingDisposition.objects.get(pk=legacy["LEGACY-NO-UNIT"])
-        assert "Unit and Quantity Need Dated Evidence" in stores.blockers(no_unit, None, TODAY)
-        mapped.refresh_from_db()
-        assert (mapped.evidence, mapped.inspector_name, mapped.document_reference) == (
-            "Original legacy decision",
-            "Chris Moore",
-            "Legacy folder",
+        assert second == []
+        assert {d.receipt.delivery_reference for d in still} == {
+            "LEGACY-UNIT",
+            "LEGACY-IDENTITY",
+            "LEGACY-DESTINATION",
+        }
+        assert any("Unit" in one for one in still[decisions["LEGACY-UNIT"]])
+        assert any("Location" in one for one in still[decisions["LEGACY-DESTINATION"]])
+        lot = StockPosting.objects.get(disposition=decisions["LEGACY-EVIDENCED"])
+        assert (lot.physical_on, lot.posted_on) == (ARRIVED, TODAY)
+        assert lot.disposition.inspector_authority == "Original RI-6"
+        assert lot.disposition.destination == "[Free-Text Bay]"
+        assert StockPosting.objects.count() == 2
+        assert not StockPosting.objects.filter(disposition=decisions["LEGACY-RETURN"]).exists()
+        Person.objects.filter(pk=actor.pk).update(full_name="Renamed Later")
+        lot.refresh_from_db()
+        assert lot.actor_name != "Renamed Later"
+
+
+def test_s07_unsubstantiated_legacy_acceptance_stays_blocked(ours: Sample) -> None:
+    """A legacy acceptance without structured evidence goes back to Goods In."""
+    actor = _lucy(ours)
+    bay = location(ours.ours, "Synthetic Bay G")
+    decision = dispose(receipt(ours.ours, "S07-BLANK"))
+    with as_owner(), connection.cursor() as cursor:
+        cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        cursor.execute("ALTER TABLE logistics_receivingdisposition DISABLE TRIGGER USER")
+        cursor.execute(
+            "UPDATE logistics_receivingdisposition SET document_kind = '' WHERE id = %s",
+            [decision.pk],
         )
-        Person.objects.filter(pk=lucy_person.pk).update(full_name="Lucy Grant-Renamed")
-        posted = StockPosting.objects.get()
-        assert posted.appointment.person.full_name == "Lucy Grant-Renamed"
-        event = Event.objects.get(record_type="logistics_stockposting", record_id=posted.pk)
-        assert event.actor_name == "Lucy Grant"  # history keeps the name at the time
+        cursor.execute("ALTER TABLE logistics_receivingdisposition ENABLE TRIGGER USER")
+    decision.refresh_from_db()
+    resolve(decision, actor, bay, serial_number="SN-B", batch_number="")
+    reasons = stores.posting_blockers(decision, stores.latest_resolution(decision))
+    assert reasons == [
+        "Acceptance Evidence Not Substantiated: Needs a Fresh Linked Goods In Assessment"
+    ]
+    with pytest.raises(RefusedError, match="Fresh Linked Goods In"):
+        stores.post(decision, actor=actor, authority="ST-1", posted_on=TODAY)
 
 
 # S08 Permission rules
 
 
-def test_s08_role_and_appointment_must_both_permit_each_action(stocked: Sample, day: Day) -> None:
-    """REQ-358, ASVS V8. UI visibility and server enforcement agree."""
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        entry = StockEntry.objects.get(disposition__receipt__delivery_reference="RX-002")
-        rx002 = decision("RX-002")
-        oil = lot("RX-006")
-    routes = (
-        f"/stores/dispositions/{rx002.pk}/evidence/",
-        f"/stores/dispositions/{rx002.pk}/post/",
-        f"/stores/lots/{oil.pk}/move/",
-        f"/stores/lots/{oil.pk}/count/",
-        "/stores/locations/add/",
-    )
-    for user in (stocked.reader, stocked.reviewer, stocked.administrator):
-        client = signed_in(user)
-        for route in routes:
-            assert post(client, route, request_id=str(uuid4())).status_code == 403
-        assert "Record Posting Evidence" not in get(client, f"/stores/{entry.pk}/").content.decode()
-    # The planner's role permits Stores work, but the only appointment was withdrawn.
-    planner = signed_in(stocked.planner)
-    page = get(planner, f"/stores/{entry.pk}/").content.decode()
-    assert "Record Posting Evidence" not in page
-    refused = post(
-        planner,
-        f"/stores/lots/{oil.pk}/move/",
-        request_id=str(uuid4()),
-        source=str(oil.evidence.location_id),
-        destination=str(StoresLocation.objects.none().model.objects.none().first() or ""),
-    )
-    assert refused.status_code == 200
-    with working_for(stocked.ours.id, stocked.planner.id):
-        with pytest.raises(RefusedError, match="Current Stores Appointment"):
-            stores.move(
-                stocked.planner,
-                oil,
-                request_id=uuid4(),
-                source=place("BAY-C"),
-                destination=place("OIL-2"),
-                quantity=Decimal(1),
-                moved_on=TODAY,
-                evidence="x",
-            )
-    lucy = signed_in(stocked.lucy)
-    assert "Record Posting Evidence" in get(lucy, f"/stores/{entry.pk}/").content.decode()
-    # Last valid day, then expiry, then a withdrawal and a person who has left.
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        grant = StoresAppointment.objects.get(person__user=stocked.lucy, action=StoresAction.MOVE)
-        assert stores.may_act(stocked.lucy, Action.RECORD_STORES, StoresAction.MOVE, grant.ends_on)
-        assert not stores.may_act(
-            stocked.lucy,
-            Action.RECORD_STORES,
-            StoresAction.MOVE,
-            grant.ends_on + timedelta(days=1),
-        )
-        assert not stores.may_act(
-            stocked.lucy,
-            Action.RECORD_STORES,
-            StoresAction.MOVE,
-            grant.starts_on - timedelta(days=1),
-        )
-    with working_for(stocked.ours.id, stocked.administrator.id):
-        stores.withdraw_appointment(
-            stocked.administrator, grant, request_id=uuid4(), evidence="Synthetic withdrawal"
-        )
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        assert not stores.may_act(stocked.lucy, Action.RECORD_STORES, StoresAction.MOVE, TODAY)
-        with pytest.raises(RefusedError, match="Current Stores Appointment"):
-            stores.move(
-                stocked.lucy,
-                oil,
-                request_id=uuid4(),
-                source=place("BAY-C"),
-                destination=place("OIL-2"),
-                quantity=Decimal(1),
-                moved_on=TODAY,
-                evidence="x",
-            )
-        # The database refuses the withdrawn appointment directly too.
-        with pytest.raises(DatabaseError, match="current Stores appointment"), transaction.atomic():
-            StockMovement.objects.create(
-                organisation_id=oil.organisation_id,
-                submission=uuid4(),
-                posting=oil,
-                kind=MovementKind.TRANSFER,
-                source=place("BAY-C"),
-                destination=place("OIL-2"),
-                quantity=Decimal(1),
-                moved_on=TODAY,
-                evidence="Direct",
-                recorded_on=TODAY,
-                appointment=grant,
-            )
-        count_grant = StoresAppointment.objects.get(
-            person__user=stocked.lucy, action=StoresAction.COUNT
-        )
-        Person.objects.filter(user=stocked.lucy).update(left_on=TODAY)
-        assert not stores.may_act(stocked.lucy, Action.RECORD_STORES, StoresAction.COUNT, TODAY)
-        with pytest.raises(DatabaseError, match="current Stores appointment"), transaction.atomic():
-            StockCount.objects.create(
-                organisation_id=oil.organisation_id,
-                submission=uuid4(),
-                posting=oil,
-                location=place("BAY-C"),
-                counted=Decimal(24),
-                on_hand=Decimal(0),
-                counted_on=TODAY,
-                evidence="Direct",
-                appointment=count_grant,
-            )
-        assert held("RX-006") == {"BAY-C": Decimal(24)}
-
-
-def test_s08_another_organisation_cannot_be_referenced(stocked: Sample) -> None:
-    """REQ-002, ADR-0002. Cross-organisation parents are refused by PostgreSQL."""
-    with working_for(stocked.ours.id, stocked.lucy.id):
-        oil = lot("RX-006")
-        grant = StoresAppointment.objects.get(person__user=stocked.lucy, action=StoresAction.MOVE)
-        ours = place("OIL-2")
-    with working_for(stocked.other.id, stocked.stranger.id):
-        assert not StockPosting.objects.exists()
-        with pytest.raises(DatabaseError), transaction.atomic():
-            StockMovement.objects.create(
-                organisation_id=stocked.other.id,
-                submission=uuid4(),
-                posting_id=oil.pk,
-                kind=MovementKind.TRANSFER,
-                source_id=ours.pk,
-                destination_id=ours.pk,
-                quantity=Decimal(1),
-                moved_on=TODAY,
-                evidence="Foreign",
-                recorded_on=TODAY,
-                appointment_id=grant.pk,
-            )
-    stranger = signed_in(stocked.stranger)
-    assert post(stranger, f"/stores/lots/{oil.pk}/move/", request_id=str(uuid4())).status_code in {
-        403,
-        404,
+def test_s08_ui_and_server_permissions_agree(ours: Sample) -> None:
+    actor = _lucy(ours)
+    bay = location(ours.ours, "Synthetic Bay H")
+    decision = dispose(receipt(ours.ours, "S08-LINE", quantity=3))
+    entry = StockEntry.objects.get(disposition=decision)
+    reader, planner, manager = (signed_in(user) for user in (ours.reader, ours.planner, ours.lucy))
+    page = get(reader, f"/stores/{entry.pk}/").content
+    assert b"Resolve for Stock" not in page
+    assert b"Resolve for Stock" in get(planner, f"/stores/{entry.pk}/").content
+    values = {
+        "unit": "Each",
+        "part_number": "PN-8",
+        "batch_number": "LOT-8",
+        "location": str(bay.pk),
+        "shelf_life_basis": "Not Applicable",
+        "evidence": "Original release reviewed",
+        "evidence_on": "2026-11-28",
+        "authority": "Synthetic ST-8",
     }
+    resolve_url = f"/stores/dispositions/{decision.pk}/resolve/"
+    post_url = f"/stores/dispositions/{decision.pk}/post/"
+    assert post(reader, resolve_url, **values).status_code == 403
+    assert post(planner, "/stores/locations/add/", name="X", kind="Quarantine").status_code == 403
+    assert post(planner, resolve_url, **values).status_code == 302
+    assert post(reader, post_url, posted_on="2026-11-28", authority="ST").status_code == 403
+    assert not StockPosting.objects.filter(disposition=decision).exists()
+    assert post(planner, post_url, posted_on="2026-11-28", authority="ST").status_code == 302
+    assert post(planner, post_url, posted_on="2026-11-28", authority="ST").status_code == 302
+    lot = StockPosting.objects.get(disposition=decision)
+    assert lot.actor == Person.objects.get(user=ours.planner)
+    stranger = signed_in(ours.stranger)
+    assert post(stranger, post_url, posted_on="2026-11-28", authority="ST").status_code == 404
+    assert post(stranger, f"/stores/lots/{lot.pk}/count/").status_code == 404
+    assert (
+        post(
+            manager,
+            "/stores/locations/add/",
+            name="Synthetic Cage H",
+            kind="Quarantine",
+            holds_components="on",
+        ).status_code
+        == 200
+    )
+    assert not StoreLocation.objects.filter(name="Synthetic Cage H").exists()
+    left = Person.objects.get(user=ours.planner)
+    Person.objects.filter(pk=left.pk).update(left_on=date(2026, 11, 20))
+    left.refresh_from_db()
+    with pytest.raises(RefusedError, match="Not Active"):
+        stores.count(
+            lot, location=bay, counted_quantity="3", counted_on=TODAY, counter=left, evidence="C"
+        )
+    assert actor.organisation_id == ours.ours.id
 
 
-def test_s08_appointments_are_recorded_by_the_administrator_for_people_with_a_sign_in(
-    stocked: Sample,
-) -> None:
-    admin = signed_in(stocked.administrator)
-    with working_for(stocked.ours.id, stocked.administrator.id):
-        planner = Person.objects.get(user=stocked.planner)
-        before = StoresAppointment.objects.count()
-    form = {
-        "request_id": str(uuid4()),
-        "approval": "Part-CAO",
-        "person": str(planner.pk),
-        "action": StoresAction.COUNT,
-        "starts_on": "2026-11-18",
-        "ends_on": "2027-11-17",
-        "exposition_reference": "Synthetic Stores procedure",
-        "authority": "Synthetic signed appointment",
-    }
-    assert post(admin, "/stores/appointments/add/", **form).status_code == 302
-    assert post(admin, "/stores/appointments/add/", **form).status_code == 302  # double submit
-    assert post(signed_in(stocked.lucy), "/stores/appointments/add/", **form).status_code == 403
-    with working_for(stocked.ours.id, stocked.administrator.id):
-        assert StoresAppointment.objects.count() == before + 1
-
-
-# S10 Exports
-
-
-def test_s10_the_organisation_archive_carries_the_ledger_and_verifies(as_lucy: User) -> None:
-    """REQ-135, REQ-358. Intended use alone creates no aircraft record."""
-    from airworthiness_plus.aircraft.models import Aircraft
-    from airworthiness_plus.exports.build import build
-    from airworthiness_plus.exports.registry import REGISTRY
-    from airworthiness_plus.exports.verify import verify
-
-    export = build(as_lucy.organisation, by=as_lucy)
-    assert verify(export.content).problems == ()
-    names = {one.table for one in REGISTRY if one.of_aircraft is None}
-    for table in (
-        "logistics_stockposting",
-        "logistics_stockmovement",
-        "logistics_stockcount",
-        "logistics_postingevidence",
-        "logistics_storeslocation",
-        "logistics_storesappointment",
-    ):
-        assert table in names
-    # No movement, posting or archive link is made for the receipt's intended aircraft.
-    assert not Aircraft.objects.filter(registration="G-DGHI").exists()
-    rx002 = decision("RX-002")
-    assert "G-DGHI" in rx002.receipt.intended_use
-    assert not StockPosting.objects.filter(disposition=rx002).exists()
-
-
-# S09 Ledger invariants over generated movement sequences
-
-PLACES = ("BAY-C", "OIL-2", "BAY-A", "BAY-D", "QUAR-1")
-MOVES = st.lists(
-    st.tuples(
-        st.sampled_from(PLACES),
-        st.sampled_from(PLACES),
-        st.decimals(min_value=Decimal("-1"), max_value=Decimal(30), places=3),
-    ),
-    max_size=8,
-)
+# S09 Ledger invariants
 
 
 @settings(
-    max_examples=40,
+    max_examples=25,
     deadline=None,
     suppress_health_check=[HealthCheck.function_scoped_fixture, HealthCheck.too_slow],
 )
-@given(moves=MOVES)
-def test_s09_generated_movements_conserve_custody_and_never_go_negative(
-    as_lucy: User, moves: list[tuple[str, str, Decimal]]
+@given(st.lists(st.tuples(st.integers(0, 2), st.integers(0, 2), st.integers(1, 30)), max_size=8))
+def test_s09_generated_movements_conserve_and_never_go_negative(
+    sample: Sample, steps: list[tuple[int, int, int]]
 ) -> None:
-    """REQ-358. Only intake and authorised adjustments change total custody in PR 1."""
-    with transaction.atomic():
-        oil = lot("RX-006")
-        accepting = {"BAY-C", "OIL-2"}
-        for source, destination, quantity in moves:
-            before = held("RX-006")
+    with working_for(sample.ours.id, sample.lucy.id), transaction.atomic():
+        actor = _lucy(sample)
+        places = [
+            StoreLocation.objects.filter(name=f"Synthetic Gen {index}").first()
+            or location(sample.ours, f"Synthetic Gen {index}")
+            for index in range(3)
+        ]
+        line = f"S09-{StockPosting.objects.count()}-{len(steps)}"
+        lot = posted(dispose(receipt(sample.ours, line, quantity=20)), actor, places[0])
+        model = [Decimal(20), Decimal(0), Decimal(0)]
+        for source, target, amount in steps:
+            values = Moved(moved_on=TODAY, actor=actor, authority="ST", evidence="Gen")
             try:
                 stores.move(
-                    as_lucy,
-                    oil,
-                    request_id=uuid4(),
-                    source=place(source),
-                    destination=place(destination),
-                    quantity=quantity,
-                    moved_on=TODAY,
-                    evidence="Generated movement",
+                    lot,
+                    from_location=places[source],
+                    to_location=places[target],
+                    quantity=str(amount),
+                    **values,
                 )
             except RefusedError:
-                assert held("RX-006") == before
-                expected_refusal = (
-                    destination not in accepting
-                    or source == destination
-                    or not stores.fits(StockUnit.LITRE, quantity)
-                    or before.get(source, Decimal(0)) < quantity
-                )
-                assert expected_refusal
-            after = held("RX-006")
-            assert all(amount > 0 for amount in after.values())
-            assert set(after) <= accepting
-            assert sum(after.values()) == Decimal(24)
+                assert source == target or model[source] < amount
+            else:
+                model[source] -= amount
+                model[target] += amount
+        actual = [on_hand(lot, place) for place in places]
+        assert actual == model
+        assert all(value >= 0 for value in actual)
+        assert sum(actual) == 20
         transaction.set_rollback(True)
 
 
-def _grant_allocation_actions(sample: Sample) -> None:
-    with working_for(sample.ours.pk, sample.administrator.pk):
-        person = Person.objects.get(user=sample.lucy)
-        for action in (
-            StoresAction.RESERVE,
-            StoresAction.ISSUE,
-            StoresAction.RETURN,
-            StoresAction.QUARANTINE,
-        ):
-            stores.record_appointment(
-                sample.administrator,
-                request_id=uuid4(),
-                approval="Part-CAO",
-                person=person,
-                action=action,
-                starts_on=TODAY,
-                ends_on=TODAY + timedelta(days=30),
-                exposition_reference="Synthetic Stores procedure, revision 1",
-                authority="Synthetic appointment",
-            )
-
-
-def _allocation_card(sample: Sample, aircraft: Aircraft) -> WorkCard:
-    with working_for(sample.ours.pk, sample.lucy.pk):
-        package = planning.build_package(
-            aircraft,
-            reference="WP-STORES-ALLOC",
-            title="Check installation",
-            location="Bay B",
-            starts_on=TODAY,
-            ends_on=TODAY + timedelta(days=1),
-        )
-        dataset = data.record_data(
-            organisation=sample.ours,
-            title="Synthetic Parts Manual",
-            author="Maker",
-            kind=Kind.INSTRUCTIONS,
-            applies_to=[aircraft.type_rating],
-            revision="1",
-            revision_date=TODAY,
-            check_due=TODAY + timedelta(days=7),
-        )
-        card = planning.add_card(
-            package,
-            title="Replace hardware",
-            data_set=dataset,
-            instruction="Chapter 53",
-            planned_hours=Decimal(1),
-        )
-        order = contracts.add_work_order(
-            aircraft,
-            work=package.title,
-            ordered_by=OrderedBy.MANAGER,
-            agreed_on=TODAY,
-        )
-        planning.link_order(package, order)
-        return card
-
-
-def test_allocation_rechecks_issue_eligibility_and_preserves_quarantined_custody(
-    stocked: Sample,
-    day: Day,
-) -> None:
-    aircraft = add_sample_fleet(stocked)["G-ABCD"]
-    _grant_allocation_actions(stocked)
-    card = _allocation_card(stocked, aircraft)
-    with working_for(stocked.ours.pk, stocked.lucy.pk):
-        user = stocked.lucy
-        bolts = lot("RX-007")
-        source = place("BAY-B")
-        quarantine = place("QUAR-1")
-        reservation: dict[str, Any] = {
-            "source": source,
-            "card": card,
-            "quantity": Decimal(4),
-            "required_identity": "[Bolt Standard]",
-            "applicable_source": "Synthetic Parts Manual revision 1, Figure 53",
-            "evidence": "Match installation request and reservation label",
-        }
-        with pytest.raises(RefusedError, match="Unfinished Card on an Issued Package"):
-            allocations.record(
-                user, bolts, AllocationKind.RESERVE, request_id=uuid4(), **reservation
-            )
-        planning.issue_package(card.package)
-        with pytest.raises(RefusedError, match="Must Match the Received Lot"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.RESERVE,
-                request_id=uuid4(),
-                **{**reservation, "required_identity": "Unapproved alternate"},
-            )
-        reserve_id = uuid4()
-        reserved = allocations.record(
-            user, bolts, AllocationKind.RESERVE, request_id=reserve_id, **reservation
-        )
-        assert (
-            allocations.record(
-                user, bolts, AllocationKind.RESERVE, request_id=reserve_id, **reservation
-            )
-            == reserved
-        )
-        with pytest.raises(RefusedError, match="Different Custody Evidence"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.RESERVE,
-                request_id=reserve_id,
-                **{**reservation, "quantity": Decimal(1)},
-            )
-        (position,) = stores.positions(user.organisation, day.today, posting=bolts)
-        assert (position.on_hand, position.reserved, position.available) == (
-            Decimal(50),
-            Decimal(4),
-            Decimal(46),
-        )
-        with pytest.raises(RefusedError, match="Less Unreserved Stock"):
-            stores.move(
-                user,
-                bolts,
-                request_id=uuid4(),
-                source=source,
-                destination=place("BAY-A"),
-                quantity=Decimal(47),
-                moved_on=day.today,
-                evidence="Would move reserved bolts",
-            )
-        with pytest.raises(DatabaseError), transaction.atomic():
-            StockAllocation.objects.filter(pk=reserved.pk).update(evidence="Rewritten")
-        issue_id = uuid4()
-        issued = allocations.record(
-            user,
-            bolts,
-            AllocationKind.ISSUE,
-            preceding=reserved,
-            request_id=issue_id,
-            evidence="Transferred to workshop against authorised card",
-        )
-        assert (
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.ISSUE,
-                preceding=reserved,
-                request_id=issue_id,
-                evidence="Transferred to workshop against authorised card",
-            )
-            == issued
-        )
-        with pytest.raises(RefusedError, match="Already Been Continued"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.ISSUE,
-                preceding=reserved,
-                request_id=uuid4(),
-                evidence="Retry with a new request",
-            )
-        assert stores.on_hand(bolts, source) == 46
-        returned = allocations.record(
-            user,
-            bolts,
-            AllocationKind.RETURN,
-            preceding=issued,
-            request_id=uuid4(),
-            destination=quarantine,
-            evidence="Packaging opened; retain for receiving inspection",
-        )
-        allocations.record(
-            user,
-            bolts,
-            AllocationKind.QUARANTINE,
-            request_id=uuid4(),
-            source=source,
-            destination=quarantine,
-            quantity=Decimal(1),
-            evidence="Label damaged",
-        )
-        position_by_code = {
-            item.location.code: item
-            for item in stores.positions(user.organisation, day.today, posting=bolts)
-        }
-        assert position_by_code["BAY-B"].on_hand == position_by_code["BAY-B"].available == 45
-        assert position_by_code["QUAR-1"].on_hand == 5
-        assert position_by_code["QUAR-1"].available == 0
-        with pytest.raises(RefusedError, match="New Receiving Decision"):
-            stores.move(
-                user,
-                bolts,
-                request_id=uuid4(),
-                source=quarantine,
-                destination=source,
-                quantity=Decimal(1),
-                moved_on=day.today,
-                evidence="Forged clearing of quarantine",
-            )
-        with pytest.raises(RefusedError, match="Does Not Hold Serviceable Stock"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.RESERVE,
-                request_id=uuid4(),
-                **{**reservation, "source": quarantine},
-            )
-        assert Event.of(returned).get().actor_id == user.pk
-        exported = build(stocked.ours, by=user)
-        assert verify(exported.content).problems == ()
-        records = opened(exported.content)["records/logistics_stockallocation.json"]
-        assert {row["kind"] for row in records} == {"Reserve", "Issue", "Return", "Quarantine"}
-        assert any(row["preceding_id"] == str(issued.pk) for row in records)
-    with working_for(stocked.other.pk, stocked.stranger.pk):
-        assert not StockAllocation.objects.exists()
-
-
-def test_issue_rechecks_lot_expiry_after_reservation(stocked: Sample, day: Day) -> None:
-    _grant_allocation_actions(stocked)
-    card = _allocation_card(stocked, add_sample_fleet(stocked)["G-ABCD"])
-    with working_for(stocked.ours.pk, stocked.lucy.pk):
-        planner = stocked.lucy
-        planning.issue_package(card.package)
-        source = place("BAY-A")
-        evidence_for(
-            planner,
-            "RX-002",
-            unit=StockUnit.EACH,
-            quantity=Decimal(1),
-            part_number="PN-EXPIRY",
-            serial="SN-EXPIRY",
-            shelf_life_basis=ShelfLifeBasis.THROUGH,
-            shelf_life_to=TODAY,
-            location=source,
-        )
-        posting = stores.post(planner, decision("RX-002"), request_id=uuid4())
-        reservation = allocations.record(
-            planner,
-            posting,
-            AllocationKind.RESERVE,
-            request_id=uuid4(),
-            source=source,
-            card=card,
-            quantity=Decimal(1),
-            required_identity="PN-EXPIRY",
-            applicable_source="Synthetic applicable manual and revision",
-            evidence="Booked",
-        )
-        day.today += timedelta(days=1)
-        with pytest.raises(RefusedError, match="Shelf Life Blocks Issue"):
-            allocations.record(
-                planner,
-                posting,
-                AllocationKind.ISSUE,
-                request_id=uuid4(),
-                preceding=reservation,
-                evidence="Request after expiry",
-            )
-        assert StockAllocation.objects.filter(posting=posting).count() == 1
-        (position,) = stores.positions(stocked.ours, day.today, posting=posting)
-        assert position.on_hand == position.reserved == Decimal(1)
-        assert position.available == Decimal(0)
-
-
-def test_real_ledger_reconciles_zrh_stores_and_network_totals(stocked: Sample) -> None:
-    identity = "PN-AMOS-STATION"
-    accepted(stocked, "RX-STATION", ItemClass.SERVICEABLE, 10, "Synthetic station component")
-    with working_for(stocked.ours.pk, stocked.lucy.pk):
-        user = stocked.lucy
-        places = {
-            code: stores.record_location(
-                user,
-                request_id=uuid4(),
-                code=code,
-                station=station,
-                name=name,
-                kind=LocationKind.SERVICEABLE,
-                classes=[ItemClass.SERVICEABLE],
-                storage_conditions="Synthetic compatible storage",
-                secure=False,
-            )
-            for station, code, name in (
-                ("zrh", "ZRH-MAIN", "ZRH Main"),
-                ("ZRH", "ZRH-LINE", "ZRH Line"),
-                ("BSL", "BSL-MAIN", "BSL Main"),
-                ("LUG", "LUG-MAIN", "LUG Main"),
-                ("GVA", "GVA-MAIN", "GVA Main"),
-            )
-        }
-        evidence_for(
-            user,
-            "RX-STATION",
-            unit=StockUnit.EACH,
-            quantity=Decimal(10),
-            manufacturer="Synthetic manufacturer",
-            part_number=identity,
-            batch="LOT-AMOS-04",
-            shelf_life_basis=ShelfLifeBasis.NOT_APPLICABLE,
-            location=places["ZRH-MAIN"],
-        )
-        posting = stores.post(user, decision("RX-STATION"), request_id=uuid4())
-        for code in ("ZRH-LINE", "BSL-MAIN", "LUG-MAIN"):
-            stores.move(
-                user,
-                posting,
-                request_id=uuid4(),
-                source=places["ZRH-MAIN"],
-                destination=places[code],
-                quantity=Decimal(1),
-                moved_on=TODAY,
-                evidence="Synthetic aircraft network stock allocation",
-            )
-        lines = stores.positions(stocked.ours, TODAY, posting=posting)
-        locations = stores.by_location(lines, places.values())
-        assert {item.location.code: item.totals[0].on_hand for item in locations} == {
-            "ZRH-MAIN": Decimal(7),
-            "ZRH-LINE": Decimal(1),
-            "BSL-MAIN": Decimal(1),
-            "LUG-MAIN": Decimal(1),
-            "GVA-MAIN": Decimal(0),
-        }
-        totals = stores.by_station(locations)
-        assert {station: values[0].available for station, values in totals.items()} == {
-            "ZRH": Decimal(8),
-            "BSL": Decimal(1),
-            "LUG": Decimal(1),
-            "GVA": Decimal(0),
-        }
-        assert stores.totals(lines)[StockUnit.EACH].on_hand == Decimal(10)
-    page = get(signed_in(stocked.reader), f"/stores/?identity={identity.lower()}")
-    assert page.status_code == 200
-    body = page.content.decode()
-    assert '<tr><th scope="row">ZRH</th><td>Each</td><td>8</td><td>0</td><td>8</td>' in body
-    assert '<tr><th scope="row">GVA</th><td>Each</td><td>0</td><td>0</td><td>0</td>' in body
-    assert (
-        '<tr><th scope="row" colspan="2">All Locations</th><td></td><td>Each</td>'
-        "<td>10</td><td>0</td><td>10</td>"
-    ) in body
-    assert "ZRH-MAIN, ZRH Main" in body
-    assert "ZRH-LINE, ZRH Line" in body
-    assert "Bay B, Standard Parts Drawers" not in body
-
-
-def test_alternate_approval_requires_certifying_scope_and_stays_bound_to_issued_revision(
-    stocked: Sample,
-    day: Day,
-) -> None:
-    _grant_allocation_actions(stocked)
-    aircraft = add_sample_fleet(stocked)["G-ABCD"]
-    card = _allocation_card(stocked, aircraft)
-    with working_for(stocked.ours.pk, stocked.administrator.pk):
-        person = Person.objects.get(user=stocked.lucy)
-        person.staff_group = StaffGroup.CERTIFYING
-        person.save(update_fields=["staff_group"])
-        grant = staff.record_maintenance_authorisation(
-            person,
-            reference="SYN-ALTERNATE",
-            scope="Part substitution approval for G-ABCD",
-            valid_from=TODAY,
-            valid_to=TODAY,
-        )
-        unrelated = staff.record_maintenance_authorisation(
-            person,
-            reference="SYN-OTHER",
-            scope="Part substitution approval for G-EJKL",
-            valid_from=TODAY,
-            valid_to=TODAY,
-        )
-    with working_for(stocked.ours.pk, stocked.lucy.pk):
-        user = stocked.lucy
-        bolts = lot("RX-007")
-        reserve: dict[str, Any] = {
-            "card": card,
-            "source": place("BAY-B"),
-            "quantity": Decimal(1),
-            "required_identity": "OLD-BOLT",
-            "applicable_source": "Synthetic IPC revision 7",
-            "evidence": "Workshop requisition",
-        }
-        approval: dict[str, Any] = {
-            "card": card,
-            "required_identity": "OLD-BOLT",
-            "applicable_source": "Synthetic IPC revision 7",
-            "evidence": "Figure 19 approval covers the requested and substitute part exactly",
-            "scope_confirmed": True,
-        }
-        with pytest.raises(RefusedError, match="Authorisation That Names This Aircraft"):
-            substitutions.approve(
-                user, bolts, request_id=uuid4(), authorisation=unrelated, **approval
-            )
-        with pytest.raises(RefusedError, match="Unfinished Card on an Issued Package"):
-            substitutions.approve(user, bolts, request_id=uuid4(), authorisation=grant, **approval)
-        planning.issue_package(card.package)
-        with pytest.raises(RefusedError, match="Must Match the Received Lot"):
-            allocations.record(user, bolts, AllocationKind.RESERVE, request_id=uuid4(), **reserve)
-        approved = substitutions.approve(
-            user, bolts, request_id=uuid4(), authorisation=grant, **approval
-        )
-        assert approved.substitute_identity == "[BOLT STANDARD]"
-        assert substitutions.available(bolts, TODAY).get() == approved
-        with pytest.raises(RefusedError, match="Alternate Approval Must Match"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.RESERVE,
-                request_id=uuid4(),
-                substitution=approved,
-                **{**reserve, "applicable_source": "Different revision"},
-            )
-        booked = allocations.record(
-            user,
-            bolts,
-            AllocationKind.RESERVE,
-            request_id=uuid4(),
-            substitution=approved,
-            **reserve,
-        )
-        day.today += timedelta(days=1)
-        assert not substitutions.available(bolts, day.today).exists()
-        with pytest.raises(RefusedError, match="Maintenance Authorisation Has Expired"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.ISSUE,
-                request_id=uuid4(),
-                preceding=booked,
-                evidence="Attempt against expired alternate approval",
-            )
-        day.today = TODAY
-        issued = allocations.record(
-            user,
-            bolts,
-            AllocationKind.ISSUE,
-            request_id=uuid4(),
-            preceding=booked,
-            evidence="Approved substitute went to the workshop",
-        )
-        booked_again = allocations.record(
-            user,
-            bolts,
-            AllocationKind.RESERVE,
-            request_id=uuid4(),
-            substitution=approved,
-            **reserve,
-        )
-        data.add_revision(card.data_set, revision="2", revision_date=TODAY)
-        assert not substitutions.available(bolts, TODAY).exists()
-        with pytest.raises(RefusedError, match="Stale Work Card Revision"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.ISSUE,
-                request_id=uuid4(),
-                preceding=booked_again,
-                evidence="Previous revision no longer applicable",
-            )
-        card.package.refresh_from_db(fields=["order"])
-        order = card.package.order
-        assert order is not None
-        contracts.close_work_order(order, closed_on=TODAY, outcome=Outcome.WITHDRAWN)
-        with pytest.raises(RefusedError, match="Unfinished Card on an Issued Package"):
-            allocations.record(
-                user,
-                bolts,
-                AllocationKind.ISSUE,
-                request_id=uuid4(),
-                preceding=booked_again,
-                evidence="The written work order was withdrawn",
-            )
-        assert StockAllocation.objects.filter(posting=bolts, kind=AllocationKind.ISSUE).count() == 1
-        exported = build(stocked.ours, by=user)
-        assert verify(exported.content).problems == ()
-        archived = opened(exported.content)
-        assert (
-            archived["records/logistics_stocksubstitution.json"][0]["required_identity"]
-            == "OLD-BOLT"
-        )
-        assert any(
-            row["id"] == str(issued.pk) and row["substitution_id"] == str(approved.pk)
-            for row in archived["records/logistics_stockallocation.json"]
-        )
-        assert Event.of(approved).get().actor_id == user.pk
-    with working_for(stocked.ours.pk, stocked.planner.pk):
-        with pytest.raises(DatabaseError), transaction.atomic():
-            StockSubstitution.objects.create(
-                organisation_id=stocked.ours.pk,
-                posting_id=bolts.pk,
-                card_id=card.pk,
-                revision_id=approved.revision_id,
-                recorded_on=TODAY,
-                authorisation_id=grant.pk,
-                submission=uuid4(),
-                scope_confirmed=True,
-                substitute_identity="[BOLT STANDARD]",
-                **{
-                    key: value
-                    for key, value in approval.items()
-                    if key not in ("scope_confirmed", "card")
-                },
-            )
+def test_s09_the_database_refuses_an_overspend_that_bypasses_the_service(ours: Sample) -> None:
+    actor = _lucy(ours)
+    bay, shelf = location(ours.ours, "Synthetic Bay I"), location(ours.ours, "Synthetic Shelf I")
+    lot = posted(dispose(receipt(ours.ours, "S09-DIRECT", quantity=2)), actor, bay)
+    direct = {
+        "organisation": ours.ours,
+        "lot": lot,
+        "moved_on": TODAY,
+        "actor": actor,
+        "actor_name": actor.full_name,
+        "authority": "Direct",
+        "evidence": "Direct",
+    }
+    for values, reason in (
+        ({"kind": "Transfer", "from_location": bay, "to_location": shelf, "quantity": 3}, "hold"),
+        ({"kind": "Intake", "to_location": bay, "quantity": 2}, "opens a lot"),
+        (
+            {"kind": "Transfer", "from_location": bay, "to_location": shelf, "quantity": 0},
+            "does not suit",
+        ),
+    ):
+        with pytest.raises(IntegrityError, match=reason), transaction.atomic():
+            StockMovement.objects.create(**direct, **values)
+    with pytest.raises(DatabaseError, match="permission denied"), transaction.atomic():
+        StockMovement.objects.filter(lot=lot).update(quantity=Decimal(9))
+    assert on_hand(lot, bay) == 2

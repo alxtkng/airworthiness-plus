@@ -73,7 +73,7 @@ from airworthiness_plus.programme.models import Basis
 from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
-from airworthiness_plus.sample import goods_in, phase1, stores, suppliers, tools
+from airworthiness_plus.sample import goods_in, phase1, suppliers, tools
 from airworthiness_plus.staffing import dispatch, roster
 from airworthiness_plus.staffing import services as staffing_services
 from airworthiness_plus.staffing.models import AbsenceType, Function
@@ -188,8 +188,53 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
         )
 
     assert goods_in.add(sample.ours, sample.lucy) == 5
-    assert stores.add(sample.ours, sample.administrator) == 2
-    assert stores.add(sample.ours, sample.administrator) == 0
+    with working_for(sample.ours.id, sample.lucy.id):
+        # Stores PR 1 (REQ-358): a location, a resolution, a posting, a count and movements.
+        from airworthiness_plus.logistics import stores
+        from airworthiness_plus.logistics.models import ReceivingDisposition
+
+        cable = ReceivingDisposition.objects.get(receipt__delivery_reference="RX-002")
+        moved_on = cable.disposition_on
+        stores_actor = Person.objects.get(user=sample.lucy)
+        bay = stores.add_location(
+            sample.ours,
+            name="[Serviceable Stores Bay]",
+            kind="Serviceable Stores",
+            holds_components=True,
+            holds_standard_parts=False,
+            holds_materials=False,
+            secure=True,
+        )
+        stores.resolve(
+            cable,
+            actor=stores_actor,
+            authority="[Stores Appointment]",
+            unit="Each",
+            part_number="[Cable Part Number]",
+            serial_number="[Cable Serial Number]",
+            location=bay,
+            shelf_life_basis="Not Applicable",
+            evidence="[Release Folder Reviewed]",
+            evidence_on=moved_on,
+        )
+        lot = stores.post(
+            cable, actor=stores_actor, authority="[Stores Appointment]", posted_on=moved_on
+        )
+        tally = stores.count(
+            lot,
+            location=bay,
+            counted_quantity="0",
+            counted_on=moved_on,
+            counter=stores_actor,
+            evidence="[Count Sheet]",
+        )
+        stores.adjust(
+            tally,
+            actor=stores_actor,
+            authority="[Adjustment Authority]",
+            evidence="[Variance Investigation]",
+            moved_on=moved_on,
+        )
     fleet = add_sample_fleet(sample)
     add_sample_programmes(sample, fleet)
     reviews = add_sample_reviews(sample, fleet)
@@ -512,26 +557,7 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
     complete_results(writer, cert)
     submitted(writer, cert + "decision/", outcome="Accepted", reason="Fictitious verified scope")
     submitted(writer, order + "reinstate/", evidence="Fictitious restored tool")
-    from unittest.mock import patch
-    from uuid import uuid4
-
-    from airworthiness_plus.logistics import allocations
-    from airworthiness_plus.logistics.models import AllocationKind
-    from tests.test_stores import lot, place
-
     with working_for(sample.ours.id, sample.lucy.id):
-        posting = lot("RX-007")
-        with patch.object(aircraft_services, "today", return_value=posting.posted_on):
-            allocations.record(
-                sample.lucy,
-                posting,
-                AllocationKind.QUARANTINE,
-                request_id=uuid4(),
-                source=place("BAY-B"),
-                destination=place("QUAR-1"),
-                quantity=D("1"),
-                evidence="Synthetic quarantine evidence",
-            )
         export = build(sample.ours, by=sample.lucy)
     files = opened(export.content)
     manifest = files["manifest.json"]
@@ -546,7 +572,6 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
         held = rows(one.table, column, sample.ours.id, omitted)
         # Individually seeded workflows have their own populated export tests.
         if one.table not in {
-            "logistics_stocksubstitution",
             "planning_workcardattestation",
             "defects_aircraftdrawing",
             "defects_damageentry",

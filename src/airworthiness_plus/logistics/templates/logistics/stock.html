@@ -1,106 +1,61 @@
 {% extends "base.html" %}
-{% load stock %}
 {% load writing %}
 {% block title %}Stores Stock{% endblock %}
 {% block content %}
 <h1>Stock</h1>
 <p><a href="{% url 'stores_lookup_exercise' %}">Practise Stock Lookup</a></p>
-<p><a href="{% url 'stores_locations' %}">Locations</a> · <a href="{% url 'stores_appointments' %}">Stores Appointments</a></p>
-
-<form method="get" action="{% url 'stores_stock' %}">
-<p><label for="stock-identity">Part Number or Specification</label><br>
-<input id="stock-identity" name="identity" value="{{ identity }}" maxlength="160">
-<button type="submit">Find Stock</button>
-{% if identity %}<a href="{% url 'stores_stock' %}">Clear Stock Filter</a>{% endif %}</p>
-</form>
-
-{% if by_station %}
-<h2>Totals by Station</h2>
-<table>
-<thead><tr><th scope="col">Station</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
-<tbody>
-{% for station, totals in by_station.items %}{% for total in totals %}
-<tr><th scope="row">{{ station }}</th><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
-{% endfor %}{% endfor %}
-</tbody>
-</table>
-{% endif %}
-<h2>Totals by Location</h2>
-{% if by_location %}
-<table>
-<thead><tr><th scope="col">Station</th><th scope="col">Location</th><th scope="col">Use</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
-<tbody>
-{% for place in by_location %}{% for total in place.totals %}
-<tr><td>{{ place.location.station|default:"—" }}</td><td>{{ place.location }}</td><td>{{ place.location.kind }}</td><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
-{% endfor %}{% endfor %}
-{% for total in overall %}
-<tr><th scope="row" colspan="2">All Locations</th><td></td><td>{{ total.unit }}</td><td>{{ total.on_hand|amount }}</td><td>{{ total.reserved|amount }}</td><td>{{ total.available|amount }}</td></tr>
-{% endfor %}
-</tbody>
-</table>
-{% else %}<p>No Stock Posted</p>{% endif %}
-
-<h2>Stock by Location</h2>
-{% if positions %}
+<p><a href="{% url 'store_locations' %}">Stores Locations</a></p>
+<h2>Acceptances</h2>
+{% if entries %}
 <table data-search="always">
-<thead><tr><th scope="col">Item</th><th scope="col">Identity</th><th scope="col">Class</th><th scope="col">Location</th><th scope="col">Unit</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Condition</th><th scope="col">Shelf Life</th></tr></thead>
+<thead><tr><th scope="col">Item</th><th scope="col">Item Reference</th><th scope="col">Received Quantity</th><th scope="col">Stock Location</th><th scope="col">Posting</th><th scope="col">On Hand</th><th scope="col">Available</th><th scope="col">Moved On</th><th scope="col">Shelf Life To</th><th scope="col">Delivery Line</th></tr></thead>
 <tbody>
-{% for line in positions %}{% with receipt=line.posting.disposition.receipt basis=line.posting.evidence %}
+{% for line in entries %}{% with decision=line.decision receipt=line.receipt %}
 <tr>
-<td><a href="{% url 'stock_entry' line.posting.disposition.stock_entry.id %}">{{ receipt.item }}</a></td>
-<td>{% include "logistics/stock_identity.html" with basis=basis %}</td>
-<td>{{ receipt.classification }}</td><td>{{ line.location }}</td><td>{{ line.unit }}</td>
-<td>{{ line.on_hand|amount }}</td><td>{{ line.reserved|amount }}</td><td>{{ line.available|amount }}</td><td>{{ line.location.kind }}</td>
-<td>{% include "logistics/shelf_life.html" with shelf=line.shelf %}</td>
+<td><a href="{% url 'stock_entry' line.entry.id %}">{{ receipt.item }}</a></td>
+<td>{{ receipt.item_reference }}</td><td>{{ receipt.quantity }}</td><td>{{ decision.destination }}</td>
+<td>{{ line.state }}</td><td>{{ line.on_hand }}{% if line.unit %} {{ line.unit }}{% endif %}</td><td>{{ line.available }}</td>
+<td>{{ decision.disposition_on|long_date }}</td><td>{{ receipt.shelf_life_to|long_date }}</td>
+<td><a href="{% url 'goods_receipt' receipt.id %}">{{ receipt.delivery_reference }}</a></td>
 </tr>
 {% endwith %}{% endfor %}
 </tbody>
 </table>
-{% else %}<p>No Serviceable Stock Posted</p>{% endif %}
-
-<h2>Awaiting Stock Posting</h2>
-{% if awaiting %}
+{% else %}<p>No Items Accepted into Stores</p>{% endif %}
+<h2>Stock by Location</h2>
+{% if positions %}
 <table>
-<thead><tr><th scope="col">Item</th><th scope="col">Delivery Line</th><th scope="col">Received Quantity</th><th scope="col">Available</th><th scope="col">Posting Blockers</th></tr></thead>
+<thead><tr><th scope="col">Location</th><th scope="col">Kind</th><th scope="col">Delivery Line</th><th scope="col">Identity</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Shelf Life</th></tr></thead>
 <tbody>
-{% for row in awaiting %}
-<tr>
-<td><a href="{% url 'stock_entry' row.disposition.stock_entry.id %}">{{ row.receipt.item }}</a></td>
-<td>{{ row.receipt.delivery_reference }}</td><td>{{ row.receipt.quantity }}</td><td>0</td>
-<td>{{ row.blockers|join:"; " }}</td>
-</tr>
+{% for one in positions %}
+<tr><td>{{ one.location.name }}</td><td>{{ one.location.kind }}</td>
+<td><a href="{% url 'stores_disposition' one.lot.disposition_id %}">{{ one.lot.disposition.receipt.delivery_reference }}</a></td>
+<td>{{ one.lot.part_number }}{% if one.lot.serial_number %} SN {{ one.lot.serial_number }}{% endif %}{% if one.lot.batch_number %} Batch {{ one.lot.batch_number }}{% endif %}{% if one.lot.specification %} {{ one.lot.specification }}{% endif %}</td>
+<td>{{ one.on_hand|stock_quantity }} {{ one.lot.unit }}</td><td>{{ one.reserved|stock_quantity }}</td><td>{{ one.available|stock_quantity }}</td><td>{{ one.shelf }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
-{% else %}<p>Nothing Awaiting Stock Posting</p>{% endif %}
-
+{% else %}<p>No Stock Posted</p>{% endif %}
 <h2>Quarantine Holds</h2>
 {% if holds %}
 <table>
-<thead><tr><th scope="col">Item</th><th scope="col">Delivery Line</th><th scope="col">Status</th><th scope="col">Held</th><th scope="col">Available</th><th scope="col">Details to Verify</th></tr></thead>
+<thead><tr><th scope="col">Delivery Line</th><th scope="col">Item</th><th scope="col">Hold</th><th scope="col">Recorded Location</th><th scope="col">Available</th></tr></thead>
 <tbody>
-{% for row in holds %}
-<tr>
-<td><a href="{% url 'quarantine_hold' row.disposition.id %}">{{ row.receipt.item }}</a></td>
-<td>{{ row.receipt.delivery_reference }}</td><td>{{ row.status }}</td>
-<td>{{ row.on_hand|default:"Not Verified" }}</td><td>0</td>
-<td>{{ row.blockers|join:"; "|default:"None" }}</td>
-</tr>
+{% for line in holds %}
+<tr><td><a href="{% url 'stores_disposition' line.decision.id %}">{{ line.receipt.delivery_reference }}</a></td><td>{{ line.receipt.item }}</td><td>{{ line.state }}</td><td>{{ line.decision.destination }}</td><td>0</td></tr>
 {% endfor %}
 </tbody>
 </table>
 {% else %}<p>No Quarantine Holds</p>{% endif %}
-
-<h2>Return History</h2>
+<h2>Returned to Supplier</h2>
 {% if returns %}
 <table>
-<thead><tr><th scope="col">Delivery Line</th><th scope="col">Item</th><th scope="col">Returned On</th><th scope="col">Recipient</th><th scope="col">Stock Credit</th></tr></thead>
+<thead><tr><th scope="col">Delivery Line</th><th scope="col">Item</th><th scope="col">Recipient</th><th scope="col">Returned On</th><th scope="col">Credited</th></tr></thead>
 <tbody>
-{% for decision in returns %}
-<tr><td><a href="{% url 'goods_receipt' decision.receipt.id %}">{{ decision.receipt.delivery_reference }}</a></td><td>{{ decision.receipt.item }}</td><td>{{ decision.disposition_on|long_date }}</td><td>{{ decision.destination }}</td><td>0</td></tr>
+{% for line in returns %}
+<tr><td><a href="{% url 'stores_disposition' line.decision.id %}">{{ line.receipt.delivery_reference }}</a></td><td>{{ line.receipt.item }}</td><td>{{ line.decision.destination }}</td><td>{{ line.decision.disposition_on|long_date }}</td><td>0</td></tr>
 {% endfor %}
 </tbody>
 </table>
-{% else %}<p>No Supplier Returns</p>{% endif %}
-<p><small>Due Soon starts {{ warning_days }} days before the last day of use. The organisation's lead time is To Be Checked.</small></p>
+{% else %}<p>No Returns</p>{% endif %}
 {% endblock %}

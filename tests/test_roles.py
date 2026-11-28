@@ -86,8 +86,7 @@ def test_read_only_can_view_and_nothing_else() -> None:
 
 
 def test_the_administrator_does_not_change_airworthiness_records() -> None:
-    """REQ-007, REQ-358. Administrative authority includes transcribing signed tooling
-    and Stores appointments. It never posts, moves, counts or adjusts stock."""
+    """REQ-007. Administrative authority includes transcribing signed tooling grants."""
     allowed = {action for action in Action if permitted([Role.ADMINISTRATOR], action)}
     assert allowed == {
         Action.VIEW_RECORDS,
@@ -96,7 +95,6 @@ def test_the_administrator_does_not_change_airworthiness_records() -> None:
         Action.CHANGE_ORGANISATION_RECORD,
         Action.ADD_OR_CHANGE_PERSON,
         Action.MANAGE_TOOL_DELEGATIONS,
-        Action.MANAGE_STORES_APPOINTMENTS,
         Action.ADD_TO_PROBLEM_LOG,
     }
     for role in Role:

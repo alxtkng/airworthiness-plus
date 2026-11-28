@@ -56,9 +56,11 @@ class Action(Enum):
     RECORD_TOOL_EVENT = "Record Tool Control Evidence and Condition"
     RECORD_SUPPLIER_EVALUATION = "Record Supplier Evaluation"
     RECORD_GOODS_IN = "Record Goods In"
-    MANAGE_STORES_APPOINTMENTS = "Manage Stores Appointment Records"
-    RECORD_STORES = "Record Stores Locations, Posting, Movements and Counts"
-    ADJUST_STOCK = "Adjust Stock After a Count"
+    MANAGE_STORE_LOCATIONS = "Manage Stores Locations"
+    POST_STOCK = "Resolve and Post Stock"
+    MOVE_STOCK = "Move Stock"
+    COUNT_STOCK = "Count Stock"
+    ADJUST_STOCK = "Adjust Stock From a Count"
     PLAN_WORK_PACKAGE = "Plan Work Package"
     RECORD_WORK_CARD = "Record Work Card Evidence"
     RECORD_WORK_ORDER = "Record Work Order"
@@ -111,8 +113,10 @@ MATRIX: dict[Action, frozenset[Role]] = {
     Action.RECORD_TOOL_EVENT: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_SUPPLIER_EVALUATION: frozenset({_MANAGER}),
     Action.RECORD_GOODS_IN: frozenset({_MANAGER, _RECORDS}),
-    Action.MANAGE_STORES_APPOINTMENTS: frozenset({_ADMINISTRATOR}),
-    Action.RECORD_STORES: frozenset({_MANAGER, _RECORDS}),
+    Action.MANAGE_STORE_LOCATIONS: frozenset({_MANAGER}),
+    Action.POST_STOCK: frozenset({_MANAGER, _RECORDS}),
+    Action.MOVE_STOCK: frozenset({_MANAGER, _RECORDS}),
+    Action.COUNT_STOCK: frozenset({_MANAGER, _RECORDS}),
     Action.ADJUST_STOCK: frozenset({_MANAGER}),
     Action.PLAN_WORK_PACKAGE: frozenset({_MANAGER, _RECORDS}),
     Action.RECORD_WORK_CARD: frozenset({_MANAGER, _RECORDS}),

@@ -28,7 +28,10 @@ from airworthiness_plus.logistics.models import (
     ReceivingDisposition,
     Supplier,
 )
+from airworthiness_plus.logistics.stores_views import stock_entry, stores_stock
 from airworthiness_plus.organisations.models import Approval
+
+__all__ = ["stock_entry", "stores_stock"]
 
 
 def _maintenance_access(
@@ -177,52 +180,6 @@ def receipt(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
 
 
 @never_cache
-@requires(Action.VIEW_RECORDS)
-@require_http_methods(["GET", "POST"])
-def stores_lookup_exercise(request: HttpRequest) -> HttpResponse:
-    """Guide the signed-in user through the synthetic Stores lookup."""
-    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
-    checkpoint_key = f"stores_lookup_v1:{user.organisation_id}:{user.pk}"
-    step = request.session.get(checkpoint_key, 0)
-    questions = stores_exercise.QUESTIONS
-    after_holds = step >= stores_exercise.HOLDS_STEP
-    holdings = stores_exercise.AFTER_HOLDS if after_holds else stores_exercise.OPENING
-    stations = dict.fromkeys(row.station for row in holdings)
-    summary = [
-        (station, stores_exercise.balance(tuple(row for row in holdings if row.station == station)))
-        for station in stations
-    ]
-    question = ""
-    form = None
-    if step < len(questions):
-        key, question, expected = questions[step]
-        form = StoresExerciseForm(
-            request.POST if request.method == "POST" else None, initial={"question": key}
-        )
-        if form.is_bound and form.is_valid():
-            if form.cleaned_data["question"] != key:
-                return redirect("stores_lookup_exercise")
-            if form.cleaned_data["quantity"] == expected:
-                request.session[checkpoint_key] = step + 1
-                return redirect("stores_lookup_exercise")
-            form.add_error("quantity", "Check the balance for the requested location and column.")
-    elif request.method == "POST":
-        return redirect("stores_lookup_exercise")
-    return render(
-        request,
-        "logistics/stores_lookup_exercise.html",
-        {
-            "holdings": holdings,
-            "stations": summary,
-            "network": stores_exercise.balance(holdings),
-            "question": question,
-            "form": form,
-            "after_holds": after_holds,
-        },
-    )
-
-
-@never_cache
 @requires(Action.RECORD_GOODS_IN)
 @require_http_methods(["GET", "POST"])
 def receive(request: HttpRequest) -> HttpResponse:
@@ -279,4 +236,50 @@ def _record_inspection(request: HttpRequest, receipt_id: UUID, *, check: bool) -
         request,
         "logistics/receiving_form.html",
         {"form": form, "heading": heading, "button": heading, "receipt": record},
+    )
+
+
+@never_cache
+@requires(Action.VIEW_RECORDS)
+@require_http_methods(["GET", "POST"])
+def stores_lookup_exercise(request: HttpRequest) -> HttpResponse:
+    """Guide the signed-in user through the synthetic Stores lookup."""
+    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
+    checkpoint_key = f"stores_lookup_v1:{user.organisation_id}:{user.pk}"
+    step = request.session.get(checkpoint_key, 0)
+    questions = stores_exercise.QUESTIONS
+    after_holds = step >= stores_exercise.HOLDS_STEP
+    holdings = stores_exercise.AFTER_HOLDS if after_holds else stores_exercise.OPENING
+    stations = dict.fromkeys(row.station for row in holdings)
+    summary = [
+        (station, stores_exercise.balance(tuple(row for row in holdings if row.station == station)))
+        for station in stations
+    ]
+    question = ""
+    form = None
+    if step < len(questions):
+        key, question, expected = questions[step]
+        form = StoresExerciseForm(
+            request.POST if request.method == "POST" else None, initial={"question": key}
+        )
+        if form.is_bound and form.is_valid():
+            if form.cleaned_data["question"] != key:
+                return redirect("stores_lookup_exercise")
+            if form.cleaned_data["quantity"] == expected:
+                request.session[checkpoint_key] = step + 1
+                return redirect("stores_lookup_exercise")
+            form.add_error("quantity", "Check the balance for the requested location and column.")
+    elif request.method == "POST":
+        return redirect("stores_lookup_exercise")
+    return render(
+        request,
+        "logistics/stores_lookup_exercise.html",
+        {
+            "holdings": holdings,
+            "stations": summary,
+            "network": stores_exercise.balance(holdings),
+            "question": question,
+            "form": form,
+            "after_holds": after_holds,
+        },
     )

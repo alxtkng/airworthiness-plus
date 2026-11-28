@@ -1,8 +1,7 @@
-"""Supplier, Goods In and Stores records (REQ-340 to REQ-358)."""
+"""Supplier identities and append-only evaluation evidence (REQ-340 to REQ-342)."""
 
 from decimal import Decimal
 
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Lower
@@ -246,14 +245,12 @@ class StockEntry(Record):
         ordering = ["-disposition__disposition_on", "disposition__receipt__item", "id"]
 
 
-# Stores PR 1 (REQ-358): appointments, locations, the once-only posting of an
-# accepted or quarantined disposition, and the movement ledger. Every record is
-# appended and never changed. Balances are derived from movements.
+# Stores PR 1 (REQ-358): the location register and the disposition-keyed stock ledger.
+# The StockEntry above stays the link to an acceptance. Stock is credited only by a
+# StockPosting, once per immutable disposition, and every balance is derived from the
+# movements that follow it (assurance/phase-4-stores-handoff.md, approved 28 November 2026).
 
-QUANTITY_DIGITS = 13
-QUANTITY_PLACES = 3
-# The largest positive integer an existing receipt could hold.
-QUANTITY_LIMIT = Decimal(2_147_483_647)
+STOCK_QUANTITY_LIMIT = 2147483647
 
 
 class StockUnit(models.TextChoices):
@@ -261,441 +258,260 @@ class StockUnit(models.TextChoices):
     LITRE = "Litre", "Litre"
 
 
-class StoresAction(models.TextChoices):
-    LOCATIONS = "Locations", "Maintain Stores Locations"
-    POST = "Post", "Post Accepted Items to Stock"
-    MOVE = "Move", "Move Stock"
-    COUNT = "Count", "Count Stock"
-    ADJUST = "Adjust", "Adjust Stock After a Count"
-    RESERVE = "Reserve", "Reserve Stock for a Work Card"
-    ISSUE = "Issue", "Issue Stock to Maintenance"
-    RETURN = "Return", "Accept Maintenance Returns to Quarantine"
-    QUARANTINE = "Quarantine", "Move Unreserved Stock to Quarantine"
-
-
 class LocationKind(models.TextChoices):
-    SERVICEABLE = "Serviceable Store", "Serviceable Store"
+    SERVICEABLE = "Serviceable Stores", "Serviceable Stores"
     QUARANTINE = "Quarantine", "Quarantine"
 
 
+class StoreLocation(Record):
+    """A same-organisation Stores or quarantine location and the classes it may hold."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    name = models.CharField("Location", max_length=120)
+    kind = models.CharField("Kind", max_length=20, choices=LocationKind.choices)
+    holds_components = models.BooleanField("Holds Components", default=False)
+    holds_standard_parts = models.BooleanField("Holds Standard Parts", default=False)
+    holds_materials = models.BooleanField("Holds Materials", default=False)
+    secure = models.BooleanField("Secure and Segregated", default=False)
+    storage_conditions = models.CharField("Storage Conditions", max_length=200, blank=True)
+    active = models.BooleanField("Active", default=True)
+
+    class Meta:
+        ordering = ["kind", "name", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("name"), "organisation", name="store_location_name_once_per_organisation"
+            ),
+            models.CheckConstraint(
+                condition=~Q(name="")
+                & Q(kind__in=LocationKind.values)
+                & (
+                    Q(holds_components=True)
+                    | Q(holds_standard_parts=True)
+                    | Q(holds_materials=True)
+                )
+                & (~Q(kind=LocationKind.QUARANTINE) | Q(secure=True)),
+                name="store_location_has_kind_classes_and_secure_quarantine",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.kind})"
+
+    def accepts(self, classification: str) -> bool:
+        if classification in (ItemClass.UNSERVICEABLE, ItemClass.UNSALVAGEABLE):
+            return self.kind == LocationKind.QUARANTINE and self.holds_components
+        return {
+            ItemClass.SERVICEABLE: self.holds_components,
+            ItemClass.STANDARD: self.holds_standard_parts,
+            ItemClass.MATERIAL: self.holds_materials,
+        }.get(ItemClass(classification), False)
+
+
 class ShelfLifeBasis(models.TextChoices):
-    THROUGH = "Usable Through the Date", "Usable Through the Date"
-    BEFORE = "Expires at the Start of the Date", "Expires at the Start of the Date"
+    DATED = "Dated", "Dated"
     NOT_APPLICABLE = "Not Applicable", "Not Applicable"
 
 
-class PostingKind(models.TextChoices):
-    STOCK = "Stock", "Serviceable Stock"
-    HOLD = "Hold", "Quarantine Hold"
+class ShelfLifeRule(models.TextChoices):
+    THROUGH = "Valid Through the Date", "Valid Through the Date"
+    START_OF_DAY = "Expires at the Start of the Date", "Expires at the Start of the Date"
+
+
+class StockResolution(Record):
+    """A dated, evidenced structured reading of one disposition's unit, identity and location.
+
+    Corrections append a later resolution. The original receipt, disposition and StockEntry
+    are never changed. The quantity is always the received quantity in the resolved unit.
+    """
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    disposition = models.ForeignKey(
+        ReceivingDisposition, on_delete=models.PROTECT, related_name="stock_resolutions"
+    )
+    unit = models.CharField("Unit", max_length=10, choices=StockUnit.choices)
+    part_number = models.CharField("Part Number", max_length=100, blank=True)
+    serial_number = models.CharField("Serial Number", max_length=100, blank=True)
+    batch_number = models.CharField("Batch or Lot", max_length=100, blank=True)
+    specification = models.CharField("Standard or Specification", max_length=160, blank=True)
+    location = models.ForeignKey(
+        StoreLocation, on_delete=models.PROTECT, related_name="+", null=True, blank=True
+    )
+    shelf_life_basis = models.CharField(
+        "Shelf-Life Basis", max_length=20, choices=ShelfLifeBasis.choices, blank=True
+    )
+    shelf_life_to = models.DateField("Shelf Life To", null=True, blank=True)
+    shelf_life_rule = models.CharField(
+        "Shelf-Life Boundary", max_length=40, choices=ShelfLifeRule.choices, blank=True
+    )
+    evidence = models.TextField("Original Evidence Relied On", max_length=1000)
+    evidence_on = models.DateField("Assessed On")
+    recorded_by = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    recorded_by_name = models.CharField("Recorded By at Recording", max_length=200)
+    authority = models.CharField("Authority Relied On", max_length=200)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(unit__in=StockUnit.values)
+                & ~Q(evidence="")
+                & ~Q(authority="")
+                & (
+                    Q(shelf_life_basis="", shelf_life_to__isnull=True, shelf_life_rule="")
+                    | Q(
+                        shelf_life_basis=ShelfLifeBasis.NOT_APPLICABLE,
+                        shelf_life_to__isnull=True,
+                        shelf_life_rule="",
+                    )
+                    | (
+                        Q(shelf_life_basis=ShelfLifeBasis.DATED, shelf_life_to__isnull=False)
+                        & Q(shelf_life_rule__in=ShelfLifeRule.values)
+                    )
+                )
+                & (Q(serial_number="") | Q(unit=StockUnit.EACH)),
+                name="stock_resolution_is_evidenced_and_consistent",
+            ),
+        ]
+
+
+class StockPosting(Record):
+    """The once-only stock posting of one disposition, and the lot its movements follow."""
+
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    disposition = models.OneToOneField(
+        ReceivingDisposition, on_delete=models.PROTECT, related_name="stock_posting"
+    )
+    resolution = models.ForeignKey(StockResolution, on_delete=models.PROTECT, related_name="+")
+    held = models.BooleanField("Blocked Custody")
+    unit = models.CharField("Unit", max_length=10, choices=StockUnit.choices)
+    quantity = models.DecimalField("Posted Quantity", max_digits=13, decimal_places=3)
+    part_number = models.CharField("Part Number", max_length=100, blank=True)
+    serial_number = models.CharField("Serial Number", max_length=100, blank=True)
+    batch_number = models.CharField("Batch or Lot", max_length=100, blank=True)
+    specification = models.CharField("Standard or Specification", max_length=160, blank=True)
+    location = models.ForeignKey(StoreLocation, on_delete=models.PROTECT, related_name="+")
+    location_name = models.CharField("Location at Posting", max_length=120)
+    location_kind = models.CharField("Location Kind at Posting", max_length=20)
+    shelf_life_basis = models.CharField("Shelf-Life Basis", max_length=20)
+    shelf_life_to = models.DateField("Shelf Life To", null=True, blank=True)
+    shelf_life_rule = models.CharField("Shelf-Life Boundary", max_length=40, blank=True)
+    physical_on = models.DateField("Physically Moved On")
+    posted_on = models.DateField("Posted On")
+    actor = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    actor_name = models.CharField("Posted By at Posting", max_length=200)
+    authority = models.CharField("Authority Relied On", max_length=200)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-physical_on", "-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(quantity__gt=0, quantity__lte=STOCK_QUANTITY_LIMIT)
+                & Q(unit__in=StockUnit.values)
+                & ~Q(authority="")
+                & Q(posted_on__gte=F("physical_on"))
+                & (Q(serial_number="") | Q(unit=StockUnit.EACH, quantity=1)),
+                name="stock_posting_has_quantity_unit_and_authority",
+            ),
+        ]
 
 
 class MovementKind(models.TextChoices):
     INTAKE = "Intake", "Intake"
-    HOLD = "Hold", "Quarantine Hold"
     TRANSFER = "Transfer", "Transfer"
-    ADJUSTMENT = "Adjustment", "Count Adjustment"
+    ADJUSTMENT = "Adjustment", "Adjustment"
 
 
-class StoresRecord(Record):
+class StockCount(Record):
+    """A physical count of one lot at one location. It changes no balance by itself."""
+
     organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
-    submission = models.UUIDField()
-    entered_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        abstract = True
-
-
-def _once(name: str) -> models.UniqueConstraint:
-    return models.UniqueConstraint(fields=["organisation", "submission"], name=name)
-
-
-class StoresAppointment(StoresRecord):
-    """Recorded evidence that a person holds a Stores action under an exposition."""
-
-    person = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
-    approval = models.ForeignKey(Approval, on_delete=models.PROTECT, related_name="+")
-    approval_reference = models.CharField("Approval Reference", max_length=40)
-    action = models.CharField("Action", max_length=12, choices=StoresAction.choices)
-    starts_on = models.DateField("From")
-    ends_on = models.DateField("To")
-    exposition_reference = models.CharField("Exposition Procedure and Revision", max_length=200)
-    authority = models.TextField("Appointment Evidence", max_length=1000)
-
-    class Meta:
-        ordering = ["person__full_name", "action", "-starts_on", "-entered_at"]
-        constraints = [
-            _once("stores_appointment_once"),
-            models.CheckConstraint(
-                condition=Q(ends_on__gte=F("starts_on"), action__in=StoresAction.values)
-                & ~Q(exposition_reference="")
-                & ~Q(authority="")
-                & ~Q(approval_reference=""),
-                name="stores_appointment_has_scope_and_evidence",
-            ),
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.person.full_name}, {self.get_action_display()}"
-
-
-class StoresAppointmentWithdrawal(StoresRecord):
-    appointment = models.OneToOneField(
-        StoresAppointment, on_delete=models.PROTECT, related_name="withdrawal"
-    )
-    withdrawn_on = models.DateField("Withdrawn On")
-    evidence = models.TextField("Withdrawal Evidence", max_length=1000)
-
-    class Meta:
-        constraints = [
-            _once("stores_appointment_withdrawal_once"),
-            models.CheckConstraint(
-                condition=~Q(evidence=""), name="stores_withdrawal_has_evidence"
-            ),
-        ]
-
-
-class StoresLocation(StoresRecord):
-    """One place that holds stock, with the rules that apply to it."""
-
-    code = models.CharField("Location Code", max_length=40)
-    station = models.CharField("Station Code", max_length=12, blank=True)
-    name = models.CharField("Location", max_length=200)
-    kind = models.CharField("Use", max_length=20, choices=LocationKind.choices)
-    classes = ArrayField(
-        models.CharField(max_length=30, choices=ItemClass.choices), verbose_name="Classes Held"
-    )
-    storage_conditions = models.CharField("Storage Conditions", max_length=300)
-    secure = models.BooleanField("Secure and Segregated", default=False)
-    recorded_on = models.DateField()
-    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
-
-    class Meta:
-        ordering = ["kind", "code", "id"]
-        constraints = [
-            _once("stores_location_once"),
-            models.UniqueConstraint(
-                Lower("code"), "organisation", name="stores_location_code_once"
-            ),
-            models.CheckConstraint(
-                condition=Q(kind__in=LocationKind.values)
-                & ~Q(code="")
-                & ~Q(name="")
-                & ~Q(storage_conditions="")
-                & ~Q(classes=[])
-                & (~Q(kind=LocationKind.QUARANTINE) | Q(secure=True)),
-                name="stores_location_has_rules",
-            ),
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.code}, {self.name}"
-
-
-class StoresLocationWithdrawal(StoresRecord):
-    location = models.OneToOneField(
-        StoresLocation, on_delete=models.PROTECT, related_name="withdrawal"
-    )
-    withdrawn_on = models.DateField("Withdrawn On")
-    evidence = models.TextField("Reason and Evidence", max_length=1000)
-    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
-
-    class Meta:
-        constraints = [
-            _once("stores_location_withdrawal_once"),
-            models.CheckConstraint(
-                condition=~Q(evidence=""), name="stores_location_withdrawal_has_evidence"
-            ),
-        ]
-
-
-class PostingEvidence(StoresRecord):
-    """A dated assessment that resolves what Stores needs to post a disposition.
-
-    For a legacy acceptance it is the authorised mapping of the original
-    records. Values left blank remain blocking reasons. A later assessment
-    supersedes an earlier one and both are kept.
-    """
-
-    disposition = models.ForeignKey(
-        ReceivingDisposition, on_delete=models.PROTECT, related_name="posting_evidence"
-    )
-    unit = models.CharField("Unit", max_length=10, choices=StockUnit.choices, blank=True)
-    quantity = models.DecimalField(
-        "Quantity",
-        max_digits=QUANTITY_DIGITS,
-        decimal_places=QUANTITY_PLACES,
-        null=True,
-        blank=True,
-    )
-    manufacturer = models.CharField("Manufacturer", max_length=120, blank=True)
-    part_number = models.CharField("Part Number", max_length=100, blank=True)
-    serial = models.CharField("Serial Number", max_length=100, blank=True)
-    batch = models.CharField("Batch or Lot", max_length=100, blank=True)
-    specification = models.CharField("Standard or Specification", max_length=160, blank=True)
-    shelf_life_basis = models.CharField(
-        "Shelf-Life Basis", max_length=40, choices=ShelfLifeBasis.choices, blank=True
-    )
-    shelf_life_to = models.DateField("Shelf-Life Date", null=True, blank=True)
-    location = models.ForeignKey(
-        StoresLocation, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
-    )
-    tag = models.CharField("Quarantine Tag", max_length=100, blank=True)
-    assessed_on = models.DateField("Assessed On")
-    evidence = models.TextField("Original Records and Evidence Relied On", max_length=2000)
-    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
-
-    class Meta:
-        ordering = ["-assessed_on", "-entered_at", "-id"]
-        constraints = [
-            _once("stores_posting_evidence_once"),
-            models.CheckConstraint(
-                condition=~Q(evidence="")
-                & (Q(quantity__isnull=True) | Q(quantity__gt=0, quantity__lte=QUANTITY_LIMIT))
-                & (Q(unit="") | Q(unit__in=StockUnit.values))
-                & (Q(shelf_life_basis="") | Q(shelf_life_basis__in=ShelfLifeBasis.values)),
-                name="stores_posting_evidence_is_valid",
-            ),
-        ]
-
-
-class StockPosting(StoresRecord):
-    """The once-only posting of one disposition, keyed by its immutable identifier."""
-
-    disposition = models.OneToOneField(
-        ReceivingDisposition, on_delete=models.PROTECT, related_name="posting"
-    )
-    evidence = models.ForeignKey(PostingEvidence, on_delete=models.PROTECT, related_name="+")
-    kind = models.CharField("Posting", max_length=10, choices=PostingKind.choices)
-    location_rules = models.CharField("Location Rules at Posting", max_length=600)
-    posted_on = models.DateField("Posted On")
-    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
-
-    class Meta:
-        ordering = ["-posted_on", "-entered_at", "id"]
-        constraints = [
-            _once("stores_posting_once"),
-            models.CheckConstraint(
-                condition=Q(kind__in=PostingKind.values) & ~Q(location_rules=""),
-                name="stores_posting_is_valid",
-            ),
-        ]
-
-
-class StockCount(StoresRecord):
-    """A physical count against the ledger. It changes nothing by itself."""
-
-    posting = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="counts")
-    location = models.ForeignKey(StoresLocation, on_delete=models.PROTECT, related_name="+")
-    counted = models.DecimalField(
-        "Counted Quantity", max_digits=QUANTITY_DIGITS, decimal_places=QUANTITY_PLACES
-    )
-    # Written by the database from the ledger at the moment of the count.
-    on_hand = models.DecimalField(
-        "Ledger Quantity", max_digits=QUANTITY_DIGITS, decimal_places=QUANTITY_PLACES
-    )
+    lot = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="counts")
+    location = models.ForeignKey(StoreLocation, on_delete=models.PROTECT, related_name="+")
+    counted_quantity = models.DecimalField("Counted Quantity", max_digits=13, decimal_places=3)
+    ledger_quantity = models.DecimalField("Ledger On Hand", max_digits=13, decimal_places=3)
     counted_on = models.DateField("Counted On")
+    counter = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    counter_name = models.CharField("Counted By at Recording", max_length=200)
     evidence = models.TextField("Count Evidence", max_length=1000)
-    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
+    recorded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-counted_on", "-entered_at", "-id"]
+        ordering = ["-counted_on", "-recorded_at", "-id"]
         constraints = [
-            _once("stores_count_once"),
             models.CheckConstraint(
-                condition=Q(counted__gte=0, on_hand__gte=0) & ~Q(evidence=""),
-                name="stores_count_is_valid",
+                condition=Q(counted_quantity__gte=0, counted_quantity__lte=STOCK_QUANTITY_LIMIT)
+                & ~Q(evidence=""),
+                name="stock_count_has_quantity_and_evidence",
             ),
         ]
 
     @property
     def variance(self) -> Decimal:
-        return self.counted - self.on_hand
+        return Decimal(self.counted_quantity) - Decimal(self.ledger_quantity)
 
 
-class StockMovement(StoresRecord):
-    """One entry in the ledger. Each moves a positive quantity in the posting's unit."""
+class StockMovement(Record):
+    """One movement of a lot. Intake opens it; transfers conserve it; adjustments are authorised."""
 
-    posting = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="movements")
+    organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
+    lot = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="movements")
     kind = models.CharField("Movement", max_length=12, choices=MovementKind.choices)
-    source = models.ForeignKey(
-        StoresLocation, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    from_location = models.ForeignKey(
+        StoreLocation, on_delete=models.PROTECT, related_name="+", null=True, blank=True
     )
-    destination = models.ForeignKey(
-        StoresLocation, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    to_location = models.ForeignKey(
+        StoreLocation, on_delete=models.PROTECT, related_name="+", null=True, blank=True
     )
-    quantity = models.DecimalField(
-        "Quantity", max_digits=QUANTITY_DIGITS, decimal_places=QUANTITY_PLACES
-    )
+    quantity = models.DecimalField("Quantity", max_digits=13, decimal_places=3)
     moved_on = models.DateField("Moved On")
-    evidence = models.TextField("Movement Evidence", max_length=1000)
     count = models.OneToOneField(
-        StockCount, on_delete=models.PROTECT, null=True, blank=True, related_name="adjustment"
+        StockCount, on_delete=models.PROTECT, related_name="adjustment", null=True, blank=True
     )
-    recorded_on = models.DateField()
-    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
+    actor = models.ForeignKey("people.Person", on_delete=models.PROTECT, related_name="+")
+    actor_name = models.CharField("Moved By at Recording", max_length=200)
+    authority = models.CharField("Authority Relied On", max_length=200)
+    evidence = models.TextField("Movement Evidence", max_length=1000)
+    recorded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["moved_on", "entered_at", "id"]
+        ordering = ["moved_on", "recorded_at", "id"]
         constraints = [
-            _once("stores_movement_once"),
             models.CheckConstraint(
-                condition=Q(kind__in=MovementKind.values, quantity__gt=0)
+                condition=Q(quantity__gt=0, quantity__lte=STOCK_QUANTITY_LIMIT)
+                & ~Q(authority="")
                 & ~Q(evidence="")
                 & (
                     Q(
-                        kind__in=[MovementKind.INTAKE, MovementKind.HOLD],
-                        source__isnull=True,
-                        destination__isnull=False,
+                        kind=MovementKind.INTAKE,
+                        from_location__isnull=True,
+                        to_location__isnull=False,
                         count__isnull=True,
                     )
-                    | Q(
-                        kind=MovementKind.TRANSFER,
-                        source__isnull=False,
-                        destination__isnull=False,
-                        count__isnull=True,
+                    | (
+                        Q(
+                            kind=MovementKind.TRANSFER,
+                            from_location__isnull=False,
+                            to_location__isnull=False,
+                            count__isnull=True,
+                        )
+                        & ~Q(from_location=F("to_location"))
                     )
-                    | Q(kind=MovementKind.ADJUSTMENT, count__isnull=False)
-                    & (
-                        Q(source__isnull=True, destination__isnull=False)
-                        | Q(source__isnull=False, destination__isnull=True)
+                    | (
+                        Q(kind=MovementKind.ADJUSTMENT, count__isnull=False)
+                        & (
+                            Q(from_location__isnull=True, to_location__isnull=False)
+                            | Q(from_location__isnull=False, to_location__isnull=True)
+                        )
                     )
-                )
-                & ~Q(source=F("destination")),
-                name="stores_movement_has_valid_ends",
-            ),
-        ]
-
-
-class AllocationKind(models.TextChoices):
-    RESERVE = "Reserve", "Reserved"
-    RELEASE = "Release", "Reservation Released"
-    ISSUE = "Issue", "Issued to Maintenance"
-    RETURN = "Return", "Returned to Quarantine"
-    QUARANTINE = "Quarantine", "Moved to Quarantine"
-
-
-class StockSubstitution(StoresRecord):
-    """A certifier's approval of one substitute for one issued card and traced lot."""
-
-    posting = models.ForeignKey(
-        StockPosting, on_delete=models.PROTECT, related_name="substitutions"
-    )
-    card = models.ForeignKey("planning.WorkCard", on_delete=models.PROTECT, related_name="+")
-    revision = models.ForeignKey(
-        "maintenance_data.Revision", on_delete=models.PROTECT, related_name="+"
-    )
-    authorisation = models.ForeignKey(
-        "people.MaintenanceAuthorisation", on_delete=models.PROTECT, related_name="+"
-    )
-    required_identity = models.CharField("Required Part Number or Specification", max_length=100)
-    substitute_identity = models.CharField("Approved Alternate Identity", max_length=160)
-    applicable_source = models.CharField(
-        "Applicable Parts Data Reference and Revision", max_length=300
-    )
-    evidence = models.CharField("Approval and Applicability Evidence", max_length=1000)
-    scope_confirmed = models.BooleanField()
-    recorded_on = models.DateField()
-
-    class Meta:
-        ordering = ["-recorded_on", "-entered_at", "pk"]
-        constraints = [
-            _once("stores_substitution_once"),
-            models.CheckConstraint(
-                condition=Q(scope_confirmed=True)
-                & ~Q(required_identity__in=["", F("substitute_identity")])
-                & ~Q(substitute_identity="")
-                & ~Q(applicable_source="")
-                & ~Q(evidence=""),
-                name="stores_substitution_has_separate_identity_and_evidence",
-            ),
-        ]
-
-    def __str__(self) -> str:
-        return (
-            f"{self.card.package} · {self.card}: {self.substitute_identity} "
-            f"for {self.required_identity}"
-        )
-
-
-class StockAllocation(StoresRecord):
-    """One append-only allocation or custody change against the lot ledger."""
-
-    posting = models.ForeignKey(StockPosting, on_delete=models.PROTECT, related_name="allocations")
-    kind = models.CharField(max_length=12, choices=AllocationKind.choices)
-    source = models.ForeignKey(
-        StoresLocation, null=True, on_delete=models.PROTECT, related_name="+"
-    )
-    destination = models.ForeignKey(
-        StoresLocation, null=True, on_delete=models.PROTECT, related_name="+"
-    )
-    card = models.ForeignKey(
-        "planning.WorkCard", null=True, on_delete=models.PROTECT, related_name="+"
-    )
-    preceding = models.OneToOneField(
-        "self", null=True, on_delete=models.PROTECT, related_name="following"
-    )
-    substitution = models.ForeignKey(
-        StockSubstitution, null=True, on_delete=models.PROTECT, related_name="+"
-    )
-    quantity = models.DecimalField(
-        "Quantity", max_digits=QUANTITY_DIGITS, decimal_places=QUANTITY_PLACES
-    )
-    required_identity = models.CharField(
-        "Required Part Number or Specification", max_length=100, blank=True
-    )
-    applicable_source = models.CharField(
-        "Applicable Parts Data Reference and Revision", max_length=300, blank=True
-    )
-    evidence = models.CharField("Custody Evidence", max_length=1000)
-    recorded_on = models.DateField()
-    appointment = models.ForeignKey(StoresAppointment, on_delete=models.PROTECT, related_name="+")
-
-    class Meta:
-        ordering = ["recorded_on", "entered_at", "pk"]
-        constraints = [
-            _once("stores_allocation_once"),
-            models.CheckConstraint(
-                condition=Q(quantity__gt=0)
-                & ~Q(evidence="")
-                & (
-                    Q(
-                        kind=AllocationKind.RESERVE,
-                        preceding__isnull=True,
-                        card__isnull=False,
-                        source__isnull=False,
-                        destination__isnull=True,
-                    )
-                    & ~Q(required_identity="")
-                    & ~Q(applicable_source="")
-                    | Q(
-                        kind__in=[AllocationKind.RELEASE, AllocationKind.ISSUE],
-                        preceding__isnull=False,
-                        card__isnull=False,
-                        source__isnull=False,
-                        destination__isnull=True,
-                    )
-                    & ~Q(required_identity="")
-                    & ~Q(applicable_source="")
-                    | Q(
-                        kind=AllocationKind.RETURN,
-                        preceding__isnull=False,
-                        card__isnull=False,
-                        source__isnull=True,
-                        destination__isnull=False,
-                    )
-                    & ~Q(required_identity="")
-                    & ~Q(applicable_source="")
-                    | Q(
-                        kind=AllocationKind.QUARANTINE,
-                        preceding__isnull=True,
-                        card__isnull=True,
-                        source__isnull=False,
-                        destination__isnull=False,
-                        required_identity="",
-                        applicable_source="",
-                    )
-                    & ~Q(source=F("destination"))
                 ),
-                name="stores_allocation_has_scope_and_evidence",
+                name="stock_movement_has_a_valid_shape",
+            ),
+            models.UniqueConstraint(
+                "lot",
+                condition=Q(kind=MovementKind.INTAKE),
+                name="stock_lot_has_one_intake",
             ),
         ]

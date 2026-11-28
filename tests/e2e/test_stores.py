@@ -1,11 +1,13 @@
 """The Stores posting contract for Goods In acceptances."""
 
-import re
+import threading
+from typing import Any
 
-from playwright.sync_api import Browser, Page, expect
+import psycopg
+from playwright.sync_api import Browser, expect
 
-from tests.e2e.browser import definition, fill, form_with, save, signed_in, submit
-from tests.e2e.conftest import Account
+from tests.e2e.browser import definition, fill, form_with, signed_in, submit
+from tests.e2e.conftest import Account, RunningSite
 
 
 def test_rx_002_awaits_stock_posting_with_zero_available(
@@ -39,414 +41,271 @@ def test_rx_002_awaits_stock_posting_with_zero_available(
         assert "location" in blockers
 
 
-APPOINTMENT = {
-    "approval": "Part-CAO",
-    "person": "[Browser Test Continuing Airworthiness Manager]",
-    "starts_on": "2026-11-18",
-    "ends_on": "2027-11-17",
-    "exposition_reference": "Synthetic Stores procedure, revision 1",
-    "authority": "Synthetic signed appointment",
-}
-
-
-def _appoint(page: Page, action: str) -> None:
-    page.goto("/stores/appointments/")
-    page.get_by_role("link", name="Record a Stores Appointment", exact=True).click()
-    form = form_with(page, "authority")
-    fill(form, {**APPOINTMENT, "action": action})
-    submit(page, form.get_by_role("button", name="Record a Stores Appointment"))
-    expect(page).to_have_url(re.compile(r"/stores/appointments/$"))
-
-
-def test_stores_appointments_locations_posting_moves_counts_and_adjustment(
+def test_rx_002_is_resolved_posted_moved_counted_and_adjusted_once(
     chromium: Browser,
     live_site: str,
     personas: dict[str, tuple[Account, ...]],
 ) -> None:
-    """REQ-358 S04, S06, S08 and S11 through the signed-in routes, with synthetic data."""
-    ours = personas["your-organisation"]
-    with signed_in(chromium, live_site, ours[0]) as page:
-        for action in (
-            "Maintain Stores Locations",
-            "Post Accepted Items to Stock",
-            "Move Stock",
-            "Count Stock",
-            "Adjust Stock After a Count",
+    """REQ-358. The manager resolves and posts RX-002, holds RX-004 and reconciles a count."""
+    with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
+        for name, kind, holds in (
+            ("Sample Serviceable Bay A", "Serviceable Stores", "holds_components"),
+            ("Sample Serviceable Bay B", "Serviceable Stores", "holds_components"),
+            ("Sample Secure Quarantine Cage", "Quarantine", "holds_components"),
         ):
-            _appoint(page, action)
-        _appoint(page, "Count Stock")
-        row = (
-            page.get_by_role("row")
-            .filter(has_text="Count Stock")
-            .filter(has_text="[Browser Test Continuing Airworthiness Manager]")
-        )
-        row.first.get_by_role("link").click()
-        form = form_with(page, "evidence")
-        fill(form, {"evidence": "Synthetic duplicate appointment withdrawn"})
-        submit(page, form.get_by_role("button"))
-        expect(page.locator("main")).to_contain_text("Withdrawn 18 November 2026")
+            page.goto("/stores/locations/")
+            page.get_by_role("link", name="Add a Stores Location", exact=True).click()
+            form = form_with(page, "name")
+            fill(form, {"name": name, "kind": kind, holds: "on", "secure": "on"})
+            submit(page, form.get_by_role("button", name="Add a Stores Location"))
+            expect(page.get_by_role("cell", name=name, exact=True)).to_be_visible()
 
-    with signed_in(chromium, live_site, ours[1]) as page:
-        page.goto("/stores/locations/")
-        page.get_by_role("link", name="Add a Stores Location", exact=True).click()
-        form = form_with(page, "storage_conditions")
-        fill(
-            form,
-            {
-                "code": "TEST-E",
-                "name": "Test Bay E",
-                "kind": "Serviceable Store",
-                "storage_conditions": "Dry, synthetic",
-            },
-        )
-        page.get_by_label("Serviceable Component", exact=True).check()
-        submit(page, form.get_by_role("button", name="Add a Stores Location"))
-        expect(page.locator("main")).to_contain_text("Test Bay E")
-        page.get_by_role("link", name="Withdraw TEST-E", exact=True).click()
-        form = form_with(page, "evidence")
-        fill(form, {"evidence": "Synthetic location taken out of use"})
-        submit(page, form.get_by_role("button"))
-        expect(page.locator("main")).to_contain_text("Withdrawn 18 November 2026")
-
-        # RX-002: resolve the blockers, then post once. A duplicate submission changes nothing.
         page.goto("/stores/")
         page.get_by_role("link", name="Stabilator Trim Cable Assembly", exact=True).click()
         entry_url = page.url
-        page.get_by_role("link", name="Record Posting Evidence", exact=True).click()
-        form = form_with(page, "part_number")
+        page.get_by_role("link", name="Resolve for Stock", exact=True).click()
+        form = form_with(page, "unit")
         fill(
             form,
             {
                 "unit": "Each",
-                "quantity": "1",
-                "manufacturer": "Synthetic Cable Maker",
-                "part_number": "PN-TEST-713",
-                "serial": "SN-TEST-863",
+                "part_number": "SAMPLE-PN-713",
+                "serial_number": "SAMPLE-SN-002",
+                "location": "Sample Serviceable Bay A (Serviceable Stores)",
                 "shelf_life_basis": "Not Applicable",
-                "location": "BAY-A, Bay A, Serviceable Components",
-                "evidence": "Synthetic mapping of the original CAA Form 1 in the RX-002 folder",
+                "evidence": "Sample release folder RX-002 and receiving checks reviewed",
+                "authority": "Sample Stores Appointment ST-1",
             },
         )
-        submit(page, form.get_by_role("button", name="Record Posting Evidence"))
-        assert definition(page, "Posting Blockers") == "None. Ready to Post"
-        page.get_by_role("link", name="Post to Stock", exact=True).click()
-        post_url = page.url
-        button = page.get_by_role("button", name="Post to Stock", exact=True)
-        submit(page, button)
+        submit(page, form.get_by_role("button", name="Resolve RX-002 for Stock"))
         expect(page).to_have_url(entry_url)
-        assert definition(page, "Posting Status") == "Posted to Stock"
-        assert definition(page, "Available Quantity") == "1"
-        page.go_back()
-        if page.url == post_url and page.get_by_role("button", name="Post to Stock").count():
-            submit(page, page.get_by_role("button", name="Post to Stock", exact=True))
+        assert definition(page, "Posting Blockers") == "None. Ready to Post"
+        form = form_with(page, "posted_on")
+        fill(form, {"authority": "Sample Stores Appointment ST-1"})
+        action = form.get_attribute("action")
+        token = form.locator('[name="csrfmiddlewaretoken"]').input_value()
+        posted_on = form.locator('[name="posted_on"]').input_value()
+        submit(page, form.get_by_role("button", name="Post to Stock"))
+        # A repeated submission of the same form returns the original posting.
+        assert action is not None
+        replay = page.request.post(
+            action,
+            form={
+                "csrfmiddlewaretoken": token,
+                "posted_on": posted_on,
+                "authority": "Sample Stores Appointment ST-1",
+            },
+            headers={"Referer": entry_url},
+        )
+        assert replay.ok
         page.goto(entry_url)
-        expect(page.get_by_role("row").filter(has_text="Opening posting")).to_have_count(1)
+        assert definition(page, "Posting State") == "Posted to Stock"
+        assert definition(page, "Available Quantity") == "1"
+        expect(page.get_by_role("cell", name="Intake", exact=True)).to_have_count(1)
 
-        # Engine oil: move 8 L of 24 L, count it, and keep 24 L in total.
-        page.goto("/stores/")
-        page.get_by_role("row").filter(has_text="BAY-C, Bay C").get_by_role(
-            "link", name="Engine Oil", exact=True
-        ).click()
-        oil_url = page.url
         page.get_by_role("link", name="Move Stock", exact=True).click()
-        form = form_with(page, "destination")
+        form = form_with(page, "to_location")
         fill(
             form,
             {
-                "source": "BAY-C, Bay C, Oils and Materials",
-                "destination": "OIL-2, Hangar Oil Store",
-                "quantity": "8",
-                "evidence": "Synthetic transfer note",
+                "from_location": "Sample Serviceable Bay A (Serviceable Stores)",
+                "to_location": "Sample Serviceable Bay B (Serviceable Stores)",
+                "quantity": "1",
+                "evidence": "Sample transfer note T-1",
+                "authority": "Sample Stores Appointment ST-1",
             },
         )
         submit(page, form.get_by_role("button", name="Move Stock"))
-        expect(page).to_have_url(oil_url)
-        custody = page.locator("main table").first
-        expect(custody).to_contain_text("16 Litre")
-        expect(custody).to_contain_text("8 Litre")
-        assert definition(page, "On Hand") == "24 L (Litre)"
-        page.get_by_role("link", name="Count Stock", exact=True).click()
-        form = form_with(page, "counted")
+        expect(page).to_have_url(entry_url)
+        expect(page.get_by_role("cell", name="Transfer", exact=True)).to_have_count(1)
+
+        page.get_by_role("link", name="Record a Stock Count", exact=True).click()
+        form = form_with(page, "counted_quantity")
         fill(
             form,
             {
-                "location": "OIL-2, Hangar Oil Store",
-                "counted": "8",
-                "evidence": "Synthetic count",
+                "location": "Sample Serviceable Bay B (Serviceable Stores)",
+                "counted_quantity": "0",
+                "evidence": "Sample count sheet C-1",
             },
         )
-        submit(page, form.get_by_role("button", name="Count Stock"))
-        expect(page.locator("main")).to_contain_text("No Variance")
-
-        # Bolts: the sample count of 46 against 50 is applied by an authorised adjustment.
-        page.goto("/stores/")
-        page.get_by_role("link", name="Bolts", exact=True).click()
-        assert definition(page, "On Hand") == "50 (Each)"
-        page.get_by_role("link", name="Adjust for Count 18 November 2026", exact=True).click()
+        submit(page, form.get_by_role("button", name="Record a Stock Count"))
+        assert definition(page, "On Hand") == "1 Each"
+        page.get_by_role("link", name="Adjust From This Count", exact=True).click()
         form = form_with(page, "evidence")
-        fill(form, {"evidence": "Synthetic adjustment authority A-7"})
-        submit(page, form.get_by_role("button", name="Adjust Stock After a Count"))
-        assert definition(page, "On Hand") == "46 (Each)"
-
-
-def test_stores_posting_works_by_keyboard_at_320_pixels(
-    chromium: Browser,
-    live_site: str,
-    personas: dict[str, tuple[Account, ...]],
-) -> None:
-    """REQ-358 S11. The quarantine hold is posted by keyboard on a narrow screen."""
-    ours = personas["your-organisation"]
-    with signed_in(chromium, live_site, ours[0]) as page:
-        _appoint(page, "Post Accepted Items to Stock")
-    with signed_in(chromium, live_site, ours[1], width=320) as page:
-        page.goto("/stores/")
-        link = page.get_by_role("link", name="Alternator", exact=True)
-        link.focus()
-        with page.expect_navigation():
-            page.keyboard.press("Enter")
-        expect(page.get_by_text("Quarantine Hold, Details to Verify", exact=True)).to_be_visible()
+        fill(
+            form,
+            {
+                "evidence": "Sample variance investigation V-1",
+                "authority": "Sample Adjustment Authority A-1",
+            },
+        )
+        submit(page, form.get_by_role("button", name="Adjust by -1 From the Count"))
+        expect(page).to_have_url(entry_url)
+        assert definition(page, "On Hand") == "0 Each"
         assert definition(page, "Available Quantity") == "0"
-        blockers = definition(page, "Posting Blockers")
-        assert "Quarantine Location to Verify" in blockers
-        assert "Quarantine Tag Not Recorded" in blockers
-        page.get_by_role("link", name="Record Posting Evidence", exact=True).click()
-        form = page.locator("main form")
-        form.get_by_label("Unit", exact=True).select_option(label="Each")
-        form.get_by_label("Quantity", exact=True).fill("1")
-        form.get_by_label("Location", exact=True).select_option(
-            label="QUAR-1, Quarantine Store, Locked"
-        )
-        form.get_by_label("Quarantine Tag", exact=True).fill("Q-TEST-0042")
-        form.get_by_label("Original Records and Evidence Relied On", exact=True).fill(
-            "Synthetic hold verified in the locked cage"
-        )
-        button = page.get_by_role("button", name="Record Posting Evidence", exact=True)
-        button.focus()
-        with page.expect_navigation():
-            page.keyboard.press("Enter")
-        page.get_by_role("link", name="Post the Quarantine Hold", exact=True).focus()
-        with page.expect_navigation():
-            page.keyboard.press("Enter")
-        page.get_by_role("button", name="Post the Quarantine Hold", exact=True).focus()
-        with page.expect_navigation():
-            page.keyboard.press("Enter")
-        assert definition(page, "Posting Status") == "Quarantine Hold"
-        assert definition(page, "On Hand") == "1 (Each)"
-        assert definition(page, "Available Quantity") == "0"
-        page.reload()
-        assert definition(page, "Posting Status") == "Quarantine Hold"
 
-
-def test_stores_reserves_issues_and_quarantines_a_maintenance_return(
-    chromium: Browser,
-    live_site: str,
-    personas: dict[str, tuple[Account, ...]],
-) -> None:
-    ours = personas["your-organisation"]
-    with signed_in(chromium, live_site, ours[0]) as page:
-        for action in (
-            "Post Accepted Items to Stock",
-            "Reserve Stock for a Work Card",
-            "Issue Stock to Maintenance",
-            "Accept Maintenance Returns to Quarantine",
-            "Move Unreserved Stock to Quarantine",
-        ):
-            _appoint(page, action)
-        certifier = APPOINTMENT["person"]
-        page.goto("/staff/")
-        page.get_by_role("link", name=certifier, exact=True).click()
-        form = form_with(page, "staff_group")
-        fill(form, {"staff_group": "Certifying Staff"})
-        submit(page, form.get_by_role("button", name=f"Save the Record of {certifier}"))
-        page.get_by_role("link", name="Record Maintenance Authorisation").click()
-        save(
-            page,
-            "Save Authorisation",
-            {
-                "reference": "SYN-ALT-LIVE",
-                "scope": "Part substitution approval for G-ABCD",
-                "valid_from": "2026-11-18",
-                "valid_to": "2026-11-20",
-            },
-            "SYN-ALT-LIVE",
-        )
-
-    with signed_in(chromium, live_site, ours[1]) as page:
-        page.goto("/maintenance-data/add/")
-        save(
-            page,
-            "Record Maintenance Data",
-            {
-                "title": "Synthetic Stores Parts Data",
-                "author": "Synthetic Aircraft Maker",
-                "kind": (
-                    "Instructions for Continued Airworthiness, From a Type or "
-                    "Supplementary Type Certificate Holder"
-                ),
-                "held": "on",
-                "revision": "1",
-                "revision_date": "2026-11-16",
-                "check_due": "2026-11-30",
-            },
-            "Synthetic Stores Parts Data",
-        )
-        page.goto("/work-packages/")
-        page.get_by_role("link", name="Build a Work Package").click()
-        save(
-            page,
-            "Build a Work Package",
-            {
-                "aircraft": "G-ABCD",
-                "reference": "WP-STORES-LIVE",
-                "title": "Synthetic workshop installation",
-                "location": "Bay A",
-                "starts_on": "2026-11-18",
-                "ends_on": "2026-11-19",
-            },
-            "WP-STORES-LIVE",
-        )
-        page.get_by_role("link", name="Link Work Order").click()
-        save(
-            page,
-            "Link Work Order",
-            {"order": "Landing Light Replacement (12 November 2026)"},
-            "Landing Light Replacement",
-        )
-        page.get_by_role("link", name="Add Work Card").click()
-        save(
-            page,
-            "Add Work Card",
-            {
-                "title": "Synthetic Installation Card",
-                "data_set": "Synthetic Stores Parts Data",
-                "instruction": "Chapter 33",
-                "planned_hours": "2.0",
-            },
-            "Synthetic Installation Card",
-        )
-        package_url = page.url
         page.goto("/stores/")
-        page.get_by_role("link", name="Stabilator Trim Cable Assembly", exact=True).click()
-        entry_url = page.url
-        page.get_by_role("link", name="Record Posting Evidence", exact=True).click()
-        main_store = "BAY-A, Bay A, Serviceable Components"
-        quarantine = "QUAR-1, Quarantine Store, Locked"
-        save(
-            page,
-            "Record Posting Evidence",
+        page.get_by_role("link", name="RX-004", exact=True).click()
+        assert definition(page, "Posting State") == "Quarantine Hold, Details to Verify"
+        page.get_by_role("link", name="Resolve for Stock", exact=True).click()
+        form = form_with(page, "unit")
+        fill(
+            form,
             {
                 "unit": "Each",
-                "quantity": "1",
-                "manufacturer": "Synthetic Cable Maker",
-                "part_number": "PN-TEST-713",
-                "serial": "SN-TEST-863",
+                "part_number": "SAMPLE-ALTERNATOR",
+                "serial_number": "SAMPLE-SN-004",
+                "location": "Sample Secure Quarantine Cage (Quarantine)",
                 "shelf_life_basis": "Not Applicable",
-                "location": main_store,
-                "evidence": "Synthetic verified Form 1 mapping",
+                "evidence": "Sample quarantine tag Q-004 and decision reviewed",
+                "authority": "Sample Stores Appointment ST-1",
             },
-            "None. Ready to Post",
         )
-        page.get_by_role("link", name="Post to Stock", exact=True).click()
-        save(page, "Post to Stock", {}, "Posted to Stock")
-        reserve = {
-            "source": main_store,
-            "card": "WP-STORES-LIVE · G-ABCD · Synthetic Installation Card",
-            "quantity": "1",
-            "required_identity": "PN-TEST-713",
-            "applicable_source": "Synthetic Parts Data revision 1, figure 33",
-            "evidence": "Material requisition from workshop",
-        }
-        page.get_by_role("link", name="Reserve Stock", exact=True).click()
-        save(page, "Reserve Stock", reserve, "Issued Package With an Open Written Order")
-        page.goto(package_url)
-        page.get_by_role("link", name="Issue Work Package").click()
-        save(page, "Issue Work Package", {}, "Revision 1")
-        page.goto(entry_url)
-        page.get_by_role("link", name="Reserve Stock", exact=True).click()
-        save(page, "Reserve Stock", reserve, "Reserved · Open")
-        assert definition(page, "On Hand") == "1 (Each)"
-        assert definition(page, "Reserved") == "1"
+        submit(page, form.get_by_role("button", name="Resolve RX-004 for Stock"))
+        form = form_with(page, "posted_on")
+        fill(form, {"authority": "Sample Stores Appointment ST-1"})
+        submit(page, form.get_by_role("button", name="Post to Stock"))
+        assert definition(page, "Posting State") == "Quarantine Hold"
+        assert definition(page, "On Hand") == "1 Each"
         assert definition(page, "Available Quantity") == "0"
+        page.goto("/stores/")
+        page.get_by_role("link", name="RX-003", exact=True).click()
+        assert definition(page, "Posting State") == "Returned to Supplier"
+        expect(page.get_by_role("link", name="Resolve for Stock")).to_have_count(0)
 
-        page.get_by_role("link", name="Quarantine Stock", exact=True).click()
-        save(
-            page,
-            "Quarantine Stock",
-            {
-                "source": main_store,
-                "destination": quarantine,
-                "quantity": "1",
-                "evidence": "Review integrity of the label",
-            },
-            "Less Unreserved Stock",
-        )
-        page.goto(entry_url)
-        page.get_by_role("link", name="Release Reservation", exact=True).click()
-        save(
-            page,
-            "Release Reservation",
-            {"evidence": "Workshop changed its installation slot"},
-            "Reservation Released",
-        )
-        assert definition(page, "Available Quantity") == "1"
-        page.get_by_role("link", name="Approve an Alternate", exact=True).click()
-        save(
-            page,
-            "Approve an Alternate",
-            {
-                "card": reserve["card"],
-                "required_identity": "ORIGINAL-PART",
-                "applicable_source": "Synthetic approved parts list revision 4",
-                "authorisation": "SYN-ALT-LIVE · Part substitution approval for G-ABCD",
-                "scope_confirmed": "on",
-                "evidence": "Figure 33 approves PN-TEST-713 for this work card and aircraft",
-            },
-            "Applicable Approved Alternates",
-        )
-        page.get_by_role("link", name="Reserve Stock", exact=True).click()
-        save(
-            page,
-            "Reserve Stock",
-            {
-                **reserve,
-                "required_identity": "ORIGINAL-PART",
-                "applicable_source": "Synthetic approved parts list revision 4",
-                "substitution": (
-                    "WP-STORES-LIVE · Synthetic Installation Card: PN-TEST-713 for ORIGINAL-PART"
-                ),
-            },
-            "Reserved · Open",
-        )
-        expect(page.get_by_text("Alternate PN-TEST-713 approved by", exact=False)).to_be_visible()
-        issue = page.get_by_role("link", name="Issue Reserved Stock", exact=True)
-        issue_url = issue.get_attribute("href")
-        assert issue_url
-        issue.click()
-        save(
-            page,
-            "Issue Reserved Stock",
-            {"evidence": "Handed intact to the workshop"},
-            "Issued to Maintenance",
-        )
-        assert definition(page, "On Hand") == "0 (Each)"
-        assert definition(page, "Reserved") == "0"
-        page.get_by_role("link", name="Return Stock to Quarantine", exact=True).click()
-        save(
-            page,
-            "Return Stock to Quarantine",
-            {"destination": quarantine, "evidence": "Opened packaging held for fresh inspection"},
-            "Returned to Quarantine",
-        )
-        assert definition(page, "On Hand") == "1 (Each)"
-        assert definition(page, "Available Quantity") == "0"
-        page.get_by_role("link", name="Reserve Stock", exact=True).click()
-        save(
-            page,
-            "Reserve Stock",
-            {**reserve, "source": quarantine},
-            "Does Not Hold Serviceable Stock",
-        )
 
-    with signed_in(chromium, live_site, personas["second-organisation"][1]) as page:
-        response = page.goto(issue_url)
-        assert response is not None and response.status == 404
+def _application(site: RunningSite) -> psycopg.Connection[tuple[Any, ...]]:
+    env = site.database.env
+    connection = psycopg.connect(
+        host=env["AIRWORTHINESS_DATABASE_HOST"],
+        port=env["AIRWORTHINESS_DATABASE_PORT"],
+        dbname=site.name,
+        user=env["AIRWORTHINESS_DATABASE_USER"],
+        password=env["AIRWORTHINESS_DATABASE_PASSWORD"],
+    )
+    connection.execute("SET ROLE airworthiness_application")
+    return connection
+
+
+def _as(connection: psycopg.Connection[tuple[Any, ...]], organisation: str, user: str) -> None:
+    connection.execute("SELECT set_config('airworthiness.organisation', %s, true)", [organisation])
+    connection.execute("SELECT set_config('airworthiness.user', %s, true)", [user])
+
+
+POSTING = """
+INSERT INTO logistics_stockposting (
+    id, organisation_id, disposition_id, resolution_id, held, unit, quantity, part_number,
+    serial_number, batch_number, specification, location_id, location_name, location_kind,
+    shelf_life_basis, physical_on, posted_on, actor_id, actor_name, authority, recorded_at
+) VALUES (
+    gen_random_uuid(), %(organisation)s, %(disposition)s, %(resolution)s, false, 'Each', 1,
+    '', '', '', '', %(location)s, '', '', '', '2026-11-16', '2026-11-18', %(person)s,
+    'Concurrent Test', 'Concurrent ST-1', now()
+)
+"""
+
+TRANSFER = """
+INSERT INTO logistics_stockmovement (
+    id, organisation_id, lot_id, kind, from_location_id, to_location_id, quantity, moved_on,
+    actor_id, actor_name, authority, evidence, recorded_at
+) VALUES (
+    gen_random_uuid(), %(organisation)s, %(lot)s, 'Transfer', %(location)s, %(second)s, 1,
+    '2026-11-18', %(person)s, 'Concurrent Test', 'Concurrent ST-1', 'Concurrent move', now()
+)
+"""
+
+
+def test_two_committed_sessions_cannot_post_or_overspend_twice(
+    running_site: RunningSite, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    """REQ-358, handoff S02 and S09. Independent PostgreSQL sessions race on RX-002."""
+    manager = personas["your-organisation"][1].username
+    with psycopg.connect(site_dsn(running_site), autocommit=True) as admin:
+        row = admin.execute(
+            "SELECT decision.id, decision.organisation_id, account.id, person.id "
+            "FROM logistics_receivingdisposition decision "
+            "JOIN logistics_receipt receipt ON receipt.id = decision.receipt_id "
+            "JOIN accounts_user account ON account.organisation_id = decision.organisation_id "
+            "JOIN people_person person ON person.user_id = account.id "
+            "WHERE receipt.delivery_reference = 'RX-002' AND account.username = %s",
+            [manager],
+        ).fetchone()
+    assert row is not None
+    disposition, organisation, user, person = (str(value) for value in row)
+    values: dict[str, str] = {
+        "organisation": organisation,
+        "disposition": disposition,
+        "person": person,
+    }
+    with _application(running_site) as setup:
+        _as(setup, organisation, user)
+        for key, name in (("location", "Race Bay A"), ("second", "Race Bay B")):
+            created = setup.execute(
+                "INSERT INTO logistics_storelocation (id, organisation_id, name, kind, "
+                "holds_components, holds_standard_parts, holds_materials, secure, "
+                "storage_conditions, active) VALUES (gen_random_uuid(), %s, %s, "
+                "'Serviceable Stores', true, false, false, false, '', true) RETURNING id",
+                [organisation, name],
+            ).fetchone()
+            assert created is not None
+            values[key] = str(created[0])
+        resolution = setup.execute(
+            "INSERT INTO logistics_stockresolution (id, organisation_id, disposition_id, unit, "
+            "part_number, serial_number, batch_number, specification, location_id, "
+            "shelf_life_basis, shelf_life_rule, evidence, evidence_on, recorded_by_id, "
+            "recorded_by_name, authority, recorded_at) VALUES (gen_random_uuid(), %s, %s, "
+            "'Each', 'RACE-PN', '', 'RACE-LOT', '', %s, 'Not Applicable', '', 'Race evidence', "
+            "'2026-11-18', %s, 'Concurrent Test', 'Concurrent ST-1', now()) RETURNING id",
+            [organisation, disposition, values["location"], person],
+        ).fetchone()
+        assert resolution is not None
+        values["resolution"] = str(resolution[0])
+        setup.commit()
+
+    def race(statement: str) -> dict[str, str]:
+        outcome: dict[str, str] = {}
+        with _application(running_site) as first, _application(running_site) as second:
+            _as(first, organisation, user)
+            _as(second, organisation, user)
+            first.execute(statement, values)
+
+            def contend() -> None:
+                try:
+                    second.execute(statement, values)
+                    second.commit()
+                    outcome["second"] = "committed"
+                except (psycopg.errors.UniqueViolation, psycopg.errors.CheckViolation) as error:
+                    outcome["second"] = type(error).__name__
+                    second.rollback()
+
+            thread = threading.Thread(target=contend)
+            thread.start()
+            thread.join(timeout=1)
+            assert thread.is_alive(), "The second session must wait for the first"
+            first.commit()
+            thread.join(timeout=10)
+        return outcome
+
+    assert race(POSTING) == {"second": "UniqueViolation"}
+    with psycopg.connect(site_dsn(running_site), autocommit=True) as admin:
+        lots = admin.execute(
+            "SELECT id FROM logistics_stockposting WHERE disposition_id = %s", [disposition]
+        ).fetchall()
+        assert len(lots) == 1
+        values["lot"] = str(lots[0][0])
+        intakes = admin.execute(
+            "SELECT count(*) FROM logistics_stockmovement WHERE lot_id = %s", [values["lot"]]
+        ).fetchone()
+        assert intakes == (1,)
+    assert race(TRANSFER) == {"second": "CheckViolation"}
+    with psycopg.connect(site_dsn(running_site), autocommit=True) as admin:
+        balances = admin.execute(
+            "SELECT logistics_stock_balance(%s, %s), logistics_stock_balance(%s, %s)",
+            [values["lot"], values["location"], values["lot"], values["second"]],
+        ).fetchone()
+        assert balances == (0, 1)
+
+
+def site_dsn(site: RunningSite) -> str:
+    return psycopg.conninfo.make_conninfo(site.database.admin.info.dsn, dbname=site.name)

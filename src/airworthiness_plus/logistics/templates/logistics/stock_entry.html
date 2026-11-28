@@ -1,130 +1,78 @@
 {% extends "base.html" %}
-{% load stock %}
 {% load writing %}
 {% block title %}{{ receipt.item }} · Stock{% endblock %}
 {% block content %}
 <h1>{{ receipt.item }}</h1>
 <p><a href="{% url 'goods_receipt' receipt.id %}">View Goods In Receipt {{ receipt.delivery_reference }}</a></p>
 <dl>
-<dt>Posting Status</dt><dd>{{ status }}</dd>
-<dt>On Hand</dt><dd>{{ on_hand|default:"0" }}{% if unit %} ({{ unit }}){% endif %}</dd>
-<dt>Reserved</dt><dd>{{ reserved|default:"0" }}</dd>
-<dt>Available Quantity</dt><dd>{{ available|default:"0" }}</dd>
-{% if not posting %}<dt>Posting Blockers</dt><dd>{{ blockers|join:"; "|default:"None. Ready to Post" }}</dd>{% endif %}
-{% if posting %}<dt>Posted On</dt><dd>{{ posting.posted_on|long_date }} by {{ posting.appointment.person.full_name }}</dd>
-<dt>Location Rules at Posting</dt><dd>{{ posting.location_rules }}</dd>{% endif %}
-</dl>
-{% if may_post and not posting %}
-<p><a class="button" href="{% url 'record_posting_evidence' disposition.id %}">Record Posting Evidence</a>
-{% if not blockers %} <a class="button" href="{% url 'post_disposition' disposition.id %}">{% if disposition.outcome == "Quarantined" %}Post the Quarantine Hold{% else %}Post to Stock{% endif %}</a>{% endif %}</p>
-{% endif %}
-
-<h2>Receiving Decision</h2>
-<dl>
+<dt>Posting State</dt><dd>{{ state }}</dd>
 <dt>Class</dt><dd>{{ receipt.classification }}</dd>
 <dt>Supplier or Owner Source</dt><dd>{{ receipt.source }}</dd>
 <dt>Item Reference</dt><dd>{{ receipt.item_reference }}</dd>
 <dt>Received Quantity</dt><dd>{{ receipt.quantity }}</dd>
-<dt>Disposition</dt><dd>{{ disposition.outcome }}</dd>
-<dt>Destination Recorded at Disposition</dt><dd>{{ disposition.destination }}</dd>
+<dt>Stock Location</dt><dd>{{ disposition.destination }}</dd>
 <dt>Moved On</dt><dd>{{ disposition.disposition_on|long_date }}</dd>
-<dt>Decision Reason and Movement Evidence</dt><dd>{{ disposition.evidence }}</dd>
-{% if receipt.shelf_life_to %}<dt>Shelf-Life Date on Receipt</dt><dd>{{ receipt.shelf_life_to|long_date }}</dd>{% endif %}
+{% if receipt.shelf_life_to %}<dt>Shelf Life To</dt><dd>{{ receipt.shelf_life_to|long_date }}</dd>{% endif %}
 <dt>Release Document Shown on Arrival</dt><dd>{{ receipt.release_document|default:"Not Recorded" }}</dd>
 {% include "logistics/verified_evidence.html" %}
+{% if disposition.outcome != "Returned to Supplier" %}
+<dt>On Hand</dt><dd>{{ on_hand }}{% if unit %} {{ unit }}{% endif %}</dd>
+<dt>Reserved Quantity</dt><dd>0</dd>
+<dt>Available Quantity</dt><dd>{{ available }}</dd>
+{% if lot %}<dt>Shelf-Life State</dt><dd>{{ shelf }}</dd>{% endif %}
+{% endif %}
+{% if not lot %}<dt>Posting Blockers</dt><dd>{% if blockers %}{{ blockers|join:"; " }}{% else %}None. Ready to Post{% endif %}</dd>{% endif %}
 </dl>
-
-{% if positions %}
-<h2>Custody</h2>
+{% if may_post and disposition.outcome != "Returned to Supplier" %}
+<p><a class="button" href="{% url 'resolve_stock' disposition.id %}">Resolve for Stock</a></p>
+{% if ready %}
+<form method="post" action="{% url 'post_stock' disposition.id %}">
+{% csrf_token %}
+{% for field in post_form %}<p>{{ field.label_tag }}<br>{{ field }}</p>{% endfor %}
+<p><button type="submit">Post to Stock</button></p>
+</form>
+{% endif %}
+{% endif %}
+{% if lot %}
+<h2>Posting</h2>
+<dl>
+<dt>Posted Quantity</dt><dd>{{ lot.quantity|stock_quantity }} {{ lot.unit }}</dd>
+<dt>Part Number</dt><dd>{{ lot.part_number|default:"Not Applicable" }}</dd>
+<dt>Serial Number</dt><dd>{{ lot.serial_number|default:"Not Applicable" }}</dd>
+<dt>Batch or Lot</dt><dd>{{ lot.batch_number|default:"Not Applicable" }}</dd>
+<dt>Standard or Specification</dt><dd>{{ lot.specification|default:"Not Applicable" }}</dd>
+<dt>Location at Posting</dt><dd>{{ lot.location_name }} ({{ lot.location_kind }})</dd>
+<dt>Shelf-Life Basis</dt><dd>{{ lot.shelf_life_basis }}{% if lot.shelf_life_to %}, {{ lot.shelf_life_rule }} {{ lot.shelf_life_to|long_date }}{% endif %}</dd>
+<dt>Physically Moved On</dt><dd>{{ lot.physical_on|long_date }}</dd>
+<dt>Posted On</dt><dd>{{ lot.posted_on|long_date }} by {{ lot.actor_name }}</dd>
+<dt>Authority Relied On</dt><dd>{{ lot.authority }}</dd>
+</dl>
+<h2>Custody by Location</h2>
 <table>
-<thead><tr><th scope="col">Location</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th><th scope="col">Condition</th><th scope="col">Shelf Life</th></tr></thead>
-<tbody>
-{% for line in positions %}
-<tr><td>{{ line.location }}</td><td>{{ line.on_hand|amount }} {{ line.unit }}</td><td>{{ line.reserved|amount }}</td><td>{{ line.available|amount }}</td><td>{{ line.location.kind }}</td><td>{% include "logistics/shelf_life.html" with shelf=line.shelf %}</td></tr>
-{% endfor %}
-</tbody>
+<thead><tr><th scope="col">Location</th><th scope="col">On Hand</th><th scope="col">Reserved</th><th scope="col">Available</th></tr></thead>
+<tbody>{% for one in positions %}<tr><td>{{ one.location.name }}</td><td>{{ one.on_hand|stock_quantity }} {{ lot.unit }}</td><td>{{ one.reserved|stock_quantity }}</td><td>{{ one.available|stock_quantity }}</td></tr>{% endfor %}</tbody>
 </table>
-{% if posting.kind == "Stock" %}
-<p>{% if may_reserve %}<a class="button" href="{% url 'reserve_stock' posting.id %}">Reserve Stock</a> {% endif %}
-{% if may_quarantine %}<a class="button" href="{% url 'quarantine_stock' posting.id %}">Quarantine Stock</a>{% endif %}</p>
-{% endif %}
-{% if may_move or may_count %}<p>{% if may_move %}<a class="button" href="{% url 'move_stock' posting.id %}">Move Stock</a> {% endif %}{% if may_count %}<a class="button" href="{% url 'count_stock' posting.id %}">Count Stock</a>{% endif %}</p>{% endif %}
-{% endif %}
-
-{% if posting.kind == "Stock" and may_approve_substitution %}
-<p><a class="button" href="{% url 'approve_stock_substitution' posting.id %}">Approve an Alternate</a></p>
-{% endif %}
-{% if approved_alternates %}
-<h2>Applicable Approved Alternates</h2>
-<ul>
-{% for approval in approved_alternates %}
-<li>{{ approval.substitute_identity }} for {{ approval.required_identity }} on
-<a href="{% url 'work_package' approval.card.package_id %}#card-{{ approval.card_id }}">{{ approval.card.package }} · {{ approval.card }}</a>.
-{{ approval.applicable_source }}. Issued work card revision {{ approval.revision.revision }}.
-Approved by {{ approval.authorisation.person }} under {{ approval.authorisation.reference }} on {{ approval.recorded_on|long_date }}.
-{{ approval.evidence }}</li>
-{% endfor %}
-</ul>
-{% endif %}
-
-{% if allocations %}
-<h2>Reservations, Issues and Returns</h2>
-<table>
-<thead><tr><th scope="col">Event</th><th scope="col">Work Card</th><th scope="col">Location</th><th scope="col">Quantity</th><th scope="col">Evidence</th><th scope="col">Recorded By</th><th scope="col">Actions</th></tr></thead>
-<tbody>
-{% for event in allocations %}
-<tr>
-<td>{{ event.get_kind_display }}{% if event.kind == "Reserve" and not event.following %} · Open{% endif %}</td>
-<td>{% if event.card_id %}<a href="{% url 'work_package' event.card.package_id %}#card-{{ event.card_id }}">{{ event.card.package }} · {{ event.card }}</a>{% endif %}</td>
-<td>{% if event.source %}{{ event.source }}{% endif %}{% if event.destination %}{% if event.source %} to {% endif %}{{ event.destination }}{% endif %}</td>
-<td>{{ event.quantity|amount }} {{ posting.evidence.unit }}</td>
-<td>{% if event.required_identity %}{{ event.required_identity }} · {{ event.applicable_source }}<br>{% endif %}{{ event.evidence }}{% if event.substitution %}<br>Alternate {{ event.substitution.substitute_identity }} approved by {{ event.substitution.authorisation.person }} under {{ event.substitution.authorisation.reference }}{% endif %}</td>
-<td>{{ event.appointment.person.full_name }}, {{ event.recorded_on|long_date }}</td>
-<td>{% if not event.following %}
-{% if event.kind == "Reserve" %}{% if may_issue %}<a href="{% url 'issue_reserved_stock' event.id %}">Issue Reserved Stock</a>{% endif %}
-{% if may_reserve %}<a href="{% url 'release_stock_reservation' event.id %}">Release Reservation</a>{% endif %}
-{% elif event.kind == "Issue" and may_return %}<a href="{% url 'return_issued_stock' event.id %}">Return Stock to Quarantine</a>{% endif %}
-{% endif %}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-{% endif %}
-
-{% if movements %}
+{% if may_move %}<p><a class="button" href="{% url 'move_stock' lot.id %}">Move Stock</a></p>{% endif %}
+{% if may_count %}<p><a class="button" href="{% url 'count_stock' lot.id %}">Record a Stock Count</a></p>{% endif %}
 <h2>Movements</h2>
 <table>
-<thead><tr><th scope="col">Moved On</th><th scope="col">Movement</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Quantity</th><th scope="col">Evidence</th><th scope="col">Recorded By</th></tr></thead>
-<tbody>
-{% for movement in movements %}
-<tr><td>{{ movement.moved_on|long_date }}</td><td>{{ movement.get_kind_display }}</td><td>{{ movement.source|default:"" }}</td><td>{{ movement.destination|default:"" }}</td><td>{{ movement.quantity|amount }} {{ posting.evidence.unit }}</td><td>{{ movement.evidence }}</td><td>{{ movement.appointment.person.full_name }}, {{ movement.recorded_on|long_date }}</td></tr>
-{% endfor %}
-</tbody>
+<thead><tr><th scope="col">Movement</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Quantity</th><th scope="col">Moved On</th><th scope="col">By</th><th scope="col">Authority</th><th scope="col">Evidence</th></tr></thead>
+<tbody>{% for move in movements %}<tr><td>{{ move.kind }}</td><td>{{ move.from_location.name|default:"" }}</td><td>{{ move.to_location.name|default:"" }}</td><td>{{ move.quantity|stock_quantity }} {{ lot.unit }}</td><td>{{ move.moved_on|long_date }}</td><td>{{ move.actor_name }}</td><td>{{ move.authority }}</td><td>{{ move.evidence }}</td></tr>{% endfor %}</tbody>
 </table>
-{% endif %}
-
-{% if counts %}
 <h2>Counts</h2>
+{% if counts %}
 <table>
-<thead><tr><th scope="col">Counted On</th><th scope="col">Location</th><th scope="col">Counted</th><th scope="col">Ledger Quantity</th><th scope="col">Variance</th><th scope="col">Evidence</th><th scope="col">Adjustment</th></tr></thead>
-<tbody>
-{% for taken in counts %}
-<tr><td>{{ taken.counted_on|long_date }}</td><td>{{ taken.location }}</td><td>{{ taken.counted|amount }}</td><td>{{ taken.on_hand|amount }}</td><td>{{ taken.variance|amount }}</td><td>{{ taken.evidence }}</td>
-<td>{% if taken.adjustment %}Applied {{ taken.adjustment.recorded_on|long_date }}{% elif taken.variance and may_adjust %}<a href="{% url 'adjust_stock' taken.id %}">Adjust for Count {{ taken.counted_on|long_date }}</a>{% elif taken.variance %}Awaiting Authorised Adjustment{% else %}No Variance{% endif %}</td></tr>
-{% endfor %}
-</tbody>
+<thead><tr><th scope="col">Counted On</th><th scope="col">Location</th><th scope="col">Counted</th><th scope="col">Ledger</th><th scope="col">Variance</th><th scope="col">By</th><th scope="col">Adjustment</th></tr></thead>
+<tbody>{% for tally in counts %}<tr><td>{{ tally.counted_on|long_date }}</td><td>{{ tally.location.name }}</td><td>{{ tally.counted_quantity|stock_quantity }}</td><td>{{ tally.ledger_quantity|stock_quantity }}</td><td>{{ tally.variance|stock_quantity }}</td><td>{{ tally.counter_name }}</td>
+<td>{% if tally.adjustment %}Adjusted {{ tally.adjustment.moved_on|long_date }}{% elif tally.variance and may_adjust %}<a href="{% url 'adjust_stock' tally.id %}">Adjust From This Count</a>{% elif tally.variance %}Awaiting Authorised Adjustment{% else %}Agrees{% endif %}</td></tr>{% endfor %}</tbody>
 </table>
+{% else %}<p>No Counts Recorded</p>{% endif %}
 {% endif %}
-
-{% if history %}
-<h2>Posting Evidence</h2>
+{% if resolutions %}
+<h2>Resolutions</h2>
 <table>
-<thead><tr><th scope="col">Assessed On</th><th scope="col">Unit and Quantity</th><th scope="col">Identity</th><th scope="col">Shelf-Life Basis</th><th scope="col">Location</th><th scope="col">Evidence</th><th scope="col">Assessed By</th></tr></thead>
-<tbody>
-{% for basis in history %}
-<tr><td>{{ basis.assessed_on|long_date }}</td><td>{% if basis.quantity %}{{ basis.quantity|amount }} {{ basis.unit }}{% else %}Not Resolved{% endif %}</td><td>{% include "logistics/stock_identity.html" %}</td><td>{{ basis.shelf_life_basis|default:"Unknown" }}{% if basis.shelf_life_to %}, {{ basis.shelf_life_to|long_date }}{% endif %}</td><td>{{ basis.location|default:"Not Resolved" }}{% if basis.tag %}, Tag {{ basis.tag }}{% endif %}</td><td>{{ basis.evidence }}</td><td>{{ basis.appointment.person.full_name }}</td></tr>
-{% endfor %}
-</tbody>
+<thead><tr><th scope="col">Assessed On</th><th scope="col">Unit</th><th scope="col">Identity</th><th scope="col">Location</th><th scope="col">Shelf Life</th><th scope="col">Evidence</th><th scope="col">By</th></tr></thead>
+<tbody>{% for one in resolutions %}<tr><td>{{ one.evidence_on|long_date }}</td><td>{{ one.unit }}</td><td>{{ one.part_number }} {{ one.serial_number }} {{ one.batch_number }} {{ one.specification }}</td><td>{{ one.location.name|default:"Not Resolved" }}</td><td>{{ one.shelf_life_basis|default:"Not Resolved" }}{% if one.shelf_life_to %} {{ one.shelf_life_to|long_date }}{% endif %}</td><td>{{ one.evidence }}</td><td>{{ one.recorded_by_name }}, {{ one.authority }}</td></tr>{% endfor %}</tbody>
 </table>
 {% endif %}
 {% endblock %}

@@ -20,16 +20,6 @@ LEGACY_REFERENCE = "TEST-RELEASE-10"
 
 
 def seed() -> None:
-    accounts = json.load(sys.stdin)
-    call_command("migrate", verbosity=0, interactive=False)
-    # Seed on the same business date the loopback server uses, so that records
-    # dated by the services (Stores postings and withdrawals) are not in its future.
-    with patch("airworthiness_plus.aircraft.services.today", return_value=date(2026, 11, 18)):
-        _seed(accounts)
-    connection.close()
-
-
-def _seed(accounts: list[list[dict[str, str]]]) -> None:
     from airworthiness_plus.accounts import users
     from airworthiness_plus.accounts.models import User
     from airworthiness_plus.aircraft.models import Aircraft
@@ -37,6 +27,8 @@ def _seed(accounts: list[list[dict[str, str]]]) -> None:
     from airworthiness_plus.organisations.models import Organisation
     from airworthiness_plus.programme.services import record_work
 
+    accounts = json.load(sys.stdin)
+    call_command("migrate", verbosity=0, interactive=False)
     for command, people in zip(
         ("seed_sample_organisation", "seed_second_sample_organisation"), accounts, strict=True
     ):
@@ -72,6 +64,7 @@ def _seed(accounts: list[list[dict[str, str]]]) -> None:
                     release_reference=LEGACY_REFERENCE,
                     release_recorded_on=date(2026, 11, 11),
                 )
+    connection.close()
 
 
 class QuietHandler(WSGIRequestHandler):

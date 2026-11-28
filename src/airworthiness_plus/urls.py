@@ -17,10 +17,8 @@ from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
 from airworthiness_plus.imports import views as imports
-from airworthiness_plus.logistics import allocation_views
 from airworthiness_plus.logistics import stores_views as stores
 from airworthiness_plus.logistics import views as logistics
-from airworthiness_plus.logistics.models import AllocationKind
 from airworthiness_plus.maintenance_data import views as data
 from airworthiness_plus.modifications import views as modifications
 from airworthiness_plus.organisations import views as settings
@@ -49,71 +47,8 @@ urlpatterns: list[URLPattern | URLResolver] = [
         logistics.record_receiving_disposition,
         name="record_receiving_disposition",
     ),
-    path("stores/", stores.stores_stock, name="stores_stock"),
-    path("stores/locations/", stores.stores_locations, name="stores_locations"),
-    path("stores/locations/add/", stores.add_stores_location, name="add_stores_location"),
-    path(
-        "stores/locations/<uuid:location_id>/withdraw/",
-        stores.withdraw_stores_location,
-        name="withdraw_stores_location",
-    ),
-    path("stores/appointments/", stores.stores_appointments, name="stores_appointments"),
-    path("stores/appointments/add/", stores.add_stores_appointment, name="add_stores_appointment"),
-    path(
-        "stores/appointments/<uuid:appointment_id>/withdraw/",
-        stores.withdraw_stores_appointment,
-        name="withdraw_stores_appointment",
-    ),
-    path("stores/holds/<uuid:disposition_id>/", stores.quarantine_hold, name="quarantine_hold"),
-    path(
-        "stores/dispositions/<uuid:disposition_id>/evidence/",
-        stores.record_posting_evidence,
-        name="record_posting_evidence",
-    ),
-    path(
-        "stores/dispositions/<uuid:disposition_id>/post/",
-        stores.post_disposition,
-        name="post_disposition",
-    ),
-    path(
-        "stores/lots/<uuid:posting_id>/approve-alternate/",
-        allocation_views.approve_substitution,
-        name="approve_stock_substitution",
-    ),
-    path("stores/lots/<uuid:posting_id>/move/", stores.move_stock, name="move_stock"),
-    path(
-        "stores/lots/<uuid:posting_id>/reserve/",
-        allocation_views.change_custody,
-        {"kind": AllocationKind.RESERVE},
-        name="reserve_stock",
-    ),
-    path(
-        "stores/lots/<uuid:posting_id>/quarantine/",
-        allocation_views.change_custody,
-        {"kind": AllocationKind.QUARANTINE},
-        name="quarantine_stock",
-    ),
-    path(
-        "stores/allocations/<uuid:allocation_id>/release/",
-        allocation_views.change_custody,
-        {"kind": AllocationKind.RELEASE},
-        name="release_stock_reservation",
-    ),
-    path(
-        "stores/allocations/<uuid:allocation_id>/issue/",
-        allocation_views.change_custody,
-        {"kind": AllocationKind.ISSUE},
-        name="issue_reserved_stock",
-    ),
-    path(
-        "stores/allocations/<uuid:allocation_id>/return/",
-        allocation_views.change_custody,
-        {"kind": AllocationKind.RETURN},
-        name="return_issued_stock",
-    ),
-    path("stores/lots/<uuid:posting_id>/count/", stores.count_stock, name="count_stock"),
-    path("stores/counts/<uuid:count_id>/adjust/", stores.adjust_stock, name="adjust_stock"),
-    path("stores/<uuid:stock_id>/", stores.stock_entry, name="stock_entry"),
+    path("stores/", logistics.stores_stock, name="stores_stock"),
+    path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
     path(
         "stores/lookup-exercise/", logistics.stores_lookup_exercise, name="stores_lookup_exercise"
     ),
@@ -156,6 +91,22 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path(
         "tools/<uuid:tool_id>/calibration/", calibration.place_order, name="place_calibration_order"
     ),
+    path("stores/locations/", stores.store_locations, name="store_locations"),
+    path("stores/locations/add/", stores.add_store_location, name="add_store_location"),
+    path(
+        "stores/dispositions/<uuid:disposition_id>/",
+        stores.stores_disposition,
+        name="stores_disposition",
+    ),
+    path(
+        "stores/dispositions/<uuid:disposition_id>/resolve/",
+        stores.resolve_stock,
+        name="resolve_stock",
+    ),
+    path("stores/dispositions/<uuid:disposition_id>/post/", stores.post_stock, name="post_stock"),
+    path("stores/lots/<uuid:lot_id>/move/", stores.move_stock, name="move_stock"),
+    path("stores/lots/<uuid:lot_id>/count/", stores.count_stock, name="count_stock"),
+    path("stores/counts/<uuid:count_id>/adjust/", stores.adjust_stock, name="adjust_stock"),
     path("tools/", tooling.tool_register, name="tool_register"),
     path("tools/add/", tooling.add_tool, name="add_tool"),
     path("tools/delegations/", tooling.tool_delegations, name="tool_delegations"),

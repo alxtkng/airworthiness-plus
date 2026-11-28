@@ -429,9 +429,11 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Record Subcontractor Assessment | No | Yes | No | No | No |
 | Record Supplier Evaluation | No | Yes | No | No | No |
 | Record Goods In | No | Yes | No | Yes | No |
-| Manage Stores Appointment Records | Yes | No | No | No | No |
-| Record Stores Locations, Posting, Movements and Counts | No | Yes | No | Yes | No |
-| Adjust Stock After a Count | No | Yes | No | No | No |
+| Manage Stores Locations | No | Yes | No | No | No |
+| Resolve and Post Stock | No | Yes | No | Yes | No |
+| Move Stock | No | Yes | No | Yes | No |
+| Count Stock | No | Yes | No | Yes | No |
+| Adjust Stock From a Count | No | Yes | No | No | No |
 | Plan Work Package | No | Yes | No | Yes | No |
 | Record Work Card Evidence | No | Yes | No | Yes | No |
 | Record Work Order | No | Yes | No | Yes | No |

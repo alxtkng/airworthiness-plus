@@ -1,22 +1,14 @@
 {% extends "base.html" %}
-{% load stock %}
 {% block title %}{{ heading }}{% endblock %}
 {% block content %}
 <h1>{{ heading }}</h1>
-{% if receipt %}<p><a href="{% url 'goods_receipt' receipt.id %}">{{ receipt.item }}, {{ receipt.delivery_reference }}</a></p>{% endif %}
-{% if blockers %}<p>Still Blocking: {{ blockers|join:"; " }}</p>{% endif %}
-{% if count %}<p>Count of {{ count.counted|amount }} at {{ count.location }} against {{ count.on_hand|amount }} on the ledger. Variance {{ variance }}</p>{% endif %}
-{% if custody %}<p>{{ custody.quantity|amount }} {{ custody.posting.evidence.unit }} reserved or issued for {{ custody.card.package }} · {{ custody.card.title }}. Part {{ custody.required_identity }}, {{ custody.applicable_source }}.</p>{% endif %}
-{% if alternate_identity %}<p>Traced alternate in this lot: {{ alternate_identity }}</p>{% endif %}
+<p><a href="{{ back }}">Back</a></p>
 <form method="post">
 {% csrf_token %}
 {% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
-{% for field in form.hidden_fields %}{{ field }}{% if field.errors %}<p role="alert">{{ field.errors|join:", " }}</p>{% endif %}{% endfor %}
-{% for field in form.visible_fields %}
-<p>{{ field.label_tag }}<br>{{ field }}
-{% if field.help_text %}<br><span id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}
-{% if field.errors %}<span role="alert">{{ field.errors|join:", " }}</span>{% endif %}</p>
+{% for field in form %}
+<p>{{ field.label_tag }}<br>{{ field }}{% if field.errors %} <span role="alert">{{ field.errors|join:", " }}</span>{% endif %}{% if field.help_text %}<br><small id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>{% endif %}</p>
 {% endfor %}
-<p><button type="submit">{{ heading }}</button></p>
+<p><button type="submit">{{ button }}</button></p>
 </form>
 {% endblock %}

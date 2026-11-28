@@ -32,51 +32,42 @@ the original decision. Missing structured evidence stays blank and the original
 inspection record remains available. New acceptance requires an evidence reference
 and the class-specific evidence fields.
 
-## Stores posting, 28 November 2026
+## Stores PR 1: once-only posting and the location ledger
 
-Alex King, Goods In owner, approved the receipt-to-stock contract recorded in
-`assurance/phase-4-stores-handoff.md` on 28 November 2026, with its legacy
-mappings and the REQ-357 clarification. REQ-358 implements it in Stores PR 1.
+28 November 2026. Alex King approved the receipt-to-stock contract, its legacy mapping
+rules and the REQ-357 clarification (`assurance/phase-4-stores-handoff.md`). REQ-358.
 
-The stock entry stays the permanent link to the acceptance. It no longer stands
-for a quantity in stock. Stores posts the disposition once, keyed by its
-identifier, from the persisted decision and a dated posting-evidence record. The
-evidence resolves the unit and exact quantity, the separate part, serial, batch
-and specification, the shelf-life basis and a location from the Stores location
-register. A legacy acceptance and a new one take the same path. Until the
-evidence is complete the entry shows Awaiting Stock Posting, every blocking
-reason and zero available. A quarantine is posted as blocked custody in a
-secure quarantine location, with zero available. A supplier return is never
-posted.
+- The `StockEntry` above stays the link to an acceptance. It credits nothing. An
+  accepted line with an entry shows **Awaiting Stock Posting**, every blocking reason
+  and zero available quantity until it is posted.
+- Stores records a dated `StockResolution` from the original evidence: unit (Each or
+  Litre), part number, serial, batch or lot and standard or specification as the class
+  requires, the location and the shelf-life basis and boundary. A correction appends a
+  later resolution. The receipt, the disposition and the entry are never changed. The
+  free-text destination stays as Goods In recorded it.
+- `StockPosting` is unique on the disposition. Its insert trigger takes the
+  disposition's transaction lock, copies the received quantity and the latest
+  resolution, checks the location's kind, class and state, the identity for the class,
+  the shelf-life basis against the receipt and that a serial has no other custody, and
+  refuses an acceptance whose structured evidence is blank. A second trigger writes the
+  opening intake movement in the same statement, so a failure leaves neither.
+- A quarantine decision posts to a secure quarantine location as blocked custody with
+  zero availability. A supplier return is never posted.
+- Balances are derived from `StockMovement`. Every movement takes the lot's
+  transaction lock and the database refuses an overspend, a wrong unit scale, a split
+  serial, an incompatible or withdrawn destination and a move of an open hold to
+  serviceable Stores. A `StockCount` reads the ledger quantity in the database and
+  changes nothing. An adjustment applies one current count's variance once, by the
+  Adjust Stock From a Count action.
+- All five tables are under ADR-0002: forced row-level security, same-organisation
+  parent checks, database-written hashed history and no update or delete, except that a
+  location can be withdrawn. They are in the organisation export.
+- Legacy acceptances use the same resolution and posting path. Reconciliation posts
+  each resolved, unblocked disposition and is safe to repeat.
 
-The posting row and its opening movement are written by one statement: an
-after-insert trigger writes the movement, so neither can exist without the
-other. A unique link on the disposition and an advisory lock on its identifier
-let one caller post. A replay that would use the same evidence returns the
-original posting. One that would use later evidence is a conflict and the
-original stands. Balances are derived from append-only movements. Each
-movement takes a per-lot lock in the database, and the database refuses a
-quantity that does not fit its unit, a move beyond the source balance, an
-incompatible or withdrawn destination and an adjustment the ledger no longer
-matches. A count records the ledger quantity the database read and changes
-nothing. A separately appointed person applies its variance.
-
-Each Stores action needs a current dated appointment for the signed-in
-person's own record, under a maintenance approval held that day, as well as the
-app role. The Administrator transcribes appointments and does not act in
-Stores. The database checks the appointment again on every insert.
-
-Goods In does not yet capture the unit, the separate identifiers or a register
-location at receipt and disposition. Until it does, new acceptances are
-resolved through the same Stores posting evidence. Reservations, issue to a work
-package and final disposal are later pull requests. The organisation's
-procedures, appointments, warning lead time and manufacturer cut-offs are To Be
-Checked.
-
-## Local AMOS custody extension (REQ-359)
-
-The live trial keeps the original acceptance link and uses the immutable disposition UUID to post an evidenced ledger credit once. Legacy acceptance may remain visible with unverified identity, physical location, unit or shelf-life basis and zero available stock. Stores records dated assessments separately. Location and station codes are independent. Quantities are grouped by station, store and unit for an exact part-number or specification lookup. Configured stores remain visible with zero quantity when appropriate. [Producer review and evidence](../../assurance/phase-4-stores-handoff.md)
-
-A separate custody action reserves or issues a lot against unfinished work on an issued package with an open written order. The issue retains the applicable parts-data reference and identity. It rechecks shelf life, physical and allocatable custody and the current Stores appointment. A release of reservation restores availability, and physical return or quarantine creates segregated custody under a retained action and reason. The application and PostgreSQL serialise competing action on the same lot. A retry uses the earlier result for identical request details. This local design preserves the original receiver and acceptance records. Confirm procedure, technical eligibility evidence and roles with the approval holder before applying it to operational records.
-
-An alternate needs separate evidence from the signed-in certifying person with a current grant naming the actual aircraft. The record pins the issued card revision, package, lot, required identity, substitute identity and applicable parts-data reference. At reservation and issue, the service and PostgreSQL recheck the evidence, current card and grant. The Stores appointment governs physical custody. The separate approval documents technical eligibility under the applicable procedure. The operator verifies the grant syntax, applicability and approved parts data before deployment.
+Not in PR 1: Goods In capturing unit and structured identity at receipt and choosing
+the location register entry at disposition (the producer side of the contract),
+reservations, work-package issue, final disposal and dated appointment records for
+Stores actions. Organisation procedures, appointments and the manufacturer's shelf-life
+convention stay **To Be Checked**. The warning lead time uses the organisation's Due
+Soon days.

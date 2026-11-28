@@ -1,1 +1,0 @@
-{% load writing %}{{ shelf.status }}{% if shelf.last_day %}, Last Day {{ shelf.last_day|long_date }}{% endif %}{% if shelf.status == "Due Soon" %}, {{ shelf.days_left }} Day{{ shelf.days_left|pluralize }} Left{% endif %}
