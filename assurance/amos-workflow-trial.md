@@ -78,7 +78,8 @@ journeys passed. The existing session-management and second-organisation
 manager navigation journeys timed out. The existing passkey journey reached
 the sign-in page instead of the expected signed-in view after password and
 authenticator verification. The passkey scenario also failed in an isolated
-run of the integration baseline.
+run of the integration baseline. All three cases passed on the subsequent
+targeted rerun in 106.73 seconds. The full run retains its original result.
 
 ## Separate receiver rehearsal
 
@@ -91,7 +92,9 @@ Replaying the same archive leaves one snapshot. The receiver refuses a
 different snapshot for the same aircraft pending reconciliation, an altered
 member, a duplicate member, the wrong aircraft, an unsupported version, a
 missing defect and a missing programme dependency. The receiving database
-still contains the original reconciled snapshot after those refusals.
+still contains the original reconciled snapshot after those refusals. The
+receiver code is at `a306259`. The complete export suite passed all 22 checks
+and mypy passed on 465 files with that code.
 [Receiver workflow and reproduction](../architecture/decisions/ADR-0010-aircraft-transfer-pilot.md)
 
 The receiver displays the signed record status as unsigned and issuer trust as
