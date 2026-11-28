@@ -32,6 +32,7 @@ from airworthiness_plus.accounts.roles import Action, permitted
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.aircraft.models import Aircraft, Counter, CounterKind
 from airworthiness_plus.configuration import services as configuration_services
+from airworthiness_plus.configuration.forecast import forecast_lines
 from airworthiness_plus.configuration.models import Product
 from airworthiness_plus.defects.models import Basis as DeferralBasis
 from airworthiness_plus.defects.models import Decision as DefectDecision
@@ -68,7 +69,7 @@ from airworthiness_plus.staffing.roster_models import (
     ShiftPattern,
     StaffingMinimum,
 )
-from airworthiness_rules.intervals import Interval, Reading
+from airworthiness_rules.intervals import Interval, Reading, TaskKind
 from tests.conftest import as_owner, as_owner_who_is_not_a_superuser
 from tests.support import (
     TODAY,
@@ -664,6 +665,61 @@ def test_the_export_of_an_aircraft_is_its_complete_record_and_no_other(
     assert {"id": str(sample.lucy.id), "full_name": "Lucy Grant"} in files["people.json"]["users"]
     assert "@" not in json.dumps(files["people.json"])  # names, not user names
     assert "access-log.json" not in files
+
+
+def test_handover_archive_preserves_deferral_inspection_and_correction(
+    sample: Sample, fleet: dict[str, Aircraft]
+) -> None:
+    """REQ-134 and REQ-290. Reconcile one synthetic aircraft using only its archive."""
+    aircraft = fleet["G-EJKL"]
+    inspection_title = "Handover Trial Recurring Inspection"
+    with working_for(sample.ours.id, sample.planner.id):
+        counter = Counter.objects.get(aircraft=aircraft, kind=CounterKind.AIRFRAME)
+        inspection = programme_services.add_task(
+            aircraft.programme,
+            title=inspection_title,
+            kind=TaskKind.PROGRAMME_TASK,
+            counter=counter,
+            source="Synthetic inspection reference",
+            interval=Interval(days=30),
+        )
+        programme_services.record_work(
+            aircraft,
+            task=inspection,
+            description=inspection_title,
+            dated=TODAY - timedelta(days=10),
+            hours=D("11206.8"),
+            cycles=0,
+        )
+        defect_title = "Right Headset Socket Crackle"
+        forecast = {line.item: line for line in forecast_lines(aircraft, TODAY)}
+        export = build(sample.ours, by=sample.planner, aircraft=aircraft)
+
+    # Receiver checks the archive without reading the issuing database. The
+    # expected digest represents the value received separately from the issuer.
+    verdict = verify(export.content)
+    assert verdict.problems == ()
+    assert verdict.manifest_sha256 == export.manifest_sha256
+    files = opened(export.content)
+    defects = files["records/defects_defect.json"]
+    (defect,) = [record for record in defects if record["title"] == defect_title]
+    assert defect["aircraft_id"] == str(aircraft.pk)
+    assert defect["closed_on"] is None
+    assert defect["decision"] == DefectDecision.DEFERRED
+    defect_due = forecast[f"Deferred Defect Limit, {defect_title}"]
+    assert date.fromisoformat(defect["limit_on"]) == defect_due.forecast
+
+    tasks = files["records/programme_task.json"]
+    (task,) = [record for record in tasks if record["title"] == inspection_title]
+    work = files["records/programme_workdone.json"]
+    (completion,) = [record for record in work if record["task_id"] == task["id"]]
+    next_due = date.fromisoformat(completion["dated"]) + timedelta(days=task["interval_days"])
+    assert next_due == TODAY + timedelta(days=20) == forecast[inspection_title].forecast
+
+    readings = files["records/aircraft_utilisationentry.json"]
+    (correction,) = [record for record in readings if record["supersedes_id"]]
+    (original,) = [record for record in readings if record["id"] == correction["supersedes_id"]]
+    assert (original["hours"], correction["hours"]) == (11208.6, 11206.8)
 
 
 # Verification (T-SEC-019)
