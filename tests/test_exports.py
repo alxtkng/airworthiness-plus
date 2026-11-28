@@ -1292,23 +1292,24 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
 
     comparison = sender / "comparison.json"
     report = receiver / "reconciliation.txt"
-    expected = {
+    defect_due = forecast["Deferred Defect Limit, Right Headset Socket Crackle"]
+    inspection_due = forecast[inspection_title]
+    assert defect_due is not None and inspection_due is not None
+    expected: dict[str, Any] = {
         "format": "Airworthiness+ Aircraft Handover Reconciliation",
         "version": 1,
         "records": {
             "source_organisation_id": identity["organisation_id"],
             "aircraft_id": identity["aircraft_id"],
             "defect_id": str(defect.id),
-            "defect_limit_on": forecast[
-                "Deferred Defect Limit, Right Headset Socket Crackle"
-            ].isoformat(),
+            "defect_limit_on": defect_due.isoformat(),
             "inspection_id": str(inspection.id),
             "inspection_source": inspection.source,
             "completion_id": str(completion.id),
             "instruction_reference": "Synthetic instruction AW-I-05",
             "instruction_revision": "2",
             "completion_measurements": "Clearance 1.2 mm",
-            "next_due": forecast[inspection_title].isoformat(),
+            "next_due": inspection_due.isoformat(),
             "original_reading_id": str(original.id),
             "corrected_reading_id": str(correction.id),
             "original_hours": 11208.6,

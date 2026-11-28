@@ -66,7 +66,7 @@ class DamageForm(Form):
         label="Repair Work Done", queryset=WorkDone.objects.none(), required=False
     )
     follow_up = forms.ModelChoiceField(
-        label="Follow-up Programme Task", queryset=Task.objects.none(), required=False
+        label="Follow-Up Programme Task", queryset=Task.objects.none(), required=False
     )
     drawing = forms.ModelChoiceField(
         label="Drawing Revision", queryset=AircraftDrawing.objects.none()
@@ -135,7 +135,7 @@ class FlightReportForm(Form):
     report = forms.CharField(
         label="Original Report", max_length=4000, strip=False, widget=forms.Textarea
     )
-    confirmed = forms.BooleanField(label="I checked the attribution and report against the source")
+    confirmed = forms.BooleanField(label="Confirm Original Attribution and Report")
 
     def __init__(self, *args: Any, flight: FlightEvent, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

@@ -19,7 +19,7 @@
 </a>
 {% endfor %}
 </svg>
-<h2>Findings On This Revision</h2>
+<h2>Findings on This Revision</h2>
 <ol>
 {% for entry in markers %}
 <li><a href="{% url 'damage_entry' aircraft.id entry.id %}">{{ entry.title }}</a> · {{ entry.frame_or_zone }}{% if entry.superseded_by %} · Superseded{% endif %}</li>

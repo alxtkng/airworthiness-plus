@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ report.source_reference }} · {{ aircraft.registration }} Technical Log{% endblock %}
 {% block content %}
-<h1>{{ report.kind }} · {{ report.source_reference }}</h1>
+<h1>{{ report.kind }}</h1>
 <p><a href="{% url 'technical_log_flight' aircraft.id report.flight_id %}">{{ aircraft.registration }} · Flight {{ report.flight }}</a></p>
 <dl>
+<dt>Source Reference</dt><dd>{{ report.source_reference }}</dd>
 <dt>Original Reporter</dt><dd>{{ report.reporter }}</dd>
 <dt>Original Report</dt><dd class="flight-report-text">{{ report.report }}</dd>
 <dt>Recorded By</dt><dd>{{ report.recorder_name }}</dd>
