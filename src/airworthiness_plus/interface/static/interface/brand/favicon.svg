@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="130 122 220 220" role="img" aria-labelledby="title">
+  <title id="title">Airworthiness+ Light triangle with a plus above its diagonal</title>
+  <rect x="130" y="122" width="220" height="220" fill="#F5FDFF"/>
+  <g transform="translate(59.05357 47.44904) scale(1.80226424)">
+    <path d="M61 155 H136.201        A14 14 0 0 0 146.101 131.101        L68.899 53.899        A14 14 0 0 0 45 63.799        V139 A16 16 0 0 0 61 155 Z" transform="translate(198 0) scale(-1 1)" fill="none" stroke="#222222" stroke-width="7.98994937" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+  <path d="M-7.2 -31.5H7.2V-7.2H31.5V7.2H7.2V31.5H-7.2V7.2H-31.5V-7.2H-7.2Z" fill="#222222" transform="translate(186.0293 178.0293)" />
+</svg>

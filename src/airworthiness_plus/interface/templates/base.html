@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Airworthiness+{% endblock %}</title>
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'interface/brand/favicon-16.png' %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'interface/brand/favicon-32.png' %}">
+<link rel="icon" type="image/svg+xml" sizes="any" href="{% static 'interface/brand/favicon.svg' %}">
 <link rel="stylesheet" href="{% static 'interface/app.css' %}">
 <script src="{% static 'interface/app.js' %}" defer></script>
 {% block scripts %}{% endblock %}
@@ -13,7 +16,7 @@
 <a class="skip" href="#content">Skip to Content</a>
 <div class="app">
 <aside class="sidebar">
-<p class="organisation">{{ request.user.organisation.name }}</p>
+<p class="organisation"><img src="{% static 'interface/brand/favicon.svg' %}" width="24" height="24" alt=""><span>{{ request.user.organisation.name }}</span></p>
 <nav aria-label="Sections">
 {% for group, items in sidebar %}
 {% if group %}<h2>{{ group }}</h2>{% endif %}
