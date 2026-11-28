@@ -12,7 +12,7 @@ from airworthiness_plus.configuration import views as configuration
 from airworthiness_plus.contracts import views as contracts
 from airworthiness_plus.customers import views as customers
 from airworthiness_plus.dashboard import views as dashboard
-from airworthiness_plus.defects import maintenance_history
+from airworthiness_plus.defects import aircraft_records, maintenance_history
 from airworthiness_plus.defects import views as defects
 from airworthiness_plus.directives import views as directives
 from airworthiness_plus.exports import views as exports
@@ -410,6 +410,71 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("defects/repeat/action/", defects.record_repeat_action, name="record_repeat_action"),
     path("defects/<uuid:defect_id>/", defects.defect_page, name="defect"),
     path("defects/<uuid:defect_id>/close/", defects.close_defect, name="close_defect"),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/",
+        aircraft_records.damage_register,
+        name="damage_register",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/drawings/add/",
+        aircraft_records.record_drawing,
+        name="record_damage_drawing",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/drawings/<uuid:drawing_id>/",
+        aircraft_records.drawing_page,
+        name="damage_drawing",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/drawings/<uuid:drawing_id>/revise/",
+        aircraft_records.record_drawing,
+        name="revise_damage_drawing",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/findings/add/",
+        aircraft_records.record_damage,
+        name="record_damage_entry",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/findings/<uuid:damage_id>/",
+        aircraft_records.damage_page,
+        name="damage_entry",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/damage/findings/<uuid:damage_id>/revise/",
+        aircraft_records.record_damage,
+        name="revise_damage_entry",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/",
+        aircraft_records.technical_log,
+        name="technical_log",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/flights/add/",
+        aircraft_records.record_flight,
+        name="record_technical_log_flight",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/flights/<uuid:flight_id>/",
+        aircraft_records.flight_page,
+        name="technical_log_flight",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/flights/<uuid:flight_id>/transcribe/",
+        aircraft_records.transcribe_report,
+        name="transcribe_technical_log_report",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/reports/<uuid:report_id>/",
+        aircraft_records.report_page,
+        name="technical_log_report",
+    ),
+    path(
+        "aircraft/<uuid:aircraft_id>/technical-log/reports/<uuid:report_id>/release/",
+        aircraft_records.link_report_release,
+        name="link_technical_log_release",
+    ),
     path("aircraft/add/", aircraft.add_aircraft, name="add_aircraft"),
     path("aircraft/<uuid:aircraft_id>/", aircraft.aircraft_page, name="aircraft"),
     path("aircraft/<uuid:aircraft_id>/details/", aircraft.record_details, name="aircraft_details"),

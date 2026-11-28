@@ -861,3 +861,19 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
   display: block;
   border-block: 0.35rem solid currentColor;
 }
+
+.aircraft-drawing {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.aircraft-drawing a:focus-visible circle {
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.flight-report-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

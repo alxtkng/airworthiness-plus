@@ -83,5 +83,10 @@ organisations to rehearse a stop and compare the source records after fallback.
 `test_dispatch.py` records overlapping assignments and a break, moves an
 inspection to the incoming shift, checks text warnings with keyboard navigation,
 and verifies acknowledgement and tenant isolation at a 390-pixel viewport.
-The mobile synthetic attestation journey is in `test_records.py`.
+`test_aircraft_records.py` remaps a synthetic lightning finding to a revised
+drawing, follows both keyboard and list links, and checks tenant separation.
+It also transcribes source flight reports, filters on the linked part, and
+checks the downloaded report and release attribution. The mobile synthetic
+attestation journey is in `test_records.py`. It recovers after a real PostgreSQL
+archive insert refusal.
 [Case evidence and scope](../../assurance/amos-evidence-matrix.md)

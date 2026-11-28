@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Damage Register · {{ aircraft.registration }}{% endblock %}
+{% block content %}
+<h1>{{ aircraft.registration }}</h1>
+<p>{{ aircraft.type_rating }}</p>
+{% include "interface/aircraft_tabs.html" with active="Damage Register" %}
+{% if may_record %}
+<p><a href="{% url 'record_damage_drawing' aircraft.id %}">Record a Drawing</a>
+{% if drawings %} · <a href="{% url 'record_damage_entry' aircraft.id %}">Record a Structural Finding</a>{% endif %}</p>
+{% endif %}
+<h2>Findings</h2>
+{% if entries %}
+<table>
+<thead><tr><th>Finding</th><th>Physical Frame or Zone</th><th>Disposition</th><th>Drawing Revision</th></tr></thead>
+<tbody>
+{% for entry in entries %}
+<tr><td><a href="{% url 'damage_entry' aircraft.id entry.id %}">{{ entry.title }}</a></td><td>{{ entry.frame_or_zone }}</td><td>{{ entry.disposition }}</td><td><a href="{% url 'damage_drawing' aircraft.id entry.drawing_id %}#marker-{{ entry.id }}">{{ entry.drawing }}</a></td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Structural Findings Recorded</p>{% endif %}
+<h2>Drawings</h2>
+<ul>
+{% for drawing in drawings %}
+<li><a href="{% url 'damage_drawing' aircraft.id drawing.id %}">{{ drawing }}</a>{% if drawing.superseded_by %} · Superseded{% endif %}</li>
+{% empty %}<li>No Drawings Recorded</li>
+{% endfor %}
+</ul>
+{% endblock %}

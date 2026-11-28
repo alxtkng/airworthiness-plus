@@ -105,7 +105,7 @@
 <tbody>
 {% for line in lines %}
 {% if line.needs_attention %}
-<tr>
+<tr id="task-{{ line.task.id }}">
 <td>{{ line.task.title }}</td>
 <td></td>
 <td>Cannot Be Calculated, {{ line.problem }}</td>
@@ -116,7 +116,7 @@
 </tr>
 {% endif %}
 {% for item in line.limits %}
-<tr>
+<tr{% if forloop.first and not line.needs_attention %} id="task-{{ line.task.id }}"{% endif %}>
 <td>{{ line.task.title }}</td>
 <td>{{ item.limit.unit.value }}</td>
 <td>{{ item.due_text }}</td>
@@ -160,7 +160,7 @@
 </thead>
 <tbody>
 {% for line in work %}
-<tr>
+<tr id="work-{{ line.work.id }}">
 <td>{{ line.work.dated|long_date }}</td>
 <td>{{ line.work.description }}{% if line.work.instruction_reference %}<br>{{ line.work.instruction_reference }}, Revision {{ line.work.instruction_revision }}<br>{{ line.work.completion_measurements }}{% endif %}</td>
 <td class="number">{{ line.work.hours|hours }}</td>

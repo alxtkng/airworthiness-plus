@@ -208,6 +208,11 @@ def test_every_table_is_under_the_record_rules() -> None:
         "sample_added": ["INSERT", "SELECT"],
         # What was done about a repeat defect is added and never changed (REQ-227).
         "defects_repeataction": ["INSERT", "SELECT"],
+        "defects_aircraftdrawing": ["INSERT", "SELECT"],
+        "defects_damageentry": ["INSERT", "SELECT"],
+        "defects_flightevent": ["INSERT", "SELECT"],
+        "defects_flightreport": ["INSERT", "SELECT"],
+        "defects_flightreportrelease": ["INSERT", "SELECT"],
         # A certificate of release to service is added and never changed (REQ-261).
         "releases_release": ["INSERT", "SELECT"],
         "releases_historicalreleaseevidence": ["INSERT", "SELECT"],
@@ -335,6 +340,11 @@ def test_every_table_is_under_the_record_rules() -> None:
             "defect_refuse_synthetic_certification",
         },
         # A contract and a work order keep what they said when recorded (REQ-241).
+        "defects_aircraftdrawing": {"history_refuse_update", "validate_aircraft_record_links"},
+        "defects_damageentry": {"history_refuse_update", "validate_aircraft_record_links"},
+        "defects_flightevent": {"history_refuse_update"},
+        "defects_flightreport": {"history_refuse_update", "validate_aircraft_record_links"},
+        "defects_flightreportrelease": {"history_refuse_update", "validate_aircraft_record_links"},
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
         "staffing_handover": {"handover_rules", "handover_card_rules"},

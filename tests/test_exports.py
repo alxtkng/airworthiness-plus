@@ -525,9 +525,14 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
             ["password", "second_factor_secret", "passkeys"] if one.table == "accounts_user" else []
         )
         held = rows(one.table, column, sample.ours.id, omitted)
-        # The synthetic pilot has its own populated export test and is off by default.
+        # Individually seeded workflows have their own populated export tests.
         if one.table not in {
             "planning_workcardattestation",
+            "defects_aircraftdrawing",
+            "defects_damageentry",
+            "defects_flightevent",
+            "defects_flightreport",
+            "defects_flightreportrelease",
             "planning_workcardsigningjob",
             "planning_workcardstepsignoff",
         }:
@@ -563,7 +568,8 @@ def test_upgraded_signed_records_export_blank_evidence_and_keep_original_history
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
-        old_apps = executor.migrate(old_targets).apps
+        executor.migrate(old_targets)
+        old_apps = executor.loader.project_state(old_targets).apps
     release_model = old_apps.get_model("releases", "Release")
     defect_model = old_apps.get_model("defects", "Defect")
     with working_for(sample.ours.id, sample.planner.id):

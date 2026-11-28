@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ flight }} · {{ aircraft.registration }} Technical Log{% endblock %}
+{% block content %}
+<h1>{{ flight }}</h1>
+<p><a href="{% url 'technical_log' aircraft.id %}">{{ aircraft.registration }} Technical Log</a></p>
+<p>{{ flight.departure }} to {{ flight.arrival }}</p>
+{% if may_record %}<p><a href="{% url 'transcribe_technical_log_report' aircraft.id flight.id %}">Transcribe a Flight Report</a></p>{% endif %}
+<h2>Flight Reports</h2>
+{% include "defects/technical_log_reports.html" with reports=flight.reports.all %}
+{% endblock %}
