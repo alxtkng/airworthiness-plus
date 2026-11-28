@@ -89,4 +89,8 @@ It also transcribes source flight reports, filters on the linked part, and
 checks the downloaded report and release attribution. The mobile synthetic
 attestation journey is in `test_records.py`. It recovers after a real PostgreSQL
 archive insert refusal.
+
+`test_maintenance_custody.py` runs the normal Stores appointments, reservation, alternate, issue and quarantine screens against published PR #167's ledger. Two independent PostgreSQL sessions compete to issue the same reservation. The live form sees the recorded outcome, and the test confirms that the second organisation cannot access the lot. `test_dispatch.py` exercises the previous and next day links. The exhaustive persona walk skips repeated date pagination and follows the finite application links.
+
+`test_parallel_handover.py` also records the inspection and readings through the normal aircraft forms before verifying the signed transfer offline and replaying it. The published-schema migration fixture and retained results are linked from the completion report.
 [Case evidence and scope](../../assurance/amos-evidence-matrix.md)
