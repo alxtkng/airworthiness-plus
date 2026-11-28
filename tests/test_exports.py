@@ -572,6 +572,10 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
         held = rows(one.table, column, sample.ours.id, omitted)
         # Individually seeded workflows have their own populated export tests.
         if one.table not in {
+            "logistics_stockallocation",
+            "logistics_stockappointment",
+            "logistics_stockappointmentwithdrawal",
+            "logistics_stocksubstitution",
             "planning_workcardattestation",
             "defects_aircraftdrawing",
             "defects_damageentry",

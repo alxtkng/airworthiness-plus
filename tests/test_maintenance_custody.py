@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 from decimal import Decimal
+from typing import TypedDict
 from uuid import uuid4
 
 import pytest
@@ -40,6 +41,16 @@ from tests.test_exports import opened
 from tests.test_stores import TODAY, dispose, location, posted, receipt, resolve
 
 pytestmark = pytest.mark.django_db
+
+
+class WorkIdentity(TypedDict):
+    card: WorkCard
+    required_identity: str
+    applicable_source: str
+
+
+class ReservationIdentity(WorkIdentity):
+    source: StoreLocation
 
 
 def grant_actions(sample: Sample) -> None:
@@ -109,7 +120,7 @@ def test_exact_issue_custody_replay_reservations_and_expiry(
         other_place = location(sample.ours, "Line")
         hold = location(sample.ours, "Secure hold", LocationKind.QUARANTINE)
         posting = posted(dispose(receipt(sample.ours, "CUSTODY", quantity=10)), person, source)
-        fields = {
+        fields: ReservationIdentity = {
             "source": source,
             "card": card,
             "required_identity": "PN-713",
@@ -124,7 +135,7 @@ def test_exact_issue_custody_replay_reservations_and_expiry(
                 evidence="Trial",
                 quantity=Decimal(3),
                 **fields,
-            )  # type: ignore[arg-type]
+            )
         grant_actions(sample)
         with pytest.raises(RefusedError, match="Issued Package"):
             allocations.record(
@@ -135,7 +146,7 @@ def test_exact_issue_custody_replay_reservations_and_expiry(
                 evidence="Trial",
                 quantity=Decimal(3),
                 **fields,
-            )  # type: ignore[arg-type]
+            )
         planning.issue_package(card.package)
         token = uuid4()
 
@@ -147,7 +158,7 @@ def test_exact_issue_custody_replay_reservations_and_expiry(
                 request_id=token,
                 evidence="Book for installation",
                 quantity=Decimal(3),
-                **fields,  # type: ignore[arg-type]
+                **fields,
             )
 
         first = reserve()
@@ -207,11 +218,23 @@ def test_exact_issue_custody_replay_reservations_and_expiry(
                 authority="Old movement role",
                 evidence="Would clear quarantine",
             )
+        appointment = stock_appointments.current(user, StockDuty.QUARANTINE, TODAY)
+        assert appointment is not None
+        stock_appointments.withdraw(user, appointment, "Synthetic appointment withdrawal")
+        assert stock_appointments.current(user, StockDuty.QUARANTINE, TODAY) is None
         archive = build(sample.ours, by=user)
         assert verify(archive.content).problems == ()
+        files = opened(archive.content)
         assert any(
-            row["id"] == str(returned.pk)
-            for row in opened(archive.content)["records/logistics_stockallocation.json"]
+            row["id"] == str(returned.pk) for row in files["records/logistics_stockallocation.json"]
+        )
+        assert any(
+            row["id"] == str(appointment.pk)
+            for row in files["records/logistics_stockappointment.json"]
+        )
+        assert any(
+            row["appointment_id"] == str(appointment.pk)
+            for row in files["records/logistics_stockappointmentwithdrawal.json"]
         )
         short = posted(
             dispose(receipt(sample.ours, "EXPIRY", shelf_life_to=TODAY)),
@@ -228,7 +251,7 @@ def test_exact_issue_custody_replay_reservations_and_expiry(
             request_id=uuid4(),
             evidence="Within shelf life",
             quantity=Decimal(1),
-            **fields,  # type: ignore[arg-type]
+            **fields,
         )
         monkeypatch.setattr(aircraft_services, "today", lambda: TODAY + timedelta(days=1))
         with pytest.raises(RefusedError, match="Shelf Life"):
@@ -271,7 +294,7 @@ def test_alternate_approval_scope_expiry_and_issued_revision(
         user = sample.lucy
         source = location(sample.ours, "Main")
         lot = posted(dispose(receipt(sample.ours, "ALTERNATE", quantity=3)), person, source)
-        option = dict(
+        option = WorkIdentity(
             card=card, required_identity="PN-OLD", applicable_source="Synthetic IPC revision 4"
         )
 
@@ -336,6 +359,14 @@ def test_alternate_approval_scope_expiry_and_issued_revision(
             preceding=booked,
         )
         assert allocated.substitution_id == approval.pk
+        archive = build(sample.ours, by=user)
+        assert verify(archive.content).problems == ()
+        (archived,) = opened(archive.content)["records/logistics_stocksubstitution.json"]
+        assert (archived["id"], archived["authorisation_id"], archived["revision_id"]) == (
+            str(approval.pk),
+            str(grant.pk),
+            str(approval.revision_id),
+        )
         remaining = reserve()
         data.add_revision(card.data_set, revision="2", revision_date=TODAY)
         with pytest.raises(RefusedError, match="Stale Work Card"):
