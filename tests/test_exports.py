@@ -91,6 +91,7 @@ from tests.support import (
     add_sample_fleet,
     add_sample_programmes,
     add_sample_reviews,
+    appoint_for_stores,
     get,
     signed_in,
 )
@@ -196,6 +197,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
         cable = ReceivingDisposition.objects.get(receipt__delivery_reference="RX-002")
         moved_on = cable.disposition_on
         stores_actor = Person.objects.get(user=sample.lucy)
+        appoint_for_stores(stores_actor)
         bay = stores.add_location(
             sample.ours,
             name="[Serviceable Stores Bay]",

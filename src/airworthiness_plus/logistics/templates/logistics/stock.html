@@ -17,7 +17,7 @@
 <h2>Acceptances</h2>
 {% if entries %}
 <table data-search="always">
-<thead><tr><th scope="col">Item</th><th scope="col">Item Reference</th><th scope="col">Received Quantity</th><th scope="col">Stock Location</th><th scope="col">Posting</th><th scope="col">On Hand</th><th scope="col">Available</th><th scope="col">Moved On</th><th scope="col">Shelf Life To</th><th scope="col">Delivery Line</th></tr></thead>
+<thead><tr><th scope="col">Item</th><th scope="col">Item Reference</th><th scope="col">Received Quantity</th><th scope="col">Recorded Destination</th><th scope="col">Posting</th><th scope="col">On Hand</th><th scope="col">Available</th><th scope="col">Moved On</th><th scope="col">Shelf Life To</th><th scope="col">Delivery Line</th></tr></thead>
 <tbody>
 {% for line in entries %}{% with decision=line.decision receipt=line.receipt %}
 <tr>
@@ -38,7 +38,7 @@
 <tbody>
 {% for one in positions %}
 <tr><td>{{ one.location.name }}</td><td>{{ one.location.kind }}</td>
-<td><a href="{% url 'stores_disposition' one.lot.disposition_id %}">{{ one.lot.disposition.receipt.delivery_reference }}</a></td>
+<td><a href="{% if one.lot.disposition.outcome == "Accepted into Stores" %}{% url 'stock_entry' one.lot.disposition.stock_entry.id %}{% else %}{% url 'stores_disposition' one.lot.disposition_id %}{% endif %}">{{ one.lot.disposition.receipt.delivery_reference }}</a></td>
 <td>{{ one.lot.part_number }}{% if one.lot.serial_number %} SN {{ one.lot.serial_number }}{% endif %}{% if one.lot.batch_number %} Batch {{ one.lot.batch_number }}{% endif %}{% if one.lot.specification %} {{ one.lot.specification }}{% endif %}</td>
 <td>{{ one.on_hand|stock_quantity }} {{ one.lot.unit }}</td><td>{{ one.reserved|stock_quantity }}</td><td>{{ one.available|stock_quantity }}</td><td>{{ one.shelf }}</td></tr>
 {% endfor %}

@@ -139,7 +139,8 @@ def test_goods_in_hands_off_to_stores_once(
         page.get_by_role("link", name="View Stores Entry").click()
         assert definition(page, "Item Reference") == "Sample batch 2841"
         assert definition(page, "Received Quantity") == "3"
-        assert definition(page, "Stock Location") == "Sample Shelf B"
+        # The free-text destination is kept as recorded. It is not a register location.
+        assert definition(page, "Destination Recorded at Disposition") == "Sample Shelf B"
         assert definition(page, "Evidence Reference") == "Sample Document Store / COC-2841"
         assert definition(page, "Manufacturing Source") == "Sample Factory"
         assert (

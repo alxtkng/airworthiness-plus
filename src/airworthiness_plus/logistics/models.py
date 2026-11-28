@@ -540,6 +540,11 @@ class StockDuty(models.TextChoices):
     ISSUE = "Issue", "Issue Stock to Maintenance"
     RETURN = "Return", "Accept Maintenance Returns to Quarantine"
     QUARANTINE = "Quarantine", "Move Unreserved Stock to Quarantine"
+    # Stores PR 1 actions (REQ-358): the role permits them, the appointment authorises them.
+    POST = "Post", "Resolve and Post Stock"
+    MOVE = "Move", "Move Stock Between Locations"
+    COUNT = "Count", "Count Stock"
+    ADJUST = "Adjust", "Adjust Stock From a Count"
 
 
 class StockAppointment(StoresRecord):

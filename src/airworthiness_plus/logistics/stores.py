@@ -17,6 +17,7 @@ from uuid import UUID
 from django.db import DatabaseError, IntegrityError, connection, transaction
 
 from airworthiness_plus.aircraft import services as aircraft_services
+from airworthiness_plus.logistics import stock_appointments
 from airworthiness_plus.logistics.models import (
     STOCK_QUANTITY_LIMIT,
     Destination,
@@ -27,6 +28,7 @@ from airworthiness_plus.logistics.models import (
     ShelfLifeBasis,
     ShelfLifeRule,
     StockCount,
+    StockDuty,
     StockMovement,
     StockPosting,
     StockResolution,
@@ -110,6 +112,15 @@ def _active_on(person: Person, organisation_id: UUID, day: date) -> None:
         or (person.left_on is not None and person.left_on < day)
     ):
         raise RefusedError("The Signed-In Person Is Not Active in the Organisation on That Date")
+
+
+def _appointed(person: Person, duty: str, day: date) -> None:
+    """Require the person's own current Stores appointment for the duty (REQ-358)."""
+    if person.user is None or stock_appointments.current(person.user, duty, day) is None:
+        raise RefusedError(
+            f"{person.full_name} Needs a Current Stores Appointment to "
+            f"{StockDuty(duty).label} on This Date"
+        )
 
 
 def _text(value: str) -> str:
@@ -298,6 +309,7 @@ def resolve(
     if not disposition.disposition_on <= evidence_on <= today:
         raise RefusedError("The Assessment Date Must Be on or After the Disposition, Not Later")
     _active_on(actor, disposition.organisation_id, evidence_on)
+    _appointed(actor, StockDuty.POST, evidence_on)
     if not _text(evidence) or not _text(authority):
         raise RefusedError("Give the Evidence Relied On and the Authority")
     if unit not in StockUnit.values:
@@ -361,6 +373,7 @@ def post(
         if posted_on > aircraft_services.today() or posted_on < disposition.disposition_on:
             raise RefusedError("The Posting Date Must Be on or After the Movement, Not Later")
         _active_on(actor, disposition.organisation_id, posted_on)
+        _appointed(actor, StockDuty.POST, posted_on)
         if not _text(authority):
             raise RefusedError("Give the Authority Relied On")
         place = resolution.location
@@ -496,6 +509,7 @@ def move(
     _active_on(actor, lot.organisation_id, moved_on)
     if not _text(authority) or not _text(evidence):
         raise RefusedError("Give the Authority and the Movement Evidence")
+    _appointed(actor, StockDuty.MOVE, moved_on)
     _lock_lot(lot)
     if balance(lot, from_location) < amount:
         raise RefusedError("The Source Location Does Not Hold That Quantity")
@@ -538,6 +552,7 @@ def count(
     if not lot.physical_on <= counted_on <= aircraft_services.today():
         raise RefusedError("The Count Date Must Be on or After Intake, Not Later")
     _active_on(counter, lot.organisation_id, counted_on)
+    _appointed(counter, StockDuty.COUNT, counted_on)
     if not _text(evidence):
         raise RefusedError("Give the Count Evidence")
     _lock_lot(lot)
@@ -580,6 +595,7 @@ def adjust(
     _active_on(actor, lot.organisation_id, moved_on)
     if not _text(authority) or not _text(evidence):
         raise RefusedError("Give the Authority and the Adjustment Evidence")
+    _appointed(actor, StockDuty.ADJUST, moved_on)
     return _write(
         organisation_id=lot.organisation_id,
         lot=lot,

@@ -100,6 +100,10 @@ def test_stores_reserves_issues_and_quarantines_a_maintenance_return(
             "Issue Stock to Maintenance",
             "Accept Maintenance Returns to Quarantine",
             "Move Unreserved Stock to Quarantine",
+            "Resolve and Post Stock",
+            "Move Stock Between Locations",
+            "Count Stock",
+            "Adjust Stock From a Count",
         ):
             page.goto("/stores/locations/")
             page.get_by_role("link", name="Stores Appointments").click()
@@ -117,9 +121,9 @@ def test_stores_reserves_issues_and_quarantines_a_maintenance_return(
                 },
                 duty,
             )
-        page.get_by_role("row").filter(has_text="Reserve Stock for a Work Card").get_by_role(
-            "link", name="Withdraw Appointment"
-        ).click()
+        page.get_by_role("row").filter(has_text="Reserve Stock for a Work Card").filter(
+            has_text=certifier
+        ).get_by_role("link", name="Withdraw Appointment").click()
         save(
             page,
             "Withdraw Stores Appointment",

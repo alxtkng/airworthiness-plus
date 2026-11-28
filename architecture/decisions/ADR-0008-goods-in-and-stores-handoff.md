@@ -67,8 +67,7 @@ rules and the REQ-357 clarification (`assurance/phase-4-stores-handoff.md`). REQ
 
 Not in PR 1: Goods In capturing unit and structured identity at receipt and choosing
 the location register entry at disposition (the producer side of the contract),
-reservations, work-package issue, final disposal and dated appointment records for
-Stores actions. Organisation procedures, appointments and the manufacturer's shelf-life
+reservations, work-package issue and final disposal. Organisation procedures, appointments and the manufacturer's shelf-life
 convention stay **To Be Checked**. The warning lead time uses the organisation's Due
 Soon days.
 
@@ -79,3 +78,17 @@ The AMOS pilot extends PR #167 with Logistics `0009_station` and `0010_maintenan
 New custody actions use a dated appointment, the signed-in person and the current maintenance approval. Reservation and issue require unfinished work on an issued card and an open written order. Issue rechecks shelf life, eligibility, physical custody and the active reservation. A return restores physical custody in secure quarantine. A later new receiving decision governs any subsequent admission to serviceable stock. PostgreSQL serialises the new custody actions with published movements using the existing lot lock. An identical replay returns its original result.
 
 An alternate approval requires a current certifying grant naming the actual aircraft. It binds the required and substitute identities, lot, issued card revision and applicable parts-data reference. Reservation and issue check that the linked approval, grant, work and revision still apply. The operator confirms its appointment, approval and actual source procedures before operational use. [Stores acceptance and scope](../../assurance/amos-evidence-matrix.md)
+
+## Stores appointments for the ledger, 28 November 2026
+
+The dated Stores appointments that #170 introduced for reservation, issue, return
+and quarantine now also cover resolving and posting, moving, counting and adjusting
+(migration 0011). The app role permits each action. The appointment authorises it:
+the signed-in person must hold a current appointment for that duty on the record's
+date, under a maintenance approval held that day, with no withdrawal in force. The
+service refuses otherwise and hides the control. PostgreSQL checks the same rule on
+every resolution, posting, count, transfer and adjustment it is asked to insert, so a
+direct request cannot bypass it. The intake written by a posting is covered by the
+posting's check. Records made before the rule keep their history unchanged, and no
+appointment is inferred for them. The free-text destination recorded at disposition
+is labelled as such, so it is not read as a register location.
