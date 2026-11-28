@@ -10,6 +10,7 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import ApprovalType
 from airworthiness_plus.sample import suppliers
+from airworthiness_rules.dates import uk_today
 from tests.support import Sample, get, post, signed_in
 
 pytestmark = pytest.mark.django_db
@@ -120,7 +121,11 @@ def test_each_approval_has_its_own_supplier_decision(
     assert b"No Current Evaluation" not in get(manager, "/suppliers/").content
     with working_for(sample.ours.id, sample.administrator.id):
         approvals.end(second_approval, on=date(2026, 11, 19))
-        approvals.record(sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[New]")
+        renewed = approvals.record(
+            sample.ours, approval=ApprovalType.PART_145, reference="UK.145.[New]"
+        )
+        renewed_on = uk_today(Event.of(renewed).latest("sequence").at)
+    monkeypatch.setattr(aircraft_services, "today", lambda: renewed_on)
     assert b"No Current Evaluation" in get(manager, "/suppliers/").content
     assert b"UK.145.[First]" in get(manager, address).content
     gap = post(manager, address + "evaluate/", **dict(next_evaluation, evaluated_on="2026-11-20"))
