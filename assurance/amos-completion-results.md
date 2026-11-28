@@ -1,4 +1,4 @@
-# AMOS local completion evidence
+# AMOS completion evidence
 
 28 November 2026. The validation branch started at `5b18ede` and initially integrated `91f9176`, retaining the calibration decision as ADR-0010. The transfer pilot is ADR-0012. Aircraft records, dispatch, signing and Stores were built and verified in separate worktrees. Stores PR #167 merged during validation at `642f1b8` and became the integration base. Alex King recorded approval of the receipt-to-stock contract and REQ-357 clarification in the parallel work. [Case evidence and dependencies](amos-evidence-matrix.md) · [Stores producer review](phase-4-stores-handoff.md) · [Merged Stores PR #167](https://github.com/alxtkng/airworthiness-plus/pull/167)
 
@@ -43,20 +43,32 @@ The first published-main intermediate run at `8575fe8` reported 129 passes and o
 | Original baseline selection rerun on the final candidate | 230 passed, zero failures or skips |
 | Focused signed transfer and normal-form G-EJKL replay | Two passed. Both receivers matched all mapped fields and preserved the IDs. The measured import time was 0.017 seconds for Python and 2.072 seconds for JavaScript. JavaScript replay took 1.079 seconds and re-import against the separately updated synthetic trust took 1.967 seconds |
 | Retained renewal fixture replay | The complete chain verified. The exact retained predecessor tokens still have indeterminate revocation status |
-| Release checks | Ruff lint and format, strict mypy, all 249 traceability rows, locked environment and secret scan passed. Dependency audit found no known vulnerabilities and the SBOM was retained. A container runner is needed for the image build and smoke test |
+| Local release checks | Ruff lint and format, strict mypy, all 249 traceability rows, locked environment and secret scan passed. Dependency audit found no known vulnerabilities and the SBOM was retained |
 
-The final implementation is `523f094`. Later handoff commits update evidence and traceability. Logs prefixed `pr167-final-` identify the final candidate runs. The suite totals exclude the separately reported baseline, focused reruns and migration rehearsals.
+The final local implementation candidate was `523f094`. Logs prefixed `pr167-final-` identify those local runs. The local suite totals exclude the separately reported baseline, focused reruns and migration rehearsals.
 
-## Release evidence boundaries
+## Post-merge CI on main
 
-The local release exercise uses disposable PostgreSQL 16.14, Python 3.13, Chromium 158, Node.js 24 and OpenSSL 3.5.9. The data set is synthetic. Raw logs, public verification material, the two receiver databases and reconciliation outputs are retained in the workspace folder `amos-completion-evidence-2026-11-28`. The locally stopped PostgreSQL cluster and the normal-form captures are separate from any hosted service. [Rehearsal procedure](../operations/amos-parallel-handover.md)
+PR #170 merged to `main` on 28 November 2026 as `5c0c81e9df21052790fdc0bb0ce628015162d7dd`. GitHub Actions Checks run #46148864025 was triggered by that push and completed successfully on its first attempt. [Merge commit](https://github.com/alxtkng/airworthiness-plus/commit/5c0c81e9df21052790fdc0bb0ce628015162d7dd) · [CI run](https://github.com/alxtkng/airworthiness-plus/actions/runs/46148864025)
+
+| Check | Verified result |
+| --- | --- |
+| PostgreSQL-backed pytest | 1,494 passed. The job deferred 78 browser tests to the dedicated live step |
+| Live Playwright | All 78 passed with exhaustive persona navigation enabled |
+| Quality and supply chain | Locked dependency installation, Ruff lint and formatting, mypy, dependency audit, secret scan and traceability passed. The dependency audit reported no known vulnerabilities |
+| Container build and runtime smoke test | The service image built. The smoke test found the expected static CSS and Geist font, verified that `/app/.git` was absent and ran Gunicorn 23.0.0 as UID 10001. [Job log](https://github.com/alxtkng/airworthiness-plus/actions/runs/46148864025/job/140990784427) |
+| Software bill of materials | Generated and uploaded by CI. [SBOM artifact](https://github.com/alxtkng/airworthiness-plus/actions/runs/46148864025/artifacts/15265566100) |
+
+## Open operational acceptance evidence
+
+The local release exercise used synthetic records with disposable PostgreSQL 16.14, Python 3.13, Chromium 158, Node.js 24 and OpenSSL 3.5.9. Raw logs, public verification material, the two receiver databases and reconciliation outputs are retained in the workspace folder `amos-completion-evidence-2026-11-28`. The following evidence is still open as of the post-merge run. [Case-level status](amos-evidence-matrix.md) · [Rehearsal procedure](../operations/amos-parallel-handover.md)
 
 | Owner | Prerequisite | Next evidence |
 | --- | --- | --- |
 | Approval holder and operator Stores lead | Applicable authority and maintenance data, staff appointments and the operator’s receiving and custody procedures | Repeat representative receiving, exact and alternate issue, quarantine and return journeys against the approved procedures. The product-level producer contract approval is recorded separately |
-| Structures, technical records and operator maintenance leads | Applicable approval and aircraft population, source content and rights, authorised people and procedures | Lightning record and flight-log provenance through the operator's actual workflow and independent drawing or source review |
-| Airworthiness Limited and Airlines for America | Applicable licensed ATA revisions and agreed publication terms | Exercise Spec 2500 and the agreed Spec 2000 Chapter 16–18 profiles with an independent operator system |
-| Approval holder, trust-service specialist and signing provider | Per-action approval basis, sandbox contract and access, provider proof format, record preservation policy | Complete sandbox identity, digest, timing, decline, delay, replay, archive and recovery cases, then validate the selected PDF/A and PAdES profile independently |
-| Issuing and receiving records leads | Agreed bilateral trust procedure, identity enrollment and authentic status distribution | Independently receive, update and verify issuer trust, maintenance authority and time evidence through the operator's routes |
-| Airworthiness Limited and independent assessor | Commissioned assessment, signed scope and isolated authorised deployment | Record findings and retests against the candidate. [Issue #40](https://github.com/alxtkng/airworthiness-plus/issues/40) |
-| Hosting and operator trial owners | Authorised hosted environment, backup access, participants, training and change classification | Measure hosted recovery, parallel reconciliation and stabilisation. Record operator go/no-go and any authority acceptance separately |
+| Structures, technical records and operator maintenance leads | Applicable approval, authorised source data and drawings, appointed staff and procedures | Exercise maintenance history, lightning damage, flight-log provenance, dispatch and handover with operational users. Confirm drawing applicability and revision, manufacturer work-card source rights and the applicable inspection procedure |
+| Airworthiness Limited, Airlines for America and the receiving operator | Applicable licensed ATA revisions and agreed publication terms | Exercise Spec 2500 and the agreed Spec 2000 Chapter 16–18 profiles with an independent operator system |
+| Approval holder, trust-service specialist, signing provider and archivist | Per-action signature assurance, authorised sandbox access, provider proof format and record preservation policy | Run authenticated provider identity, digest, timing, decline, delay, replay and recovery cases. Validate the selected PDF/A and PAdES profile independently and exercise the storage adapter if the deployment requires one |
+| Issuing and receiving records leads | Bilateral trust procedure, identity enrollment, independent trust distribution and authentic status services | Rehearse trust updates and rollover, and independently verify issuer trust, maintenance authority and time evidence. Revocation status remains indeterminate for the exact retained predecessor tokens |
+| Airworthiness Limited and independent assessor | Commissioned penetration test with agreed scope and an isolated authorised deployment | Record findings and retests before use of customer data. [Open issue #40](https://github.com/alxtkng/airworthiness-plus/issues/40) |
+| Hosting and operator trial owners | Authorised hosted environment, backup access, recovery owner, participants, training and change classification | Exercise hosted backup and restore, parallel reconciliation, fallback, cutover and stabilisation. Record the operator's go/no-go decision and any applicable competent-authority acceptance |
