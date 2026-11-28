@@ -68,7 +68,7 @@ class HistoryForm(forms.Form):
             self.fields["aircraft"].queryset = Aircraft.objects.all()  # type: ignore[attr-defined]
 
     def clean(self) -> dict[str, Any]:
-        values = super().clean()
+        values = super().clean() or {}
         start, end = values.get("from_date"), values.get("to_date")
         if start and end and start > end:
             self.add_error("to_date", "The End Date Is on or After the Start Date")

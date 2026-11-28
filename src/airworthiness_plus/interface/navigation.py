@@ -107,6 +107,7 @@ BOARD: tuple[Group, ...] = (
                         "set_transfer_item",
                         "set_up_configuration",
                         "aircraft_forecast",
+                        "aircraft_maintenance_history",
                         "aircraft_configuration",
                         "add_position",
                         "record_position",
@@ -239,6 +240,7 @@ BOARD: tuple[Group, ...] = (
                 inside=frozenset(
                     {
                         "work_package",
+                        "maintenance_history",
                         "build_work_package",
                         "link_package_order",
                         "add_work_card",

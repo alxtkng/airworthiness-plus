@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% load writing %}
-{% block title %}{% if aircraft %}{{ aircraft.registration }} · {% endif %}Maintenance History{% endblock %}
+{% block title %}Maintenance History{% if aircraft %} for {{ aircraft.registration }}{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if aircraft %}{{ aircraft.registration }} · {% endif %}Maintenance History</h1>
+<h1>Maintenance History{% if aircraft %} for {{ aircraft.registration }}{% endif %}</h1>
 {% if aircraft %}{% include "interface/aircraft_tabs.html" with active="Maintenance History" %}{% endif %}
 <form method="get" aria-label="Maintenance History Filters">
 {% for field in form %}

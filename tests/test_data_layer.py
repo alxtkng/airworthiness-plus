@@ -281,6 +281,7 @@ def test_every_table_is_under_the_record_rules() -> None:
             "defect_rules",
             "defect_certification_evidence",
             "defect_timing",
+            "keep_ata_section",
             "defect_refuse_synthetic_certification",
         },
         # A contract and a work order keep what they said when recorded (REQ-241).
