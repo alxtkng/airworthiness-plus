@@ -249,7 +249,15 @@ def test_the_role_and_the_sample_are_made_once_and_a_second_start_changes_neithe
         mark_the_database()
         with CaptureQueriesContext(connection) as sent:
             first = prepare()
-        assert first.splitlines() == [
+        lines = first.splitlines()
+        (review_path,) = (
+            line.removeprefix("Counterfoil Sample Added ")
+            for line in lines
+            if line.startswith("Counterfoil Sample Added ")
+        )
+        assert review_path.startswith("/work-packages/")
+        lines.remove(f"Counterfoil Sample Added {review_path}")
+        assert lines == [
             "Service Role Made",
             "Sample Organisation Set Up",
             f"Administrator {ADMINISTRATOR}",

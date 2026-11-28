@@ -33,6 +33,7 @@ from airworthiness_plus.organisations.models import Organisation
 from airworthiness_plus.sample import (
     build,
     calibration,
+    counterfoil,
     goods_in,
     planning,
     second,
@@ -334,6 +335,12 @@ class Command(BaseCommand):
             seed(administrator)
             self.stdout.write("Sample Organisation Set Up")
             self.stdout.write(f"Administrator {ADMINISTRATOR}")
+        if first := administrator_named(ADMINISTRATOR):
+            try:
+                if package_id := counterfoil.add_review_package(first):
+                    self.stdout.write(f"Counterfoil Sample Added /work-packages/{package_id}/")
+            except Exception as error:
+                self.stderr.write(f"Counterfoil Sample Not Added: {type(error).__name__}")
         # The second sample organisation holds Part-CAMO and Part-145 (REQ-218).
         self.stdout.write(second_organisation())
         for username, reference in (
