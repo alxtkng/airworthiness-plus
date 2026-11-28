@@ -73,7 +73,7 @@ def _usage(*, ca: bool) -> x509.KeyUsage:
 
 
 def make_timestamp_authority(
-    workdir: Path, *, leaf_validity_days: int = 90
+    workdir: Path, *, leaf_validity_days: float = 90
 ) -> SyntheticTimestampAuthority:
     """Create a synthetic root and dedicated TSA leaf using the current UTC clock.
 
@@ -86,8 +86,8 @@ def make_timestamp_authority(
     if not workdir.is_dir():
         raise ValueError("Supply an existing disposable timestamp work directory")
 
-    if type(leaf_validity_days) is not int or not 1 <= leaf_validity_days <= 365:
-        raise ValueError("TSA leaf validity must be 1 to 365 whole days")
+    if isinstance(leaf_validity_days, bool) or not 0 < leaf_validity_days <= 365:
+        raise ValueError("TSA leaf validity must be positive and at most 365 days")
 
     now = datetime.now(UTC)
     root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
