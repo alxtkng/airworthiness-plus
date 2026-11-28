@@ -26,7 +26,6 @@ from airworthiness_plus.logistics.models import (
     CheckKind,
     Receipt,
     ReceivingDisposition,
-    StockEntry,
     Supplier,
 )
 from airworthiness_plus.organisations.models import Approval
@@ -179,16 +178,6 @@ def receipt(request: HttpRequest, receipt_id: UUID) -> HttpResponse:
 
 @never_cache
 @requires(Action.VIEW_RECORDS)
-def stores_stock(request: HttpRequest) -> HttpResponse:
-    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
-    entries = StockEntry.objects.filter(organisation=user.organisation).select_related(
-        "disposition__receipt"
-    )
-    return render(request, "logistics/stock.html", {"entries": entries})
-
-
-@never_cache
-@requires(Action.VIEW_RECORDS)
 @require_http_methods(["GET", "POST"])
 def stores_lookup_exercise(request: HttpRequest) -> HttpResponse:
     """Guide the signed-in user through the synthetic Stores lookup."""
@@ -230,24 +219,6 @@ def stores_lookup_exercise(request: HttpRequest) -> HttpResponse:
             "form": form,
             "after_holds": after_holds,
         },
-    )
-
-
-@never_cache
-@requires(Action.VIEW_RECORDS)
-def stock_entry(request: HttpRequest, stock_id: UUID) -> HttpResponse:
-    user, _ = _maintenance_access(request, Action.VIEW_RECORDS, aircraft_services.today())
-    entry = get_object_or_404(
-        StockEntry.objects.filter(organisation=user.organisation).select_related(
-            "disposition__receipt"
-        ),
-        pk=stock_id,
-    )
-    decision = entry.disposition
-    return render(
-        request,
-        "logistics/stock_entry.html",
-        {"receipt": decision.receipt, "disposition": decision},
     )
 
 

@@ -23,10 +23,18 @@ from airworthiness_plus.defects.models import Defect, RepeatAction
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive, Source
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
 from airworthiness_plus.logistics.models import (
+    PostingEvidence,
     Receipt,
     ReceivingCheck,
     ReceivingDisposition,
+    StockCount,
     StockEntry,
+    StockMovement,
+    StockPosting,
+    StoresAppointment,
+    StoresAppointmentWithdrawal,
+    StoresLocation,
+    StoresLocationWithdrawal,
     SubcontractorAssessment,
     Supplier,
     SupplierEvaluation,
@@ -208,6 +216,16 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(ReceivingCheck, None),
     Exported(ReceivingDisposition, None),
     Exported(StockEntry, None),
+    # Stores custody belongs to the organisation. PR 1 has no issue to an aircraft, so an
+    # intended aircraft on a receipt creates no aircraft record (REQ-358).
+    Exported(StoresAppointment, None),
+    Exported(StoresAppointmentWithdrawal, None),
+    Exported(StoresLocation, None),
+    Exported(StoresLocationWithdrawal, None),
+    Exported(PostingEvidence, None),
+    Exported(StockPosting, None),
+    Exported(StockMovement, None),
+    Exported(StockCount, None),
     Exported(SubcontractorAssessment, None),
     Exported(Tool, None),
     Exported(ToolServiceProviderAuthorisation, None),
