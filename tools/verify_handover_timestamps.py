@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -17,12 +18,25 @@ from typing import Any
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes
-from cryptography.x509.oid import ExtendedKeyUsageOID
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+from cryptography.x509.oid import CRLEntryExtensionOID, ExtendedKeyUsageOID, ExtensionOID
 
 FORMAT = "Airworthiness+ Synthetic Reading Timestamps"
 POLICY = "1.3.6.1.4.1.32473.1.1"
 SHA256 = re.compile(r"[0-9a-f]{64}")
 CLAIM_TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
+EVALUATION_TIME = re.compile(CLAIM_TIME.pattern.removesuffix("Z") + r"(?:\.[0-9]{1,6})?Z")
+UNSUPPORTED_CRL_EXTENSIONS = {
+    ExtensionOID.DELTA_CRL_INDICATOR,
+    ExtensionOID.FRESHEST_CRL,
+    ExtensionOID.ISSUING_DISTRIBUTION_POINT,
+}
+POST_GENTIME_REASONS = {
+    x509.ReasonFlags.unspecified,
+    x509.ReasonFlags.affiliation_changed,
+    x509.ReasonFlags.superseded,
+    x509.ReasonFlags.cessation_of_operation,
+}
 DISPLAY_TIME = re.compile(
     r"([A-Z][a-z]{2}) +([0-9]{1,2}) ([0-9]{2}:[0-9]{2}:[0-9]{2})"
     r"(\.[0-9]{1,6})? ([0-9]{4}) GMT"
@@ -36,6 +50,14 @@ class TimestampError(ValueError):
     def __init__(self, outcome: str, message: str):
         self.outcome = outcome
         super().__init__(f"{outcome}: {message}")
+
+
+@dataclass(frozen=True)
+class _VerifiedSigner:
+    record_id: str
+    gen_time: datetime
+    certificate: x509.Certificate
+    accuracy_unspecified: bool
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -172,7 +194,9 @@ def _gen_time(report: str) -> datetime:
         raise TimestampError("Invalid", "Timestamp response has an invalid genTime") from error
 
 
-def _check_certificate_evidence(pem: bytes, root: x509.Certificate, gen_time: datetime) -> None:
+def _check_certificate_evidence(
+    pem: bytes, root: x509.Certificate, gen_time: datetime
+) -> x509.Certificate:
     try:
         certificates = x509.load_pem_x509_certificates(pem)
         root_fingerprint = root.fingerprint(hashes.SHA256())
@@ -205,6 +229,7 @@ def _check_certificate_evidence(pem: bytes, root: x509.Certificate, gen_time: da
     for cert in (root, signer):
         if not cert.not_valid_before_utc <= gen_time <= cert.not_valid_after_utc:
             raise TimestampError("Inapplicable", "TSA certificate was outside validity at genTime")
+    return signer
 
 
 def _verify_token(
@@ -215,7 +240,7 @@ def _verify_token(
     libressl: bool,
     response: str,
     signature: bytes,
-) -> datetime:
+) -> tuple[datetime, x509.Certificate, bool]:
     der = _b64(response, "Timestamp response")
     _check_der_sequence(der)
     token = workspace / "response.tsr"
@@ -224,7 +249,9 @@ def _verify_token(
     report = _run(executable, [*inspect, "-text"], environment)
     if report.returncode:
         raise TimestampError("Invalid", "OpenSSL could not parse the timestamp response")
-    gen_time = _gen_time(report.stdout.decode("ascii", errors="replace"))
+    rendered = report.stdout.decode("ascii", errors="replace")
+    gen_time = _gen_time(rendered)
+    accuracy_unspecified = _one_field(rendered, "Accuracy") == "unspecified"
     extract = _run(executable, [*inspect, "-token_out"], environment)
     if extract.returncode:
         raise TimestampError("Invalid", "Timestamp response has no usable CMS token")
@@ -235,13 +262,9 @@ def _verify_token(
     )
     if certificates.returncode:
         raise TimestampError("Invalid", "Timestamp response has unusable CMS certificates")
-    _check_certificate_evidence(certificates.stdout, root, gen_time)
+    signer = _check_certificate_evidence(certificates.stdout, root, gen_time)
 
-    trusted_paths = (
-        ["-CApath", str(workspace / "empty")]
-        if libressl
-        else ["-no-CApath", "-no-CAstore", "-attime", str(int(gen_time.timestamp()))]
-    )
+    historical_time = [] if libressl else ["-attime", str(int(gen_time.timestamp()))]
     checked = _run(
         executable,
         [
@@ -253,7 +276,9 @@ def _verify_token(
             hashlib.sha256(signature).hexdigest(),
             "-CAfile",
             str(workspace / "pinned.pem"),
-            *trusted_paths,
+            "-CApath",
+            str(workspace / "empty"),
+            *historical_time,
         ],
         environment,
     )
@@ -261,7 +286,7 @@ def _verify_token(
         raise TimestampError(
             "Invalid", "RFC 3161 verification failed against the exact signature and pinned root"
         )
-    return gen_time
+    return gen_time, signer, accuracy_unspecified
 
 
 def _read_signature(row: dict[str, Any]) -> tuple[str, bytes, datetime]:
@@ -283,13 +308,198 @@ def _read_signature(row: dict[str, Any]) -> tuple[str, bytes, datetime]:
         raise TimestampError("Invalid", "Verified reading signature row is malformed") from error
 
 
+def _utc_label(instant: datetime) -> str:
+    return instant.isoformat().replace("+00:00", "Z")
+
+
+def _read_evaluation(value: str) -> datetime:
+    if not isinstance(value, str) or not EVALUATION_TIME.fullmatch(value):
+        raise TimestampError(
+            "Indeterminate", "TSA status evaluation requires an explicit UTC instant"
+        )
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError as error:
+        raise TimestampError("Indeterminate", "TSA status evaluation instant is invalid") from error
+
+
+def _effective_revocation(
+    entry: x509.RevokedCertificate,
+) -> tuple[datetime, x509.ReasonFlags | None]:
+    for extension in entry.extensions:
+        if extension.oid == CRLEntryExtensionOID.CERTIFICATE_ISSUER:
+            raise TimestampError("Indeterminate", "Indirect TSA CRL entries are unsupported")
+        if extension.critical and extension.oid not in {
+            CRLEntryExtensionOID.CRL_REASON,
+            CRLEntryExtensionOID.INVALIDITY_DATE,
+        }:
+            raise TimestampError(
+                "Indeterminate", "TSA CRL entry has an unsupported critical extension"
+            )
+    try:
+        reason = entry.extensions.get_extension_for_class(x509.CRLReason).value.reason
+    except x509.ExtensionNotFound:
+        reason = None
+    if reason == x509.ReasonFlags.remove_from_crl:
+        raise TimestampError("Indeterminate", "TSA CRL contains a delta-only removal entry")
+    try:
+        invalidity = entry.extensions.get_extension_for_class(x509.InvalidityDate).value
+    except x509.ExtensionNotFound:
+        return entry.revocation_date_utc, reason
+    return min(entry.revocation_date_utc, invalidity.invalidity_date_utc), reason
+
+
+def _read_crl(
+    content: bytes, root: x509.Certificate, evaluated_at: datetime
+) -> tuple[datetime, datetime, dict[int, tuple[datetime, x509.ReasonFlags | None]]]:
+    try:
+        pem = content.strip()
+        if not re.fullmatch(
+            rb"-----BEGIN X509 CRL-----[\r\n]+[A-Za-z0-9+/=\r\n]+-----END X509 CRL-----", pem
+        ):
+            raise ValueError("Expected one PEM CRL")
+        crl = x509.load_pem_x509_crl(pem)
+        public_key = root.public_key()
+        key_usage = root.extensions.get_extension_for_class(x509.KeyUsage).value
+        if (
+            crl.issuer != root.subject
+            or not isinstance(public_key, RSAPublicKey)
+            or not key_usage.crl_sign
+            or not crl.is_signature_valid(public_key)
+        ):
+            raise TimestampError(
+                "Indeterminate", "TSA CRL was not authenticated by the pinned RSA root"
+            )
+        for extension in crl.extensions:
+            if extension.oid in UNSUPPORTED_CRL_EXTENSIONS:
+                raise TimestampError(
+                    "Indeterminate", "Delta, indirect or scoped TSA CRLs are unsupported"
+                )
+            if extension.critical and extension.oid not in {
+                ExtensionOID.AUTHORITY_KEY_IDENTIFIER,
+                ExtensionOID.CRL_NUMBER,
+            }:
+                raise TimestampError(
+                    "Indeterminate", "TSA CRL has an unsupported critical extension"
+                )
+        last_update, next_update = crl.last_update_utc, crl.next_update_utc
+        if next_update is None or not last_update <= evaluated_at < next_update:
+            raise TimestampError("Indeterminate", "TSA CRL does not cover the evaluation instant")
+        effective_dates = {}
+        for entry in crl:
+            if entry.serial_number in effective_dates:
+                raise TimestampError(
+                    "Indeterminate", "TSA CRL contains duplicate certificate entries"
+                )
+            effective_dates[entry.serial_number] = _effective_revocation(entry)
+        return last_update, next_update, effective_dates
+    except TimestampError:
+        raise
+    except (
+        InvalidSignature,
+        UnsupportedAlgorithm,
+        ValueError,
+        x509.DuplicateExtension,
+        x509.ExtensionNotFound,
+        x509.UnsupportedGeneralNameType,
+    ) as error:
+        raise TimestampError("Indeterminate", "TSA CRL evidence is unusable") from error
+
+
+def _checked_status(
+    signer: _VerifiedSigner,
+    revocation: tuple[datetime, x509.ReasonFlags | None] | None,
+    evaluated_at: datetime,
+) -> dict[str, str | None]:
+    effective, reason = revocation if revocation is not None else (None, None)
+    serial = signer.certificate.serial_number
+    if effective is None:
+        if evaluated_at > signer.certificate.not_valid_after_utc:
+            raise TimestampError(
+                "Indeterminate", "TSA CRL may omit previously revoked expired certificates"
+            )
+        status = "No Revocation Listed at genTime"
+    else:
+        if effective <= signer.gen_time:
+            raise TimestampError(
+                "Inapplicable",
+                f"TSA signer for reading {signer.record_id} was revoked at or before genTime",
+            )
+        if reason not in POST_GENTIME_REASONS:
+            raise TimestampError(
+                "Inapplicable", "TSA revocation reason invalidates prior tokens under RFC 3161"
+            )
+        if not signer.accuracy_unspecified:
+            raise TimestampError(
+                "Indeterminate", "Explicit timestamp accuracy is outside the historical TSA profile"
+            )
+        status = "Revoked After genTime"
+    return {
+        "record_id": signer.record_id,
+        "tsa_signer_serial": str(serial),
+        "status": status,
+        "effective_revocation_at": _utc_label(effective) if effective is not None else None,
+        "revocation_reason": reason.value if reason is not None else None,
+    }
+
+
+def _revocation_status(
+    content: bytes,
+    root: x509.Certificate,
+    evaluated_at: datetime,
+    verified_signers: list[_VerifiedSigner],
+) -> dict[str, Any]:
+    last_update, next_update, effective_dates = _read_crl(content, root, evaluated_at)
+    return {
+        "status": "Verified",
+        "crl_sha256": hashlib.sha256(content).hexdigest(),
+        "evaluated_at": _utc_label(evaluated_at),
+        "last_update": _utc_label(last_update),
+        "next_update": _utc_label(next_update),
+        "findings": [
+            _checked_status(
+                signer, effective_dates.get(signer.certificate.serial_number), evaluated_at
+            )
+            for signer in verified_signers
+        ],
+    }
+
+
+def _certificate_evaluation(
+    evaluated_at: datetime, verified_signers: list[_VerifiedSigner]
+) -> dict[str, Any]:
+    if any(evaluated_at < signer.gen_time for signer in verified_signers):
+        raise TimestampError("Indeterminate", "TSA status evaluation precedes trusted genTime")
+    return {
+        "evaluated_at": _utc_label(evaluated_at),
+        "findings": [
+            {
+                "record_id": signer.record_id,
+                "tsa_signer_serial": str(signer.certificate.serial_number),
+                "not_after": _utc_label(signer.certificate.not_valid_after_utc),
+                "status": "Expired"
+                if evaluated_at > signer.certificate.not_valid_after_utc
+                else "Within Validity",
+            }
+            for signer in verified_signers
+        ],
+    }
+
+
 def verify_timestamps(
     signatures: list[dict[str, Any]],
     timestamp_content: bytes,
     tsa_root_pem: bytes,
     expected_root_sha256: str,
+    *,
+    revocation_pem: bytes | None = None,
+    evaluated_at: str | None = None,
 ) -> dict[str, Any]:
-    """Independently verify time of existence for the verified reading signatures."""
+    """Independently verify time of existence and any supplied historic TSA status."""
+    if revocation_pem is not None and evaluated_at is None:
+        raise TimestampError(
+            "Indeterminate", "A TSA CRL requires an explicit UTC evaluation instant"
+        )
     if not isinstance(expected_root_sha256, str) or not SHA256.fullmatch(expected_root_sha256):
         raise TimestampError(
             "Indeterminate", "A separately supplied TSA root SHA-256 pin is required"
@@ -326,10 +536,11 @@ def verify_timestamps(
                 "Indeterminate", "Timestamp verification requires LibreSSL or OpenSSL 3"
             )
         timestamps = []
+        verified_signers = []
         previous = None
         for record_id, signature, signed_at in claims:
             response = responses[record_id]
-            gen_time = _verify_token(
+            gen_time, signer, accuracy_unspecified = _verify_token(
                 executable, root, workspace, environment, libressl, response, signature
             )
             if gen_time < signed_at or (previous is not None and gen_time < previous):
@@ -337,14 +548,17 @@ def verify_timestamps(
                     "Invalid", "Trusted genTime conflicts with the signed reading chronology"
                 )
             previous = gen_time
+            verified_signers.append(
+                _VerifiedSigner(record_id, gen_time, signer, accuracy_unspecified)
+            )
             timestamps.append(
                 {
                     "record_id": record_id,
-                    "gen_time": gen_time.isoformat().replace("+00:00", "Z"),
+                    "gen_time": _utc_label(gen_time),
                     "response": response,
                 }
             )
-    return {
+    evidence: dict[str, Any] = {
         "tsa_root_sha256": actual_pin,
         "trusted_timestamps": timestamps,
         "timestamp_assurance": (
@@ -352,3 +566,18 @@ def verify_timestamps(
             "The signing instant remains signer-asserted."
         ),
     }
+    if evaluated_at is not None:
+        evaluation = _read_evaluation(evaluated_at)
+        evidence["tsa_certificate_evaluation"] = _certificate_evaluation(
+            evaluation, verified_signers
+        )
+        evidence["tsa_revocation_status"] = (
+            _revocation_status(revocation_pem, root, evaluation, verified_signers)
+            if revocation_pem is not None
+            else {
+                "status": "Indeterminate",
+                "evaluated_at": _utc_label(evaluation),
+                "reason": "No independently supplied TSA CRL",
+            }
+        )
+    return evidence
