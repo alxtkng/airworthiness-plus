@@ -31,3 +31,9 @@ The migration gives existing accepted draft receipts a linked Stores entry using
 the original decision. Missing structured evidence stays blank and the original
 inspection record remains available. New acceptance requires an evidence reference
 and the class-specific evidence fields.
+
+## Proposed local Stores ledger extension
+
+The live trial keeps the original acceptance link and uses the immutable disposition UUID to post an evidenced ledger credit once. Legacy acceptance may remain visible with unverified identity, physical location, unit or shelf-life basis and zero available stock. Stores records dated assessments separately. Location and station codes are independent. Quantities are grouped by station, store and unit for an exact part-number or specification lookup. Configured stores remain visible with zero quantity when appropriate. [Producer review and evidence](../../assurance/phase-4-stores-handoff.md)
+
+A separate custody action reserves or issues a lot against unfinished work on an issued package with an open written order. The issue retains the applicable parts-data reference and identity. It rechecks shelf life, physical and allocatable custody and the current Stores appointment. A release of reservation restores availability, and physical return or quarantine creates segregated custody under a retained action and reason. The application and PostgreSQL serialise competing action on the same lot. A retry uses the earlier result for identical request details. This local design preserves the original receiver and acceptance records. Confirm procedure, technical eligibility evidence and roles with the approval holder before applying it to operational records.

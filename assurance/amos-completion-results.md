@@ -10,6 +10,20 @@ The project-format comparison additionally used two independently implemented re
 
 The retained complete synthetic renewal fixture was imported and replayed with both generations verified. The predecessor revocation status for the exact retained historical tokens remains indeterminate. The G-EJKL signing time is signer-asserted. The RFC 3161 exercises establish proof that each relevant signature existed by the verified token time. Maintenance authority was tested under a synthetic grant only. [Renewal report](gejkl-evidence-renewal.md) · [Historical status report](gejkl-historical-timestamp-status.md)
 
+## Executed comparisons and early runs
+
+| Revision or source | Selection | Result |
+| --- | --- | --- |
+| `e7a2743` | Original baseline selection with PostgreSQL and live Playwright | 230 passed |
+| `8edecac` | Full non-live pytest command with the live directory disabled | 1,490 passed, 76 live cases skipped, three failures in the programme table, title-case labels and dispatch form declaration |
+| `8edecac` | Initial full live walk | Interrupted after seven passes. Dispatch previous and next links extended graph discovery across the calendar. The dedicated dispatch case now exercises both links, and the graph walk traverses finite application links |
+| `4669e5a` | Integrated security, role, database and focused browser pack with real post-signing archive refusal and retry | 321 passed, one dispatch form declaration failure. The display and retry of a retained signed result passed. The declaration failure passed on targeted rerun after `7284d91` |
+| `4669e5a` | Two signed receiving implementations | Passed. The Python receiving transaction and checks took 0.017 seconds. The JavaScript receiver took 0.717 seconds for import, 0.690 for replay and 0.563 for the independently pinned update. Both kept the original identifiers and matched all mapped fields |
+| `e7a2743` | Three-record signed transfer from normal forms | Passed, including replay. The earlier browser attempt lacked setup of the aircraft's programme. The rerun creates it through the normal form before adding the inspection |
+| `3cff07d` | Populated upgrade and native rollback | Both retained 280 history entries with an identical digest, seven aircraft, four open defects, three pending orders and no prior problem entries. Prior and candidate record checks found zero discrepancies. Native restore took 0.937 seconds |
+
+The early mixed-worktree baseline attempt reported 200 passes and 30 failures while files changed under an already-seeded browser service. Its results remain in the logs. The fixed-revision baseline above is the reproducible baseline selection. The historic 43-check renewal run remains focused evidence.
+
 ## Release evidence boundaries
 
 The local release exercise uses disposable PostgreSQL 16.14, Python 3.13, Chromium 158, Node.js 24 and OpenSSL 3.5.9. The data set is synthetic. Raw logs, public verification material, the two receiver databases and reconciliation outputs are retained in the workspace folder `amos-completion-evidence-2026-11-28`. The locally stopped PostgreSQL cluster and the normal-form captures are separate from any hosted service. [Rehearsal procedure](../operations/amos-parallel-handover.md)
