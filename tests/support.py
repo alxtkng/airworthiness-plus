@@ -4,7 +4,9 @@ Everything here is from design-system/SampleData.md. Today in the sample
 world is 18 November 2026.
 """
 
+import uuid
 from dataclasses import dataclass
+from datetime import date
 
 from django.http import HttpResponse
 from django.test import Client
@@ -16,6 +18,7 @@ from airworthiness_plus.aircraft.models import Aircraft
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.organisations.models import Organisation, Privilege
 from airworthiness_plus.organisations.provisioning import provision_organisation
+from airworthiness_plus.people.models import Person
 from airworthiness_plus.programme.models import Task
 from airworthiness_plus.sample import build
 from tests.conftest import as_owner
@@ -159,3 +162,33 @@ def page(client: Client, path: str) -> str:
 
 def call(client: Client, method: str, path: str) -> HttpResponse:
     return get(client, path) if method == "GET" else post(client, path)
+
+
+STORES_PR1_DUTIES = ("Post", "Move", "Count", "Adjust")
+
+
+def appoint_for_stores(person: Person, *duties: str) -> None:
+    """Give a person dated Stores appointments for 2026 to 2027, once (REQ-358).
+
+    Runs as whoever is working, inside their organisation. Used by tests that post,
+    move, count or adjust stock and are not about the appointment itself.
+    """
+    from airworthiness_plus.logistics.models import StockAppointment
+    from airworthiness_plus.logistics.services import maintenance_approvals
+    from airworthiness_plus.organisations.models import Organisation
+
+    organisation = Organisation.objects.get(pk=person.organisation_id)
+    approval = maintenance_approvals(organisation, date(2026, 11, 1))[0]
+    for duty in duties or STORES_PR1_DUTIES:
+        StockAppointment.objects.get_or_create(
+            organisation_id=person.organisation_id,
+            person=person,
+            action=duty,
+            starts_on=date(2026, 1, 1),
+            defaults={
+                "approval": approval,
+                "ends_on": date(2027, 12, 31),
+                "evidence": "Synthetic signed Stores appointment for the tests",
+                "submission": uuid.uuid4(),
+            },
+        )

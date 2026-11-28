@@ -6,7 +6,7 @@ from typing import Any
 import psycopg
 from playwright.sync_api import Browser, expect
 
-from tests.e2e.browser import definition, fill, form_with, signed_in, submit
+from tests.e2e.browser import definition, fill, form_with, save, signed_in, submit
 from tests.e2e.conftest import Account, RunningSite
 
 
@@ -63,6 +63,31 @@ def test_rx_002_is_resolved_posted_moved_counted_and_adjusted_once(
         page.goto("/stores/")
         page.get_by_role("link", name="Stabilator Trim Cable Assembly", exact=True).click()
         entry_url = page.url
+        # The role alone offers no Stores control. A dated appointment does (REQ-358).
+        expect(page.get_by_role("link", name="Resolve for Stock", exact=True)).to_have_count(0)
+        for duty in (
+            "Resolve and Post Stock",
+            "Move Stock Between Locations",
+            "Count Stock",
+            "Adjust Stock From a Count",
+        ):
+            page.goto("/stores/locations/")
+            page.get_by_role("link", name="Stores Appointments").click()
+            page.get_by_role("link", name="Record a Stores Appointment").click()
+            save(
+                page,
+                "Record a Stores Appointment",
+                {
+                    "person": "[Browser Test Continuing Airworthiness Manager]",
+                    "approval": "Part-CAO, UK.CAO.[Number]",
+                    "action": duty,
+                    "starts_on": "2026-11-18",
+                    "ends_on": "2026-11-30",
+                    "evidence": "Synthetic signed Stores appointment",
+                },
+                duty,
+            )
+        page.goto(entry_url)
         page.get_by_role("link", name="Resolve for Stock", exact=True).click()
         form = form_with(page, "unit")
         fill(
@@ -240,6 +265,16 @@ def test_two_committed_sessions_cannot_post_or_overspend_twice(
     }
     with _application(running_site) as setup:
         _as(setup, organisation, user)
+        # The person's own dated appointments for the Stores duties raced below (REQ-358).
+        for duty in ("Post", "Move", "Count", "Adjust"):
+            setup.execute(
+                "INSERT INTO logistics_stockappointment (id, organisation_id, submission, "
+                "entered_at, person_id, approval_id, action, starts_on, ends_on, evidence) "
+                "SELECT gen_random_uuid(), %s, gen_random_uuid(), now(), %s, approval.id, %s, "
+                "'2026-11-01', '2026-12-31', 'Synthetic signed appointment' "
+                "FROM organisations_approval approval WHERE approval.approval = 'Part-CAO'",
+                [organisation, person, duty],
+            )
         for key, name in (("location", "Race Bay A"), ("second", "Race Bay B")):
             created = setup.execute(
                 "INSERT INTO logistics_storelocation (id, organisation_id, name, kind, "

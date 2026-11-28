@@ -6,7 +6,7 @@ identity, location, shelf life and evidence are resolved. Balances come from mov
 """
 
 from collections.abc import Iterator
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import TypedDict
 from uuid import UUID
@@ -19,7 +19,7 @@ from hypothesis import strategies as st
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.history.models import Event
 from airworthiness_plus.history.session import working_for
-from airworthiness_plus.logistics import receiving, stores
+from airworthiness_plus.logistics import receiving, stock_appointments, stores
 from airworthiness_plus.logistics.models import (
     CheckKind,
     CheckOutcome,
@@ -30,10 +30,14 @@ from airworthiness_plus.logistics.models import (
     MovementKind,
     Receipt,
     ReceivingDisposition,
+    StockAppointment,
+    StockAppointmentWithdrawal,
     StockCount,
+    StockDuty,
     StockEntry,
     StockMovement,
     StockPosting,
+    StockResolution,
     StockUnit,
     StoreLocation,
 )
@@ -41,7 +45,7 @@ from airworthiness_plus.logistics.services import RefusedError
 from airworthiness_plus.organisations.models import ApprovalType, Organisation
 from airworthiness_plus.people.models import Person
 from tests.conftest import as_owner
-from tests.support import Sample, get, post, signed_in
+from tests.support import Sample, appoint_for_stores, get, post, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -163,6 +167,7 @@ def resolve(
         "shelf_life_basis": "Not Applicable",
         **values,
     }
+    appoint_for_stores(actor)
     stores.resolve(
         decision,
         actor=actor,
@@ -810,7 +815,9 @@ def test_s08_ui_and_server_permissions_agree(ours: Sample) -> None:
     reader, planner, manager = (signed_in(user) for user in (ours.reader, ours.planner, ours.lucy))
     page = get(reader, f"/stores/{entry.pk}/").content
     assert b"Resolve for Stock" not in page
-    assert b"Resolve for Stock" in get(planner, f"/stores/{entry.pk}/").content
+    # The role permits Stores work. Without a dated appointment there is no control,
+    # and a direct request is refused with nothing recorded (REQ-358).
+    assert b"Resolve for Stock" not in get(planner, f"/stores/{entry.pk}/").content
     values = {
         "unit": "Each",
         "part_number": "PN-8",
@@ -825,6 +832,12 @@ def test_s08_ui_and_server_permissions_agree(ours: Sample) -> None:
     post_url = f"/stores/dispositions/{decision.pk}/post/"
     assert post(reader, resolve_url, **values).status_code == 403
     assert post(planner, "/stores/locations/add/", name="X", kind="Quarantine").status_code == 403
+    refused = post(planner, resolve_url, **values)
+    assert refused.status_code == 200
+    assert b"Needs a Current Stores Appointment" in refused.content
+    assert not StockResolution.objects.filter(disposition=decision).exists()
+    appoint_for_stores(Person.objects.get(user=ours.planner))
+    assert b"Resolve for Stock" in get(planner, f"/stores/{entry.pk}/").content
     assert post(planner, resolve_url, **values).status_code == 302
     assert post(reader, post_url, posted_on="2026-11-28", authority="ST").status_code == 403
     assert not StockPosting.objects.filter(disposition=decision).exists()
@@ -854,6 +867,100 @@ def test_s08_ui_and_server_permissions_agree(ours: Sample) -> None:
             lot, location=bay, counted_quantity="3", counted_on=TODAY, counter=left, evidence="C"
         )
     assert actor.organisation_id == ours.ours.id
+
+
+def test_s08_each_stores_action_needs_the_persons_own_dated_appointment(ours: Sample) -> None:
+    """REQ-358. The service and PostgreSQL refuse posting, moves, counts and adjustments
+    without a current appointment for the signed-in person, duty and date."""
+    lucy = _lucy(ours)
+    bay, shelf = location(ours.ours, "Synthetic Bay J"), location(ours.ours, "Synthetic Shelf J")
+    decision = dispose(receipt(ours.ours, "APPOINT-LINE", quantity=4))
+    with pytest.raises(RefusedError, match="Needs a Current Stores Appointment"):
+        stores.resolve(
+            decision,
+            actor=lucy,
+            authority="ST",
+            unit=StockUnit.EACH,
+            part_number="PN-J",
+            batch_number="LOT-J",
+            shelf_life_basis="Not Applicable",
+            location=bay,
+            evidence="Original release reviewed",
+            evidence_on=TODAY,
+        )
+    # Post and Count only: moving and adjusting stay refused.
+    appoint_for_stores(lucy, StockDuty.POST, StockDuty.COUNT)
+    stores.resolve(
+        decision,
+        actor=lucy,
+        authority="ST",
+        unit=StockUnit.EACH,
+        part_number="PN-J",
+        batch_number="LOT-J",
+        shelf_life_basis="Not Applicable",
+        location=bay,
+        evidence="Original release reviewed",
+        evidence_on=TODAY,
+    )
+    lot = stores.post(decision, actor=lucy, authority="ST", posted_on=TODAY)
+    moved: Moved = {"moved_on": TODAY, "actor": lucy, "authority": "ST", "evidence": "Note"}
+    with pytest.raises(RefusedError, match="Move Stock Between Locations"):
+        stores.move(lot, from_location=bay, to_location=shelf, quantity="1", **moved)
+    tally = stores.count(
+        lot, location=bay, counted_quantity="3", counted_on=TODAY, counter=lucy, evidence="C"
+    )
+    with pytest.raises(RefusedError, match="Adjust Stock From a Count"):
+        stores.adjust(tally, actor=lucy, authority="ST", evidence="A", moved_on=TODAY)
+    # PostgreSQL refuses the same move written directly, bypassing the service.
+    with pytest.raises(DatabaseError, match="current Stores appointment"), transaction.atomic():
+        StockMovement.objects.create(
+            organisation_id=lot.organisation_id,
+            lot=lot,
+            kind=MovementKind.TRANSFER,
+            from_location=bay,
+            to_location=shelf,
+            quantity=Decimal(1),
+            moved_on=TODAY,
+            actor=lucy,
+            actor_name=lucy.full_name,
+            authority="Direct",
+            evidence="Direct",
+        )
+    # Another person's appointment does not authorise the signed-in user.
+    planner = Person.objects.get(user=ours.planner)
+    appoint_for_stores(planner, StockDuty.ADJUST)
+    with pytest.raises(DatabaseError, match="current Stores appointment"), transaction.atomic():
+        StockMovement.objects.create(
+            organisation_id=lot.organisation_id,
+            lot=lot,
+            kind=MovementKind.ADJUSTMENT,
+            from_location=bay,
+            quantity=Decimal(1),
+            moved_on=TODAY,
+            count=tally,
+            actor=planner,
+            actor_name=planner.full_name,
+            authority="Direct",
+            evidence="Direct",
+        )
+    # The last day authorises; the day after and a withdrawal do not.
+    grant = StockAppointment.objects.get(person=lucy, action=StockDuty.COUNT)
+    assert stock_appointments.current(ours.lucy, StockDuty.COUNT, grant.ends_on) == grant
+    assert (
+        stock_appointments.current(ours.lucy, StockDuty.COUNT, grant.ends_on + timedelta(1)) is None
+    )
+    StockAppointmentWithdrawal.objects.create(
+        organisation_id=lot.organisation_id,
+        appointment=grant,
+        withdrawn_on=TODAY,
+        evidence="Synthetic withdrawal",
+    )
+    with pytest.raises(RefusedError, match="Count Stock"):
+        stores.count(
+            lot, location=bay, counted_quantity="4", counted_on=TODAY, counter=lucy, evidence="C"
+        )
+    assert stores.balance(lot, bay) == Decimal(4)
+    assert StockMovement.objects.filter(lot=lot).count() == 1
 
 
 # S09 Ledger invariants
@@ -926,3 +1033,32 @@ def test_s09_the_database_refuses_an_overspend_that_bypasses_the_service(ours: S
     with pytest.raises(DatabaseError, match="permission denied"), transaction.atomic():
         StockMovement.objects.filter(lot=lot).update(quantity=Decimal(9))
     assert on_hand(lot, bay) == 2
+
+
+def test_the_sample_posts_oil_and_bolts_once_and_leaves_rx_002_awaiting(sample: Sample) -> None:
+    """REQ-358. The test site can show a move of oil and an authorised count adjustment."""
+    from airworthiness_plus.sample import goods_in
+    from airworthiness_plus.sample import stores as stores_sample
+
+    goods_in.add(sample.ours, sample.lucy)
+    assert stores_sample.add(sample.ours, sample.administrator) == 2
+    assert stores_sample.add(sample.ours, sample.administrator) == 0
+    with working_for(sample.ours.id, sample.lucy.id):
+        oil = StockPosting.objects.get(disposition__receipt__delivery_reference="RX-006")
+        bolts = StockPosting.objects.get(disposition__receipt__delivery_reference="RX-007")
+        (oil_line,) = stores.positions([oil], TODAY, 30)
+        assert (oil.unit, oil_line.on_hand, oil_line.available) == (
+            StockUnit.LITRE,
+            Decimal(24),
+            Decimal(24),
+        )
+        assert oil_line.location.name == "Bay C, Oils and Materials"
+        (tally,) = bolts.counts.all()
+        assert (tally.counted_quantity, tally.ledger_quantity) == (Decimal(46), Decimal(50))
+        assert not StockMovement.objects.filter(count=tally).exists()
+        rx002 = ReceivingDisposition.objects.get(receipt__delivery_reference="RX-002")
+        assert not StockPosting.objects.filter(disposition=rx002).exists()
+        keeper = Person.objects.get(user=sample.lucy)
+        assert set(
+            StockAppointment.objects.filter(person=keeper).values_list("action", flat=True)
+        ) == set(StockDuty.values)

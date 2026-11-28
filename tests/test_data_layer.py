@@ -286,17 +286,28 @@ def test_every_table_is_under_the_record_rules() -> None:
         },
         "logistics_stockentry": {"history_refuse_update", "stock_requires_acceptance"},
         "logistics_storelocation": {"keep_store_location_station", "store_location_rules"},
-        "logistics_stockresolution": {"history_refuse_update", "stock_resolution_rules"},
+        # Each Stores ledger write needs the person's own dated appointment (REQ-358).
+        "logistics_stockresolution": {
+            "history_refuse_update",
+            "stock_resolution_rules",
+            "stores_ledger_authority",
+        },
         "logistics_stockposting": {
             "history_refuse_update",
             "stock_posting_rules",
             "stock_posting_intake",
+            "stores_ledger_authority",
         },
-        "logistics_stockcount": {"history_refuse_update", "stock_count_rules"},
+        "logistics_stockcount": {
+            "history_refuse_update",
+            "stock_count_rules",
+            "stores_ledger_authority",
+        },
         "logistics_stockmovement": {
             "history_refuse_update",
             "stock_movement_rules",
             "stores_movement_reservations",
+            "stores_ledger_authority",
         },
         "logistics_stockappointment": {"history_refuse_update"},
         "logistics_stockappointmentwithdrawal": {"history_refuse_update"},

@@ -169,10 +169,17 @@ def _detail(request: HttpRequest, user: User, decision: ReceivingDisposition) ->
             "may_return": stock_appointments.current(user, StockDuty.RETURN, today) is not None,
             "may_quarantine": stock_appointments.current(user, StockDuty.QUARANTINE, today)
             is not None,
-            "may_post": user.may(Action.POST_STOCK) and lot is None,
-            "may_move": user.may(Action.MOVE_STOCK) and lot is not None,
-            "may_count": user.may(Action.COUNT_STOCK) and lot is not None,
-            "may_adjust": user.may(Action.ADJUST_STOCK),
+            "may_post": user.may(Action.POST_STOCK)
+            and lot is None
+            and stock_appointments.current(user, StockDuty.POST, today) is not None,
+            "may_move": user.may(Action.MOVE_STOCK)
+            and lot is not None
+            and stock_appointments.current(user, StockDuty.MOVE, today) is not None,
+            "may_count": user.may(Action.COUNT_STOCK)
+            and lot is not None
+            and stock_appointments.current(user, StockDuty.COUNT, today) is not None,
+            "may_adjust": user.may(Action.ADJUST_STOCK)
+            and stock_appointments.current(user, StockDuty.ADJUST, today) is not None,
             "ready": lot is None and not line["blockers"],
             "post_form": PostStockForm(initial={"posted_on": today}),
             "display": stores.display,

@@ -10,7 +10,7 @@
 <dt>Supplier or Owner Source</dt><dd>{{ receipt.source }}</dd>
 <dt>Item Reference</dt><dd>{{ receipt.item_reference }}</dd>
 <dt>Received Quantity</dt><dd>{{ receipt.quantity }}</dd>
-<dt>Stock Location</dt><dd>{{ disposition.destination }}</dd>
+<dt>Destination Recorded at Disposition</dt><dd>{{ disposition.destination }}</dd>
 <dt>Moved On</dt><dd>{{ disposition.disposition_on|long_date }}</dd>
 {% if receipt.shelf_life_to %}<dt>Shelf Life To</dt><dd>{{ receipt.shelf_life_to|long_date }}</dd>{% endif %}
 <dt>Release Document Shown on Arrival</dt><dd>{{ receipt.release_document|default:"Not Recorded" }}</dd>

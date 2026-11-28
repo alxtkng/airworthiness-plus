@@ -413,6 +413,10 @@ def test_populated_published_schema_preserves_lot_keys_and_history(
     sample: Sample, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(aircraft_services, "today", lambda: TODAY)
+    # These records are made under the published schema, before Stores appointments
+    # existed, and must upgrade unchanged without one (REQ-358, migration 0011).
+    monkeypatch.setattr("tests.test_stores.appoint_for_stores", lambda *_: None)
+    monkeypatch.setattr(stores, "_appointed", lambda *_: None)
     previous = [("logistics", "0008_stores_ledger_rules")]
     with as_owner(), connection.cursor() as cursor:
         cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
