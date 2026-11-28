@@ -75,4 +75,14 @@
 </details>
 {% empty %}<p>No verified control basis recorded.</p>{% endfor %}
 </section>
+<section>
+  <h2>Custody and Use</h2>
+  {% if may_custody %}<p class="actions"><a class="button" href="{% url 'issue_tool' tool.id %}">Issue Tool</a> <a href="{% url 'record_historical_tool_claim' tool.id %}">Record Historical Tool Claim</a></p>{% endif %}
+  {% for issue in issues %}
+    <p><a href="{% url 'tool_issue' issue.id %}">{{ issue.work_approval.package }}</a> · {{ issue.custodian }} · {% if issue.return_record %}Returned to {{ issue.return_record.location }}{% else %}Issued at {{ issue.location }}{% endif %}</p>
+  {% empty %}<p>No issues recorded.</p>{% endfor %}
+  {% for claim in historical_claims %}
+    <article><h3>{{ claim.subject }}</h3><p>{{ claim.occurred_on|date:"j F Y" }}</p><p>{{ claim.claim }} · {{ claim.attributed_to }}</p><p>{{ claim.source }}</p><p>{{ claim.gaps }}</p></article>
+  {% endfor %}
+</section>
 {% endblock %}

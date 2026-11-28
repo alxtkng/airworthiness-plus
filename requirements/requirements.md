@@ -348,6 +348,10 @@ The boards of Phase 1 (`prompts/canvas-build.md`, Part 5). Each board group take
 | REQ-367 | A delegated decision checks asset and controlled component identities, date, traceability, provider scope and coverage. Require ordered uncertainty and coverage for as-found conformity claims and as-left evidence. Keep rejection and superseded evidence. | CAP 2375 §§2.4–2.5, UKAS TPS 41, UKAS LAB 48; ADR-0010 | Must | Test |
 | REQ-368 | Recording an out-of-limits result restricts the tool and creates one open affected-work case per episode atomically. Retain the original trigger, evidence gaps and provisional status on retries and corrections. | CAP 2375 §2.5; local case and hold workflow, ADR-0010 | Must | Golden, Test, Independent |
 | REQ-369 | Reinstatement requires a separate delegated decision, actual return, current accepted evidence and satisfied controls. Refresh the calibration deadline from the calibrated date and leave historical affected-work review open. | AMC 145.A.40(b), CAP 2375 §§2.5–2.6; ADR-0009 and ADR-0010 | Must | Golden, Test |
+| REQ-370 | Pin the applicable dated maintenance approval and allow one delegated open issue per tool. Record person, work package, location and accepted control evidence. Refuse an ineligible tool. | CAO.A.050, 145.A.40, CAP 2375 §2.6, ADR-0013 | Must | Test |
+| REQ-371 | Record attributable actual use against a work card, aircraft and current revision. Require one applicable passing inspection for each use where before-use control applies. Keep sourced historical claims and evidence gaps. | CAO.A.060, 145.A.48, ADR-0013 | Must | Test |
+| REQ-372 | Record return distinctly with recipient, person returning, location and observed condition. Keep adverse condition and refuse future use until reinstatement. | CAP 2375 §2.6, ADR-0013 | Must | Test |
+| REQ-373 | Require tool accountability and separate signed general verification at prospective organisation release. Retain both in the release transaction alongside the existing certification evidence. Preserve legacy releases and their original evidence. | CAO.A.060(i), 145.A.48(c)(1), ADR-0013 | Must | Test |
 
 ## Open Points
 

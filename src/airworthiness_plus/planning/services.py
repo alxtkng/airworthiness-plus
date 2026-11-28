@@ -25,6 +25,8 @@ from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import Task, WorkDone
 from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy
+from airworthiness_plus.tooling import custody
+from airworthiness_plus.tooling.release_evidence import Verification
 from airworthiness_rules.intervals import TaskKind
 
 
@@ -214,7 +216,8 @@ def _check_data(
 
 
 @transaction.atomic
-def issue_package(package: WorkPackage) -> None:
+def issue_package(package: WorkPackage, *, approval: str = "") -> None:
+    Organisation.objects.select_for_update(no_key=True).only("id").get(pk=package.organisation_id)
     package = _locked_draft(package)
     today = aircraft_services.today()
     _for_maintenance(package.aircraft, today)
@@ -245,6 +248,12 @@ def issue_package(package: WorkPackage) -> None:
         card.save(update_fields=["revision", "issue_check_due"])
     package.issued_on = today
     package.save(update_fields=["issued_on"])
+    try:
+        custody.pin_approval(
+            package, approval, today, "Governing approval recorded at package issue"
+        )
+    except custody.RefusedError as error:
+        raise RefusedError(str(error)) from error
 
 
 def _locked_issued(package_id: UUID) -> WorkPackage:
@@ -484,7 +493,9 @@ def release_package(
     maintenance_authorisation: MaintenanceAuthorisation,
     scope_confirmed: bool,
     verification: str,
+    general_verification: Verification | None = None,
 ) -> None:
+    Organisation.objects.select_for_update(no_key=True).only("id").get(pk=package.organisation_id)
     package = _locked_issued(package.pk)
     verification = verification.strip()
     if not verification:
@@ -526,6 +537,8 @@ def release_package(
             issued_by=issued_by,
             maintenance_authorisation=maintenance_authorisation,
             scope_confirmed=scope_confirmed,
+            general_verification=general_verification,
+            work_package=package,
         )
         for work in works[1:]:
             programme_services.record_release(

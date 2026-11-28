@@ -42,6 +42,7 @@ from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases import services
 from airworthiness_plus.releases.models import IssuedBy, Release
 from airworthiness_plus.sample import build, phase1
+from airworthiness_plus.tooling.release_evidence import Verification
 from tests.conftest import as_owner
 from tests.support import TODAY, Sample, dot, get, make_sample, page, post, signed_in
 from tests.test_defects import Day, tables
@@ -657,7 +658,19 @@ def test_new_staff_release_needs_in_force_authorisation_and_confirmation(
     with pytest.raises(services.RefusedError, match="No Recorded Maintenance Authorisation Covers"):
         record(sample, work, **details, maintenance_authorisation=old, scope_confirmed=True)
     verified = record(
-        sample, work, **details, maintenance_authorisation=current, scope_confirmed=True
+        sample,
+        work,
+        **details,
+        maintenance_authorisation=current,
+        scope_confirmed=True,
+        general_verification=Verification(
+            "",
+            TODAY,
+            True,
+            "None removed",
+            "Fictitious signed clearance",
+            "Fixture custody reconciled",
+        ),
     )
     assert verified.maintenance_authorisation_id == current.pk and verified.scope_confirmed
     later_work = work_on(sample, fleet["G-EJKL"], dated=TODAY, description="A second inspection")

@@ -14,6 +14,11 @@
 <dt>Work Order</dt>
 <dd>{% if package.order %}<a href="{% url 'contracts' %}">{{ package.order.work }}</a>, {{ package.order.ordered_by_text }}, {{ package.order.agreed_on|date:"j F Y" }}{% else %}Not Received{% endif %}</dd>
 <dt>Status</dt><dd>{{ package.status }}</dd>
+{% if package.tooling_approval %}
+<dt>Governing Maintenance Approval</dt><dd>{{ package.tooling_approval.reference }} · {{ package.tooling_approval.evidence }}</dd>
+{% elif may_plan and package.issued_on and not package.released_on %}
+<dt>Governing Maintenance Approval</dt><dd><a href="{% url 'assign_tooling_approval' package.id %}">Record Governing Approval</a></dd>
+{% endif %}
 {% if package.issued_on %}<dt>Issued</dt><dd>{{ package.issued_on|date:"j F Y" }}</dd>{% endif %}
 {% if package.released_on %}<dt>Released</dt><dd>{{ package.released_on|date:"j F Y" }}</dd>{% endif %}
 </dl>
@@ -21,6 +26,14 @@
 <p><a class="button" href="{% url 'link_package_order' package.id %}">Link Work Order</a>
 <a class="button" href="{% url 'add_work_card' package.id %}">Add Work Card</a>
 <a class="button" href="{% url 'issue_work_package' package.id %}">Issue Work Package</a></p>
+{% endif %}
+{% if tool_issues %}
+<section>
+<h2>Tool Accountability</h2>
+{% for issue in tool_issues %}
+<p><a href="{% url 'tool_issue' issue.id %}">{{ issue.tool }}</a> · {{ issue.custodian }} · {% if issue.return_record %}Returned to {{ issue.return_record.location }}{% else %}Issued at {{ issue.location }}{% endif %}</p>
+{% endfor %}
+</section>
 {% endif %}
 <h2>Work Cards</h2>
 <button type="button" data-print hidden>Print Work Cards</button>
@@ -31,7 +44,7 @@
 <tbody>
 {% for card in cards %}
 <tr>
-<td><a href="#card-{{ card.id }}">{{ card.title }}</a></td>
+<td><a href="#card-{{ card.id }}">{{ card.title }}</a>{% for entry in card.tool_uses.all %}<br><a href="{% url 'tool_issue' entry.issue_id %}">{{ entry.issue.tool }}</a> · {{ entry.delegation.person }} · {{ entry.evidence }}{% endfor %}</td>
 <td><a href="{% url 'data_set' card.data_set_id %}">{{ card.data_set }}</a>{% if card.revision %}, Revision {{ card.revision }}{% endif %}</td>
 <td>{{ card.critical|yesno:"Yes,No" }}</td>
 <td>{{ card.performed_by|default_if_none:"—" }}</td>

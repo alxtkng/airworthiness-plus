@@ -15,6 +15,7 @@ from airworthiness_plus.history.session import working_for
 from airworthiness_plus.maintenance_data import services as data_services
 from airworthiness_plus.maintenance_data.models import Kind
 from airworthiness_plus.people.models import Person
+from airworthiness_plus.tooling.release_evidence import Verification
 from tests.support import TODAY, Sample, add_sample_fleet, get, make_sample, signed_in
 
 pytestmark = pytest.mark.django_db
@@ -322,6 +323,9 @@ def test_release_closes_the_package_and_reuses_certifying_staff_checks(
                 maintenance_authorisation=authorisation,
                 scope_confirmed=scope_confirmed,
                 verification="Panels refitted, checked clear of tools and loose items",
+                general_verification=Verification(
+                    "", TODAY, True, "All refitted", "Signed clearance", "Tool register reconciled"
+                ),
             )
 
         with pytest.raises(services.RefusedError, match="Independent Inspection"):

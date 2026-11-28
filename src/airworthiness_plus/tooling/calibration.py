@@ -289,6 +289,8 @@ def record_movement(
     if CalibrationMovement.objects.filter(order=order, kind=kind).exists() or occurred_on > today:
         raise RefusedError("Record each movement once, on or before today")
     if kind == MovementKind.DESPATCHED:
+        if order.tool.issues.filter(return_record__isnull=True).exists():
+            raise RefusedError("Accept return from the open tool issue before despatch")
         if not expected_on or expected_on < occurred_on:
             raise RefusedError("Give an expected return date on or after despatch")
         if not scope_on(order.provider, occurred_on):

@@ -64,12 +64,56 @@ def seed() -> None:
                     release_reference=LEGACY_REFERENCE,
                     release_recorded_on=date(2026, 11, 11),
                 )
+                # Represent an issued package from before tooling approval was pinned.
+                seed_legacy_issued_package()
     connection.close()
 
 
 class QuietHandler(WSGIRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         """Avoid logging URLs from account and record pages."""
+
+
+def seed_legacy_issued_package() -> None:
+    from airworthiness_plus.aircraft.models import Aircraft
+    from airworthiness_plus.contracts.models import WorkOrder
+    from airworthiness_plus.maintenance_data import services as data
+    from airworthiness_plus.maintenance_data.models import Kind
+    from airworthiness_plus.planning import services as planning
+
+    day = date(2026, 11, 18)
+    aircraft = Aircraft.objects.get(registration="G-ABCD")
+    order = WorkOrder.objects.get(aircraft=aircraft, work="Landing Light Replacement")
+    package = planning.build_package(
+        aircraft,
+        reference="WP-LEGACY-CUSTODY",
+        title="Fictitious earlier issued job",
+        location="Bay 2",
+        starts_on=day,
+        ends_on=day,
+    )
+    planning.link_order(package, order)
+    manual = data.record_data(
+        organisation=aircraft.organisation,
+        title="Fictitious earlier job instruction",
+        author="Fictitious designer",
+        kind=Kind.INSTRUCTIONS,
+        revision="1",
+        revision_date=day,
+        check_due=day,
+    )
+    card = planning.add_card(
+        package,
+        title="Fictitious earlier work card",
+        data_set=manual,
+        instruction="Test task evidence",
+        planned_hours=Decimal("1.0"),
+    )
+    card.revision = data.current_revision(manual)
+    card.issue_check_due = day
+    card.save(update_fields=["revision", "issue_check_due"])
+    package.issued_on = day
+    package.save(update_fields=["issued_on"])
 
 
 def serve(address_file: Path) -> None:

@@ -822,6 +822,11 @@ def test_certifying_staff_evidence_is_retained_with_release_and_deferral(
             "Record Certificate",
             {
                 **evidence,
+                "performed_on": "2026-11-18",
+                "cleared": "on",
+                "panels": "No Panels Removed",
+                "signed_evidence": "Fictitious signed ordinary release clearance",
+                "accountability": "Fixture tools accounted for",
                 "reference": "TEST-RELEASE-81",
                 "kind": "Organisation Certifying Staff",
                 "issued_by": "Sam Patel",
@@ -944,6 +949,22 @@ def _record_critical_card_completion(
     )
 
 
+def test_pin_approval_on_legacy_issued_package(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
+        page.goto("/work-packages/")
+        page.get_by_role("link", name="WP-LEGACY-CUSTODY", exact=True).click()
+        page.get_by_role("link", name="Record Governing Approval").click()
+        save(
+            page,
+            "Record Governing Approval",
+            {"approval": "Part-CAO", "evidence": "Signed original package approval evidence"},
+            "Signed original package approval evidence",
+        )
+        expect(page.locator("main")).to_contain_text("UK.CAO.[Number]")
+
+
 def test_work_package_from_draft_to_release(
     chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
 ) -> None:
@@ -962,8 +983,204 @@ def test_work_package_from_draft_to_release(
             "TEST-PACKAGE-AUTH",
         )
 
+        for action in (
+            "Register a Tool",
+            "Approve a Control Basis",
+            "Issue a Tool",
+            "Record Use and Pre-use Inspection",
+            "Accept Tool Return",
+        ):
+            page.goto("/tools/delegations/add/")
+            save(
+                page,
+                "Record Tool Delegation",
+                {
+                    "approval": "Part-CAO",
+                    "person": "[Planning and Records Name]",
+                    "action": action,
+                    "site": "Bay 2",
+                    "starts_on": "2026-11-18",
+                    "ends_on": "2026-12-31",
+                    "procedure": "Fictitious CAE C.3 revision 2",
+                    "authority": f"Fictitious signed grant for {action}",
+                },
+                f"Fictitious signed grant for {action}",
+            )
+
     with signed_in(chromium, live_site, personas["your-organisation"][3]) as page:
-        _record_critical_card_completion(page, "WP-2026-TEST", "Sam Patel")
+        page.goto("/maintenance-data/add/")
+        save(
+            page,
+            "Record Maintenance Data",
+            {
+                "title": "Test Piper Maintenance Instructions",
+                "author": "Piper",
+                "kind": (
+                    "Instructions for Continued Airworthiness, From a Type or "
+                    "Supplementary Type Certificate Holder"
+                ),
+                "held": "on",
+                "revision": "1",
+                "revision_date": "2026-11-16",
+                "check_due": "2026-11-30",
+            },
+            "Test Piper Maintenance Instructions",
+        )
+        page.goto("/work-packages/")
+        page.get_by_role("link", name="Build a Work Package").click()
+        save(
+            page,
+            "Build a Work Package",
+            {
+                "aircraft": "G-ABCD",
+                "reference": "WP-2026-TEST",
+                "title": "Test Landing Light",
+                "location": "Bay 2",
+                "starts_on": "2026-11-18",
+                "ends_on": "2026-11-19",
+            },
+            "WP-2026-TEST",
+        )
+        page.get_by_role("link", name="Link Work Order").click()
+        save(
+            page,
+            "Link Work Order",
+            {"order": "Landing Light Replacement (12 November 2026)"},
+            "Landing Light Replacement",
+        )
+        page.get_by_role("link", name="Add Work Card").click()
+        save(
+            page,
+            "Add Work Card",
+            {
+                "title": "Test Landing Light Card",
+                "data_set": "Test Piper Maintenance Instructions",
+                "instruction": "Chapter 33",
+                "planned_hours": "2.0",
+                "critical": "on",
+                "inspection_hours": "0.5",
+            },
+            "Test Landing Light Card",
+        )
+        page.get_by_role("link", name="Issue Work Package").click()
+        save(page, "Issue Work Package", {}, "Revision 1")
+        package = page.url
+        page.goto("/tools/add/")
+        save(
+            page,
+            "Register a Tool",
+            {
+                "approval": "Part-CAO",
+                "asset_id": "E2E-ADAPTER",
+                "description": "Fictitious job adapter",
+                "site": "Bay 2",
+                "location": "Tools board",
+                "owner": "Organisation",
+            },
+            "Fictitious job adapter",
+        )
+        tool = page.url
+        page.get_by_role("link", name="Record Control Basis").click()
+        save(
+            page,
+            "Record Control Basis",
+            {
+                "kind": "Before each use",
+                "instruction": "Check fixture",
+                "instruction_revision": "1",
+                "method": "Inspect surfaces",
+                "limits": "No damage",
+                "decision_basis": "Fictitious fixture procedure",
+                "scope": "Landing light fixture orientation",
+            },
+            "Check fixture",
+        )
+        page.get_by_role("link", name="Issue Tool", exact=True).click()
+        issue_form = page.get_by_role("button", name="Issue Tool").locator("xpath=ancestor::form")
+        fill(
+            issue_form,
+            {
+                "package": "WP-2026-TEST",
+                "custodian": "Sam Patel",
+                "location": "Bay 2 fixture bench",
+                "evidence": "Fictitious handover",
+            },
+        )
+        attempts = issue_form.evaluate("""async form => {
+            const first = new FormData(form);
+            const second = new FormData(form);
+            second.set("request_id", crypto.randomUUID());
+            const submit = body => fetch(form.action, {method: "POST", body});
+            const responses = await Promise.all([submit(first), submit(second)]);
+            return Promise.all(responses.map(async response => ({
+                url: response.url,
+                duplicate: (await response.text()).includes("The tool already has an open issue"),
+            })));
+        }""")
+        successes = [entry for entry in attempts if "/tools/issues/" in entry["url"]]
+        assert len(successes) == 1 and sum(entry["duplicate"] for entry in attempts) == 1
+        issue = successes[0]["url"]
+        page.goto(issue)
+        expect(page.locator("main")).to_contain_text("Fictitious handover")
+        page.get_by_role("link", name="Record Pre-Use Inspection").click()
+        save(
+            page,
+            "Record Pre-Use Inspection",
+            {
+                "card": "Test Landing Light Card",
+                "revision": "1",
+                "passed": "on",
+                "evidence": "Faces sound",
+            },
+            "Faces sound",
+        )
+        page.get_by_role("link", name="Record Actual Use").click()
+        inspection = page.locator('[name="inspection"] option').nth(1)
+        save(
+            page,
+            "Record Actual Use",
+            {
+                "card": "Test Landing Light Card",
+                "revision": "1",
+                "inspection": inspection.inner_text(),
+                "configuration": "Test orientation",
+                "evidence": "Fictitious task-specific signed use reference",
+            },
+            "Fictitious task-specific signed use reference",
+        )
+        page.goto(tool)
+        page.get_by_role("link", name="Record Historical Tool Claim").click()
+        save(
+            page,
+            "Record Historical Tool Claim",
+            {
+                "occurred_on": "2026-11-17",
+                "claim": "Earlier use reported",
+                "attributed_to": "Fictitious engineer",
+                "subject": "Fictitious aircraft",
+                "source": "Fictitious worksheet",
+                "gaps": "Actual custody unverified",
+            },
+            "Actual custody unverified",
+        )
+        page.goto(package)
+        expect(page.locator("main")).to_contain_text(
+            "Fictitious task-specific signed use reference"
+        )
+        page.get_by_role("link", name="Record Signed Work").click()
+        save(
+            page,
+            "Record Signed Work",
+            {
+                "performed_by": "Sam Patel",
+                "revision": "1",
+                "completed_on": "2026-11-18",
+                "sign_off_reference": "Signed test card",
+                "hours": "6412.6",
+                "cycles": "0",
+            },
+            "Awaiting Inspection",
+        )
         page.get_by_role("link", name="Record Independent Inspection").click()
         save(
             page,
@@ -976,20 +1193,42 @@ def test_work_package_from_draft_to_release(
             },
             "1 of 1 Signed",
         )
+        release_values = {
+            "reference": "TEST-PACKAGE-CRS",
+            "issued_by": "Sam Patel",
+            "issued_on": "2026-11-18",
+            "maintenance_authorisation": "Sam Patel (TEST-PACKAGE-AUTH)",
+            "scope_confirmed": "on",
+            "performed_on": "2026-11-18",
+            "cleared": "on",
+            "panels": "All Removed Panels Refitted",
+            "signed_evidence": "Signed fixture inspection after maintenance",
+            "accountability": "Fixture issue accepted into quarantine custody",
+        }
         page.get_by_role("link", name="Record Package Release").click()
+        button = page.get_by_role("button", name="Record Package Release", exact=True)
+        fill(button.locator("xpath=ancestor::form"), release_values)
+        submit(page, button)
+        expect(page.locator("main")).to_contain_text("Account for every open tool issue")
+        page.goto(issue)
+        page.get_by_role("link", name="Record Tool Return").click()
         save(
             page,
-            "Record Package Release",
+            "Record Tool Return",
             {
-                "reference": "TEST-PACKAGE-CRS",
-                "issued_by": "Sam Patel",
-                "issued_on": "2026-11-18",
-                "maintenance_authorisation": "Sam Patel (TEST-PACKAGE-AUTH)",
-                "scope_confirmed": "on",
-                "verification": "Tools accounted for and panels refitted",
+                "returned_by": "Sam Patel",
+                "location": "Quarantine bench",
+                "condition": "Unserviceable",
+                "evidence": "Fictitious fresh damage observed",
             },
-            "Released",
+            "Quarantine bench",
         )
+        page.goto(package)
+        expect(page.locator("main")).to_contain_text(
+            "Fictitious task-specific signed use reference"
+        )
+        page.get_by_role("link", name="Record Package Release").click()
+        save(page, "Record Package Release", release_values, "Released")
         page.get_by_role("link", name="Release Certificate", exact=True).click()
         expect(page.get_by_role("heading", name="TEST-PACKAGE-CRS")).to_be_visible()
 

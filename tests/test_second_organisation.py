@@ -153,6 +153,7 @@ def test_maintenance_and_management_records_take_the_approval_for_the_activity(
     from airworthiness_plus.programme import services as programmes
     from airworthiness_plus.releases import services as releases
     from airworthiness_plus.releases.models import IssuedBy
+    from airworthiness_plus.tooling.release_evidence import Verification
 
     _, theirs = both
     administrator = user_named(second.ADMINISTRATOR)
@@ -184,9 +185,18 @@ def test_maintenance_and_management_records_take_the_approval_for_the_activity(
             issued_on=TODAY,
             maintenance_authorisation=authorisation,
             scope_confirmed=True,
+            general_verification=Verification(
+                "Part-145",
+                TODAY,
+                True,
+                "None removed",
+                "Fictitious Part-145 signed verification",
+                "Fictitious tools accounted for",
+            ),
         )
         assert contract.organisation_approval_reference == "UK.CAMO.[Number]"
         assert certificate.approval_reference == "UK.145.[Number]"
+        assert certificate.general_verification.rule == "145.A.48(c)(1)"
 
 
 def test_each_sample_organisation_sees_its_own_records_alone(

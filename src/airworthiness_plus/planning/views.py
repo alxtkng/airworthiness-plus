@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from django.http import Http404, HttpRequest, HttpResponse
@@ -17,6 +18,8 @@ from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.planning import attestation, forms, services
 from airworthiness_plus.planning.models import SigningState, WorkCard, WorkPackage
 from airworthiness_plus.releases.services import maintains
+from airworthiness_plus.tooling.custody_models import ToolIssue
+from airworthiness_plus.tooling.verification_forms import take_verification
 
 
 def _user(request: HttpRequest, *, write: bool = True) -> User:
@@ -89,7 +92,11 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
             "attestation",
             "inspection_authorisation",
         ).prefetch_related(
-            "signing_jobs", "step_signoffs__performer", "step_signoffs__authorisation"
+            "signing_jobs",
+            "step_signoffs__performer",
+            "step_signoffs__authorisation",
+            "tool_uses__issue__tool",
+            "tool_uses__delegation__person",
         )
     )
     return render(
@@ -98,6 +105,9 @@ def work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
         {
             "package": package,
             "cards": cards,
+            "tool_issues": ToolIssue.objects.filter(work_approval__package=package).select_related(
+                "tool", "custodian", "return_record"
+            ),
             "signed": sum(card.signed for card in cards),
             "has_structured_pilot": any(card.steps for card in cards),
             "missing_inspections": sum(
@@ -173,9 +183,9 @@ def issue_work_package(request: HttpRequest, package_id: UUID) -> HttpResponse:
     package = _package(package_id)
     return _form(
         request,
-        Form(request.POST if request.method == "POST" else None),
+        forms.IssuePackageForm(request.POST if request.method == "POST" else None),
         "Issue Work Package",
-        lambda: services.issue_package(package),
+        lambda **values: services.issue_package(package, **values),
         package,
     )
 
@@ -219,13 +229,18 @@ def release_work_package(request: HttpRequest, package_id: UUID) -> HttpResponse
     """Record the package release after the release checklist is satisfied."""
     _user(request)
     package = _package(package_id)
-    return _form(
-        request,
-        forms.PackageReleaseForm(request.POST or None),
-        "Record Package Release",
-        lambda **values: services.release_package(package, **values),
-        package,
-    )
+    form = forms.PackageReleaseForm(request.POST or None)
+
+    def save(**values: Any) -> None:
+        verification = take_verification(values)
+        services.release_package(
+            package,
+            verification=verification.signed_evidence,
+            general_verification=verification,
+            **values,
+        )
+
+    return _form(request, form, "Record Package Release", save, package)
 
 
 @never_cache

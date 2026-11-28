@@ -425,6 +425,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Record Tool Control Basis | No | Yes | No | Yes | No |
 | Record Tool Provider Scope | No | Yes | No | Yes | No |
 | Record Tool Calibration | No | Yes | No | Yes | No |
+| Record Tool Custody and Use | No | Yes | No | Yes | No |
 | Record Tool Control Evidence and Condition | No | Yes | No | Yes | No |
 | Record Subcontractor Assessment | No | Yes | No | No | No |
 | Record Supplier Evaluation | No | Yes | No | No | No |

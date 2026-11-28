@@ -8,9 +8,10 @@ from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.people.forms import CertificationEvidenceForm
 from airworthiness_plus.people.models import Person, StaffGroup
 from airworthiness_plus.releases.models import IssuedBy
+from airworthiness_plus.tooling.verification_forms import GeneralVerificationForm
 
 
-class CertificateForm(CertificationEvidenceForm, Form):
+class CertificateForm(CertificationEvidenceForm, GeneralVerificationForm, Form):
     """Record the certificate of release to service for work done (ML.A.801(e))."""
 
     reference = forms.CharField(label="Certificate Reference", max_length=100)

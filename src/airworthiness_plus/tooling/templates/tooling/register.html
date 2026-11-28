@@ -24,17 +24,18 @@
 <section aria-labelledby="tools-register">
 <h2 id="tools-register">Register</h2>
 <table data-search="always">
-<thead><tr><th scope="col">Tool</th><th scope="col">Usual Location</th><th scope="col">Condition</th><th scope="col">Control</th><th scope="col">Next Due</th></tr></thead>
+<thead><tr><th scope="col">Tool</th><th scope="col">Usual Location</th><th scope="col">Current Issue</th><th scope="col">Condition</th><th scope="col">Control</th><th scope="col">Next Due</th></tr></thead>
 <tbody>
 {% for item in lines %}
 <tr>
   <th scope="row"><a href="{% url 'tool_record' item.tool.id %}{% if selected %}?approval={{ selected.approval }}{% endif %}">{{ item.tool }}</a></th>
   <td>{{ item.tool.site }} · {{ item.tool.location }}</td>
+  <td>{% with issue=item.tool.open_issues.0 %}{% if issue %}<a href="{% url 'tool_issue' issue.id %}">{{ issue.work_approval.package }}</a> · {{ issue.custodian }} · {{ issue.location }}{% else %}—{% endif %}{% endwith %}</td>
   <td>{% if item.calibration_hold %}Calibration hold<br>{% endif %}{% if item.condition %}{{ item.condition.get_kind_display|status }}{% else %}No restriction recorded{% endif %}</td>
   <td>{{ item.control_status|status }}{% for line in item.controls %}{% if line.revision.interval_months %}<br>{{ line.revision.get_kind_display }} every {{ line.revision.interval_months }} months{% elif item.control_status != line.status %}<br>{{ line.status }}{% endif %}{% endfor %}</td>
   <td>{% if item.next_due %}{{ item.next_due|date:"j F Y" }}{% endif %}</td>
 </tr>
-{% empty %}<tr><td colspan="5">No tools registered.</td></tr>{% endfor %}
+{% empty %}<tr><td colspan="6">No tools registered.</td></tr>{% endfor %}
 </tbody>
 </table>
 </section>
