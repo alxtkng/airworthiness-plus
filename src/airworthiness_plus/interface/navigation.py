@@ -577,6 +577,7 @@ OUTSIDE = frozenset(
         "sign_in",
         "passkey_sign_in",
         "passkey_settings",
+        "display_settings",
         "add_passkey",
         "remove_passkey",
         "verify_passkey",
@@ -619,7 +620,7 @@ def navigation(request: HttpRequest) -> dict[str, object]:
     """Give every page its sidebar, its breadcrumb and its section tabs."""
     user = request.user
     if not isinstance(user, User):
-        return {"page_title": "Sign In"}
+        return {"page_title": "Sign In", "display": []}
     match = request.resolver_match
     address = match.url_name if match and match.url_name else ""
     found = place(address)
@@ -642,4 +643,10 @@ def navigation(request: HttpRequest) -> dict[str, object]:
     # (WCAG 2.2 SC 2.4.2, REQ-393). A page with its own title block overrides it.
     current = [tab.label for tab, chosen in tabs if chosen]
     title = current[0] if current else found[1].label if found else "Your Account"
-    return {"sidebar": sidebar, "place": found, "section_tabs": tabs, "page_title": title}
+    return {
+        "sidebar": sidebar,
+        "place": found,
+        "section_tabs": tabs,
+        "page_title": title,
+        "display": user.display(),
+    }

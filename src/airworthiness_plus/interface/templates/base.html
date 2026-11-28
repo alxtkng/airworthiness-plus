@@ -1,5 +1,5 @@
 {% load static %}<!doctype html>
-<html lang="en-GB">
+<html lang="en-GB"{% for name, value in display %} data-{{ name }}="{{ value }}"{% endfor %}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,6 +27,7 @@
 <p class="roles">{{ request.user.roles|join:", " }}</p>
 <p><a href="{% url 'change_password' %}">Change Password</a></p>
 <p><a href="{% url 'passkey_settings' %}">Passkeys</a></p>
+<p><a href="{% url 'display_settings' %}">Display</a></p>
 <form method="post" action="{% url 'sign_out' %}">
 {% csrf_token %}
 <button type="submit">Sign Out</button>
