@@ -1,6 +1,8 @@
 # Generator for static Airworthiness+ pages in the shared layout.
 import html
-OUT = '/home/claude/overhaul/project/'
+import os as _os
+# The canvas folder of this repository, unless CANVAS_OUT names another.
+OUT = _os.environ.get('CANVAS_OUT', _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'canvas') + '/')
 C = {'g': '#1FCB6E', 'a': '#FFB224', 'r': '#FF5A4E'}
 E = html.escape
 
@@ -21,13 +23,18 @@ body{margin:0}
 a{text-decoration:none}
 tbody tr:last-child > td{border-bottom-color:transparent !important}
 ol > li:last-child{border-bottom-color:transparent !important}
+.skip{position:absolute;left:16px;top:-100px;z-index:1;padding:8px 16px;border-radius:6px;background:var(--focus);color:var(--skip-ink);font-size:14px;text-decoration:none}
+.skip:focus{top:8px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
 </style>
 </helmet>
-<div style="font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+<div style="--focus: {{t.text}}; --skip-ink: {{t.bg}}; font-family: 'Geist Sans Embedded', Geist, sans-serif; color: {{t.text}}; background: {{t.bg}}; color-scheme: {{t.scheme}}; font-feature-settings: 'tnum' 1; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 100vh">
+  <a class="skip" href="#main">Skip to Main Content</a>
   <div style="flex: 1 1 248px; max-width: 100%%; display: flex">
     <dc-import name="Sidebar" active="%s" dark="{{dark}}" hint-size="248px,%dpx"></dc-import>
   </div>
-  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
+  <main id="main" style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px">
 '''
 
 TAIL = '''  </main>
@@ -39,8 +46,8 @@ class Component extends DCLogic {
   renderVals() {
     const dark = this.props.dark === true || this.props.dark === 'true';
     const t = dark
-      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#2E2E2E', note: '#000000' }
-      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#EBEBEB', note: '#FAFAFA' };
+      ? { scheme: 'dark', bg: '#0A0A0A', sidebar: '#000000', border: '#2E2E2E', row: '#2E2E2E', text: '#EDEDED', muted: '#A1A1A1', body: '#EDEDED', pBg: '#EDEDED', pFg: '#0A0A0A', sBorder: '#7C7C7C', note: '#000000', eg: '#1FCB6E', ea: '#FFB224', er: '#FF5A4E' }
+      : { scheme: 'light', bg: '#FFFFFF', sidebar: '#FAFAFA', border: '#EBEBEB', row: '#EBEBEB', text: '#171717', muted: '#666666', body: '#171717', pBg: '#171717', pFg: '#FFFFFF', sBorder: '#7D7D7D', note: '#FAFAFA', eg: '#107A3F', ea: '#9A6700', er: '#C4291C' };
     const ids = __IDS__;
     const o = this.state.open, open = {}, exp = {}, rot = {}, tog = {}, line = {}, bg = {};
     ids.forEach(id => { const on = !!o[id]; open[id] = on; exp[id] = on ? 'true' : 'false'; rot[id] = on ? '90deg' : '0deg'; line[id] = on ? 'transparent' : t.row; bg[id] = on ? t.sidebar : 'transparent';
@@ -141,7 +148,8 @@ def strip(items):
 def dot(c):
     if c == 'o':
         return '<span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1.5px {{t.muted}}; flex: none; display: inline-block"></span>'
-    return f'<span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {C[c]}; flex: none; display: inline-block"></span>'
+    # The edge brings the dot to 3:1 on every background (WCAG 2.2 SC 1.4.11); the word beside it carries the meaning.
+    return f'<span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 9999px; background: {C[c]}; box-shadow: inset 0 0 0 1px {{{{t.e{c}}}}}; flex: none; display: inline-block"></span>'
 
 def cell(v, strong=False):
     # v: str, or dict(text, sub, dot, mono, bold, href)
@@ -225,9 +233,66 @@ def foot(text=None):
     return ''
     return f'    <p style="margin: 0; font-size: 13px; line-height: 18px; font-weight: 400; color: {{{{t.muted}}}}">{E(text)}</p>\n'
 
+FOCUS_CSS = (".skip{position:absolute;left:16px;top:-100px;z-index:1;padding:8px 16px;border-radius:6px;background:var(--focus);color:var(--skip-ink);font-size:14px;text-decoration:none}\n"
+             ".skip:focus{top:8px}\n"
+             ":focus-visible{outline:2px solid var(--focus);outline-offset:2px}\n"
+             "@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}\n")
+
+
+def accessible(s):
+    """Apply the accessibility rules to a finished page that was not built from HEAD and TAIL.
+
+    The same changes HEAD, TAIL and dot() make (design-system/Accessibility.md):
+    a skip link and a focus ring from the text colour, reduced motion, a main
+    landmark to skip to, secondary button and link edges at 3:1 (SC 1.4.11),
+    an edge on every status dot, and tables named by their section. Applying it
+    twice changes nothing.
+    """
+    import re as _re
+    if '.skip{' not in s and '</style>\n</helmet>' in s:
+        s = s.replace('</style>\n</helmet>', FOCUS_CSS + '</style>\n</helmet>', 1)
+    if 'class="skip"' not in s:
+        s, n = _re.subn(r'<div style="(font-family: \'Geist Sans Embedded\'[^"]*min-height: 100vh[^"]*)">\n',
+                        lambda m: '<div style="--focus: {{t.text}}; --skip-ink: {{t.bg}}; ' + m.group(1) + '">\n  <a class="skip" href="#main">Skip to Main Content</a>\n', s, count=1)
+    s = _re.sub(r'<main(?![^>]*\bid=) style=', '<main id="main" style=', s, count=1)
+    s = s.replace("sBorder: '#2E2E2E'", "sBorder: '#7C7C7C'").replace("sBorder: '#EBEBEB'", "sBorder: '#7D7D7D'")
+    if 'dotEdge' not in s and "scheme: 'light'" in s:
+        s = s.replace("? { scheme: 'dark',", "? { dotEdge: 'transparent', scheme: 'dark',")
+        s = s.replace(": { scheme: 'light',", ": { dotEdge: 'rgba(0, 0, 0, 0.45)', scheme: 'light',")
+    if 'dotEdge' in s:
+        s = _re.sub(r'(width: 10px; height: 10px; border-radius: 9999px; background: [^;"]+;)(?! box-shadow)',
+                    r'\1 box-shadow: inset 0 0 0 1px {{t.dotEdge}};', s)
+    return named_tables(s)
+
+
+def named_tables(s):
+    """Name each table by the heading of its section (WCAG 2.2 SC 1.3.1, REQ-402)."""
+    import re as _re
+    def one(m):
+        return _re.sub(r'<table style=', f'<table aria-labelledby="{m.group(1)}" style=', m.group(0))
+    s = _re.sub(r'<section aria-labelledby="([^"]+)".*?</section>', one, s, flags=_re.S)
+    # A table outside such a section takes the heading before it, given an id if it has none.
+    while True:
+        table = s.find('<table style=')
+        if table < 0:
+            return s
+        headings = list(_re.finditer(r'<h[1-3]\b[^>]*>', s[:table]))
+        if not headings:
+            return s
+        heading = headings[-1]
+        found = _re.search(r'\bid="([^"]+)"', heading.group(0))
+        if found:
+            name = found.group(1)
+        else:
+            name = 'table-heading-%d' % (s.count('id="table-heading-') + 1)
+            s = s[:heading.start()] + heading.group(0)[:-1] + ' id="%s">' % name + s[heading.end():]
+            table = s.find('<table style=')
+        s = s[:table] + '<table aria-labelledby="%s" style=' % name + s[table + len('<table style='):]
+
 def page(name, title, active, height, parts):
     import json as _j
     s = HEAD % (E(title), active, height) + ''.join(parts) + (TAIL % height).replace('__IDS__', _j.dumps(ROWS))
+    s = named_tables(s)
     del ROWS[:]
     import os
     only = os.environ.get('ONLY')

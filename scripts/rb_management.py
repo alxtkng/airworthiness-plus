@@ -2,7 +2,7 @@
 # Compliance Monitoring (Audit) and Actions. Hand-built interactive DC pages in the shared layout.
 # Run: cd /home/claude/scripts && python3 rb_management.py
 import json
-OUT = '/home/claude/overhaul/project/'
+from gen import OUT, accessible
 
 HEAD = '''<!doctype html>
 <html lang="en-GB">
@@ -156,7 +156,7 @@ def page(name, title, active, trail, height, parts, state, body):
     s = (HEAD.replace('@TITLE', title).replace('@ACTIVE', active).replace('@TRAIL', trail).replace('@H', str(height))
          + ''.join(parts)
          + TAIL.replace('@H', str(height)).replace('@STATE', json.dumps(state)).replace('@BODY', body))
-    open(OUT + name, 'w').write(s)
+    open(OUT + name, 'w').write(accessible(s))
     print('wrote', name)
 
 

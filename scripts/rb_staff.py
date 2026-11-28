@@ -168,7 +168,7 @@ staff_js = '''    const st = this.state;
 
 def write(name, title, active, height, body, js, state):
     s = HEAD % (E(title), active, height) + body + script(js, height, state)
-    open(OUT + name, 'w').write(s)
+    open(OUT + name, 'w').write(accessible(s))
 
 write('Staff.dc.html', 'Staff', 'staff', 1200,
       header('People', 'Staff', '', [btn('Add a Person', primary=True)], tabs=('staff', 'staff'), trail='People=Staff.dc.html|Staff=Staff.dc.html|All Staff') + staff_body,

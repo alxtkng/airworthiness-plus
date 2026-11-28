@@ -65,7 +65,7 @@ def filtered_page(name, title, active, height, parts, groups, segs):
     tail = tail.replace('    return { t, dark, open, exp, rot, tog, line, bg };', js)
     s = gen.HEAD % (E(title), active, height) + ''.join(parts) + tail
     del gen.ROWS[:]
-    open(gen.OUT + name, 'w').write(s)
+    open(gen.OUT + name, 'w').write(gen.named_tables(s))
 
 
 CAL, SRV, INS = 'cal', 'srv', 'ins'
