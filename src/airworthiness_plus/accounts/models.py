@@ -54,6 +54,45 @@ class Passkey(TypedDict):
     sign_count: int
 
 
+class Appearance(models.TextChoices):
+    """Light or dark, or as the device says (REQ-405)."""
+
+    SYSTEM = "System"
+    LIGHT = "Light"
+    DARK = "Dark"
+
+
+class Contrast(models.TextChoices):
+    """Standard or high contrast, or as the device says (REQ-406)."""
+
+    SYSTEM = "System"
+    STANDARD = "Standard"
+    HIGH = "High"
+
+
+class TextSize(models.TextChoices):
+    """How large the text is, from the root size (REQ-407)."""
+
+    DEFAULT = "Default"
+    LARGE = "Large"
+    LARGER = "Larger"
+
+
+class Density(models.TextChoices):
+    """Compact rows and 24 pixel targets, or 44 pixel targets for gloves (REQ-408)."""
+
+    COMPACT = "Compact"
+    COMFORTABLE = "Comfortable"
+
+
+class ReduceMotion(models.TextChoices):
+    """Whether movement is removed, or as the device says (REQ-409)."""
+
+    SYSTEM = "System"
+    ON = "On"
+    OFF = "Off"
+
+
 class User(Record, AbstractBaseUser):
     """One named person in one organisation.
 
@@ -81,6 +120,26 @@ class User(Record, AbstractBaseUser):
     first_password_set_on = models.DateField(null=True, blank=True)
     # Raised to end every session of the user at once (OWASP ASVS 5.0, 7.4.5, 7.5.2).
     session_generation = models.PositiveIntegerField(default=0)
+    # Display settings, the person's own (REQ-405 to REQ-410). Until one is
+    # chosen the device decides; base.html writes each choice on the page.
+    appearance = models.CharField(
+        max_length=20, choices=Appearance.choices, default=Appearance.SYSTEM, db_default="System"
+    )
+    contrast = models.CharField(
+        max_length=20, choices=Contrast.choices, default=Contrast.SYSTEM, db_default="System"
+    )
+    text_size = models.CharField(
+        max_length=20, choices=TextSize.choices, default=TextSize.DEFAULT, db_default="Default"
+    )
+    density = models.CharField(
+        max_length=20, choices=Density.choices, default=Density.COMPACT, db_default="Compact"
+    )
+    reduce_motion = models.CharField(
+        max_length=20,
+        choices=ReduceMotion.choices,
+        default=ReduceMotion.SYSTEM,
+        db_default="System",
+    )
 
     objects: ClassVar[UserManager] = UserManager()
 
@@ -111,6 +170,23 @@ class User(Record, AbstractBaseUser):
             secret=secret,
             algorithm="sha256",
         ).hexdigest()
+
+    def display(self) -> list[tuple[str, str]]:
+        """The attributes base.html writes on <html> for this person's display settings.
+
+        Nothing is written for a setting left to the device, so the stylesheet's
+        media queries decide (REQ-410).
+        """
+        chosen = {
+            "appearance": "" if self.appearance == Appearance.SYSTEM else self.appearance,
+            "contrast": "" if self.contrast == Contrast.SYSTEM else self.contrast,
+            "text-size": "" if self.text_size == TextSize.DEFAULT else self.text_size,
+            "density": "" if self.density == Density.COMPACT else self.density,
+            "reduce-motion": ""
+            if self.reduce_motion == ReduceMotion.SYSTEM
+            else self.reduce_motion,
+        }
+        return [(name, value.lower()) for name, value in chosen.items() if value]
 
     def may(self, action: Action) -> bool:
         """Return whether this user may take ``action`` (REQ-006).
