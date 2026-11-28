@@ -214,6 +214,8 @@ Recorded 27 November 2026 as ours. The plan gives each phase the next block of 2
 
 - **Supplier evaluation** (REQ-340 to REQ-343). [AMC1 145.A.42(b)(i)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/3%20AMC/AMC1%20145%20A%2042%20b%20i%20Components.htm) includes supplier evaluation in the Part-145 acceptance procedure. [GM3 145.A.42(b)(i)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/4%20GM/GM3%20145%20A%2042%20b%20i%20Components.htm) describes initial and recurrent evaluations and varying methods. The organisation sets its next evaluation date and supplies the evidence. A Part-CAO with maintenance privilege can use the same register for its own procedure. Maintenance subcontracting is a separate workflow. Under [AMC1 145.A.75(b)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/3%20AMC/AMC1%20145%20A%2075%20b%20Privileges%20of%20the%20organisation.htm), a subcontractor works under the Part-145 organisation’s approval and management system, with a procedure and list in the exposition. [AMC1 CAO.A.025](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/3%20AMC/AMC1%20CAO%20A%20025%20Combined%20airworthiness.htm) identifies the Part-CAO exposition sections for subcontracting. A supplier decision records the organisation's assessment. Receiving inspection and installation eligibility use the item and its documents.
 
+- **Maintenance subcontractor evidence** (REQ-344 and REQ-345, 28 November 2026). Use the supplier identity for separately dated assessments of a maintenance subcontractor working under the organisation's own approval. Keep the scope, approval reference, exposition reference, qualifications and controls. Part-145 also keeps the pre-audit reference when controls are recorded. A suspension can be added when earlier evidence is missing. Work-package use, release decisions and the exposition itself each retain their own controls. [CAO.A.095(a)(2)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/05d%20CAO/2%20Regs/06100_CAOA095_Privileges_of_the_organisation.htm), [145.A.70(a)(14)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/2%20Regs/01656%20145.A.70%20Maintenance%20organisation%20exposition.htm), [AMC1 145.A.75(b)](https://regulatorylibrary.caa.co.uk/1321-2014/Content/Document%20Structure/02%20145/3%20AMC/AMC1%20145%20A%2075%20b%20Privileges%20of%20the%20organisation.htm).
+
 ## Navigation
 
 - The sidebar follows 1321/2014. See Sections in the README.
@@ -401,6 +403,7 @@ Decided 18 November 2026 (REQ-006, REQ-007). Write access by role is a condition
 | Draw Up or End Contract | No | Yes | No | No | No |
 | Acknowledge Own Handover | No | Yes | Yes | Yes | No |
 | Record Staffing Plan | No | Yes | No | Yes | No |
+| Record Subcontractor Assessment | No | Yes | No | No | No |
 | Record Supplier Evaluation | No | Yes | No | No | No |
 | Plan Work Package | No | Yes | No | Yes | No |
 | Record Work Card Evidence | No | Yes | No | Yes | No |

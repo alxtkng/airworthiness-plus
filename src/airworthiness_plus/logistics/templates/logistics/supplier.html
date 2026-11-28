@@ -13,4 +13,16 @@
 {% endfor %}
 </tbody>
 </table>
+<h2>Maintenance Subcontracting Evidence</h2>
+{% if may_assess %}<p><a class="button" href="{% url 'assess_subcontractor' supplier.id %}">Record Subcontractor Assessment</a></p>{% endif %}
+{% if subcontracting %}
+<table>
+<thead><tr><th scope="col">Assessed On</th><th scope="col">Approval</th><th scope="col">Scope of Work</th><th scope="col">Outcome</th><th data-detail>Exposition Reference</th><th data-detail>Qualification Evidence</th><th data-detail>Pre-Audit Reference</th><th data-detail>Controls or Reasons for Suspension</th></tr></thead>
+<tbody>
+{% for row in subcontracting %}
+<tr><td>{{ row.assessed_on|long_date }}</td><td>{{ row.approval.approval }}, {{ row.approval_reference }}</td><td>{{ row.scope }}</td><td>{{ row.outcome }}</td><td>{{ row.exposition_reference }}</td><td>{{ row.qualification_evidence }}</td><td>{{ row.pre_audit_reference }}</td><td>{{ row.controls }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}<p>No Subcontractor Assessments Recorded</p>{% endif %}
 {% endblock %}

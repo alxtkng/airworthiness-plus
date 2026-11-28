@@ -207,6 +207,8 @@ Sign in as Planning and Records and open **Planning → Staffing and Capacity �
 
 Sign in as the Continuing Airworthiness Manager and open **Logistics → Suppliers**. Find the propeller organisation and its 30 November 2026 evaluation date, and open the oil supplier to review its suspension evidence. Select **Evaluate a Supplier** to record a new sample supplier, then open that supplier and **Record an Evaluation** to append a decision. The register shows the latest decision and the supplier record retains both evaluations. Use a fictitious supplier on the test site.
 
+On a fictitious supplier record, choose **Record Subcontractor Assessment**. Enter a specialised maintenance scope, the organisation's exposition reference, the qualification evidence and the controls. Part-145 also asks for a pre-audit reference when recording controls. Save and expand the history row to see the supporting evidence. A later suspension remains in this history alongside the earlier assessment.
+
 ## What Cannot Be Shown Yet
 
 The per-flight technical log (Issue 7), choosing the type from the SRG1782 list (REQ-021), and the remaining boards in Phases 4 to 9 of `prompts/canvas-build.md`: goods in, stores, tools, hazards, audits, training, documents, quotes, invoices and the Marketplace. This guide gains a part as each phase is finished.

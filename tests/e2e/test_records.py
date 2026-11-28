@@ -1132,3 +1132,32 @@ def test_supplier_register_and_evaluation_history(
         page.goto("/suppliers/")
         row = page.get_by_role("row").filter(has_text="Test Browser Supplier")
         expect(row.get_by_text("Suspended", exact=True)).to_be_visible()
+
+
+def test_subcontractor_controls_on_a_supplier(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    with signed_in(chromium, live_site, personas["your-organisation"][1]) as page:
+        page.goto("/suppliers/")
+        page.get_by_role("link", name="[Propeller Organisation]", exact=True).click()
+        page.get_by_role("link", name="Record Subcontractor Assessment", exact=True).click()
+        save(
+            page,
+            "Record Assessment",
+            {
+                "approval": "Part-CAO",
+                "assessed_on": "2026-11-18",
+                "scope": "Test Steel Inspection",
+                "exposition_reference": "CAE B.7 Revision 4",
+                "qualification_evidence": "Qualification Register Entry 7",
+                "controls": "Review Test Report",
+                "outcome": "Controls Recorded",
+            },
+            "Test Steel Inspection",
+        )
+        expect(
+            page.get_by_role("heading", name="Maintenance Subcontracting Evidence")
+        ).to_be_visible()
+        row = page.get_by_role("row").filter(has_text="Test Steel Inspection")
+        expect(row.get_by_text("Controls Recorded", exact=True)).to_be_visible()
+        expect(reveal(row)).to_contain_text("Review Test Report")

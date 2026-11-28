@@ -22,7 +22,11 @@ from airworthiness_plus.customers.models import Customer
 from airworthiness_plus.defects.models import Defect, RepeatAction
 from airworthiness_plus.directives.models import Applicability, Compliance, Directive, Source
 from airworthiness_plus.imports.models import Load, LoadedValue, ValueCheck
-from airworthiness_plus.logistics.models import Supplier, SupplierEvaluation
+from airworthiness_plus.logistics.models import (
+    SubcontractorAssessment,
+    Supplier,
+    SupplierEvaluation,
+)
 from airworthiness_plus.maintenance_data.models import AmendmentCheck, DataSet, Revision
 from airworthiness_plus.modifications.models import Bulletin, Change, Weighing, WeightSchedule
 from airworthiness_plus.organisations.models import Approval, Organisation
@@ -172,6 +176,7 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(StaffingReview, None),
     Exported(Supplier, None),
     Exported(SupplierEvaluation, None),
+    Exported(SubcontractorAssessment, None),
     Exported(Report, None),
     Exported(Absence, None),
     Exported(BankHoliday, None),

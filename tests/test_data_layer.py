@@ -219,6 +219,7 @@ def test_every_table_is_under_the_record_rules() -> None:
         # Supplier identities and their evaluation evidence are retained (REQ-343).
         "logistics_supplier": ["INSERT", "SELECT"],
         "logistics_supplierevaluation": ["INSERT", "SELECT"],
+        "logistics_subcontractorassessment": ["INSERT", "SELECT"],
         "staffing_review": ["INSERT", "SELECT"],
         "staffing_report": ["INSERT", "SELECT"],
         "staffing_absence": ["INSERT", "SELECT"],

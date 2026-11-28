@@ -13,7 +13,11 @@ from airworthiness_plus.accounts.permissions import ActionRefusedError, requires
 from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.logistics import services
-from airworthiness_plus.logistics.forms import EvaluationForm, NewSupplierForm
+from airworthiness_plus.logistics.forms import (
+    EvaluationForm,
+    NewSupplierForm,
+    SubcontractorAssessmentForm,
+)
 from airworthiness_plus.logistics.models import Supplier
 from airworthiness_plus.organisations.models import Approval
 
@@ -57,6 +61,8 @@ def supplier(request: HttpRequest, supplier_id: UUID) -> HttpResponse:
         {
             "supplier": record,
             "evaluations": record.evaluations.select_related("approval"),
+            "subcontracting": record.subcontractor_assessments.select_related("approval"),
+            "may_assess": user.may(Action.RECORD_SUBCONTRACTOR_ASSESSMENT),
             "may_evaluate": user.may(Action.RECORD_SUPPLIER_EVALUATION),
         },
     )
@@ -95,3 +101,25 @@ def _evaluate(request: HttpRequest, supplier_id: UUID | None = None) -> HttpResp
         else:
             return redirect("supplier", supplier_id=evaluation.supplier_id)
     return render(request, "logistics/evaluate.html", {"form": form, "supplier": record})
+
+
+@never_cache
+@requires(Action.RECORD_SUBCONTRACTOR_ASSESSMENT)
+@require_http_methods(["GET", "POST"])
+def assess_subcontractor(request: HttpRequest, supplier_id: UUID) -> HttpResponse:
+    """Record the maintenance subcontractor controls for a supplier (REQ-344)."""
+    _maintenance_access(request, Action.RECORD_SUBCONTRACTOR_ASSESSMENT, aircraft_services.today())
+    supplier_record = get_object_or_404(Supplier, pk=supplier_id)
+    form = SubcontractorAssessmentForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            services.assess_subcontractor(supplier_record, **form.cleaned_data)
+        except services.RefusedError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("supplier", supplier_id=supplier_id)
+    return render(
+        request,
+        "logistics/evaluate.html",
+        {"form": form, "supplier": supplier_record, "assessing_subcontractor": True},
+    )

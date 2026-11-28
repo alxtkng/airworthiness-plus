@@ -8,7 +8,13 @@ from django.db import IntegrityError, transaction
 from django.db.models import F, Prefetch
 
 from airworthiness_plus.aircraft import services as aircraft_services
-from airworthiness_plus.logistics.models import Supplier, SupplierEvaluation, SupplierStatus
+from airworthiness_plus.logistics.models import (
+    SubcontractorAssessment,
+    SubcontractorOutcome,
+    Supplier,
+    SupplierEvaluation,
+    SupplierStatus,
+)
 from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation, Privilege
 from airworthiness_rules.dates import days_between
@@ -100,17 +106,7 @@ def record_evaluation(
         raise RefusedError("The Next Evaluation Must Be After the Evaluation")
     if status == SupplierStatus.APPROVED and next_evaluation_on is None:
         raise RefusedError("Record the Next Evaluation for an Approved Supplier")
-    term = next(
-        (
-            one
-            for one in maintenance_approvals(organisation, evaluated_on)
-            if one.approval == approval
-        ),
-        None,
-    )
-    reference = term.reference_on(evaluated_on) if term is not None else None
-    if reference is None or term is None:
-        raise RefusedError(f"The Organisation Held No {approval} Maintenance Approval on This Day")
+    term, reference = _approval_on(organisation, approval, evaluated_on)
     if supplier is None:
         try:
             with transaction.atomic():
@@ -132,4 +128,51 @@ def record_evaluation(
         next_evaluation_on=next_evaluation_on,
         status=status,
         evidence=evidence,
+    )
+
+
+def _approval_on(organisation: Organisation, kind: str, day: date) -> tuple[Approval, str]:
+    for approval in maintenance_approvals(organisation, day):
+        if approval.approval == kind and (reference := approval.reference_on(day)):
+            return approval, reference
+    raise RefusedError(f"The Organisation Held No {kind} Maintenance Approval on This Day")
+
+
+@transaction.atomic
+def assess_subcontractor(
+    supplier: Supplier,
+    *,
+    approval: str,
+    assessed_on: date,
+    scope: str,
+    exposition_reference: str,
+    qualification_evidence: str,
+    controls: str,
+    pre_audit_reference: str,
+    outcome: str,
+) -> SubcontractorAssessment:
+    """Append evidence about the recorded scope and controls under this approval."""
+    organisation = Organisation.objects.select_for_update(no_key=True).get(
+        pk=supplier.organisation_id
+    )
+    if assessed_on > aircraft_services.today():
+        raise RefusedError("An Assessment Cannot Be Dated in the Future")
+    term, reference = _approval_on(organisation, approval, assessed_on)
+    if outcome == SubcontractorOutcome.CONTROLS_RECORDED:
+        if not exposition_reference or not qualification_evidence:
+            raise RefusedError("Record the Exposition Reference and Qualification Evidence")
+        if approval == ApprovalType.PART_145 and not pre_audit_reference:
+            raise RefusedError("Record the Pre-Audit Reference for the Part-145 Assessment")
+    return SubcontractorAssessment.objects.create(
+        organisation=organisation,
+        supplier=supplier,
+        approval=term,
+        approval_reference=reference,
+        assessed_on=assessed_on,
+        scope=scope,
+        exposition_reference=exposition_reference,
+        qualification_evidence=qualification_evidence,
+        controls=controls,
+        pre_audit_reference=pre_audit_reference,
+        outcome=outcome,
     )
