@@ -7,7 +7,7 @@ from django.db import DatabaseError, transaction
 
 from airworthiness_plus.history.session import working_for
 from airworthiness_plus.logistics.models import StoreLocation
-from tests.support import Sample, get, post, signed_in
+from tests.support import Sample, post, signed_in
 from tests.test_stores import _lucy, dispose, posted, receipt, today  # noqa: F401
 
 pytestmark = pytest.mark.django_db
@@ -54,7 +54,7 @@ def test_station_lookup_groups_exact_posted_identity_including_zero_station(samp
         with pytest.raises(DatabaseError), transaction.atomic():
             StoreLocation.objects.filter(pk=main.pk).update(station="BSL")
 
-    response = get(manager, look)
+    response = manager.get(look, secure=True)
     assert response.status_code == 200
     assert response.context is not None
     summary = response.context["summary"]
@@ -81,5 +81,6 @@ def test_station_lookup_groups_exact_posted_identity_including_zero_station(samp
     assert '<th scope="row">ZRH</th><td>Each</td><td>8</td>' in body
     assert '<th scope="row">Network</th><td>Each</td><td>10</td>' in body
     assert '<th scope="row">ZRH Main</th><td>Each</td><td>7</td>' in body
-    lower_case = get(manager, "/stores/?identity=pn-713")
+    lower_case = manager.get("/stores/?identity=pn-713", secure=True)
+    assert lower_case.context is not None
     assert lower_case.context["summary"] == summary
