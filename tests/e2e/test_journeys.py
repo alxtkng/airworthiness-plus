@@ -109,7 +109,9 @@ def test_persona_can_open_its_pages(
             expect(page.locator("main")).to_be_visible()
             expect(page.locator("aside .roles")).to_have_text(str(role))
             opened.add(path)
-            for href in page.locator("a[href]").evaluate_all(
+            # Date pagination is exercised by the dispatch journey. Following both
+            # directions here adds another day on every iteration.
+            for href in page.locator('a[href]:not([rel="prev"]):not([rel="next"])').evaluate_all(
                 "(links) => links.map(link => link.getAttribute('href'))"
             ):
                 target = urlsplit(urljoin(page.url, href))

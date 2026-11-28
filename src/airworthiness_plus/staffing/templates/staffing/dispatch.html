@@ -7,8 +7,8 @@
   <label>Day <input name="day" type="date" value="{{ day|date:'Y-m-d' }}"></label>
   <button type="submit">Show Day</button>
 </form>
-<p><a href="{% url 'dispatch_board' %}?day={{ previous|date:'Y-m-d' }}">Previous Day</a>
-<a href="{% url 'dispatch_board' %}?day={{ next|date:'Y-m-d' }}">Next Day</a>
+<p><a rel="prev" href="{% url 'dispatch_board' %}?day={{ previous|date:'Y-m-d' }}">Previous Day</a>
+<a rel="next" href="{% url 'dispatch_board' %}?day={{ next|date:'Y-m-d' }}">Next Day</a>
 <a href="{% url 'staff_roster' %}?week={{ week|date:'Y-m-d' }}">Roster for This Week</a>
 <a href="{% url 'load_and_capacity' %}?week={{ week|date:'Y-m-d' }}">Load and Capacity</a></p>
 <h2>{{ day|long_date }}</h2>

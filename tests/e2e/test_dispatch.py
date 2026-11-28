@@ -42,6 +42,10 @@ def test_dispatch_moves_work_and_retains_the_incoming_acknowledgement(
             )
         page.get_by_role("link", name="Dispatch", exact=True).click()
         expect(page).to_have_url(live_site + "/staffing/dispatch/")
+        page.get_by_role("link", name="Next Day", exact=True).click()
+        expect(page.get_by_role("heading", name="19 November 2026")).to_be_visible()
+        page.get_by_role("link", name="Previous Day", exact=True).click()
+        expect(page).to_have_url(live_site + DAY)
         page.get_by_role("link", name="Record Break", exact=True).click()
         save(
             page,
