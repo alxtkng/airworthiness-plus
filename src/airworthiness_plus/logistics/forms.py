@@ -202,6 +202,7 @@ class StoresWithdrawalForm(Form):
 class StoresLocationForm(Form):
     request_id = submission_field()
     code = forms.CharField(label="Location Code", max_length=40)
+    station = forms.CharField(label="Station Code", max_length=12, required=False)
     name = forms.CharField(label="Location", max_length=200)
     kind = forms.ChoiceField(label="Use", choices=LocationKind.choices)
     classes = forms.MultipleChoiceField(

@@ -9,6 +9,7 @@ are appended and never changed. PostgreSQL holds the same rules
 """
 
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
@@ -190,6 +191,7 @@ def record_location(
     classes: list[str],
     storage_conditions: str,
     secure: bool,
+    station: str = "",
 ) -> StoresLocation:
     today = aircraft_services.today()
     grant = _authorise(user, Action.RECORD_STORES, StoresAction.LOCATIONS, today)
@@ -204,6 +206,7 @@ def record_location(
         organisation=organisation,
         submission=request_id,
         code=code,
+        station=station.strip().upper(),
         name=name,
         kind=kind,
         classes=sorted(set(classes), key=ItemClass.values.index),
@@ -732,16 +735,37 @@ def totals(lines: list[Position]) -> dict[str, Totals]:
     return result
 
 
-def by_location(lines: list[Position]) -> list[LocationTotal]:
+def by_location(
+    lines: list[Position],
+    configured: Iterable[StoresLocation] = (),
+) -> list[LocationTotal]:
     grouped: dict[UUID, list[Position]] = defaultdict(list)
-    places: dict[UUID, StoresLocation] = {}
+    places = {location.pk: location for location in configured}
+    units = sorted({line.unit for line in lines}) or [""]
     for line in lines:
         grouped[line.location.pk].append(line)
         places[line.location.pk] = line.location
     return [
-        LocationTotal(places[key], list(totals(group).values()))
-        for key, group in sorted(grouped.items(), key=lambda item: places[item[0]].code)
+        LocationTotal(
+            location,
+            list(totals(grouped[location.pk]).values()) or [Totals(unit) for unit in units],
+        )
+        for location in sorted(places.values(), key=lambda place: (place.station, place.code))
     ]
+
+
+def by_station(places: list[LocationTotal]) -> dict[str, list[Totals]]:
+    grouped: dict[str, dict[str, Totals]] = defaultdict(dict)
+    for place in places:
+        station = place.location.station
+        if not station:
+            continue
+        for value in place.totals:
+            total = grouped[station].setdefault(value.unit, Totals(value.unit))
+            total.on_hand += value.on_hand
+            total.reserved += value.reserved
+            total.available += value.available
+    return {station: list(group.values()) for station, group in sorted(grouped.items())}
 
 
 def quantity_text(quantity: Decimal | None, unit: str) -> str:

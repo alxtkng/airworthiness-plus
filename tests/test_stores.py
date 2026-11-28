@@ -1426,3 +1426,82 @@ def test_issue_rechecks_lot_expiry_after_reservation(stocked: Sample, day: Day) 
         (position,) = stores.positions(stocked.ours, day.today, posting=posting)
         assert position.on_hand == position.reserved == Decimal(1)
         assert position.available == Decimal(0)
+
+
+def test_real_ledger_reconciles_zrh_stores_and_network_totals(stocked: Sample) -> None:
+    identity = "PN-AMOS-STATION"
+    accepted(stocked, "RX-STATION", ItemClass.SERVICEABLE, 10, "Synthetic station component")
+    with working_for(stocked.ours.pk, stocked.lucy.pk):
+        user = stocked.lucy
+        places = {
+            code: stores.record_location(
+                user,
+                request_id=uuid4(),
+                code=code,
+                station=station,
+                name=name,
+                kind=LocationKind.SERVICEABLE,
+                classes=[ItemClass.SERVICEABLE],
+                storage_conditions="Synthetic compatible storage",
+                secure=False,
+            )
+            for station, code, name in (
+                ("zrh", "ZRH-MAIN", "ZRH Main"),
+                ("ZRH", "ZRH-LINE", "ZRH Line"),
+                ("BSL", "BSL-MAIN", "BSL Main"),
+                ("LUG", "LUG-MAIN", "LUG Main"),
+                ("GVA", "GVA-MAIN", "GVA Main"),
+            )
+        }
+        evidence_for(
+            user,
+            "RX-STATION",
+            unit=StockUnit.EACH,
+            quantity=Decimal(10),
+            manufacturer="Synthetic manufacturer",
+            part_number=identity,
+            batch="LOT-AMOS-04",
+            shelf_life_basis=ShelfLifeBasis.NOT_APPLICABLE,
+            location=places["ZRH-MAIN"],
+        )
+        posting = stores.post(user, decision("RX-STATION"), request_id=uuid4())
+        for code in ("ZRH-LINE", "BSL-MAIN", "LUG-MAIN"):
+            stores.move(
+                user,
+                posting,
+                request_id=uuid4(),
+                source=places["ZRH-MAIN"],
+                destination=places[code],
+                quantity=Decimal(1),
+                moved_on=TODAY,
+                evidence="Synthetic aircraft network stock allocation",
+            )
+        lines = stores.positions(stocked.ours, TODAY, posting=posting)
+        locations = stores.by_location(lines, places.values())
+        assert {item.location.code: item.totals[0].on_hand for item in locations} == {
+            "ZRH-MAIN": Decimal(7),
+            "ZRH-LINE": Decimal(1),
+            "BSL-MAIN": Decimal(1),
+            "LUG-MAIN": Decimal(1),
+            "GVA-MAIN": Decimal(0),
+        }
+        totals = stores.by_station(locations)
+        assert {station: values[0].available for station, values in totals.items()} == {
+            "ZRH": Decimal(8),
+            "BSL": Decimal(1),
+            "LUG": Decimal(1),
+            "GVA": Decimal(0),
+        }
+        assert stores.totals(lines)[StockUnit.EACH].on_hand == Decimal(10)
+    page = get(signed_in(stocked.reader), f"/stores/?identity={identity.lower()}")
+    assert page.status_code == 200
+    body = page.content.decode()
+    assert '<tr><th scope="row">ZRH</th><td>Each</td><td>8</td><td>0</td><td>8</td>' in body
+    assert '<tr><th scope="row">GVA</th><td>Each</td><td>0</td><td>0</td><td>0</td>' in body
+    assert (
+        '<tr><th scope="row" colspan="2">All Locations</th><td></td><td>Each</td>'
+        "<td>10</td><td>0</td><td>10</td>"
+    ) in body
+    assert "ZRH-MAIN, ZRH Main" in body
+    assert "ZRH-LINE, ZRH Line" in body
+    assert "Bay B, Standard Parts Drawers" not in body
