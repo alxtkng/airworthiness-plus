@@ -151,6 +151,13 @@ class ReceivingDispositionForm(Form):
 
 class StoreLocationForm(Form):
     name = forms.CharField(label="Location", max_length=120)
+    station = forms.RegexField(
+        r"^[A-Za-z0-9-]{1,12}$",
+        label="Station",
+        max_length=12,
+        required=False,
+        help_text="Use the station code, for example ZRH. Leave blank if unassigned.",
+    )
     kind = forms.ChoiceField(label="Kind", choices=LocationKind.choices)
     holds_components = forms.BooleanField(label="Holds Components", required=False)
     holds_standard_parts = forms.BooleanField(label="Holds Standard Parts", required=False)

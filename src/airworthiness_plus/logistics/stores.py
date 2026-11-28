@@ -139,8 +139,12 @@ def add_location(
     holds_materials: bool,
     secure: bool,
     storage_conditions: str = "",
+    station: str = "",
 ) -> StoreLocation:
     name = _text(name)
+    station = station.strip().upper()
+    if station and not re.fullmatch(r"[A-Z0-9-]{1,12}", station):
+        raise RefusedError("Use up to 12 letters, numbers or hyphens for the Station Code")
     if not name:
         raise RefusedError("Give the Location a Name")
     if kind not in LocationKind.values:
@@ -156,6 +160,7 @@ def add_location(
             return StoreLocation.objects.create(
                 organisation=organisation,
                 name=name,
+                station=station,
                 kind=kind,
                 holds_components=holds_components,
                 holds_standard_parts=holds_standard_parts,

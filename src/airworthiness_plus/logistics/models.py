@@ -268,6 +268,7 @@ class StoreLocation(Record):
 
     organisation = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="+")
     name = models.CharField("Location", max_length=120)
+    station = models.CharField("Station", max_length=12, blank=True, db_default="")
     kind = models.CharField("Kind", max_length=20, choices=LocationKind.choices)
     holds_components = models.BooleanField("Holds Components", default=False)
     holds_standard_parts = models.BooleanField("Holds Standard Parts", default=False)
@@ -279,6 +280,10 @@ class StoreLocation(Record):
     class Meta:
         ordering = ["kind", "name", "id"]
         constraints = [
+            models.CheckConstraint(
+                condition=Q(station="") | Q(station__regex=r"^[A-Z0-9-]{1,12}$"),
+                name="store_location_station_is_a_code",
+            ),
             models.UniqueConstraint(
                 Lower("name"), "organisation", name="store_location_name_once_per_organisation"
             ),

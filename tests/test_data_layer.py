@@ -274,7 +274,7 @@ def test_every_table_is_under_the_record_rules() -> None:
             "stock_from_acceptance",
         },
         "logistics_stockentry": {"history_refuse_update", "stock_requires_acceptance"},
-        "logistics_storelocation": {"store_location_rules"},
+        "logistics_storelocation": {"keep_store_location_station", "store_location_rules"},
         "logistics_stockresolution": {"history_refuse_update", "stock_resolution_rules"},
         "logistics_stockposting": {
             "history_refuse_update",
