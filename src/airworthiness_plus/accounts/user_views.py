@@ -19,6 +19,7 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.accounts.user_forms import (
     AddUserForm,
     ChangePasswordForm,
+    DisplayForm,
     RolesForm,
 )
 
@@ -330,3 +331,19 @@ def change_password(request: HttpRequest) -> HttpResponse:
             "sessions": sessions.live_sessions(user, request.session.session_key),
         },
     )
+
+
+@never_cache
+@signed_in
+@require_http_methods(["GET", "POST"])
+def display_settings(request: HttpRequest) -> HttpResponse:
+    """The signed-in user's own display settings (REQ-405 to REQ-410)."""
+    user = _user(request)
+    if request.method == "POST":
+        form = DisplayForm(request.POST)
+        if form.is_valid():
+            users.change_display(user, **form.cleaned_data)
+            return redirect("display_settings")
+    else:
+        form = DisplayForm(initial={name: getattr(user, name) for name in users.DISPLAY_SETTINGS})
+    return render(request, "accounts/display.html", {"form": form})

@@ -154,3 +154,32 @@ def test_passkey_enrolment_sign_in_and_revocation(
         page.get_by_role("button", name="Sign in with a Passkey").click()
         expect(page.get_by_role("alert")).to_have_text("Passkey Not Accepted")
         sign_in_again(page, account, authenticator)
+
+
+def test_display_settings_are_kept_and_applied(
+    chromium: Browser, live_site: str, personas: dict[str, tuple[Account, ...]]
+) -> None:
+    """REQ-405 to REQ-410. Dark, high contrast and Comfortable, chosen and kept."""
+    account = personas["your-organisation"][-1]
+    with signed_in(chromium, live_site, account) as page:
+        page.goto("/account/display/")
+        page.get_by_role("group", name="Appearance").get_by_label("Dark").check()
+        page.get_by_role("group", name="Contrast").get_by_label("High").check()
+        page.get_by_role("group", name="Density").get_by_label("Comfortable").check()
+        submit(page, page.get_by_role("button", name="Save"))
+        page.goto("/dashboard/")
+        root = page.locator("html")
+        expect(root).to_have_attribute("data-appearance", "dark")
+        expect(root).to_have_attribute("data-contrast", "high")
+        expect(root).to_have_attribute("data-density", "comfortable")
+        # Comfortable: the sidebar links are 44 pixels high, for gloves (SC 2.5.5).
+        height = page.locator(".sidebar li a").first.evaluate(
+            "(link) => link.getBoundingClientRect().height"
+        )
+        assert height >= 44
+        page.goto("/account/display/")
+        for group in ("Appearance", "Contrast"):
+            page.get_by_role("group", name=group).get_by_label("System").check()
+        page.get_by_role("group", name="Density").get_by_label("Compact").check()
+        submit(page, page.get_by_role("button", name="Save"))
+        expect(page.locator("html")).not_to_have_attribute("data-appearance", "dark")

@@ -794,6 +794,26 @@ label {
   text-decoration-thickness: var(--focus-width);
 }
 
+fieldset {
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-weight: 500;
+}
+
+fieldset label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-minimum);
+  color: var(--gray-1000);
+}
+
 main.alone h1 {
   margin-bottom: var(--space-6);
 }

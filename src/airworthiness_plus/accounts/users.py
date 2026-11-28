@@ -219,3 +219,17 @@ def change_password(
     user.first_password_set_on = None
     user.save(update_fields=["password", "password_must_change", "first_password_set_on"])
     sign_in.log_account_event(AccessKind.PASSWORD_CHANGED, user, address=address)
+
+
+DISPLAY_SETTINGS = ("appearance", "contrast", "text_size", "density", "reduce_motion")
+
+
+def change_display(user: User, **chosen: str) -> None:
+    """Keep the signed-in user's own display settings (REQ-410).
+
+    They change only how pages look to this person, so nothing else is
+    asked for. The change is in the user's history like any other.
+    """
+    for name in DISPLAY_SETTINGS:
+        setattr(user, name, chosen[name])
+    user.save(update_fields=list(DISPLAY_SETTINGS))

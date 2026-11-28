@@ -1,9 +1,10 @@
-"""Forms for the Users page and the change of password."""
+"""Forms for the Users page, the change of password and the display settings."""
 
 from typing import Any
 
 from django import forms
 
+from airworthiness_plus.accounts.models import Appearance, Contrast, Density, ReduceMotion, TextSize
 from airworthiness_plus.accounts.roles import Role
 from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.people.models import Person
@@ -65,4 +66,22 @@ class ChangePasswordForm(Form):
     )
     code = forms.CharField(
         label="Code From Your Authenticator Application", max_length=12, required=False
+    )
+
+
+class DisplayForm(Form):
+    """The person's own display settings (REQ-405 to REQ-410), each a set of radio buttons."""
+
+    appearance = forms.ChoiceField(
+        label="Appearance", choices=Appearance.choices, widget=forms.RadioSelect
+    )
+    contrast = forms.ChoiceField(
+        label="Contrast", choices=Contrast.choices, widget=forms.RadioSelect
+    )
+    text_size = forms.ChoiceField(
+        label="Text Size", choices=TextSize.choices, widget=forms.RadioSelect
+    )
+    density = forms.ChoiceField(label="Density", choices=Density.choices, widget=forms.RadioSelect)
+    reduce_motion = forms.ChoiceField(
+        label="Reduce Motion", choices=ReduceMotion.choices, widget=forms.RadioSelect
     )
