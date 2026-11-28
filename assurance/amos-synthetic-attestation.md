@@ -28,3 +28,7 @@ uv run pytest -q tests/test_work_card_attestation.py tests/test_data_layer.py \
 The first run exposed the required `WP-` package reference prefix and the general export test's expectation that every type is always populated. The pilot now uses `WP-SYNTHETIC-`, and a dedicated test verifies export of a populated pilot record while the ordinary sample stays unpopulated.
 
 The populated upgrade rehearsal applied migration `planning.0005_workcardattestation` to a sample seeded with `planning.0004_freeze_issue_check` current. PostgreSQL 16.14 retained all 280 preceding history events and the same aggregate of ordered event hashes. Django reported no pending model migrations.
+
+## Executed results
+
+At code revision `958a947`, the focused run passed all 305 checks in 105.50 seconds, including the normal mobile browser form and existing release flow. Formatting, lint, typing and traceability passed. The full run collected 1,449 checks, with 1,434 passes and 15 failures in live browser scenarios. The pilot browser run reached step-up and then refused the preview token during a run with substantial elapsed-time discontinuities on the host. The same scenario passed in the focused run. Two failing existing persona scenarios passed in isolation. The passkey enrolment scenario failed in isolated runs on both the branch and the clean integration baseline. A separate run excluding the live browser directory reported 1,382 passes and one standalone browser sorting timeout. The affected sort scenario passed when repeated separately.
