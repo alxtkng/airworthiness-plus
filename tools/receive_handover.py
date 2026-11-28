@@ -85,7 +85,14 @@ def read_transfer(
                 record["aircraft_id"] != aircraft_id for record in completions
             ):
                 raise TransferError("The inspection has no matching aircraft completion")
-            completion = max(completions, key=lambda record: date.fromisoformat(record["dated"]))
+            completion = max(
+                completions,
+                key=lambda record: (
+                    date.fromisoformat(record["dated"]),
+                    record["hours"],
+                    record["id"],
+                ),
+            )
             days = task["interval_days"]
             if (
                 type(days) is not int
@@ -202,7 +209,11 @@ def reconcile(received: dict[str, Any], comparison: dict[str, Any]) -> dict[str,
     expected = comparison.get("records")
     if not isinstance(expected, dict) or actual.keys() != expected.keys():
         raise TransferError("The reconciliation requires a comparison for every mapped field")
-    changed = [field for field, value in actual.items() if value != expected[field]]
+    changed = [
+        field
+        for field, value in actual.items()
+        if isinstance(expected[field], bool) or value != expected[field]
+    ]
     if changed:
         raise TransferError(f"Reconciliation differs for {', '.join(changed)}")
     return actual
@@ -267,6 +278,14 @@ def main() -> None:
     options = parser.parse_args()
     if options.report and not options.compare:
         parser.error("A reconciliation report requires --compare")
+    if options.report:
+        report = options.report.resolve()
+        if any(
+            value.resolve() == report
+            for name, value in vars(options).items()
+            if name != "report" and isinstance(value, Path)
+        ):
+            parser.error("The report needs an output path separate from the receiver and inputs")
     signing = (options.signatures, options.trust, options.trust_sha256)
     if any(value is not None for value in signing) and not all(signing):
         parser.error("Signed import requires --signatures, --trust and --trust-sha256")

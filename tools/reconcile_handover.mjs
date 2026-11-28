@@ -67,7 +67,7 @@ function readTrial({ manifest, members }, wanted) {
     const original = readings.get(corrected?.supersedes_id);
     const completions = [...rows('programme_workdone').values()]
         .filter(row => row.task_id === task?.id)
-        .sort((a, b) => a.dated.localeCompare(b.dated) || a.hours - b.hours);
+        .sort((a, b) => a.dated.localeCompare(b.dated) || a.hours - b.hours || a.id.localeCompare(b.id));
     const completion = completions.at(-1);
     requireEvidence(aircraft && task && defect && original && corrected && completion
         && aircraft.registration === manifest.aircraft.registration && defect.aircraft_id === aircraftId

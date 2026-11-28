@@ -1376,6 +1376,10 @@ def test_signed_gejkl_trial_reconstructs_and_verifies_both_readings_offline(
     assert not database.exists()
     comparison.write_bytes(_trial_json(expected))
 
+    collision = run([*command, "--compare", str(comparison), "--report", str(database)])
+    assert collision.returncode == 2 and "separate from the receiver and inputs" in collision.stderr
+    assert not database.exists()
+
     began = perf_counter()
     first = run(comparison_command)
     elapsed = perf_counter() - began
