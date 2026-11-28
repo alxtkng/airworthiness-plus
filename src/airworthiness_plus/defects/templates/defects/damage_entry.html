@@ -20,6 +20,6 @@
 <dt>Drawing Revision</dt><dd><a href="{% url 'damage_drawing' aircraft.id entry.drawing_id %}#marker-{{ entry.id }}">Locate Marker on {{ entry.drawing }}</a></dd>
 {% if entry.defect %}<dt>Defect</dt><dd><a href="{% url 'defect' entry.defect_id %}">{{ entry.defect }}</a></dd>{% endif %}
 {% if entry.repair %}<dt>Repair Work Done</dt><dd><a href="{% url 'programme' aircraft.id %}#work-{{ entry.repair_id }}">{{ entry.repair }}</a></dd>{% endif %}
-{% if entry.follow_up %}<dt>Follow-up Inspection</dt><dd><a href="{% url 'programme' aircraft.id %}#task-{{ entry.follow_up_id }}">{{ entry.follow_up }}</a></dd>{% endif %}
+{% if entry.follow_up %}<dt>Follow-Up Inspection</dt><dd><a href="{% url 'programme' aircraft.id %}#task-{{ entry.follow_up_id }}">{{ entry.follow_up }}</a></dd>{% endif %}
 </dl>
 {% endblock %}
