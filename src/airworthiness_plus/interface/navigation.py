@@ -258,6 +258,7 @@ BOARD: tuple[Group, ...] = (
                         "link_package_order",
                         "add_work_card",
                         "issue_work_package",
+                        "assign_tooling_approval",
                         "complete_work_card",
                         "attest_work_card",
                         "sign_work_card_step",
@@ -353,6 +354,12 @@ BOARD: tuple[Group, ...] = (
                 inside=frozenset(
                     {
                         "tool_record",
+                        "tool_issue",
+                        "issue_tool",
+                        "tool_pre_use_inspection",
+                        "tool_actual_use",
+                        "tool_return",
+                        "record_historical_tool_claim",
                         "tool_provider",
                         "authorise_tool_provider",
                         "calibration_order",

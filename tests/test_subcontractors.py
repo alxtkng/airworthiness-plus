@@ -84,6 +84,8 @@ def test_part_145_controls_need_pre_audit_and_a_held_approval(sample: Sample) ->
 def test_subcontractor_migration_preserves_existing_supplier_evidence(sample: Sample) -> None:
     """Add subcontractor evidence without rewriting existing supplier history."""
     with as_owner():
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
         executor.migrate([("logistics", "0002_supplier_record_rules")])

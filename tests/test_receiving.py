@@ -475,6 +475,8 @@ def test_stock_migration_keeps_prior_acceptance_and_its_original_evidence(sample
     from tests.conftest import as_owner
 
     with as_owner():
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
         old_apps = executor.migrate([("logistics", "0004_receiving_record_rules")]).apps

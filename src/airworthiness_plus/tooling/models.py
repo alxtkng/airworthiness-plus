@@ -18,6 +18,9 @@ class ToolAction(models.TextChoices):
     RESULT = "Result", "Record a Calibration Result"
     CERTIFICATE = "Certificate", "Decide Certificate Acceptance"
     REINSTATE = "Reinstate", "Authorise Return to Use"
+    ISSUE = "Issue", "Issue a Tool"
+    USE = "Use", "Record Use and Pre-use Inspection"
+    RETURN = "Return", "Accept Tool Return"
 
 
 class ControlKind(models.TextChoices):
@@ -230,4 +233,4 @@ class ToolControlEvent(SubmittedToolRecord):
 
 
 # Django discovers the associated calibration records with the tooling app.
-from airworthiness_plus.tooling import calibration_models  # noqa: E402, F401
+from airworthiness_plus.tooling import calibration_models, custody_models  # noqa: E402, F401

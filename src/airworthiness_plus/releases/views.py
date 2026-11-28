@@ -21,6 +21,7 @@ from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases import services
 from airworthiness_plus.releases.forms import CertificateForm, HistoricalReleaseEvidenceForm
 from airworthiness_plus.releases.models import HistoricalReleaseEvidence, Release
+from airworthiness_plus.tooling.verification_forms import take_verification
 
 
 def _user(request: HttpRequest) -> User:
@@ -82,7 +83,10 @@ def record_release_certificate(request: HttpRequest, work_id: uuid.UUID) -> Http
     form = CertificateForm(request.POST or None, initial={"reference": work.release_reference})
     if request.method == "POST" and form.is_valid():
         try:
-            services.record_certificate(work, **form.cleaned_data)
+            verification = take_verification(form.cleaned_data)
+            services.record_certificate(
+                work, general_verification=verification, **form.cleaned_data
+            )
         except services.RefusedError as error:
             form.add_error(None, str(error))
         else:

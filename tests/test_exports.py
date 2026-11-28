@@ -548,6 +548,11 @@ def test_the_export_of_an_organisation_is_every_record_as_the_database_holds_it(
         setup_workshop,
         submitted,
     )
+    from tests.test_tool_custody import exercise_custody, exercise_release, make_job
+
+    card, user = make_job(sample, monkeypatch, fleet["G-EJKL"])
+    exercise_custody(sample, card, user)
+    exercise_release(sample, card)
 
     calibration = setup_workshop(sample, monkeypatch, "TEST-EXPORT")
     writer, _, _ = calibration

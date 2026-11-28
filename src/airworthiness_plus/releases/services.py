@@ -22,10 +22,12 @@ from airworthiness_plus.organisations import approvals
 from airworthiness_plus.organisations.models import ApprovalType, Organisation, Privilege
 from airworthiness_plus.people import services as people_services
 from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, StaffGroup
+from airworthiness_plus.planning.models import WorkPackage
 from airworthiness_plus.programme import due
 from airworthiness_plus.programme import services as programme_services
 from airworthiness_plus.programme.models import WorkDone
 from airworthiness_plus.releases.models import HistoricalReleaseEvidence, IssuedBy, Release
+from airworthiness_plus.tooling import custody, release_evidence
 from airworthiness_rules.dates import days_between
 from airworthiness_rules.programme import Flag, pilot_owner_notification_deadline
 
@@ -112,6 +114,8 @@ def record_certificate(
     maintenance_authorisation: MaintenanceAuthorisation | None = None,
     scope_confirmed: bool = False,
     legacy_evidence: str = "",
+    general_verification: release_evidence.Verification | None = None,
+    work_package: WorkPackage | None = None,
 ) -> Release:
     """Record the certificate of release to service for work done (REQ-260 to REQ-263).
 
@@ -126,6 +130,8 @@ def record_certificate(
         licence.strip(),
         limitations.strip(),
     )
+    if kind == IssuedBy.ORGANISATION:
+        Organisation.objects.select_for_update(no_key=True).only("id").get(pk=work.organisation_id)
     work = WorkDone.objects.select_for_update().get(pk=work.pk)
     if (
         Release.objects.filter(work=work).exists()
@@ -203,6 +209,14 @@ def record_certificate(
         raise RefusedError(
             f"Open Defect That Is Not Deferrable on the Day of Issue, ML.A.801(g): {stops.title}"
         )
+    verification = None
+    if kind == IssuedBy.ORGANISATION and not legacy_evidence:
+        try:
+            verification = release_evidence.check(
+                work, issued_on, general_verification, work_package
+            )
+        except custody.RefusedError as error:
+            raise RefusedError(str(error)) from error
     release = Release.objects.create(
         organisation_id=work.organisation_id,
         work=work,
@@ -210,6 +224,7 @@ def record_certificate(
         kind=kind,
         issued_by=issued_by,
         maintenance_authorisation=maintenance_authorisation,
+        governing_approval=verification.approval if verification is not None else None,
         scope_confirmed=scope_confirmed,
         legacy_evidence=legacy_evidence,
         issuer_name=issuer_name,
@@ -220,6 +235,8 @@ def record_certificate(
     )
     if not work.release_reference:
         programme_services.record_release(work, reference, recorded_on)
+    if verification is not None:
+        verification.retain(release)
     release.refresh_from_db()
     return release
 

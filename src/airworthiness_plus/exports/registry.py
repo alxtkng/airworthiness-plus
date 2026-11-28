@@ -105,6 +105,15 @@ from airworthiness_plus.tooling.calibration_models import (
     ToolImpactCase,
     ToolServiceProviderAuthorisation,
 )
+from airworthiness_plus.tooling.custody_models import (
+    HistoricalToolClaim,
+    ReleaseGeneralVerification,
+    ToolIssue,
+    ToolPreUseInspection,
+    ToolReturn,
+    ToolUse,
+    WorkPackageApproval,
+)
 from airworthiness_plus.tooling.models import (
     Tool,
     ToolControlEvent,
@@ -248,7 +257,31 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(StockAllocation, None),
     Exported(StockSubstitution, None),
     Exported(SubcontractorAssessment, None),
-    Exported(Tool, None),
+    Exported(
+        Tool,
+        lambda aircraft: (
+            Q(
+                pk__in=ToolIssue.objects.filter(work_approval__package__aircraft=aircraft).values(
+                    "tool_id"
+                )
+            )
+            | Q(
+                pk__in=HistoricalToolClaim.objects.filter(
+                    Q(card__package__aircraft=aircraft) | Q(work__aircraft=aircraft)
+                ).values("tool_id")
+            )
+        ),
+    ),
+    Exported(WorkPackageApproval, _by("package__aircraft")),
+    Exported(ToolIssue, _by("work_approval__package__aircraft")),
+    Exported(ToolPreUseInspection, _by("card__package__aircraft")),
+    Exported(ToolUse, _by("card__package__aircraft")),
+    Exported(ToolReturn, _by("issue__work_approval__package__aircraft")),
+    Exported(
+        HistoricalToolClaim,
+        lambda aircraft: Q(card__package__aircraft=aircraft) | Q(work__aircraft=aircraft),
+    ),
+    Exported(ReleaseGeneralVerification, _by("release__work__aircraft")),
     Exported(ToolServiceProviderAuthorisation, None),
     Exported(CalibrationOrder, None),
     Exported(CalibrationMovement, None),

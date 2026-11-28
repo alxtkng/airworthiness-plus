@@ -16,6 +16,7 @@ from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.logistics.services import maintenance_approvals
 from airworthiness_plus.organisations.models import Approval
 from airworthiness_plus.tooling import services, status
+from airworthiness_plus.tooling.custody_models import ToolIssue
 from airworthiness_plus.tooling.forms import (
     ControlForm,
     DelegationForm,
@@ -63,6 +64,15 @@ def _tools(user: User) -> QuerySet[Tool]:
         Tool.objects.filter(organisation_id=user.organisation_id)
         .prefetch_related(Prefetch("control_revisions", queryset=revisions))
         .prefetch_related(Prefetch("control_events", queryset=events))
+        .prefetch_related(
+            Prefetch(
+                "issues",
+                queryset=ToolIssue.objects.filter(return_record__isnull=True).select_related(
+                    "work_approval__package", "custodian"
+                ),
+                to_attr="open_issues",
+            )
+        )
         .prefetch_related(
             "calibration_orders__movements",
             "calibration_orders__certificates__decisions__reinstatement",
@@ -122,6 +132,11 @@ def tool_record(request: HttpRequest, tool_id: UUID) -> HttpResponse:
             "may_control": bool(selected) and user.may(Action.RECORD_TOOL_CONTROL),
             "may_record": bool(selected) and user.may(Action.RECORD_TOOL_EVENT),
             "may_calibrate": bool(selected) and user.may(Action.RECORD_TOOL_CALIBRATION),
+            "may_custody": user.may(Action.RECORD_TOOL_CUSTODY),
+            "issues": tool.issues.select_related(
+                "work_approval__package", "custodian", "return_record"
+            ),
+            "historical_claims": tool.historical_claims.all(),
         },
     )
 

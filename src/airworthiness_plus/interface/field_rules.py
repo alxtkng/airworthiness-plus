@@ -39,6 +39,7 @@ from airworthiness_plus.staffing import dispatch_forms as dispatch
 from airworthiness_plus.staffing import forms as staffing
 from airworthiness_plus.staffing import roster_forms as roster
 from airworthiness_plus.tooling import calibration_forms as calibration
+from airworthiness_plus.tooling import custody_forms as custody
 from airworthiness_plus.tooling import forms as tooling
 
 Sets = tuple[type[forms.Form] | str, ...]
@@ -46,6 +47,12 @@ Sets = tuple[type[forms.Form] | str, ...]
 # Every address that changes something, by its name, with what it may set: the
 # fields of a form, or a value named in words where the address takes it itself.
 WRITES: dict[str, Sets] = {
+    "issue_tool": (custody.IssueForm,),
+    "tool_pre_use_inspection": (custody.InspectionForm,),
+    "tool_actual_use": (custody.UseForm,),
+    "tool_return": (custody.ReturnForm,),
+    "record_historical_tool_claim": (custody.ClaimForm,),
+    "assign_tooling_approval": (custody.AssignmentForm,),
     "authorise_tool_provider": (calibration.ProviderForm,),
     "place_calibration_order": (calibration.OrderForm,),
     "calibration_movement": (calibration.MovementForm,),
@@ -99,7 +106,7 @@ WRITES: dict[str, Sets] = {
     "build_work_package": (planning.BuildPackageForm,),
     "link_package_order": (planning.LinkOrderForm,),
     "add_work_card": (planning.WorkCardForm,),
-    "issue_work_package": (),
+    "issue_work_package": (planning.IssuePackageForm,),
     "complete_work_card": (planning.WorkCompletionForm,),
     "attest_work_card": (planning.AttestationForm, "Signature Request", "Request Action"),
     "sign_work_card_step": (planning.StepSignOffForm,),
@@ -260,6 +267,7 @@ READS = frozenset(
         "calibration_order",
         "calibration_certificate",
         "tool_record",
+        "tool_issue",
         "tool_delegations",
         "supplier",
         "staffing_plan",

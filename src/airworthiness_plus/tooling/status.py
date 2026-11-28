@@ -7,6 +7,7 @@ from uuid import UUID
 from airworthiness_plus.organisations.models import Approval
 from airworthiness_plus.tooling.calibration_models import CalibrationOrder, CalibrationReinstatement
 from airworthiness_plus.tooling.calibration_status import holding_order, reinstatement_on
+from airworthiness_plus.tooling.custody_models import ReturnCondition, ToolReturn
 from airworthiness_plus.tooling.models import ControlKind, EventKind, Tool, ToolControlEvent
 from airworthiness_plus.tooling.models import ToolControlRevision as Revision
 from airworthiness_rules.dates import add_months
@@ -37,7 +38,7 @@ class ControlLine:
 class ToolLabel:
     tool: Tool
     controls: list[ControlLine]
-    condition: ToolControlEvent | None
+    condition: ToolControlEvent | ToolReturn | None
     calibration_hold: CalibrationOrder | None
 
     @property
@@ -88,8 +89,8 @@ def active_controls(
     return latest
 
 
-def condition_on(tool: Tool, day: date) -> ToolControlEvent | None:
-    return next(
+def condition_on(tool: Tool, day: date) -> ToolControlEvent | ToolReturn | None:
+    event = next(
         (
             event
             for event in tool.control_events.all()
@@ -99,6 +100,23 @@ def condition_on(tool: Tool, day: date) -> ToolControlEvent | None:
         ),
         None,
     )
+    if event and event.kind == EventKind.WITHDRAWN:
+        return event
+    returned = (
+        ToolReturn.objects.filter(
+            issue__tool=tool,
+            kind=ReturnCondition.UNSERVICEABLE,
+            occurred_on__lte=day,
+        )
+        .order_by("-occurred_on", "-entered_at")
+        .first()
+    )
+    if returned and (
+        event is None
+        or (returned.occurred_on, returned.entered_at) > (event.occurred_on, event.entered_at)
+    ):
+        return returned
+    return event
 
 
 def label(

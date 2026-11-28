@@ -21,5 +21,11 @@
 <dd>{% if certificate.maintenance_authorisation %}{{ certificate.maintenance_authorisation.reference }}, Scope Confirmed{% if certificate.maintenance_authorisation.withdrawn_on and certificate.maintenance_authorisation.withdrawn_on <= certificate.issued_on %}. Later Withdrawal Effective {{ certificate.maintenance_authorisation.withdrawn_on|long_date }}{% endif %}{% else %}Unverified Historical Evidence{% if certificate.legacy_evidence %}, {{ certificate.legacy_evidence }}{% endif %}{% endif %}</dd>
 {% if certificate.maintenance_authorisation %}<dt>Authorisation Scope</dt><dd>{{ certificate.maintenance_authorisation.scope }}</dd>{% endif %}
 {% endif %}
+{% with verification=certificate.general_verification %}
+{% if verification %}
+<dt>Physical General Verification</dt><dd>{{ verification.performed_on|long_date }} · {{ verification.rule }} · {{ verification.approval_reference }}<br>Clear of Tools, Equipment and Extraneous Parts and Material · {{ verification.panels }}<br>{{ verification.signed_evidence }}</dd>
+<dt>Tool Accountability</dt><dd>{{ verification.accountability }}</dd>
+{% endif %}
+{% endwith %}
 </dl>
 {% endblock %}

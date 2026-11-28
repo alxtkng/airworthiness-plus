@@ -33,6 +33,7 @@ from airworthiness_plus.staffing import dispatch_views as dispatch
 from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
 from airworthiness_plus.tooling import calibration_views as calibration
+from airworthiness_plus.tooling import custody_views as custody
 from airworthiness_plus.tooling import views as tooling
 
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -53,6 +54,21 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("stores/<uuid:stock_id>/", logistics.stock_entry, name="stock_entry"),
     path(
         "stores/lookup-exercise/", logistics.stores_lookup_exercise, name="stores_lookup_exercise"
+    ),
+    path("tools/<uuid:tool_id>/issue/", custody.issue_tool, name="issue_tool"),
+    path("tools/<uuid:tool_id>/claim/", custody.record_claim, name="record_historical_tool_claim"),
+    path("tools/issues/<uuid:issue_id>/", custody.issue_record, name="tool_issue"),
+    path(
+        "tools/issues/<uuid:issue_id>/inspect/",
+        custody.record_inspection,
+        name="tool_pre_use_inspection",
+    ),
+    path("tools/issues/<uuid:issue_id>/use/", custody.record_use, name="tool_actual_use"),
+    path("tools/issues/<uuid:issue_id>/return/", custody.return_tool, name="tool_return"),
+    path(
+        "work-packages/<uuid:package_id>/approval/",
+        custody.assign_approval,
+        name="assign_tooling_approval",
     ),
     path("tools/providers/", calibration.providers, name="tool_providers"),
     path(

@@ -57,6 +57,9 @@ class Release(Record):
     )
     issuer_name = models.CharField("Name", max_length=200, blank=True)
     licence = models.CharField("Licence Number", max_length=100, blank=True)
+    governing_approval = models.ForeignKey(
+        "organisations.Approval", on_delete=models.PROTECT, null=True, related_name="+"
+    )
     approval_reference = models.CharField(max_length=40, blank=True)
     issued_on = models.DateField("Issued")
     incomplete = models.BooleanField("Maintenance Could Not Be Completed", default=False)

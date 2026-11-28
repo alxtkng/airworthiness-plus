@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Tool Issue{% endblock %}
+{% block content %}
+<h1>Tool Issue</h1>
+<p><a href="{% url 'tool_record' issue.tool_id %}">{{ issue.tool }}</a> · <a href="{% url 'work_package' issue.work_approval.package_id %}">{{ issue.work_approval.package }}</a></p>
+<dl>
+  <dt>Governing Approval</dt><dd>{{ issue.work_approval.reference }}</dd>
+  <dt>Custodian</dt><dd>{{ issue.custodian }}</dd>
+  <dt>Issued</dt><dd>{{ issue.occurred_on|long_date }} · {{ issue.entered_at|time:"H:i" }} · {{ issue.delegation.person }}</dd>
+  <dt>Custody Location</dt><dd>{{ issue.location }}</dd>
+  <dt>Handover Evidence</dt><dd>{{ issue.evidence }}</dd>
+  {% if issue.return_record %}
+  <dt>Returned</dt><dd>{{ issue.return_record.occurred_on|long_date }} · {{ issue.return_record.returned_by }} to {{ issue.return_record.delegation.person }}</dd>
+  <dt>Receiving Location and Condition</dt><dd>{{ issue.return_record.location }} · {{ issue.return_record.kind }}</dd>
+  <dt>Return Evidence</dt><dd>{{ issue.return_record.evidence }}</dd>
+  {% endif %}
+</dl>
+{% if may_record and not issue.return_record %}
+<p class="actions">
+  <a class="button" href="{% url 'tool_pre_use_inspection' issue.id %}">Record Pre-Use Inspection</a>
+  <a class="button" href="{% url 'tool_actual_use' issue.id %}">Record Actual Use</a>
+  <a class="button" href="{% url 'tool_return' issue.id %}">Record Tool Return</a>
+</p>
+{% endif %}
+<section>
+  <h2>Actual Use</h2>
+  {% for entry in uses %}
+    <p>{{ entry.occurred_on|long_date }} · {{ entry.delegation.person }} · {{ entry.card }} · {{ entry.aircraft_registration }} · {{ entry.revision }}<br>{{ entry.configuration }} {{ entry.setting }} · {{ entry.evidence }}</p>
+  {% empty %}<p>Actual use unconfirmed.</p>{% endfor %}
+</section>
+<section>
+  <h2>Pre-Use Inspections</h2>
+  {% for inspection in inspections %}
+    <p>{{ inspection.occurred_on|long_date }} · {{ inspection.delegation.person }} · {{ inspection.card }} · {{ inspection.revision }}<br>{% if inspection.passed %}Satisfactory{% else %}Unsatisfactory{% endif %} · {{ inspection.evidence }}</p>
+  {% empty %}<p>No pre-use inspections recorded.</p>{% endfor %}
+</section>
+{% endblock %}

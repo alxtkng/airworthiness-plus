@@ -15,6 +15,8 @@ from airworthiness_plus.people.models import MaintenanceAuthorisation, Person, S
 from airworthiness_plus.planning.models import WorkCard, WorkPackage
 from airworthiness_plus.planning.services import synthetic_available
 from airworthiness_plus.programme.models import Task
+from airworthiness_plus.tooling.forms import MAINTENANCE
+from airworthiness_plus.tooling.verification_forms import GeneralVerificationForm
 from airworthiness_rules.intervals import TaskKind
 
 
@@ -133,7 +135,13 @@ class AuthorisationChoice(forms.ModelChoiceField):  # type: ignore[type-arg]
         return f"{obj.person} ({obj.reference})"
 
 
-class PackageReleaseForm(Form):
+class IssuePackageForm(Form):
+    approval = forms.ChoiceField(
+        label="Governing Maintenance Approval", choices=[("", "—"), *MAINTENANCE], required=False
+    )
+
+
+class PackageReleaseForm(GeneralVerificationForm, Form):
     reference = forms.CharField(label="Certificate Reference", max_length=100)
     issued_by = forms.ModelChoiceField(
         label="Certifying Staff", queryset=Person.objects.filter(staff_group=StaffGroup.CERTIFYING)
@@ -144,7 +152,6 @@ class PackageReleaseForm(Form):
         queryset=MaintenanceAuthorisation.objects.select_related("person"),
     )
     scope_confirmed = forms.BooleanField(label="Authorisation Covers This Work")
-    verification = forms.CharField(label="General Verification Evidence", max_length=200)
 
 
 class AttestationForm(Form):
