@@ -70,6 +70,7 @@ def dispatch_board(request: HttpRequest) -> HttpResponse:
 @requires(Action.RECORD_STAFFING_PLAN)
 @require_http_methods(["GET", "POST"])
 def dispatch_assignment(request: HttpRequest, assignment_id: UUID | None = None) -> HttpResponse:
+    """Record or revise a dispatch assignment against a roster shift."""
     previous = None
     if assignment_id is not None:
         previous = get_object_or_404(
@@ -114,6 +115,7 @@ def dispatch_assignment(request: HttpRequest, assignment_id: UUID | None = None)
 @requires(Action.RECORD_STAFFING_PLAN)
 @require_http_methods(["GET", "POST"])
 def dispatch_window(request: HttpRequest, turnaround: bool = False) -> HttpResponse:
+    """Record a break or turnaround window on the dispatch board."""
     with timezone.override(roster.LONDON):
         form_class = TurnaroundForm if turnaround else BreakForm
         form = form_class(
