@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models import F, Q
 
 from airworthiness_plus.history.models import Record
+from airworthiness_plus.staffing.dispatch_models import DispatchAssignment as DispatchAssignment
+from airworthiness_plus.staffing.dispatch_models import DispatchWindow as DispatchWindow
 from airworthiness_plus.staffing.roster_models import (
     BankHoliday as BankHoliday,
 )

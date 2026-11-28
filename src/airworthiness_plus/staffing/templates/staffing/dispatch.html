@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load writing %}
+{% block title %}Dispatch{% endblock %}
+{% block content %}
+<h1>Dispatch</h1>
+<form method="get" action="{% url 'dispatch_board' %}">
+  <label>Day <input name="day" type="date" value="{{ day|date:'Y-m-d' }}"></label>
+  <button type="submit">Show Day</button>
+</form>
+<p><a href="{% url 'dispatch_board' %}?day={{ previous|date:'Y-m-d' }}">Previous Day</a>
+<a href="{% url 'dispatch_board' %}?day={{ next|date:'Y-m-d' }}">Next Day</a>
+<a href="{% url 'staff_roster' %}?week={{ week|date:'Y-m-d' }}">Roster for This Week</a>
+<a href="{% url 'load_and_capacity' %}?week={{ week|date:'Y-m-d' }}">Load and Capacity</a></p>
+<h2>{{ day|long_date }}</h2>
+{% if may_plan %}
+<p><a href="{% url 'dispatch_assign' %}?day={{ day|date:'Y-m-d' }}">Assign Work</a>
+<a href="{% url 'dispatch_break' %}?day={{ day|date:'Y-m-d' }}">Record Break</a>
+<a href="{% url 'dispatch_turnaround' %}?day={{ day|date:'Y-m-d' }}">Record Turnaround</a>
+<a href="{% url 'record_handover' %}?from=dispatch">Record Handover</a></p>
+{% endif %}
+<p><a href="#dispatch-details">Go to Dispatch Details</a></p>
+{% if board.timeline %}
+<div aria-hidden="true" class="dispatch-timeline">
+<h3>Timeline</h3>
+<p>A bar marks each two-hour block touched by the event. Exact times appear in Dispatch Details.</p>
+<table>
+<thead><tr><th>Event</th>{% for slot in board.slots %}<th>{{ slot|date:"H:i" }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for event, cells in board.timeline %}
+<tr><th scope="row">{{ event.label }}</th>{% for occupied in cells %}<td>{% if occupied %}<span class="dispatch-block"></span>{% endif %}</td>{% endfor %}</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+<h3 id="dispatch-details" tabindex="-1">Dispatch Details</h3>
+<p>Times use Europe/London. Work status follows the maintenance record.</p>
+<h4>Assignments</h4>
+<ul>
+{% for item, warnings, remaining in board.assignments %}
+<li>
+  <strong><a href="{% url 'work_package' item.card.package_id %}">{{ item.card.package }}</a> · {{ item.card }}</strong>
+  <p>{{ item.shift.person }} · {{ item.shift.shift_name }}, {{ item.shift.area }}<br>
+  {{ item.starts_at|date:"j M H:i T" }} to {{ item.ends_at|date:"j M H:i T" }}<br>
+  {{ remaining }}</p>
+  <p>Planning or change reason: {{ item.reason }}</p>
+  {% if warnings %}
+  <p>Warnings</p>
+  <ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+  {% else %}<p>No Dispatch Conflicts Found</p>{% endif %}
+  {% if may_plan and not item.card.signed %}
+  <p><a href="{% url 'dispatch_move' item.pk %}">Move Assignment for {{ item.card }}</a>
+  <a href="{% url 'record_handover' %}?from=dispatch&amp;card={{ item.card_id }}">Hand Over {{ item.card }}</a></p>
+  {% endif %}
+</li>
+{% empty %}<li>No Assignments Recorded for This Day</li>
+{% endfor %}
+</ul>
+<h4>Shift, Break and Turnaround Times</h4>
+<ul>
+{% for shift in board.shifts %}
+<li>Shift · {{ shift.person }} · {{ shift.shift_name }}, {{ shift.area }} · {{ shift.starts_at|date:"j M H:i T" }} to {{ shift.ends_at|date:"j M H:i T" }}</li>
+{% endfor %}
+{% for window in board.windows %}
+<li>
+{% if window.shift_id %}Break · {{ window.shift.person }} · {{ window.shift.shift_name }}{% else %}Turnaround · <a href="{% url 'work_package' window.package_id %}">{{ window.package }}</a>{% endif %}
+· {{ window.starts_at|date:"j M H:i T" }} to {{ window.ends_at|date:"j M H:i T" }} · {{ window.note }}
+</li>
+{% endfor %}
+{% if not board.shifts and not board.windows %}<li>No Shifts, Breaks or Turnarounds Recorded for This Day</li>{% endif %}
+</ul>
+<h4>Assignment History</h4>
+<ul>
+{% for item in board.history %}
+<li>
+  <strong>{{ item.card.package }} · {{ item.card }}</strong>
+  <p>Previous: {{ item.shift.person }} · {{ item.shift.shift_name }}, {{ item.shift.area }} · {{ item.starts_at|date:"j M H:i T" }} to {{ item.ends_at|date:"j M H:i T" }}<br>
+  Reason: {{ item.reason }}</p>
+  <p>Moved to: {{ item.replacement.shift.person }} · {{ item.replacement.shift.shift_name }}, {{ item.replacement.shift.area }} · {{ item.replacement.starts_at|date:"j M H:i T" }} to {{ item.replacement.ends_at|date:"j M H:i T" }}<br>
+  Reason: {{ item.replacement.reason }}</p>
+</li>
+{% empty %}<li>No Assignment Changes Recorded for This Day</li>
+{% endfor %}
+</ul>
+<h4>Handovers</h4>
+<ul>
+{% for handover, remaining in handovers %}
+<li>
+  <strong>{% if handover.package_id %}<a href="{% url 'work_package' handover.package_id %}">{{ handover.package }}</a>{% else %}General Handover{% endif %}{% if handover.card_id %} · {{ handover.card }}{% endif %}</strong>
+  <p>{{ handover.outgoing }} to {{ handover.incoming }} · {{ handover.handed_at|date:"j M H:i T" }}</p>
+  <p>Stage Reached and Open Tasks: {{ handover.stage }}<br>
+  Parts, Tools and Warnings: {{ handover.parts }}{% if remaining %}<br>{{ remaining }}{% endif %}</p>
+  {% if handover.overlap is not None %}<p>Planned Overlap: {{ handover.overlap }} of {{ handover.overlap_target }} Minutes</p>{% else %}<p>Planned Overlap Not Established</p>{% endif %}
+  {% if handover.acknowledged_at %}
+  <p>Acknowledged by {{ handover.actor.full_name }} · {{ handover.acknowledged_at|date:"j M H:i T" }}</p>
+  {% else %}
+  <p>Awaiting Acknowledgement
+  {% if may_acknowledge and handover.incoming.user_id == user.id %}
+  <a href="{% url 'acknowledge_handover' handover.id %}?from=dispatch">Acknowledge Handover</a>
+  {% endif %}</p>
+  {% endif %}
+</li>
+{% empty %}<li>No Handovers Recorded for This Day</li>
+{% endfor %}
+</ul>
+{% endblock %}

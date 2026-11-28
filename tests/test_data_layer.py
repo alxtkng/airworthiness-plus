@@ -243,6 +243,8 @@ def test_every_table_is_under_the_record_rules() -> None:
         "staffing_absence": ["INSERT", "SELECT"],
         "staffing_publishedroster": ["INSERT", "SELECT"],
         "staffing_publishedshift": ["INSERT", "SELECT"],
+        "staffing_dispatchassignment": ["INSERT", "SELECT"],
+        "staffing_dispatchwindow": ["INSERT", "SELECT"],
         # A transfer and a signed baseline are added and never changed (REQ-267, REQ-274).
         "configuration_transfer": ["INSERT", "SELECT"],
         "configuration_baseline": ["INSERT", "SELECT"],
@@ -310,7 +312,12 @@ def test_every_table_is_under_the_record_rules() -> None:
         # A contract and a work order keep what they said when recorded (REQ-241).
         "contracts_contract": {"contract_rules"},
         "contracts_workorder": {"workorder_rules"},
-        "staffing_handover": {"handover_rules"},
+        "staffing_handover": {"handover_rules", "handover_card_rules"},
+        "staffing_dispatchassignment": {
+            "dispatch_assignment_rules",
+            "dispatch_assignment_immutable",
+        },
+        "staffing_dispatchwindow": {"dispatch_window_rules", "dispatch_window_immutable"},
         "staffing_shift": {"roster_shift_rules"},
         "staffing_publishedroster": {"publication_rules"},
         "staffing_publishedshift": {"published_shift_week"},

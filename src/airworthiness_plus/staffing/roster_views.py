@@ -6,7 +6,7 @@ from uuid import UUID
 
 from django.db import transaction
 from django.forms.models import model_to_dict
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -18,6 +18,7 @@ from airworthiness_plus.accounts.roles import Action
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.organisations.models import Approval, Organisation
+from airworthiness_plus.planning.models import WorkCard
 from airworthiness_plus.staffing import roster
 from airworthiness_plus.staffing.roster_forms import (
     BankHolidayForm,
@@ -172,19 +173,24 @@ def record_handover(request: HttpRequest) -> HttpResponse:
     """Record who handed over work and where it stood."""
     user = _user(request)
     with timezone.override(roster.LONDON):
-        form = HandoverForm(request.POST or None)
+        card_id = request.GET.get("card")
+        card = None
+        if card_id:
+            try:
+                card = get_object_or_404(WorkCard, pk=UUID(card_id))
+            except ValueError:
+                raise Http404 from None
+        form = HandoverForm(
+            request.POST or None,
+            initial={"card": card, "package": card.package_id if card else None},
+        )
         if request.method == "POST" and form.is_valid():
             try:
                 handover = roster.record_handover(actor=user, **form.cleaned_data)
             except RefusedError as error:
                 form.add_error(None, str(error))
             else:
-                return redirect(
-                    reverse(
-                        "staff_roster",
-                        query={"week": roster.local_day(handover.handed_at).isoformat()},
-                    )
-                )
+                return _handover_return(request, handover)
         return _show_form(request, form, "Record Handover")
 
 
@@ -201,12 +207,15 @@ def acknowledge_handover(request: HttpRequest, handover_id: UUID) -> HttpRespons
         except RefusedError as error:
             form.add_error(None, str(error))
         else:
-            return redirect(
-                reverse(
-                    "staff_roster", query={"week": roster.local_day(handover.handed_at).isoformat()}
-                )
-            )
+            return _handover_return(request, handover)
     return _show_form(request, form, "Acknowledge Handover")
+
+
+def _handover_return(request: HttpRequest, handover: Handover) -> HttpResponse:
+    day = roster.local_day(handover.handed_at).isoformat()
+    if request.GET.get("from") == "dispatch":
+        return redirect(reverse("dispatch_board", query={"day": day}))
+    return redirect(reverse("staff_roster", query={"week": day}))
 
 
 @never_cache

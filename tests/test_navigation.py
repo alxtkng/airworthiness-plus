@@ -101,7 +101,7 @@ TABS = {
     ],
     "Goods In": ["Receiving Inspection"],
     "Stores": ["Stock", "Quarantine and Scrap"],
-    "Staffing and Capacity": ["Staffing Plan", "Load and Capacity", "Staff Roster"],
+    "Staffing and Capacity": ["Staffing Plan", "Load and Capacity", "Staff Roster", "Dispatch"],
     "Tools and Equipment": [
         "Register",
         "Service Providers",

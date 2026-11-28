@@ -59,6 +59,7 @@ from airworthiness_plus.reviews.models import (
     ReviewStaff,
 )
 from airworthiness_plus.sample.models import Added
+from airworthiness_plus.staffing.dispatch_models import DispatchAssignment, DispatchWindow
 from airworthiness_plus.staffing.models import Absence, Demand, Report
 from airworthiness_plus.staffing.models import Review as StaffingReview
 from airworthiness_plus.staffing.roster_models import (
@@ -222,6 +223,8 @@ REGISTRY: tuple[Exported, ...] = (
     Exported(ShiftPattern, None),
     Exported(StaffingMinimum, None),
     Exported(PublishedShift, None),
+    Exported(DispatchAssignment, _by("card__package__aircraft")),
+    Exported(DispatchWindow, _by("package__aircraft")),
     Exported(Handover, _by("package__aircraft")),
     Exported(PublishedRoster, None),
     Exported(Settings, None),

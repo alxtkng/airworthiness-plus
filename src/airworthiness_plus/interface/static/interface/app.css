@@ -847,3 +847,17 @@ tr.detail form input:not([type="checkbox"]):not([type="hidden"]) {
     margin-inline-start: 0;
   }
 }
+
+.dispatch-timeline {
+  overflow-x: auto;
+}
+
+.dispatch-timeline td {
+  min-width: 2rem;
+  padding-inline: 0;
+}
+
+.dispatch-block {
+  display: block;
+  border-block: 0.35rem solid currentColor;
+}
