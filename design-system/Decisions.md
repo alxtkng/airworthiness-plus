@@ -206,7 +206,7 @@ Recorded 27 November 2026. Moved here from Navigation, where it was first writte
 
 ### Requirement Numbering
 
-Recorded 27 November 2026 as ours. The plan gives each phase the next block of 20 from REQ-200. In practice Phase 0 took REQ-200 to REQ-219, Phase 1 took REQ-220 to REQ-294 in blocks by board group (REQ-279 unused), Phase 2 took REQ-295 to REQ-302, and Phase 3 took REQ-320 to REQ-333. REQ-303 to REQ-319 are unused. No number was used twice. From Phase 4, a phase starts at the next multiple of 20 after the last number used and takes a block of 20 for each board group: Phase 4 takes REQ-340 to REQ-359 for Suppliers, Goods In and Stores, and REQ-360 to REQ-379 for Tools and Equipment. An unused number is never reused.
+Recorded 27 November 2026 as ours. The plan gives each phase the next block of 20 from REQ-200. In practice Phase 0 took REQ-200 to REQ-219, Phase 1 took REQ-220 to REQ-294 in blocks by board group (REQ-279 unused), Phase 2 took REQ-295 to REQ-302, and Phase 3 took REQ-320 to REQ-333. REQ-303 to REQ-319 are unused. No number was used twice. From Phase 4, a phase starts at the next multiple of 20 after the last number used and takes a block of 20 for each board group: Phase 4 takes REQ-340 to REQ-359 for Suppliers, Goods In and Stores, and REQ-360 to REQ-392 for Tools and Equipment. An unused number is never reused.
 
 ### Phase 4 Logistics, Decided Before It Starts
 
