@@ -25,9 +25,13 @@ def error_summary(form: Any) -> dict[str, object]:
     items = []
     for field in form:
         if field.errors and not field.is_hidden:
+            target = field.id_for_label
+            # A set of radio buttons or checkboxes is reached at its first choice.
+            if not target and field.subwidgets:
+                target = field.subwidgets[0].id_for_label
             items.append(
                 {
-                    "target": field.id_for_label or field.auto_id,
+                    "target": target or field.auto_id,
                     "label": field.label,
                     "messages": ", ".join(str(message) for message in field.errors),
                 }

@@ -745,6 +745,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     path("users/<uuid:user_id>/sessions/", users.end_sessions, name="end_user_sessions"),
     path("account/passkeys/", passkey_views.passkey_settings, name="passkey_settings"),
+    path("account/display/", users.display_settings, name="display_settings"),
     path("account/passkeys/add/", passkey_views.add_passkey, name="add_passkey"),
     path("account/passkeys/remove/", passkey_views.remove_passkey, name="remove_passkey"),
     path("account/verify/", passkey_views.verify_passkey, name="verify_passkey"),

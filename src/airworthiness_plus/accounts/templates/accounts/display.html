@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Display{% endblock %}
+{% block content %}
+<h1>Display</h1>
+<form method="post" action="{% url 'display_settings' %}" class="settings-display">
+{% csrf_token %}
+{% error_summary form %}{% if form.non_field_errors %}<p role="alert">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+{% for field in form %}<fieldset{% if field.errors %} aria-describedby="{{ field.auto_id }}_error"{% endif %}>
+<legend>{{ field.label }}</legend>
+{{ field }}{% if field.errors %}<span class="field-error" id="{{ field.auto_id }}_error"><span class="visually-hidden">Error, </span>{{ field.errors|join:", " }}</span>{% endif %}
+</fieldset>
+{% endfor %}<p><button type="submit" class="primary">Save</button></p>
+</form>
+{% endblock %}

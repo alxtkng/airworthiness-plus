@@ -194,6 +194,7 @@ Each line is an address that changes something: the action it needs, the roles t
 | Manage Users and Roles | Administrator | `/users/<uuid:user_id>/second-factor/` | Clear a user's second factor so that they set one up again | Password and Authenticator Code |
 | Manage Users and Roles | Administrator | `/users/<uuid:user_id>/sessions/` | End every session of a user, for example when a device is lost | Code From the Administrator's Authenticator Application |
 | None | Any Signed-In User, for Themselves | `/account/passkeys/` | Show a user's passkeys and options to register or revoke them | Password and Authenticator Code |
+| None | Any Signed-In User, for Themselves | `/account/display/` | The signed-in user's own display settings (REQ-405 to REQ-410) | Appearance; Contrast; Text Size; Density; Reduce Motion |
 | None | Any Signed-In User, for Themselves | `/account/passkeys/add/` | Register a passkey after recent verification | Passkey Name; Passkey Response |
 | None | Any Signed-In User, for Themselves | `/account/passkeys/remove/` | Revoke a passkey and end the other sessions for this account | Passkey; Password and Authenticator Code |
 | None | Any Signed-In User, for Themselves | `/account/verify/` | Verify a signed-in user's passkey before a sensitive action | Passkey Response |
