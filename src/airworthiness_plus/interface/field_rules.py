@@ -34,6 +34,7 @@ from airworthiness_plus.planning import forms as planning
 from airworthiness_plus.programme import forms as programme
 from airworthiness_plus.releases import forms as releases
 from airworthiness_plus.reviews import forms as reviews
+from airworthiness_plus.staffing import dispatch_forms as dispatch
 from airworthiness_plus.staffing import forms as staffing
 from airworthiness_plus.staffing import roster_forms as roster
 from airworthiness_plus.tooling import calibration_forms as calibration
@@ -73,6 +74,10 @@ WRITES: dict[str, Sets] = {
     "count_stock": (logistics.StockCountForm,),
     "adjust_stock": (logistics.StockAdjustmentForm,),
     "add_roster_shift": (roster.ShiftForm,),
+    "dispatch_assign": (dispatch.AssignmentForm,),
+    "dispatch_move": (dispatch.MoveAssignmentForm,),
+    "dispatch_break": (dispatch.BreakForm,),
+    "dispatch_turnaround": (dispatch.TurnaroundForm,),
     "withdraw_roster_shift": (roster.WithdrawShiftForm,),
     "publish_roster": (roster.PublicationForm,),
     "record_handover": (roster.HandoverForm,),
@@ -221,6 +226,7 @@ READS = frozenset(
     {
         "home",
         "staff_roster",
+        "dispatch_board",
         "load_and_capacity",
         "planning_settings",
         "suppliers",

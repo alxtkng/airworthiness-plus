@@ -259,6 +259,7 @@ BOARD: tuple[Group, ...] = (
                     Tab("Staffing Plan", "staffing_plan"),
                     Tab("Load and Capacity", "load_and_capacity"),
                     Tab("Staff Roster", "staff_roster"),
+                    Tab("Dispatch", "dispatch_board"),
                 ),
                 inside=frozenset(
                     {
@@ -267,6 +268,10 @@ BOARD: tuple[Group, ...] = (
                         "record_staffing_shortfall",
                         "record_staff_absence",
                         "add_roster_shift",
+                        "dispatch_assign",
+                        "dispatch_move",
+                        "dispatch_break",
+                        "dispatch_turnaround",
                         "withdraw_roster_shift",
                         "publish_roster",
                         "record_handover",

@@ -5,7 +5,7 @@ from django import forms
 from airworthiness_plus.interface.forms import Form
 from airworthiness_plus.organisations.models import Approval
 from airworthiness_plus.people.models import Person
-from airworthiness_plus.planning.models import WorkPackage
+from airworthiness_plus.planning.models import WorkCard, WorkPackage
 from airworthiness_plus.staffing.forms import ApprovalChoice
 from airworthiness_plus.staffing.models import Function
 
@@ -45,6 +45,11 @@ class WithdrawShiftForm(Form):
 class HandoverForm(Form):
     package = forms.ModelChoiceField(
         label="Work Package", queryset=WorkPackage.objects.all(), required=False
+    )
+    card = forms.ModelChoiceField(
+        label="Work Card",
+        queryset=WorkCard.objects.select_related("package"),
+        required=False,
     )
     outgoing = forms.ModelChoiceField(label="Handed Over By", queryset=Person.objects.all())
     incoming = forms.ModelChoiceField(label="Handed Over To", queryset=Person.objects.all())

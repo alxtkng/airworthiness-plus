@@ -3,6 +3,7 @@
 {% block title %}Load and Capacity{% endblock %}
 {% block content %}
 <h1>Load and Capacity</h1>
+<p><a href="{% url 'dispatch_board' %}?day={{ week|date:'Y-m-d' }}">Dispatch for This Week</a></p>
 {% if may_build %}<p><a href="{% url 'build_work_package' %}">Build a Work Package</a></p>{% endif %}
 {% if weekly %}
 <form method="get" action="{% url 'load_and_capacity' %}">

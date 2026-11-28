@@ -80,5 +80,8 @@ chapter and section filtering, separate text searches, keyboard navigation and
 tenant isolation. `test_stores_exercise.py` follows the sample lookup from Stores
 and resumes its checkpoint. `test_parallel_handover.py` uses the two sample
 organisations to rehearse a stop and compare the source records after fallback.
+`test_dispatch.py` records overlapping assignments and a break, moves an
+inspection to the incoming shift, checks text warnings with keyboard navigation,
+and verifies acknowledgement and tenant isolation at a 390-pixel viewport.
 The mobile synthetic attestation journey is in `test_records.py`.
 [Case evidence and scope](../../assurance/amos-evidence-matrix.md)

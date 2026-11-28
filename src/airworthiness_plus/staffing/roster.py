@@ -15,7 +15,7 @@ from airworthiness_plus.accounts.models import User
 from airworthiness_plus.aircraft import services as aircraft_services
 from airworthiness_plus.organisations.models import Approval, ApprovalType, Organisation, Privilege
 from airworthiness_plus.people.models import Employment, Person
-from airworthiness_plus.planning.models import WorkPackage
+from airworthiness_plus.planning.models import WorkCard, WorkPackage
 from airworthiness_plus.staffing.models import Absence
 from airworthiness_plus.staffing.roster_models import (
     Handover,
@@ -180,6 +180,7 @@ def record_handover(
     handed_at: datetime,
     stage: str,
     parts: str,
+    card: WorkCard | None = None,
 ) -> Handover:
     if outgoing.pk == incoming.pk or not stage.strip() or not parts.strip():
         raise RefusedError("Name Two People and Record the Stage, Work, Parts and Warnings")
@@ -190,8 +191,13 @@ def record_handover(
         outgoing.organisation_id != organisation
         or incoming.organisation_id != organisation
         or (package is not None and package.organisation_id != organisation)
+        or (card is not None and card.organisation_id != organisation)
     ):
         raise RefusedError("The Handover Belongs to This Organisation")
+    if card is not None:
+        if package is not None and card.package_id != package.pk:
+            raise RefusedError("Choose a Work Card in the Handover Work Package")
+        package = card.package
     shifts = list(
         Shift.objects.filter(
             person__in=[incoming, outgoing],
@@ -207,6 +213,7 @@ def record_handover(
     return Handover.objects.create(
         organisation_id=organisation,
         package=package,
+        card=card,
         outgoing=outgoing,
         incoming=incoming,
         handed_at=handed_at,
@@ -375,5 +382,5 @@ def handovers_for(week: date) -> list[Handover]:
         Handover.objects.filter(
             Q(handed_at__gte=midnight(week), handed_at__lt=midnight(week + timedelta(days=7)))
             | Q(acknowledged_at__isnull=True)
-        ).select_related("incoming", "outgoing", "package")
+        ).select_related("incoming", "outgoing", "package", "card", "actor")
     )

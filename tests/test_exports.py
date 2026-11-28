@@ -74,7 +74,7 @@ from airworthiness_plus.releases import services as release_services
 from airworthiness_plus.releases.models import IssuedBy
 from airworthiness_plus.reviews import services as review_services
 from airworthiness_plus.sample import goods_in, phase1, stores, suppliers, tools
-from airworthiness_plus.staffing import roster
+from airworthiness_plus.staffing import dispatch, roster
 from airworthiness_plus.staffing import services as staffing_services
 from airworthiness_plus.staffing.models import AbsenceType, Function
 from airworthiness_plus.staffing.roster_models import (
@@ -327,7 +327,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             revision_date=TODAY,
             check_due=TODAY,
         )
-        planning_services.add_card(
+        card = planning_services.add_card(
             package,
             title="Install New Stabilator Trim Cable",
             data_set=data_set,
@@ -392,7 +392,7 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             normal=2,
             applies_on="Hangar Working Days",
         )
-        roster.add_shift(
+        dispatch_shift = roster.add_shift(
             actor=sample.planner,
             approval=approval,
             person=Person.objects.get(full_name="Chris Moore"),
@@ -403,6 +403,21 @@ def fleet(sample: Sample) -> dict[str, Aircraft]:
             break_minutes=30,
             other_minutes=0,
             maintenance=True,
+        )
+        dispatch.assign(
+            actor=sample.planner,
+            card=card,
+            shift=dispatch_shift,
+            starts_at=datetime(2026, 11, 18, 10, tzinfo=UTC),
+            ends_at=datetime(2026, 11, 18, 11, tzinfo=UTC),
+            reason="Reserve time for cable installation",
+        )
+        dispatch.add_window(
+            actor=sample.planner,
+            shift=dispatch_shift,
+            starts_at=datetime(2026, 11, 18, 12, tzinfo=UTC),
+            ends_at=datetime(2026, 11, 18, 12, 30, tzinfo=UTC),
+            note="Protected break",
         )
         roster.publish(actor=sample.planner, week=date(2026, 11, 16), note="Reviewed and Published")
         roster.record_handover(

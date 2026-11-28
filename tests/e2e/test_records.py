@@ -834,7 +834,9 @@ def test_certifying_staff_evidence_is_retained_with_release_and_deferral(
         expect(page.locator("main")).to_contain_text("Unverified Historical Evidence")
 
 
-def _record_critical_card_completion(page: Page, reference: str, performer: str) -> None:
+def _record_critical_card_completion(
+    page: Page, reference: str, performer: str, *, with_dispatch_card: bool = False
+) -> None:
     page.goto("/maintenance-data/add/")
     save(
         page,
@@ -889,9 +891,27 @@ def _record_critical_card_completion(page: Page, reference: str, performer: str)
         },
         "Test Landing Light Card",
     )
+    if with_dispatch_card:
+        page.get_by_role("link", name="Add Work Card").click()
+        save(
+            page,
+            "Add Work Card",
+            {
+                "title": "Test Dispatch Cover Card",
+                "data_set": "Test Piper Maintenance Instructions",
+                "instruction": "Chapter 33",
+                "planned_hours": "1.0",
+            },
+            "Test Dispatch Cover Card",
+        )
     page.get_by_role("link", name="Issue Work Package").click()
     save(page, "Issue Work Package", {}, "Revision 1")
-    page.get_by_role("link", name="Record Signed Work").click()
+    if with_dispatch_card:
+        page.get_by_role("row").filter(has_text="Test Landing Light Card").get_by_role(
+            "link", name="Record Signed Work"
+        ).click()
+    else:
+        page.get_by_role("link", name="Record Signed Work").click()
     save(
         page,
         "Record Signed Work",

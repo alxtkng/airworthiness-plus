@@ -27,6 +27,7 @@ from airworthiness_plus.planning import views as planning
 from airworthiness_plus.programme import views as programme
 from airworthiness_plus.releases import views as releases
 from airworthiness_plus.reviews import views as reviews
+from airworthiness_plus.staffing import dispatch_views as dispatch
 from airworthiness_plus.staffing import roster_views as roster
 from airworthiness_plus.staffing import views as staffing
 from airworthiness_plus.tooling import calibration_views as calibration
@@ -146,6 +147,20 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("", aircraft.fleet, name="home"),
     path("staffing/capacity/", roster.load_and_capacity, name="load_and_capacity"),
     path("staffing/roster/", roster.staff_roster, name="staff_roster"),
+    path("staffing/dispatch/", dispatch.dispatch_board, name="dispatch_board"),
+    path("staffing/dispatch/assign/", dispatch.dispatch_assignment, name="dispatch_assign"),
+    path(
+        "staffing/dispatch/<uuid:assignment_id>/move/",
+        dispatch.dispatch_assignment,
+        name="dispatch_move",
+    ),
+    path("staffing/dispatch/break/", dispatch.dispatch_window, name="dispatch_break"),
+    path(
+        "staffing/dispatch/turnaround/",
+        dispatch.dispatch_window,
+        {"turnaround": True},
+        name="dispatch_turnaround",
+    ),
     path("staffing/roster/add/", roster.add_roster_shift, name="add_roster_shift"),
     path("staffing/roster/publish/", roster.publish_roster, name="publish_roster"),
     path(
