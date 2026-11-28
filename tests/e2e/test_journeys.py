@@ -273,57 +273,61 @@ def test_import_is_checked_against_source_by_a_second_person(
 
 
 @pytest.mark.parametrize("organisation", FLEETS)
+@pytest.mark.parametrize(
+    "role", [Role.CONTINUING_AIRWORTHINESS_MANAGER, Role.ADMINISTRATOR], ids=str
+)
 def test_every_page_passes_the_accessibility_scan(
     chromium: Browser,
     live_site: str,
     personas: dict[str, tuple[Account, ...]],
     organisation: str,
+    role: Role,
 ) -> None:
     """REQ-383 to REQ-404. axe-core, WCAG 2.2 Levels A and AA, on every page the
     Continuing Airworthiness Manager and the Administrator can open, at 320 pixels
     (SC 1.4.10), in light and dark and with high contrast asked for by the device.
-    The pull request scans the Dashboard and the Fleet; the full walk scans every page."""
+    The pull request scans the Dashboard and the Fleet; the full walk scans every page.
+    With AIRWORTHINESS_ACCESSIBILITY_REPORT set, what is found is also written there."""
     found: dict[str, list[str]] = {}
-    for role in (Role.CONTINUING_AIRWORTHINESS_MANAGER, Role.ADMINISTRATOR):
-        account = next(person for person in personas[organisation] if person.role == role)
-        with signed_in(chromium, live_site, account, width=320) as page:
-            pending = deque(["/dashboard/", "/"])
-            seen: set[str] = set()
-            while pending:
-                path = pending.popleft()
-                if path in seen:
+    account = next(person for person in personas[organisation] if person.role == role)
+    with signed_in(chromium, live_site, account, width=320) as page:
+        pending = deque(["/dashboard/", "/"])
+        seen: set[str] = set()
+        while pending:
+            path = pending.popleft()
+            if path in seen:
+                continue
+            seen.add(path)
+            response = page.goto(path, wait_until="load")
+            if (
+                response is None
+                or not response.ok
+                or "text/html" not in response.headers.get("content-type", "")
+            ):
+                continue
+            for scheme, contrast in SCHEMES:
+                page.emulate_media(color_scheme=scheme, contrast=contrast)  # type: ignore[arg-type,unused-ignore]
+                problems = violations(page)
+                if page.evaluate(SIDEWAYS):
+                    problems.append("the page scrolls sideways at 320 pixels")
+                if problems:
+                    found[f"{path} {scheme} {contrast}"] = problems
+            if not os.environ.get("AIRWORTHINESS_E2E_FULL"):
+                continue
+            for href in page.locator("a[href]").evaluate_all(
+                "(links) => links.map(link => link.getAttribute('href'))"
+            ):
+                target = urlsplit(urljoin(page.url, href))
+                if target.netloc != urlsplit(live_site).netloc or target.fragment:
                     continue
-                seen.add(path)
-                response = page.goto(path, wait_until="load")
-                if (
-                    response is None
-                    or not response.ok
-                    or "text/html" not in (response.headers.get("content-type", ""))
-                ):
+                if "sign-out" in target.path or "export" in target.path:
                     continue
-                for scheme, contrast in (
-                    ("light", "no-preference"),
-                    ("dark", "no-preference"),
-                    ("light", "more"),
-                ):
-                    page.emulate_media(color_scheme=scheme, contrast=contrast)  # type: ignore[arg-type,unused-ignore]
-                    problems = violations(page)
-                    if page.evaluate(SIDEWAYS):
-                        problems.append("the page scrolls sideways at 320 pixels")
-                    if problems:
-                        found[f"{path} {scheme} {contrast}"] = problems
-                if not os.environ.get("AIRWORTHINESS_E2E_FULL"):
-                    continue
-                for href in page.locator("a[href]").evaluate_all(
-                    "(links) => links.map(link => link.getAttribute('href'))"
-                ):
-                    target = urlsplit(urljoin(page.url, href))
-                    if target.netloc != urlsplit(live_site).netloc or target.fragment:
-                        continue
-                    if "sign-out" in target.path or "export" in target.path:
-                        continue
-                    pending.append(target.path + (f"?{target.query}" if target.query else ""))
-            page.emulate_media(color_scheme="light", contrast="no-preference")  # type: ignore[arg-type,unused-ignore]
-            page.goto("/dashboard/")
-            sign_out(page)
+                pending.append(target.path + (f"?{target.query}" if target.query else ""))
+        page.emulate_media(color_scheme="light", contrast="no-preference")  # type: ignore[arg-type,unused-ignore]
+    report = os.environ.get("AIRWORTHINESS_ACCESSIBILITY_REPORT")
+    if report:
+        with Path(report).open("a", encoding="utf-8") as handle:
+            handle.write(
+                json.dumps({"organisation": organisation, "role": str(role), "found": found}) + "\n"
+            )
     assert found == {}
