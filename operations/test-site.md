@@ -1,10 +1,10 @@
 # The Test Site
 
-Date: 20 November 2026. Decision: `architecture/decisions/ADR-0003-test-site.md` (Issue 96).
+Date: 20 November 2026. Decision: `architecture/decisions/ADR-0003-test-site.md` (Issues 96 and 98).
 
 ## Status
 
-Built and rehearsed away from the host. Not yet made on Render: that needs Alex King's account. What could not be tried is under Not Yet Shown.
+Made on Render by Alex King on 20 November 2026, from the Blueprint, at commit `9c33a95`. It answers at `https://airworthiness-plus-test.onrender.com`. The first sign-in is still to be done. What was seen of it is under First Deploy.
 
 ## What It Is
 
@@ -152,16 +152,41 @@ Run in the build environment, not on Render. PostgreSQL 16 with password sign-in
 
 One thing the rehearsal found: the owner of the tables, when not a superuser, is shown no organisation's rows, because row-level security is forced on the owner too (ADR-0002). So the check in `seed_sample_organisation` that the sample is already set up finds nothing on such a database, and a second run is stopped only by the user name being taken. `prepare_test_site` asks as the sign-in page does, by user name. The command for the server is left as it is and the point is recorded for the server's first deployment.
 
-## Not Yet Shown
+## First Deploy, 20 November 2026
 
-Each is expected from Render's documents. None could be tried from the build session.
+Alex King signed up to Render and applied the Blueprint. Render made the database and the web service from `render.yaml` at commit `9c33a95`. The health page answered within about 6 minutes of the Blueprint being applied.
 
-| Expected | How It Is Shown |
+Seen from the build session, from outside, with no sign-in:
+
+| Asked | Answer |
 |---|---|
-| The free plan builds and runs a `Dockerfile` service | The first deploy goes live |
-| Render sends requests to port 8000, set by `PORT` | The sign-in page appears at the `.onrender.com` address |
-| The database's user may create a role and owns its database | The first deploy's log reads Service Role Made |
-| Render sets `X-Forwarded-Proto`, so the service knows a request came over HTTPS | The sign-in page appears and does not redirect without end |
-| The service's host name is the one in `RENDER_EXTERNAL_HOSTNAME` | The sign-in page appears and is not refused with 400 |
-| A free database may be closed to all outside addresses | The Blueprint applies without error |
-| The free plan asks for no payment card | Seen at sign-up |
+| `/health/` | 200, OK. The service reaches its database as its own role |
+| The home page | 302 to `/sign-in/?next=/` at the same host, over HTTPS |
+| The sign-in page | 200, titled Sign In, with the user name and password fields |
+| The stylesheet and the script | 200, from the service itself. The page asks for nothing from any other site |
+| Response headers | Content Security Policy with `default-src 'none'`; Strict Transport Security for a year with subdomains; no-store; nosniff; frame options DENY; referrer policy same-origin; opener policy same-origin |
+| The forgery-protection cookie | `__Host-csrftoken`, Secure, HttpOnly, SameSite Lax |
+| What answers behind the proxy | Gunicorn, by Render's own header |
+| A path that does not exist, `/admin/` | 404 |
+
+Not done from the build session: no sign-in was tried, with a right password or a wrong one. The certificate and the TLS versions were not read, because the build session's own proxy stands between it and the site.
+
+## Expected of Render, and What Was Seen
+
+| Expected | Seen on 20 November 2026 |
+|---|---|
+| The free plan builds and runs a `Dockerfile` service | Yes. The service is live and Gunicorn answers |
+| Render sends requests to port 8000, set by `PORT` | Yes. The sign-in page appears at the `.onrender.com` address |
+| The database's user may create a role and owns its database | Yes, by what followed: the service starts only after the owner's work has finished, and it signs in to the database as the role that work makes. The deploy's own log was not read from the build session |
+| Render sets `X-Forwarded-Proto`, so the service knows a request came over HTTPS | Yes. The home page redirects once, to sign-in, and not without end |
+| The service's host name is the one in `RENDER_EXTERNAL_HOSTNAME` | Yes. The host name is `airworthiness-plus-test.onrender.com` and no request was refused with 400 |
+| A free database may be closed to all outside addresses | The Blueprint applied without error. That the database refuses an outside connection was not tried |
+| The free plan asks for no payment card | To be confirmed by Alex King |
+
+## Still to Be Seen
+
+| What | When |
+|---|---|
+| The first sign-in as the sample Administrator, and the authenticator set-up | By Alex King |
+| The address the access log records for that sign-in: the visitor's, or one of Render's | At the first sign-in |
+| Two-factor sign-in on the Render account | To be confirmed by Alex King |
